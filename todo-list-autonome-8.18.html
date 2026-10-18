@@ -5,7 +5,8 @@
 <meta name="apple-mobile-web-app-title" content="Sous le tapis">
 <link rel="apple-touch-icon" href="icon-faisan-180.png">
 <link rel="icon" href="icon-faisan-180.png">
-<!-- Fauconnerie — version AUTONOME 8.17 -->
+<link rel="manifest" href="manifest.webmanifest">
+<!-- Fauconnerie — version AUTONOME 8.18 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -334,6 +335,9 @@
     de partage du système s'ouvre (Enregistrer dans Fichiers, iCloud,
     AirDrop, Mail…) au lieu d'un téléchargement peu visible ; ailleurs, rien
     ne change. Aucune clé de stockage ajoutée ni modifiée.
+  - 8.18 : installable comme une appli sur ordinateur (Chrome / Edge :
+    « Installer » ; Safari Mac : Fichier > Ajouter au Dock) avec l'icône
+    faisan : fichier manifest.webmanifest + icônes 192 et 512. Rien d'autre.
 -->
 <title>Les listes sous le tapis</title>
 <style>
@@ -2006,7 +2010,7 @@ cette semaine</span></span>
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.17</span>
+    <span class="version-tag">v8.18</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>

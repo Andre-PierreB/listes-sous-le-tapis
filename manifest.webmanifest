@@ -1,0 +1,29 @@
+{
+  "name": "Les listes sous le tapis",
+  "short_name": "Sous le tapis",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#34495A",
+  "theme_color": "#34495A",
+  "icons": [
+    {
+      "src": "icon-faisan-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-faisan-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-faisan-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
