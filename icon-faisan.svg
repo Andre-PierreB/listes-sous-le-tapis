@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-<rect width="1024" height="1024" fill="#F4EFE6"/>
+<rect width="1024" height="1024" fill="#34495A"/>
 <g transform="translate(1024 0) scale(1.12) translate(-1024 0) translate(55 25)">
 <defs><clipPath id="ch"><path d="M455 330 C470 150 640 40 860 -20 L1044 -20 L1044 760 C1000 800 940 780 905 720 C860 640 790 585 700 560 C600 535 470 480 455 330 Z"/></clipPath><clipPath id="cbl"><path d="M590 470 C440 458 280 485 128 543 C270 625 450 640 600 600 Z"/></clipPath><clipPath id="cbu"><path d="M585 300 C470 285 300 360 120 540 C280 480 440 455 590 470 Z"/></clipPath></defs>
 <path d="M470 515 C452 640 466 780 515 870 C640 905 800 905 935 870 C940 760 930 650 905 600 C800 560 650 535 470 515 Z" fill="#B892DD" stroke="#1c1a1f" stroke-width="5"/>
