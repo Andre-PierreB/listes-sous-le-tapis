@@ -4197,8 +4197,8 @@ function closeLucky(){
   if(!el || luckyReduceMotion()){ finish(); return; }
   el.classList.add("closing");
   const cl = el.querySelector(".lucky-clover");
-  if(cl) cl.animate([{ transform:"rotate(0deg)" }, { transform:"rotate(-720deg)" }],
-    { duration:950, easing:"cubic-bezier(.45,.05,.2,1)" });
+  if(cl) cl.animate([{ transform:"rotate(0deg)" }, { transform:"rotate(-360deg)" }],
+    { duration:420, easing:"cubic-bezier(.3,.6,.4,1)" });
   const head = el.querySelector(".lucky-head");
   const opts = el.querySelector(".lucky-opts");
   const cs = getComputedStyle(el);
@@ -4206,9 +4206,9 @@ function closeLucky(){
   const target = head.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(getComputedStyle(head).marginTop) + parseFloat(cs.paddingTop);
   const from = el.offsetHeight;
   el.style.overflow = "hidden";
-  if(opts) opts.animate([{ opacity:1, transform:"none" }, { opacity:0, transform:"translateY(-6px)" }], { duration:280, delay:120, fill:"forwards", easing:"ease-in" });
+  if(opts) opts.animate([{ opacity:1, transform:"none" }, { opacity:0, transform:"translateY(-6px)" }], { duration:200, fill:"forwards", easing:"ease-out" });
   const shrink = el.animate([{ height: from + "px" }, { height: target + "px" }],
-    { duration:460, delay:260, easing:"cubic-bezier(.64,0,.78,0)", fill:"forwards" });
+    { duration:420, easing:"cubic-bezier(.3,.6,.4,1)", fill:"forwards" });
   shrink.onfinish = ()=>{ shrink.cancel(); finish(); };
   shrink.oncancel = null;
 }
