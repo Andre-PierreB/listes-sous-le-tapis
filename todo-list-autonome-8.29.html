@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.28 -->
+<!-- Sous le tapis — version AUTONOME 8.29 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -387,6 +387,10 @@
     lieu de décrire l'état actuel, que la flèche montre déjà.
   - 8.28 : case urgente : le détail de la tâche (s'il y en a un) s'affiche
     sous son titre, en petit et discret, comme dans les listes.
+  - 8.29 : case urgente : poignée ⋮⋮ à gauche de la case à cocher et
+    visible seulement au survol, comme dans les listes ; textes à la même
+    place qu'avant. Puce plus grosse, dans le rouge vif du titre, un peu
+    plus à gauche ; détail un peu plus clair.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -677,7 +681,18 @@ header{
 .urgent-list li:hover{ background:color-mix(in srgb, var(--urgent) 8%, transparent); }
 :root:not([data-theme="light"]) .urgent-list li:hover{ background:color-mix(in srgb, var(--urgent) 14%, transparent); }
 .urgent-list li.dragging{opacity:0.4;}
-.urgent-list .drag-handle{ color:var(--urgent-ink); opacity:0.5; }
+.urgent-list .drag-handle{
+  /* hors du flux, à gauche de la case à cocher, visible au survol (8.29) */
+  position:absolute;
+  left:-2.9rem;
+  top:0;
+  bottom:0;
+  padding:0;
+  color:var(--urgent-ink);
+  opacity:0;
+  transition:opacity .15s ease;
+}
+.urgent-list li:hover .drag-handle{ opacity:0.5; }
 .urgent-check{
   appearance:none;
   -webkit-appearance:none;
@@ -729,16 +744,24 @@ header{
   text-align:left;
   font-family:inherit;
   font-size:0.95rem;
+  line-height:1.3;
   color:var(--ink);
-  padding:0.3rem 0.4rem;
+  padding:0.3rem 0.4rem 0.3rem 3.5rem; /* texte à la même place qu'avec la poignée dans le flux (8.29) */
   border-radius:8px;
   cursor:pointer;
+  position:relative;
 }
+/* puce : un rond plein dans le rouge du titre, centré sur la 1re ligne (8.29) */
 .urgent-bullet{
-  display:inline-block;
-  margin-right:0.4em;
-  color:var(--urgent-ink);
-  opacity:0.65;
+  position:absolute;
+  left:2.15rem;
+  top:calc(0.3rem + 0.6175rem); /* moitié de la 1re ligne : 0.95rem × 1.3 / 2 */
+  transform:translateY(-50%);
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--urgent);
+  font-size:0;
 }
 .urgent-jump-cat{
   display:inline-block;
@@ -750,17 +773,17 @@ header{
   color:var(--ink-faint); /* le nom de la liste, en gris (8.14) */
   margin:0 0.5rem;
 }
-/* détail de la tâche sous son titre, aligné après la puce (8.28) */
+/* détail de la tâche sous son titre, aligné sur le titre (8.28, plus clair en 8.29) */
 .urgent-note{
   display:block;
   font-size:0.8rem;
-  color:var(--ink-soft);
-  margin:0.1rem 0 0 1.05em;
+  color:color-mix(in srgb, var(--ink-soft) 70%, transparent);
+  margin-top:0.1rem;
   line-height:1.4;
 }
 /* relance arrivée (tâche en cours dont la date est là) */
-.urgent-list li.is-relance .urgent-jump,
-.urgent-list li.is-relance .urgent-bullet{ color:var(--relance); }
+.urgent-list li.is-relance .urgent-jump{ color:var(--relance); }
+.urgent-list li.is-relance .urgent-bullet{ background:var(--relance); }
 .item.item-relance .item-title{ color:var(--relance); font-weight:600; }
 
 /* ---------- trèfle : deux petites tâches piochées chaque jour ---------- */
@@ -2021,7 +2044,7 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
 /* ---------- appareils tactiles : pas de survol ---------- */
 @media (hover:none){
   /* les contrôles doivent rester repérables sans attendre un survol qui n'arrivera jamais */
-  .item-controls, .item .drag-handle{opacity:0.65;}
+  .item-controls, .item .drag-handle, .urgent-list .drag-handle{opacity:0.65;}
   [data-tip]::after{ display:none; }
 }
 
@@ -2104,7 +2127,7 @@ cette semaine</span></span>
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.28</span>
+    <span class="version-tag">v8.29</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
