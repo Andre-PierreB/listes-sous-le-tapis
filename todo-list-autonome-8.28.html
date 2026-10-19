@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.27 -->
+<!-- Sous le tapis — version AUTONOME 8.28 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -385,6 +385,8 @@
   - 8.27 : info-bulle du petit triangle d'ordre d'une liste : elle propose
     ce que fera le clic (« Récentes en bas ? » / « Récentes en haut ? ») au
     lieu de décrire l'état actuel, que la flèche montre déjà.
+  - 8.28 : case urgente : le détail de la tâche (s'il y en a un) s'affiche
+    sous son titre, en petit et discret, comme dans les listes.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -747,6 +749,14 @@ header{
   text-transform:uppercase;
   color:var(--ink-faint); /* le nom de la liste, en gris (8.14) */
   margin:0 0.5rem;
+}
+/* détail de la tâche sous son titre, aligné après la puce (8.28) */
+.urgent-note{
+  display:block;
+  font-size:0.8rem;
+  color:var(--ink-soft);
+  margin:0.1rem 0 0 1.05em;
+  line-height:1.4;
 }
 /* relance arrivée (tâche en cours dont la date est là) */
 .urgent-list li.is-relance .urgent-jump,
@@ -2094,7 +2104,7 @@ cette semaine</span></span>
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.27</span>
+    <span class="version-tag">v8.28</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -3690,7 +3700,7 @@ function collectUrgentItems(){
       const status = dueStatus(shown);
       const dueUrgent = !eff.waiting && isDueUrgent(eff.due);
       if(relance || eff.urgent || dueUrgent){
-        out.push({ key, catId: cat.id, catTitle: cat.title, text: eff.t, due: shown, status, isRdv: isRdvTitle(eff.t), manual: !!eff.urgent, relance });
+        out.push({ key, catId: cat.id, catTitle: cat.title, text: eff.t, note: eff.note || "", due: shown, status, isRdv: isRdvTitle(eff.t), manual: !!eff.urgent, relance });
       }
     });
   });
@@ -4022,7 +4032,7 @@ function renderUrgentBanner(){
     if(entry.relance) li.classList.add("is-relance");
     li.innerHTML = `
       <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
-      <button type="button" class="urgent-jump"><span class="urgent-bullet" aria-hidden="true">&#8226;</span>${escapeAttr(entry.text)}<span class="urgent-jump-cat">${escapeAttr(entry.catTitle)}</span>${badge}</button>
+      <button type="button" class="urgent-jump"><span class="urgent-bullet" aria-hidden="true">&#8226;</span>${escapeAttr(entry.text)}<span class="urgent-jump-cat">${escapeAttr(entry.catTitle)}</span>${badge}${entry.note ? `<span class="urgent-note">${escapeAttr(entry.note)}</span>` : ""}</button>
       <button type="button" class="urgent-check" aria-label="Marquer cette tâche comme faite"></button>
       <span class="urgent-actions">
         ${entry.relance
