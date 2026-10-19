@@ -3,8 +3,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sous le tapis">
-<link rel="apple-touch-icon" href="icon-faisan-180.png">
-<link rel="icon" href="icon-faisan-180.png">
+<link rel="apple-touch-icon" href="icon-faisan-v2-180.png">
+<link rel="icon" href="icon-faisan-v2-180.png">
 <link rel="manifest" href="manifest.webmanifest" id="manifestLink">
 <script>
   // 8.21 : Android découpe lui-même l'icône (cercle, goutte…) et veut donc
@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.21 -->
+<!-- Sous le tapis — version AUTONOME 8.22 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -26,7 +26,7 @@
     todo-list-autonome-X.Y.html.
   - EN LIGNE (depuis la 8.17) : l'appli est publiée sur GitHub Pages
     (dépôt Andre-PierreB/listes-sous-le-tapis), où ce fichier s'appelle
-    index.html, à côté de l'icône icon-faisan-180.png. Les données restent
+    index.html, à côté de l'icône icon-faisan-v2-180.png. Les données restent
     dans le navigateur de chacun (localStorage) : chaque personne a sa liste.
 
   RÈGLES DE LA MAISON
@@ -360,6 +360,9 @@
     l'icône pleine (icon-faisan-plein-192/512.png, « any » et « maskable »)
     qu'Android découpe à sa forme ; ordinateur : manifest.webmanifest
     (icône macOS). Rien d'autre.
+  - 8.22 : œil du faisan plus vif : liseré blanc autour de la pupille et
+    reflet blanc pur (icon-faisan.svg). Toutes les icônes régénérées sous de
+    nouveaux noms « -v2- » pour éviter les anciennes en cache.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2032,7 +2035,7 @@ cette semaine</span></span>
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.21</span>
+    <span class="version-tag">v8.22</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
