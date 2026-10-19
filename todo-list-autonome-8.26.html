@@ -379,8 +379,8 @@
     hors annulation et sauvegardes. Animations coupées si le système
     demande moins de mouvement.
   - 8.26 : case ouverte : reclic sur le trèfle pour la refermer — la
-    manivelle tourne à l'envers, les rouleaux se rebobinent en floutant et la
-    case se replie. Tirage et choix du jour gardés. (Pas de fermeture une
+    manivelle tourne à l'envers, les deux tâches s'effacent sans tourner et
+    la case se replie. Au ⟳, le trèfle ne tourne plus (seuls les rouleaux). Tirage et choix du jour gardés. (Pas de fermeture une
     fois la tâche du jour faite.)
 -->
 <title>Sous le tapis</title>
@@ -4183,8 +4183,9 @@ function openLucky(){
   luckySpinNext = "open";
   renderLuckyLine();
 }
-// 8.26 : reclic sur le trèfle — la manivelle tourne à l'envers, les rouleaux
-// se rebobinent et la case se replie. Le tirage et le choix sont gardés.
+// 8.26 : reclic sur le trèfle — la manivelle tourne à l'envers, les deux
+// tâches s'effacent (sans tourner : le défilement sert à piquer la curiosité,
+// pas à la refermer) et la case se replie. Le tirage et le choix sont gardés.
 function closeLucky(){
   const el = document.getElementById("luckyLine");
   const finish = ()=>{
@@ -4198,7 +4199,6 @@ function closeLucky(){
   const cl = el.querySelector(".lucky-clover");
   if(cl) cl.animate([{ transform:"rotate(0deg)" }, { transform:"rotate(-720deg)" }],
     { duration:950, easing:"cubic-bezier(.45,.05,.2,1)" });
-  spinLuckyReels(el, "close");
   const head = el.querySelector(".lucky-head");
   const opts = el.querySelector(".lucky-opts");
   const cs = getComputedStyle(el);
@@ -4206,9 +4206,9 @@ function closeLucky(){
   const target = head.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(getComputedStyle(head).marginTop) + parseFloat(cs.paddingTop);
   const from = el.offsetHeight;
   el.style.overflow = "hidden";
-  if(opts) opts.animate([{ opacity:1 }, { opacity:0 }], { duration:300, delay:380, fill:"forwards", easing:"ease-in" });
+  if(opts) opts.animate([{ opacity:1, transform:"none" }, { opacity:0, transform:"translateY(-6px)" }], { duration:280, delay:120, fill:"forwards", easing:"ease-in" });
   const shrink = el.animate([{ height: from + "px" }, { height: target + "px" }],
-    { duration:460, delay:420, easing:"cubic-bezier(.64,0,.78,0)", fill:"forwards" });
+    { duration:460, delay:260, easing:"cubic-bezier(.64,0,.78,0)", fill:"forwards" });
   shrink.onfinish = ()=>{ shrink.cancel(); finish(); };
   shrink.oncancel = null;
 }
@@ -4372,9 +4372,10 @@ function renderLuckyLine(){
   }
   el.onkeydown = null;
   if(spinMode && !luckyReduceMotion()){
-    const cl = el.querySelector(".lucky-clover");
-    if(cl) cl.animate([{ transform:"rotate(0deg)" }, { transform:`rotate(${spinMode === "open" ? 720 : 360}deg)` }],
-      { duration: spinMode === "open" ? 1100 : 700, easing:"cubic-bezier(.45,.05,.2,1)" });
+    // le trèfle ne tourne qu'à l'ouverture ; au ⟳, seuls les rouleaux bougent
+    const cl = spinMode === "open" ? el.querySelector(".lucky-clover") : null;
+    if(cl) cl.animate([{ transform:"rotate(0deg)" }, { transform:"rotate(720deg)" }],
+      { duration:1100, easing:"cubic-bezier(.45,.05,.2,1)" });
     if(spinMode === "open" && closedHeight){
       const full = el.offsetHeight;
       el.style.overflow = "hidden";
