@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.29 -->
+<!-- Sous le tapis — version AUTONOME 8.30 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -391,6 +391,11 @@
     visible seulement au survol, comme dans les listes ; textes à la même
     place qu'avant. Puce plus grosse, dans le rouge vif du titre, un peu
     plus à gauche ; détail un peu plus clair.
+  - 8.30 : case urgente : poignée et case à cocher reviennent dans la ligne,
+    à l'intérieur de la zone de survol (élargie vers la gauche, textes
+    toujours à la même place) : on ne perd plus le survol en allant cocher.
+    Case à cocher et poignée dans le flux, centrées sur la 1re ligne ;
+    plus d'espace perdu entre la case et la puce. Puce un rien moins vive.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -671,8 +676,12 @@ header{
 }
 .urgent-list li{
   display:flex;
-  align-items:center;
-  gap:0.2rem;
+  align-items:flex-start;
+  gap:0.35rem;
+  /* zone de survol élargie à gauche jusqu'au bord du rond « ! » : poignée et
+     case à cocher y tiennent, le texte reste à sa place (8.30) */
+  margin-left:-2rem;
+  padding-left:0.3rem;
   border-radius:8px;
   position:relative;
   transition:background .12s ease;
@@ -682,12 +691,7 @@ header{
 :root:not([data-theme="light"]) .urgent-list li:hover{ background:color-mix(in srgb, var(--urgent) 14%, transparent); }
 .urgent-list li.dragging{opacity:0.4;}
 .urgent-list .drag-handle{
-  /* hors du flux, à gauche de la case à cocher, visible au survol (8.29) */
-  position:absolute;
-  left:-2.9rem;
-  top:0;
-  bottom:0;
-  padding:0;
+  /* dans la ligne, comme dans les listes, visible au survol (8.30) */
   color:var(--urgent-ink);
   opacity:0;
   transition:opacity .15s ease;
@@ -698,11 +702,8 @@ header{
   -webkit-appearance:none;
   box-sizing:border-box;
   padding:0;
-  margin:0;
-  position:absolute;
-  left:-1.15rem;
-  top:50%;
-  transform:translateY(-50%);
+  flex:none;
+  margin:calc(0.3rem + 0.6175rem - 7px) 0 0; /* centrée sur la 1re ligne (8.30) */
   width:14px;
   height:14px;
   border:1.5px solid color-mix(in srgb, var(--urgent-ink) 45%, transparent);
@@ -717,6 +718,7 @@ header{
 .urgent-actions{
   margin-left:auto;
   flex:none;
+  align-self:center;
   display:flex;
   align-items:center;
   gap:0.1rem;
@@ -740,13 +742,14 @@ header{
   appearance:none;
   border:none;
   background:transparent;
-  width:100%;
+  flex:1;
+  min-width:0;
   text-align:left;
   font-family:inherit;
   font-size:0.95rem;
   line-height:1.3;
   color:var(--ink);
-  padding:0.3rem 0.4rem 0.3rem 3.5rem; /* texte à la même place qu'avec la poignée dans le flux (8.29) */
+  padding:0.3rem 0.4rem 0.3rem 1.65rem; /* place de la puce ; texte à la même place qu'avant (8.30) */
   border-radius:8px;
   cursor:pointer;
   position:relative;
@@ -754,13 +757,13 @@ header{
 /* puce : un rond plein dans le rouge du titre, centré sur la 1re ligne (8.29) */
 .urgent-bullet{
   position:absolute;
-  left:2.15rem;
+  left:0.45rem;
   top:calc(0.3rem + 0.6175rem); /* moitié de la 1re ligne : 0.95rem × 1.3 / 2 */
   transform:translateY(-50%);
   width:7px;
   height:7px;
   border-radius:50%;
-  background:var(--urgent);
+  background:color-mix(in srgb, var(--urgent) 80%, transparent); /* un rien moins vive (8.30) */
   font-size:0;
 }
 .urgent-jump-cat{
@@ -2127,7 +2130,7 @@ cette semaine</span></span>
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.29</span>
+    <span class="version-tag">v8.30</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4055,8 +4058,8 @@ function renderUrgentBanner(){
     if(entry.relance) li.classList.add("is-relance");
     li.innerHTML = `
       <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
-      <button type="button" class="urgent-jump"><span class="urgent-bullet" aria-hidden="true">&#8226;</span>${escapeAttr(entry.text)}<span class="urgent-jump-cat">${escapeAttr(entry.catTitle)}</span>${badge}${entry.note ? `<span class="urgent-note">${escapeAttr(entry.note)}</span>` : ""}</button>
       <button type="button" class="urgent-check" aria-label="Marquer cette tâche comme faite"></button>
+      <button type="button" class="urgent-jump"><span class="urgent-bullet" aria-hidden="true">&#8226;</span>${escapeAttr(entry.text)}<span class="urgent-jump-cat">${escapeAttr(entry.catTitle)}</span>${badge}${entry.note ? `<span class="urgent-note">${escapeAttr(entry.note)}</span>` : ""}</button>
       <span class="urgent-actions">
         ${entry.relance
           ? `<button type="button" class="waiting-btn postpone-btn" aria-label="Reporter la relance" data-tip="Reporter la relance"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 2.5h6"/></svg></button><button type="button" class="waiting-btn back-btn" aria-label="Sortir de « En cours »" data-tip="Sortir de « En cours »">&#8617;</button>`
