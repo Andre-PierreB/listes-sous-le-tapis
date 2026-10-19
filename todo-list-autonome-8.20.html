@@ -6,7 +6,7 @@
 <link rel="apple-touch-icon" href="icon-faisan-180.png">
 <link rel="icon" href="icon-faisan-180.png">
 <link rel="manifest" href="manifest.webmanifest">
-<!-- Sous le tapis — version AUTONOME 8.19 -->
+<!-- Sous le tapis — version AUTONOME 8.20 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -344,6 +344,11 @@
     nom de l'icône installée, sauvegardes) ; plus aucune trace visible de
     « Fauconnerie ». Clés de stockage inchangées, anciennes sauvegardes
     toujours importables.
+  - 8.20 : icône d'ordinateur (Chrome sur Mac) sans plaque blanche autour :
+    icônes icon-faisan-mac-192/512.png déjà découpées à la forme macOS
+    (coins arrondis, marge transparente), plus d'icône « maskable » dans le
+    manifest — c'est elle que Chrome posait sur un fond blanc. L'icône
+    iPhone (icon-faisan-180.png) ne change pas.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2016,7 +2021,7 @@ cette semaine</span></span>
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.19</span>
+    <span class="version-tag">v8.20</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
