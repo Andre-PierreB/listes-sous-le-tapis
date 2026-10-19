@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.25 -->
+<!-- Sous le tapis — version AUTONOME 8.26 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -378,6 +378,10 @@
     Nouvelle clé « fauconnerie-v2-luckyopen » (date d'ouverture seulement),
     hors annulation et sauvegardes. Animations coupées si le système
     demande moins de mouvement.
+  - 8.26 : case ouverte : reclic sur le trèfle pour la refermer — la
+    manivelle tourne à l'envers, les rouleaux se rebobinent en floutant et la
+    case se replie. Tirage et choix du jour gardés. (Pas de fermeture une
+    fois la tâche du jour faite.)
 -->
 <title>Sous le tapis</title>
 <style>
@@ -780,6 +784,15 @@ header{
   transition:transform .3s ease, opacity .2s ease;
 }
 .lucky-line.closed:hover .lucky-crank{ opacity:1; transform:translateY(2px); }
+.lucky-clover-btn{
+  appearance:none; border:none; background:transparent; padding:3px; margin:-3px;
+  border-radius:50%; line-height:0; cursor:pointer; color:inherit; flex:none;
+  transition:background .15s ease;
+}
+.lucky-clover-btn:hover{ background:color-mix(in srgb, var(--lucky-gold) 22%, var(--surface)); }
+.lucky-clover-btn:hover .lucky-clover{ transform:rotate(30deg); }
+.lucky-clover-btn:focus-visible{ outline:2px solid var(--lucky-gold); outline-offset:1px; }
+.lucky-line.closing{ pointer-events:none; }
 .lucky-pick.spinning{ position:relative; }
 .lucky-pick.spinning .lucky-pick-text{ visibility:hidden; }
 .lucky-reel{ position:absolute; overflow:hidden; pointer-events:none; }
@@ -2078,7 +2091,7 @@ cette semaine</span></span>
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.25</span>
+    <span class="version-tag">v8.26</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4170,6 +4183,35 @@ function openLucky(){
   luckySpinNext = "open";
   renderLuckyLine();
 }
+// 8.26 : reclic sur le trèfle — la manivelle tourne à l'envers, les rouleaux
+// se rebobinent et la case se replie. Le tirage et le choix sont gardés.
+function closeLucky(){
+  const el = document.getElementById("luckyLine");
+  const finish = ()=>{
+    try{ localStorage.removeItem(LUCKY_OPEN_KEY); }catch(e){}
+    el.classList.remove("closing");
+    el.style.overflow = ""; el.style.height = "";
+    renderLuckyLine();
+  };
+  if(!el || luckyReduceMotion()){ finish(); return; }
+  el.classList.add("closing");
+  const cl = el.querySelector(".lucky-clover");
+  if(cl) cl.animate([{ transform:"rotate(0deg)" }, { transform:"rotate(-720deg)" }],
+    { duration:950, easing:"cubic-bezier(.45,.05,.2,1)" });
+  spinLuckyReels(el, "close");
+  const head = el.querySelector(".lucky-head");
+  const opts = el.querySelector(".lucky-opts");
+  const cs = getComputedStyle(el);
+  // hauteur visée : celle de la case fermée (tête + marges intérieures)
+  const target = head.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(getComputedStyle(head).marginTop) + parseFloat(cs.paddingTop);
+  const from = el.offsetHeight;
+  el.style.overflow = "hidden";
+  if(opts) opts.animate([{ opacity:1 }, { opacity:0 }], { duration:300, delay:380, fill:"forwards", easing:"ease-in" });
+  const shrink = el.animate([{ height: from + "px" }, { height: target + "px" }],
+    { duration:460, delay:420, easing:"cubic-bezier(.64,0,.78,0)", fill:"forwards" });
+  shrink.onfinish = ()=>{ shrink.cancel(); finish(); };
+  shrink.oncancel = null;
+}
 const luckyReduceMotion = () => !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 // Textes de remplissage pour les rouleaux : d'autres tâches de la liste.
 function luckyFillerTexts(excludeKeys){
@@ -4194,7 +4236,8 @@ function spinLuckyReels(el, mode){
   const keys = picks.map(p => p.dataset.key);
   let fillers = luckyFillerTexts(keys);
   if(!fillers.length) fillers = ["…"];
-  const startDelay = mode === "open" ? 220 : 60;
+  const startDelay = mode === "open" ? 220 : (mode === "close" ? 0 : 60);
+  const rewind = mode === "close";
   picks.forEach((pick, n)=>{
     const span = pick.querySelector(".lucky-pick-text");
     if(!span) return;
@@ -4223,6 +4266,14 @@ function spinLuckyReels(el, mode){
     reel.appendChild(strip);
     pick.appendChild(reel);
     const dist = count * H;
+    if(rewind){
+      // rebobinage : les rouleaux repartent en arrière, de plus en plus flous
+      strip.animate([
+        { transform:`translateY(${-dist}px)`, filter:"blur(0)", opacity:1 },
+        { transform:"translateY(0)", filter:"blur(3px)", opacity:.35 }
+      ], { duration:560 + n * 80, easing:"cubic-bezier(.55,0,.8,.4)", fill:"forwards" });
+      return;
+    }
     const dur = (mode === "open" ? 1150 : 900) + n * 380;
     const anim = strip.animate([
       { transform:"translateY(0)", filter:"blur(2.5px)", easing:"cubic-bezier(.18,.6,.3,1)" },
@@ -4295,7 +4346,7 @@ function renderLuckyLine(){
   const chosenKey = getLuckyChosen();
   const winner = donePick ? donePick.key : (picks.some(p => p.key === chosenKey) ? chosenKey : null);
   el.innerHTML =
-    `<div class="lucky-head">${clover}<span class="lucky-lead">${done ? "Trèfle du jour fait !" : LUCKY_LEAD}</span>` +
+    `<div class="lucky-head">${(closed || done) ? clover : `<button type="button" class="lucky-clover-btn" aria-label="Refermer la case" title="Refermer">${clover}</button>`}<span class="lucky-lead">${done ? "Trèfle du jour fait !" : LUCKY_LEAD}</span>` +
     (closed ? `<span class="lucky-crank" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>` : "") +
     ((closed || done) ? "" : `<button type="button" class="lucky-reroll" aria-label="Deux autres propositions"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg></button>`) +
     `</div>` +
@@ -4314,6 +4365,7 @@ function renderLuckyLine(){
     `</div>`;
   if(closed){
     el.querySelector(".lucky-opts").remove();
+    el.classList.remove("can-reset");
     el.onclick = ()=> openLucky();
     el.onkeydown = (e)=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openLucky(); } };
     return;
@@ -4347,7 +4399,7 @@ function renderLuckyLine(){
   // clic dans le fond de la case (hors des deux tâches) : on annule le choix
   // et on revient au départ, avec le « ou » — seulement tant que rien n'est coché
   el.onclick = (e)=>{
-    if(done || !winner || e.target.closest(".lucky-pick, .lucky-reroll")) return;
+    if(done || !winner || e.target.closest(".lucky-pick, .lucky-reroll, .lucky-clover-btn")) return;
     setLuckyChosen(null);
     renderLuckyLine();
     noteUndoPoint();
@@ -4355,6 +4407,8 @@ function renderLuckyLine(){
   el.classList.toggle("can-reset", !done && !!winner);
   const reroll = el.querySelector(".lucky-reroll");
   if(reroll) reroll.addEventListener("click", (e)=>{ e.stopPropagation(); rerollLucky(); });
+  const cloverBtn = el.querySelector(".lucky-clover-btn");
+  if(cloverBtn) cloverBtn.addEventListener("click", (e)=>{ e.stopPropagation(); closeLucky(); });
   const check = el.querySelector(".lucky-check");
   if(check){
     check.addEventListener("change", (e)=>{
