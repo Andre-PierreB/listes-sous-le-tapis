@@ -6,7 +6,7 @@
 <link rel="apple-touch-icon" href="icon-faisan-180.png">
 <link rel="icon" href="icon-faisan-180.png">
 <link rel="manifest" href="manifest.webmanifest">
-<!-- Fauconnerie — version AUTONOME 8.18 -->
+<!-- Sous le tapis — version AUTONOME 8.19 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -25,7 +25,9 @@
   RÈGLES DE LA MAISON
   - Ne jamais abîmer l'appli ni perdre d'anciennes tâches : toutes les
     données vivent dans localStorage (clés « fauconnerie-v2-… »), on ne
-    renomme ni ne supprime une clé existante.
+    renomme ni ne supprime une clé existante. Le préfixe « fauconnerie » est
+    un vestige interne invisible : l'appli s'appelle « Sous le tapis »
+    partout ailleurs (depuis la 8.19) ; ne pas réintroduire ce nom à l'écran.
   - Fichier autonome : un seul .html, rien d'autre que les polices Google
     en externe.
   - Ton des messages : humour, faisan, folklore plutôt belge ; rien de
@@ -338,8 +340,12 @@
   - 8.18 : installable comme une appli sur ordinateur (Chrome / Edge :
     « Installer » ; Safari Mac : Fichier > Ajouter au Dock) avec l'icône
     faisan : fichier manifest.webmanifest + icônes 192 et 512. Rien d'autre.
+  - 8.19 : l'appli s'appelle « Sous le tapis » partout (onglet, en-tête,
+    nom de l'icône installée, sauvegardes) ; plus aucune trace visible de
+    « Fauconnerie ». Clés de stockage inchangées, anciennes sauvegardes
+    toujours importables.
 -->
-<title>Les listes sous le tapis</title>
+<title>Sous le tapis</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap');
 
@@ -1976,7 +1982,7 @@ body.arrive footer{ animation-delay:.52s; }
 
 <div class="wrap">
   <header>
-    <span class="eyebrow">Les listes sous le t<span class="ap-nod">ap</span>is</span>
+    <span class="eyebrow">Sous le t<span class="ap-nod">ap</span>is</span>
   </header>
 
   <div class="progress-card">
@@ -2010,7 +2016,7 @@ cette semaine</span></span>
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.18</span>
+    <span class="version-tag">v8.19</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -2206,7 +2212,7 @@ const AMBIENT_MESSAGES = [
   "« Une liste bien tenue traverse les âges mieux qu'un dicton de grand-mère. » — proverbe rapiécé pour l'occasion.",
   "Sur une pierre tombale, on pourrait écrire : « Sa liste était à jour. » Pas la pire épitaphe.",
   "Toute chose a une fin, sauf apparemment cette liste, increvable.",
-  "À la Fauconnerie, les listes ont toujours le dernier mot — même face à un faisan retors.",
+  "Sous le tapis, les listes ont toujours le dernier mot — même face à un faisan retors.",
   "Cette liste a plus de tenue qu'un Gille de Binche au matin du Mardi gras.",
   "Increvable comme un pigeon lâché à Orléans qui retrouve quand même son colombier de Charleroi.",
   "Plus fiable qu'un coulonneux qui jure que son pigeon rentrera avant l'averse.",
@@ -2907,7 +2913,7 @@ async function idbGetHandle(){
 }
 
 async function exportData(){
-  const dump = { app:"fauconnerie", version:1, exportedAt:new Date().toISOString(), data:{} };
+  const dump = { app:"sous-le-tapis", version:1, exportedAt:new Date().toISOString(), data:{} };
   BACKUP_KEYS.forEach(k=>{
     const raw = localStorage.getItem(k);
     if(raw !== null) dump.data[k] = raw;
@@ -2915,7 +2921,7 @@ async function exportData(){
   dump.snapshot = buildSnapshot(); // photo autonome, relisible partout
   const text = JSON.stringify(dump, null, 2);
   const stamp = new Date().toISOString().slice(0,10);
-  const suggestedName = "fauconnerie-sauvegarde-" + stamp + ".json";
+  const suggestedName = "sous-le-tapis-sauvegarde-" + stamp + ".json";
 
   // Chrome / Edge : vraie fenêtre « Enregistrer sous » où tu choisis le
   // dossier. L'option id fait que le navigateur rouvre le même dossier la
@@ -2926,7 +2932,7 @@ async function exportData(){
       const opts = {
         id: "fauconnerie-v2-backup",
         suggestedName,
-        types: [{ description:"Sauvegarde Fauconnerie (JSON)", accept:{ "application/json":[".json"] } }],
+        types: [{ description:"Sauvegarde Sous le tapis (JSON)", accept:{ "application/json":[".json"] } }],
       };
       // Point de départ = dossier du dernier enregistrement, s'il est connu.
       try{ const last = await idbGetHandle(); if(last) opts.startIn = last; }catch(e){}
@@ -2953,7 +2959,7 @@ async function exportData(){
     try{
       const file = new File([text], suggestedName, {type:"application/json"});
       if(navigator.canShare({ files:[file] })){
-        await navigator.share({ files:[file], title:"Sauvegarde — Les listes sous le tapis" });
+        await navigator.share({ files:[file], title:"Sauvegarde — Sous le tapis" });
         noteBackupDone();
         celebrate("Sauvegarde enregistrée");
         return;
