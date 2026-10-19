@@ -802,7 +802,7 @@ header{
   overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
 }
 .lucky-reel-item > span{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
-.lucky-reel-item.final > span{ white-space:inherit; overflow:visible; }
+.lucky-reel-item.final > span{ white-space:inherit; overflow:visible; flex:none; max-width:100%; }
 .lucky-lead{
   min-width:0;
   white-space:nowrap;
@@ -4242,12 +4242,18 @@ function spinLuckyReels(el, mode){
     const span = pick.querySelector(".lucky-pick-text");
     if(!span) return;
     pick.classList.add("spinning"); // position:relative : mesures prises par rapport à la case
-    const H = span.offsetHeight, W = span.getBoundingClientRect().width + 1;
+    // mesures au sous-pixel près, par rapport au bord intérieur de la case,
+    // pour que le rouleau s'arrête exactement là où est le vrai texte
+    const pr = pick.getBoundingClientRect(), sr = span.getBoundingClientRect();
+    const pcs = getComputedStyle(pick);
+    const left = sr.left - pr.left - parseFloat(pcs.borderLeftWidth);
+    const top = sr.top - pr.top - parseFloat(pcs.borderTopWidth);
+    const H = sr.height, W = sr.width;
     if(!H || !W){ pick.classList.remove("spinning"); return; }
     const count = 9 + n * 4;
     const reel = document.createElement("span");
     reel.className = "lucky-reel";
-    reel.style.cssText = `left:${span.offsetLeft}px; top:${span.offsetTop}px; width:${W}px; height:${H}px;`;
+    reel.style.cssText = `left:${left}px; top:${top}px; width:${W}px; height:${H}px;`;
     const strip = document.createElement("span");
     strip.className = "lucky-reel-strip";
     const cs = getComputedStyle(span);
