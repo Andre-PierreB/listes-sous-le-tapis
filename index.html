@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.42 -->
+<!-- Sous le tapis — version AUTONOME 9.0 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -488,6 +488,12 @@
     teinte bleu-vert.
   - 8.42 : fond un rien plus clair et plus froid (#F7FAF9). Liseré gardé
     pour Corbeille seulement ; Restaurer, fond blanc sans liseré.
+  - 9.0 : version majeure à la demande d'André-Pierre (détail replié, flèches
+    dessinées, vibrations, compteur en bloc, couleurs des listes, fond
+    sauge des 8.31–8.42). Restaurer aussi large que Sauvegarder (deux
+    caractères de plus de marge, police à chasse fixe). « + Nouvelle
+    catégorie » devient « + Nouvelle liste », sur fond blanc, pointillés
+    gardés.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1254,7 +1260,7 @@ header{
 .add-category-btn{
   appearance:none;
   border:1px dashed var(--line);
-  background:transparent;
+  background:var(--surface); /* fond blanc, pointillés gardés (9.0) */
   color:var(--ink-faint);
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.7rem;
@@ -1896,6 +1902,10 @@ footer{
 .backup-btn-primary{ --btn:var(--accent); background:color-mix(in srgb, var(--accent) 15%, var(--surface)); }
 .trash-link:hover, .trash-link.open, .backup-btn:hover{ background:var(--btn); color:var(--surface); transform:translateY(-1px); }
 .backup-btn svg{ width:14px; height:14px; display:block; }
+/* 9.0 : Restaurer aussi large que Sauvegarder — « restaurer » a deux lettres
+   de moins ; police à chasse fixe, donc une lettre (1ch + espacement) de
+   marge en plus de chaque côté */
+#importBtn{ padding-inline:calc(0.95rem + 1ch + 0.08em); }
 .trash-link{ margin-right:auto; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--btn) 28%, transparent); }
 .trash-link svg{ width:15px; height:15px; display:block; flex:none; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 .trash-link svg .lid{ transform-box:fill-box; transform-origin:right bottom; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
@@ -2331,7 +2341,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.42</span>
+    <span class="version-tag">v9.0</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -3509,7 +3519,7 @@ function renderAddCategoryRow(){
         document.getElementById("importFile").click();
       });
     }else{
-      el.innerHTML = `<button type="button" class="add-category-btn">+ Nouvelle catégorie</button>`;
+      el.innerHTML = `<button type="button" class="add-category-btn">+ Nouvelle liste</button>`;
     }
     el.querySelector(".add-category-btn").addEventListener("click", (e)=>{
       e.stopPropagation();
