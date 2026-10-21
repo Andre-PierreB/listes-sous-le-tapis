@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 9.0 -->
+<!-- Sous le tapis — version AUTONOME 9.1 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -494,6 +494,11 @@
     caractères de plus de marge, police à chasse fixe). « + Nouvelle
     catégorie » devient « + Nouvelle liste », sur fond blanc, pointillés
     gardés.
+  - 9.1 : bloc « accomplies / cette semaine » un chouïa plus haut par rapport
+    à la barre. Titres des tâches toujours avec une majuscule initiale
+    (capFirst, appliqué dans getEffective et à l'affichage de la corbeille) :
+    rien n'est réécrit dans le stockage, une tâche modifiée est simplement
+    enregistrée avec sa majuscule.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -703,7 +708,7 @@ header{
   align-self:stretch;
 }
 .count-week{ margin-top:-0.1rem; line-height:1.1; }
-.progress-count{ grid-column:1; grid-row:1; padding-right:1.6rem; margin-bottom:-0.4rem; /* plus près de la barre (8.38) */ }
+.progress-count{ grid-column:1; grid-row:1; padding-right:1.6rem; margin-bottom:-0.28rem; /* plus près de la barre (8.38, un chouïa remonté en 9.1) */ }
 .progress-count b{ color:var(--relance); }
 .progress-total{
   grid-column:3; grid-row:1;  /* tout au bout, juste au-dessus de la barre (8.13) */
@@ -2341,7 +2346,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v9.0</span>
+    <span class="version-tag">v9.1</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -3632,6 +3637,12 @@ function getEffectiveItems(cat){
   return cat.items.concat(customItems[cat.id] || []);
 }
 
+// 9.1 : majuscule à la première lettre d'un titre (à l'affichage seulement)
+function capFirst(t){
+  const str = String(t == null ? "" : t);
+  const i = str.search(/\S/);
+  return i < 0 ? str : str.slice(0, i) + str.charAt(i).toLocaleUpperCase("fr") + str.slice(i + 1);
+}
 function getEffective(key, base){
   const o = overrides[key] || {};
   const waiting = o.waiting !== undefined ? !!o.waiting : !!base.waiting;
@@ -3643,7 +3654,7 @@ function getEffective(key, base){
     due = o.dueBeforeWaiting !== undefined ? o.dueBeforeWaiting : "";
   }
   return {
-    t: o.t !== undefined ? o.t : base.t,
+    t: capFirst(o.t !== undefined ? o.t : base.t),
     note: o.note !== undefined ? o.note : base.note,
     urgent: o.urgent !== undefined ? !!o.urgent : !!base.urgent,
     due,                       // échéance (masquée tant que la tâche est en cours)
@@ -5671,7 +5682,7 @@ function renderTrash(){
       const who = entry.who ? `<span class="who-tag">${escapeAttr(entry.who)}</span>` : "";
       li.innerHTML = `
         <span class="trash-tick" aria-hidden="true">${isDoneEntry(entry) ? "&#10003;" : "&ndash;"}</span>
-        <span class="item-text">${who}${escapeAttr(entry.t || "")}${entry.note ? `<span class="note">${escapeAttr(entry.note)}</span>` : ""}</span><span class="trash-date">${entry.doneOn ? shortDateFR(entry.doneOn) : ""}</span>
+        <span class="item-text">${who}${escapeAttr(capFirst(entry.t))}${entry.note ? `<span class="note">${escapeAttr(entry.note)}</span>` : ""}</span><span class="trash-date">${entry.doneOn ? shortDateFR(entry.doneOn) : ""}</span>
         <span class="item-controls"><button type="button" class="waiting-btn" aria-label="Remettre dans la liste" data-tip="Remettre dans la liste">${hookArrowSvg(15, true)}</button><button type="button" class="delete-btn" aria-label="Supprimer de la corbeille" data-tip="Supprimer de la corbeille">&times;</button></span>
       `;
       li.querySelector(".waiting-btn").addEventListener("click", (e)=>{
