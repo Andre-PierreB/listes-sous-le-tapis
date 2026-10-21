@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.41 -->
+<!-- Sous le tapis — version AUTONOME 8.42 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -486,6 +486,8 @@
     Restaurer : fond blanc et fin liseré, texte dans une ardoise de la
     famille de l'icône (--btn-ink) au lieu du mauve ; Sauvegarder garde sa
     teinte bleu-vert.
+  - 8.42 : fond un rien plus clair et plus froid (#F7FAF9). Liseré gardé
+    pour Corbeille seulement ; Restaurer, fond blanc sans liseré.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -502,9 +504,9 @@
 /* ---------- couleurs (clair, puis sombre deux fois : réglage du système, ou
    thème forcé par la page hôte via data-theme) ---------- */
 :root{
-  /* fond uni (8.39), sauge très pâle (8.40, plus claire en 8.41) */
-  --bg:#F5F9F4;
-  --bg-top:#F5F9F4;
+  /* fond uni (8.39), sauge très pâle (8.40, plus claire en 8.41, plus froide en 8.42) */
+  --bg:#F7FAF9;
+  --bg-top:#F7FAF9;
   --bg-bottom:#ECEFEF;
   --surface:#FFFFFF;
   --surface-2:#FBF9F3;
@@ -1879,9 +1881,9 @@ footer{
   padding:0.5rem 0.95rem;
   border:none;
   border-radius:999px;
-  /* fond blanc et fin liseré (8.41) ; Sauvegarder garde sa teinte, plus bas */
+  /* fond blanc (8.41) ; liseré pour Corbeille seulement (8.42) ;
+     Sauvegarder garde sa teinte, plus bas */
   background:var(--surface);
-  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--btn) 28%, transparent);
   color:var(--btn);
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.7rem;
@@ -1891,10 +1893,10 @@ footer{
   cursor:pointer;
   transition:background .15s ease, color .15s ease, transform .15s ease;
 }
-.backup-btn-primary{ --btn:var(--accent); background:color-mix(in srgb, var(--accent) 15%, var(--surface)); box-shadow:none; }
+.backup-btn-primary{ --btn:var(--accent); background:color-mix(in srgb, var(--accent) 15%, var(--surface)); }
 .trash-link:hover, .trash-link.open, .backup-btn:hover{ background:var(--btn); color:var(--surface); transform:translateY(-1px); }
 .backup-btn svg{ width:14px; height:14px; display:block; }
-.trash-link{ margin-right:auto; }
+.trash-link{ margin-right:auto; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--btn) 28%, transparent); }
 .trash-link svg{ width:15px; height:15px; display:block; flex:none; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 .trash-link svg .lid{ transform-box:fill-box; transform-origin:right bottom; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 .trash-link:hover svg .lid, .trash-link.open svg .lid{ transform:rotate(-18deg) translateY(-1px); }
@@ -2329,7 +2331,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.41</span>
+    <span class="version-tag">v8.42</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
