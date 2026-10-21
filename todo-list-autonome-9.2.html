@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 9.1 -->
+<!-- Sous le tapis — version AUTONOME 9.2 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -56,6 +56,11 @@
     soit), insertItem() (ajouter une tâche à une liste), reloadAllFromStorage()
     (tout relire), hasAnyList(), formToggles() / eggSvg() / triangleSvg()
     (œuf et triangle des formulaires), openPopAt() (petites fenêtres).
+  - Stockage (depuis la 9.2) : on ne touche JAMAIS directement à
+    localStorage ; on passe par Store.get / Store.set / Store.remove (début
+    du script). Ce qui arrive d'ailleurs (autre onglet, et demain autre
+    appareil) passe par applyExternalChange(clé). C'est le point de
+    branchement prévu pour la synchro en ligne (Firebase).
   - Annuler (⌘Z / Ctrl+Z) : après chaque renderAll(), noteUndoPoint() compare
     les clés du stockage (UNDO_KEYS) à leur état précédent. Toute nouvelle
     clé de données doit donc entrer dans BACKUP_KEYS pour être annulable et
@@ -499,6 +504,11 @@
     (capFirst, appliqué dans getEffective et à l'affichage de la corbeille) :
     rien n'est réécrit dans le stockage, une tâche modifiée est simplement
     enregistrée avec sa majuscule.
+  - 9.2 : préparation de la synchro en ligne, sans aucun changement visible
+    ni de données. Tous les accès au stockage passent par une porte unique
+    (Store), et la réception des changements d'un autre onglet devient la
+    fonction applyExternalChange(), réutilisable pour un autre appareil.
+    Clés, valeurs et sauvegardes strictement identiques.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2346,7 +2356,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v9.1</span>
+    <span class="version-tag">v9.2</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -2355,6 +2365,20 @@ body.arrive footer{ animation-delay:.52s; }
 <div id="toast"></div>
 
 <script>
+// ---- 9.2 : porte unique vers le stockage ----
+// Toutes les lectures / écritures des données passent par Store (et plus
+// jamais directement par localStorage). Aujourd'hui, Store ne fait que
+// relayer localStorage, à l'identique : mêmes clés, mêmes valeurs, mêmes
+// erreurs (chaque appel garde son propre try/catch là où il est). Demain, la
+// synchro en ligne (Firebase) se branchera ici, à un seul endroit :
+// Store.set / Store.remove pour envoyer, applyExternalChange() (plus bas)
+// pour recevoir ce qui vient d'un autre appareil.
+const Store = {
+  get(k){ return localStorage.getItem(k); },
+  set(k, v){ localStorage.setItem(k, v); },
+  remove(k){ localStorage.removeItem(k); },
+};
+
 const DATA = [];  // édition autonome : aucune base en dur, tout vient des sauvegardes;
 
 // Catégories ajoutées via le petit "+" en bas de la liste des cases : elles
@@ -2364,12 +2388,12 @@ const DATA = [];  // édition autonome : aucune base en dur, tout vient des sauv
 const CUSTOM_CATS_KEY = "fauconnerie-v2-customcats";
 function loadCustomCategories(){
   try{
-    const raw = localStorage.getItem(CUSTOM_CATS_KEY);
+    const raw = Store.get(CUSTOM_CATS_KEY);
     return raw ? JSON.parse(raw) : [];
   }catch(e){ return []; }
 }
 function saveCustomCategories(list){
-  try{ localStorage.setItem(CUSTOM_CATS_KEY, JSON.stringify(list)); }catch(e){}
+  try{ Store.set(CUSTOM_CATS_KEY, JSON.stringify(list)); }catch(e){}
 }
 let customCategories = loadCustomCategories();
 function mergeCustomCategories(){
@@ -2389,12 +2413,12 @@ mergeCustomCategories();
 const CAT_TITLE_OVERRIDES_KEY = "fauconnerie-v2-cattitles";
 function loadCatTitleOverrides(){
   try{
-    const raw = localStorage.getItem(CAT_TITLE_OVERRIDES_KEY);
+    const raw = Store.get(CAT_TITLE_OVERRIDES_KEY);
     return raw ? JSON.parse(raw) : {};
   }catch(e){ return {}; }
 }
 function saveCatTitleOverrides(o){
-  try{ localStorage.setItem(CAT_TITLE_OVERRIDES_KEY, JSON.stringify(o)); }catch(e){}
+  try{ Store.set(CAT_TITLE_OVERRIDES_KEY, JSON.stringify(o)); }catch(e){}
 }
 let catTitleOverrides = loadCatTitleOverrides();
 function applyCatTitleOverrides(){
@@ -2460,12 +2484,12 @@ function addCategory(title){
 const DELETED_CATS_KEY = "fauconnerie-v2-deletedcats";
 function loadDeletedCategoryIds(){
   try{
-    const raw = localStorage.getItem(DELETED_CATS_KEY);
+    const raw = Store.get(DELETED_CATS_KEY);
     return raw ? JSON.parse(raw) : [];
   }catch(e){ return []; }
 }
 function saveDeletedCategoryIds(list){
-  try{ localStorage.setItem(DELETED_CATS_KEY, JSON.stringify(list)); }catch(e){}
+  try{ Store.set(DELETED_CATS_KEY, JSON.stringify(list)); }catch(e){}
 }
 let deletedCategoryIds = loadDeletedCategoryIds();
 function isCategoryDeleted(catId){
@@ -2728,12 +2752,12 @@ const STORAGE_KEY = "fauconnerie-v2-todo";
 
 function loadState(){
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = Store.get(STORAGE_KEY);
     return raw ? JSON.parse(raw) : {};
   }catch(e){ return {}; }
 }
 function saveState(state){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  try{ Store.set(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
 }
 
 let state = loadState();
@@ -2745,36 +2769,36 @@ function itemKey(catId, idx){ return catId + ":" + idx; }
 const ORDER_KEY = "fauconnerie-v2-order";
 function loadOrder(){
   try{
-    const raw = localStorage.getItem(ORDER_KEY);
+    const raw = Store.get(ORDER_KEY);
     return raw ? JSON.parse(raw) : {};
   }catch(e){ return {}; }
 }
 function saveOrder(o){
-  try{ localStorage.setItem(ORDER_KEY, JSON.stringify(o)); }catch(e){}
+  try{ Store.set(ORDER_KEY, JSON.stringify(o)); }catch(e){}
 }
 let order = loadOrder();
 
 const OVERRIDES_KEY = "fauconnerie-v2-overrides";
 function loadOverrides(){
   try{
-    const raw = localStorage.getItem(OVERRIDES_KEY);
+    const raw = Store.get(OVERRIDES_KEY);
     return raw ? JSON.parse(raw) : {};
   }catch(e){ return {}; }
 }
 function saveOverrides(o){
-  try{ localStorage.setItem(OVERRIDES_KEY, JSON.stringify(o)); }catch(e){}
+  try{ Store.set(OVERRIDES_KEY, JSON.stringify(o)); }catch(e){}
 }
 let overrides = loadOverrides();
 
 const CUSTOM_KEY = "fauconnerie-v2-custom";
 function loadCustom(){
   try{
-    const raw = localStorage.getItem(CUSTOM_KEY);
+    const raw = Store.get(CUSTOM_KEY);
     return raw ? JSON.parse(raw) : {};
   }catch(e){ return {}; }
 }
 function saveCustom(o){
-  try{ localStorage.setItem(CUSTOM_KEY, JSON.stringify(o)); }catch(e){}
+  try{ Store.set(CUSTOM_KEY, JSON.stringify(o)); }catch(e){}
 }
 let customItems = loadCustom();
 
@@ -2798,12 +2822,12 @@ const WAIT_LOG_KEY = "fauconnerie-v2-waitlog";
 function waitLog(){ const l = loadJSONKey(WAIT_LOG_KEY, []); return Array.isArray(l) ? l : []; }
 function loadJSONKey(k, fallback){
   try{
-    const raw = localStorage.getItem(k);
+    const raw = Store.get(k);
     return raw ? JSON.parse(raw) : fallback;
   }catch(e){ return fallback; }
 }
 function saveJSONKey(k, v){
-  try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
+  try{ Store.set(k, JSON.stringify(v)); }catch(e){}
 }
 let checkedAt = loadJSONKey(CHECKED_AT_KEY, {});
 let trash = loadJSONKey(TRASH_KEY, []);
@@ -2864,29 +2888,29 @@ function purgeCheckedBefore(thisMonday, onlyWaiting){
 const WAITING_PURGE_FIX_KEY = "fauconnerie-v2-purge-waiting-fix";
 function runWaitingPurgeFix(){
   let done = null;
-  try{ done = localStorage.getItem(WAITING_PURGE_FIX_KEY); }catch(e){ return 0; }
+  try{ done = Store.get(WAITING_PURGE_FIX_KEY); }catch(e){ return 0; }
   if(done) return 0;
   let last = null;
-  try{ last = localStorage.getItem(LAST_PURGE_KEY); }catch(e){}
+  try{ last = Store.get(LAST_PURGE_KEY); }catch(e){}
   // Pas encore de purge du tout : rien à rattraper, la purge normale s'en chargera.
   const n = last ? purgeCheckedBefore(mondayOf(todayISO()), true) : 0;
-  try{ localStorage.setItem(WAITING_PURGE_FIX_KEY, todayISO()); }catch(e){}
+  try{ Store.set(WAITING_PURGE_FIX_KEY, todayISO()); }catch(e){}
   return n;
 }
 function runWeeklyPurge(){
   const thisMonday = mondayOf(todayISO());
   let last = null;
-  try{ last = localStorage.getItem(LAST_PURGE_KEY); }catch(e){ return 0; }
+  try{ last = Store.get(LAST_PURGE_KEY); }catch(e){ return 0; }
   if(!last){
     // Toute première ouverture de cette version : on ne purge rien, on
     // note juste la semaine en cours. La première purge aura lieu lundi.
-    try{ localStorage.setItem(LAST_PURGE_KEY, thisMonday); }catch(e){}
+    try{ Store.set(LAST_PURGE_KEY, thisMonday); }catch(e){}
     return 0;
   }
   if(last >= thisMonday) return runWaitingPurgeFix();
   const n = purgeCheckedBefore(thisMonday, false);
-  try{ localStorage.setItem(LAST_PURGE_KEY, thisMonday); }catch(e){}
-  try{ localStorage.setItem(WAITING_PURGE_FIX_KEY, todayISO()); }catch(e){}
+  try{ Store.set(LAST_PURGE_KEY, thisMonday); }catch(e){}
+  try{ Store.set(WAITING_PURGE_FIX_KEY, todayISO()); }catch(e){}
   return n;
 }
 
@@ -3163,14 +3187,14 @@ function hasActiveEdit(){
 const LAST_BACKUP_KEY = "fauconnerie-v2-lastbackup";
 const BACKUP_WATCH_KEY = "fauconnerie-v2-backupwatch"; // 1re ouverture avec ce rappel
 function noteBackupDone(){
-  try{ localStorage.setItem(LAST_BACKUP_KEY, todayISO()); }catch(e){}
+  try{ Store.set(LAST_BACKUP_KEY, todayISO()); }catch(e){}
   renderBackupNudge();
 }
 function backupNudgeText(){
   let last = null, watch = null;
-  try{ last = localStorage.getItem(LAST_BACKUP_KEY); watch = localStorage.getItem(BACKUP_WATCH_KEY); }catch(e){ return ""; }
+  try{ last = Store.get(LAST_BACKUP_KEY); watch = Store.get(BACKUP_WATCH_KEY); }catch(e){ return ""; }
   if(!last && !watch){
-    try{ localStorage.setItem(BACKUP_WATCH_KEY, todayISO()); }catch(e){}
+    try{ Store.set(BACKUP_WATCH_KEY, todayISO()); }catch(e){}
     return "";
   }
   const ref = last || watch;
@@ -3218,7 +3242,7 @@ function buildSnapshot(){
     snap.categories.push(catOut);
   });
   snap.trash = loadJSONKey(TRASH_KEY, []);
-  try{ snap.lastPurge = localStorage.getItem(LAST_PURGE_KEY) || ""; }catch(e){ snap.lastPurge = ""; }
+  try{ snap.lastPurge = Store.get(LAST_PURGE_KEY) || ""; }catch(e){ snap.lastPurge = ""; }
   snap.waitLog = waitLog();
   return snap;
 }
@@ -3258,7 +3282,7 @@ async function idbGetHandle(){
 async function exportData(){
   const dump = { app:"sous-le-tapis", version:1, exportedAt:new Date().toISOString(), data:{} };
   BACKUP_KEYS.forEach(k=>{
-    const raw = localStorage.getItem(k);
+    const raw = Store.get(k);
     if(raw !== null) dump.data[k] = raw;
   });
   dump.snapshot = buildSnapshot(); // photo autonome, relisible partout
@@ -3374,19 +3398,19 @@ function importSnapshot(snap){
   });
   ord["__categories__"]=catIdxList;
   try{
-    localStorage.setItem(CUSTOM_CATS_KEY, JSON.stringify(cats));
-    localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-    localStorage.setItem(ORDER_KEY, JSON.stringify(ord));
-    localStorage.setItem(OVERRIDES_KEY, JSON.stringify({}));
-    localStorage.setItem(DELETED_CATS_KEY, JSON.stringify([]));
-    localStorage.setItem(CAT_TITLE_OVERRIDES_KEY, JSON.stringify({}));
-    localStorage.setItem(CHECKED_AT_KEY, JSON.stringify(newCheckedAt));
+    Store.set(CUSTOM_CATS_KEY, JSON.stringify(cats));
+    Store.set(CUSTOM_KEY, JSON.stringify(custom));
+    Store.set(STORAGE_KEY, JSON.stringify(newState));
+    Store.set(ORDER_KEY, JSON.stringify(ord));
+    Store.set(OVERRIDES_KEY, JSON.stringify({}));
+    Store.set(DELETED_CATS_KEY, JSON.stringify([]));
+    Store.set(CAT_TITLE_OVERRIDES_KEY, JSON.stringify({}));
+    Store.set(CHECKED_AT_KEY, JSON.stringify(newCheckedAt));
     // Une sauvegarde plus ancienne, sans corbeille, ne vide pas celle qui existe.
-    if(Array.isArray(snap.trash)) localStorage.setItem(TRASH_KEY, JSON.stringify(snap.trash));
-    if(snap.lastPurge) localStorage.setItem(LAST_PURGE_KEY, snap.lastPurge);
-    if(Array.isArray(snap.waitLog)) localStorage.setItem(WAIT_LOG_KEY, JSON.stringify(snap.waitLog));
-    if(hasReversed) localStorage.setItem(CAT_REVERSE_KEY, JSON.stringify(reversed));
+    if(Array.isArray(snap.trash)) Store.set(TRASH_KEY, JSON.stringify(snap.trash));
+    if(snap.lastPurge) Store.set(LAST_PURGE_KEY, snap.lastPurge);
+    if(Array.isArray(snap.waitLog)) Store.set(WAIT_LOG_KEY, JSON.stringify(snap.waitLog));
+    if(hasReversed) Store.set(CAT_REVERSE_KEY, JSON.stringify(reversed));
   }catch(e){}
   DATA.length = 0; // la liste est entièrement remplacée
   reloadAllFromStorage();
@@ -3415,7 +3439,7 @@ function importData(file){
     if(!ok) return;
     BACKUP_KEYS.forEach(k=>{
       if(typeof data[k] === "string"){
-        try{ localStorage.setItem(k, data[k]); }catch(e){}
+        try{ Store.set(k, data[k]); }catch(e){}
       }
     });
     reloadAllFromStorage(); // on recharge tout depuis ce qu'on vient d'écrire
@@ -4534,11 +4558,11 @@ let luckyWasShown = null; // null : premier affichage de la page, sans animation
 const LUCKY_OPEN_KEY = "fauconnerie-v2-luckyopen";
 let luckySpinNext = null; // "open" ou "reroll" : anime le prochain rendu
 function luckyOpenedToday(){
-  try{ return localStorage.getItem(LUCKY_OPEN_KEY) === todayISO(); }catch(e){ return true; }
+  try{ return Store.get(LUCKY_OPEN_KEY) === todayISO(); }catch(e){ return true; }
 }
 function openLucky(){
   haptic.tap();
-  try{ localStorage.setItem(LUCKY_OPEN_KEY, todayISO()); }catch(e){}
+  try{ Store.set(LUCKY_OPEN_KEY, todayISO()); }catch(e){}
   luckySpinNext = "open";
   renderLuckyLine();
 }
@@ -4549,7 +4573,7 @@ function closeLucky(){
   haptic.tap();
   const el = document.getElementById("luckyLine");
   const finish = ()=>{
-    try{ localStorage.removeItem(LUCKY_OPEN_KEY); }catch(e){}
+    try{ Store.remove(LUCKY_OPEN_KEY); }catch(e){}
     el.classList.remove("closing");
     el.style.overflow = ""; el.style.height = "";
     renderLuckyLine();
@@ -4688,7 +4712,7 @@ function renderLuckyLine(){
   if(liveCount < 3){
     const saved = loadJSONKey(LUCKY_KEY, null);
     if(saved && saved.date === todayISO() && !(saved.keys || []).some(k => state[k])){
-      try{ localStorage.removeItem(LUCKY_KEY); }catch(e){} // tirage refait à la 3e tâche
+      try{ Store.remove(LUCKY_KEY); }catch(e){} // tirage refait à la 3e tâche
     }
     el.hidden = true; el.innerHTML = ""; luckyWasShown = false; return;
   }
@@ -5501,9 +5525,9 @@ const TRASH_CHART_KEY = "fauconnerie-v2-trashchart";
 const TC_MODES = { jour:"Jour", semaine:"Semaine", mois:"Mois" };
 const MONTHS_FR_SHORT = ["janv","févr","mars","avr","mai","juin","juil","août","sept","oct","nov","déc"];
 function getTrashChartMode(){
-  try{ const m = localStorage.getItem(TRASH_CHART_KEY); return TC_MODES[m] ? m : "semaine"; }catch(e){ return "semaine"; }
+  try{ const m = Store.get(TRASH_CHART_KEY); return TC_MODES[m] ? m : "semaine"; }catch(e){ return "semaine"; }
 }
-function setTrashChartMode(m){ try{ localStorage.setItem(TRASH_CHART_KEY, m); }catch(e){} }
+function setTrashChartMode(m){ try{ Store.set(TRASH_CHART_KEY, m); }catch(e){} }
 function collectDoneDates(){
   const dates = []; let undated = 0;
   const tr = loadJSONKey(TRASH_KEY, []);
@@ -5915,14 +5939,18 @@ document.addEventListener("click", (e)=>{
 // faite ici ensuite n'écrase par erreur ce qui vient d'être fait ailleurs.
 // (L'événement "storage" ne se déclenche jamais dans l'onglet qui a
 // lui-même écrit — pas de risque de boucle.)
-window.addEventListener("storage", (e)=>{
-  if(e.key === LAST_BACKUP_KEY){ renderBackupNudge(); return; }
-  if(!BACKUP_KEYS.includes(e.key)) return;
+// 9.2 : le traitement est une fonction à part, applyExternalChange(clé),
+// pour que la future synchro en ligne (autre appareil) emprunte exactement le
+// même chemin qu'un autre onglet. Comportement inchangé.
+function applyExternalChange(key){
+  if(key === LAST_BACKUP_KEY){ renderBackupNudge(); return; }
+  if(!BACKUP_KEYS.includes(key)) return;
   if(hasActiveEdit()) return; // on ne casse jamais un formulaire ouvert ici
   reloadAllFromStorage();
   undoCurrent = null; // un autre onglet a écrit : son changement n'est pas un geste d'ici à annuler
   renderAll();
-});
+}
+window.addEventListener("storage", (e)=> applyExternalChange(e.key));
 
 // ---- 8.1 : annuler le dernier geste (⌘Z / Ctrl+Z) ----
 // Toutes les tâches vivent dans quelques clés du stockage : après chaque
@@ -5945,7 +5973,7 @@ function saveUndoStack(){
 }
 function storageSnapshot(){
   const o = {};
-  UNDO_KEYS.forEach(k=>{ try{ o[k] = localStorage.getItem(k); }catch(e){ o[k] = null; } });
+  UNDO_KEYS.forEach(k=>{ try{ o[k] = Store.get(k); }catch(e){ o[k] = null; } });
   return o;
 }
 function noteUndoPoint(){
@@ -5967,7 +5995,7 @@ function undoLast(){
   const prev = undoStack.pop();
   saveUndoStack();
   Object.keys(prev).forEach(k=>{
-    try{ if(prev[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, prev[k]); }catch(e){}
+    try{ if(prev[k] === null) Store.remove(k); else Store.set(k, prev[k]); }catch(e){}
   });
   undoCurrent = null; // le rendu qui suit repart de cet état-là
   DATA.length = 0;
