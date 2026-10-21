@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.33 -->
+<!-- Sous le tapis — version AUTONOME 8.34 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -429,6 +429,14 @@
     détail le déplie (sans détail : on va toujours à la liste).
     Formulaires (nouvelle tâche, modification, nouvelle liste) : œuf et
     triangle à gauche, Annuler puis le bouton qui valide tout à droite.
+  - 8.34 : flèche « en cours » : descend puis tourne à droite (↳) ; le
+    retour est la même tournée d'un demi-tour (↰). Vibrations : plus de tic
+    en dépliant un détail ; tic de retour à l'ouverture de la case trèfle.
+    Case urgente : plus de voile gris au toucher (tap-highlight), pas de
+    survol qui reste collé sur écran tactile ; une tâche sans détail ne
+    réagit plus au clic (plus de saut vers la liste). Compteur en bloc : le
+    chiffre à gauche, « accomplies » calé sur le haut du chiffre et « cette
+    semaine » sur sa ligne de base, de 0 à 99.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -589,7 +597,9 @@ header{
    Ligne du haut : à gauche le chiffre de la semaine, au milieu la phrase ;
    la barre court en dessous sur toute la largeur, le total en petit
    juste au-dessus de son extrémité droite (8.13 ; chiffre seul en 8.32).
-   Le gros chiffre est sur la ligne de « accomplies » (8.32).
+   Compteur en bloc (8.34) : le chiffre à gauche, à sa droite « accomplies »
+   calé sur le haut du chiffre et « cette semaine » sur sa ligne de base ;
+   même dessin de 0 à 99 (chiffres à chasse fixe).
    Sur téléphone : chiffre et total côte à côte, la barre, puis la phrase. */
 .progress-card{
   background:var(--surface);
@@ -604,7 +614,8 @@ header{
 .progress-top{ display:contents; }
 .progress-count{
   display:flex;
-  flex-direction:column;
+  align-items:stretch;
+  gap:0.9em;
 }
 .progress-count, .progress-total{
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
@@ -617,15 +628,17 @@ header{
   font-variant-numeric:tabular-nums;
   color:var(--count-ink);
 }
-.count-line{
-  display:flex;
-  align-items:baseline;
-  gap:0.85em;
-}
 .progress-count b{
   font-size:4.2em;
   letter-spacing:-0.03em;
-  line-height:0.85;
+  line-height:0.72;
+}
+.count-words{
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  line-height:1;
+  padding:0.1em 0 0;
 }
 .progress-count{ grid-column:1; grid-row:1; padding-right:1.6rem; }
 .progress-count b{ color:var(--relance); }
@@ -789,9 +802,11 @@ header{
   color:var(--ink);
   padding:0.3rem 0.4rem 0.3rem 1.65rem; /* place de la puce ; texte à la même place qu'avant (8.30) */
   border-radius:8px;
-  cursor:pointer;
+  cursor:default;
+  -webkit-tap-highlight-color:transparent; /* pas de voile gris au toucher (8.34) */
   position:relative;
 }
+[data-note-key] .urgent-jump{ cursor:pointer; }
 /* puce : un rond plein dans le rouge du titre, centré sur la 1re ligne (8.29) */
 .urgent-bullet{
   position:absolute;
@@ -1238,6 +1253,7 @@ ul.items{
   transition:color .15s ease, background .15s ease;
 }
 .note-toggle svg{ display:block; }
+.item[data-note-key], .note-toggle{ -webkit-tap-highlight-color:transparent; }
 .note-toggle:hover{ color:var(--ink-soft); }
 .note-open .note-toggle{ color:var(--accent-strong); background:var(--accent-soft); }
 .item.is-checked .note-toggle{ opacity:0.6; }
@@ -2135,6 +2151,9 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
 @media (hover:none){
   /* les contrôles doivent rester repérables sans attendre un survol qui n'arrivera jamais */
   .item-controls, .item .drag-handle, .urgent-list .drag-handle{opacity:0.65;}
+  /* le survol resterait collé après un toucher (8.34) */
+  .urgent-list li:hover,
+  :root:not([data-theme="light"]) .urgent-list li:hover{ background:transparent; }
   [data-tip]::after{ display:none; }
 }
 
@@ -2188,7 +2207,7 @@ body.arrive footer{ animation-delay:.52s; }
 
   <div class="progress-card">
     <div class="progress-top">
-      <span class="progress-count"><span class="count-line"><b id="doneCount">0</b><span id="doneWord">accomplie</span></span><span>cette semaine</span></span>
+      <span class="progress-count"><b id="doneCount">0</b><span class="count-words"><span id="doneWord">accomplie</span><span>cette semaine</span></span></span>
       <span class="progress-total" id="totalCount"></span>
       <span class="progress-msg" id="progressMsg">Prêt à démarrer ?</span>
     </div>
@@ -2216,7 +2235,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.33</span>
+    <span class="version-tag">v8.34</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4230,12 +4249,8 @@ function renderUrgentBanner(){
       </span>
     `;
     if(entry.note) markNoteHolder(li, entry.key);
-    li.querySelector(".urgent-jump").addEventListener("click", ()=>{
-      // 8.33 : une tâche qui a un détail le déplie ; sinon, on va à sa liste
-      if(entry.note){ toggleNoteOpen(entry.key); return; }
-      const cardEl = document.getElementById("cat-" + entry.catId);
-      if(cardEl) cardEl.scrollIntoView({behavior:"smooth", block:"center"});
-    });
+    // 8.34 : un clic déplie le détail ; une tâche sans détail ne réagit pas
+    if(entry.note) li.querySelector(".urgent-jump").addEventListener("click", ()=> toggleNoteOpen(entry.key));
     const urgentCheck = li.querySelector(".urgent-check");
     urgentCheck.addEventListener("click", (e)=>{
       e.stopPropagation();
@@ -4386,6 +4401,7 @@ function luckyOpenedToday(){
   try{ return localStorage.getItem(LUCKY_OPEN_KEY) === todayISO(); }catch(e){ return true; }
 }
 function openLucky(){
+  haptic.tap();
   try{ localStorage.setItem(LUCKY_OPEN_KEY, todayISO()); }catch(e){}
   luckySpinNext = "open";
   renderLuckyLine();
@@ -4597,6 +4613,7 @@ function renderLuckyLine(){
     el.classList.remove("can-reset");
     el.onclick = ()=> openLucky();
     el.onkeydown = (e)=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openLucky(); } };
+    haptic.attach(el);
     return;
   }
   el.onkeydown = null;
@@ -4657,9 +4674,9 @@ const eggSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}
 const triangleSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="tri" d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5"/><path d="M12 17.4v.2"/></svg>`;
 // 8.31 : flèche dessinée plutôt que les caractères ↪ / ↩, que l'iPhone
 // remplace par son émoji (blanc sur carré gris). 8.32 : elle descend vers
-// « En cours » (plus bas dans la page) ; 8.33 : elle descend puis tourne à
-// gauche ; back = retour, elle monte puis tourne à gauche.
-const hookArrowSvg = (size, back) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${back ? ' style="transform:scaleY(-1)"' : ""}><path d="M18 3.5v8a5.5 5.5 0 0 1-5.5 5.5H5"/><path d="M9 13l-4 4 4 4"/></svg>`;
+// « En cours » (plus bas dans la page) ; 8.34 : elle descend puis tourne à
+// droite (↳) ; back = retour, la même tournée d'un demi-tour (↰).
+const hookArrowSvg = (size, back) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${back ? ' style="transform:rotate(180deg)"' : ""}><path d="M6 3.5v8a5.5 5.5 0 0 0 5.5 5.5H19"/><path d="M15 13l4 4-4 4"/></svg>`;
 const noteSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg>`;
 const EGG_TIP = { on:"En couvaison — cliquer pour retirer", off:"Mettre en couvaison" };
 const URGENT_TIP = { on:"Urgent — cliquer pour retirer", off:"Marquer comme urgent" };
@@ -4929,7 +4946,6 @@ function buildItemLi(cat, idx, base, key, opts){
   const checkbox = li.querySelector("input");
   if(checkbox) checkbox.addEventListener("change", ()=> setDone(key, checkbox.checked));
   haptic.attach(checkbox);
-  haptic.attach(li.querySelector(".note-toggle"));
   if(eff.note){
     // 8.31 : un clic sur la ligne (hors case, poignée et boutons de droite)
     // déplie / replie le détail. Le 2e clic d'un double-clic est ignoré.
