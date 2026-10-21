@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.39 -->
+<!-- Sous le tapis — version AUTONOME 8.40 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -480,6 +480,8 @@
     détail suit directement le titre (avant le nom de liste et le badge),
     collé au dernier mot (titleWithToggle), partout. Mode clair : fond uni, teinte claire du
     bleu ardoise de l'icône (#34495A), plus de dégradé.
+  - 8.40 : fond clair : sauge pâle, lumineuse et peu grise (#ECF4EB), uni,
+    choisi parmi quatre pistes (ciel, lin, sauge, ardoise).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -496,9 +498,9 @@
 /* ---------- couleurs (clair, puis sombre deux fois : réglage du système, ou
    thème forcé par la page hôte via data-theme) ---------- */
 :root{
-  /* 8.39 : fond uni, teinte claire du bleu ardoise de l'icône (#34495A) */
-  --bg:#E1E5E9;
-  --bg-top:#E1E5E9;
+  /* fond uni (8.39), sauge pâle (8.40) */
+  --bg:#ECF4EB;
+  --bg-top:#ECF4EB;
   --bg-bottom:#ECEFEF;
   --surface:#FFFFFF;
   --surface-2:#FBF9F3;
@@ -2318,7 +2320,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.39</span>
+    <span class="version-tag">v8.40</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
