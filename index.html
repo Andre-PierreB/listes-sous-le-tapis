@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.35 -->
+<!-- Sous le tapis — version AUTONOME 8.36 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -444,6 +444,15 @@
     s'agrandit (CSS) ; si la 1re l'est, « cette semaine » s'espace lettre
     par lettre jusqu'à la même largeur (fitCountBlock, après chaque mise à
     jour et au chargement des polices).
+  - 8.36 : compteur : plus d'étirement ; « cette semaine » simplement calé
+    à droite sous « accomplies » (fitCountBlock retiré). Titres des listes
+    dans la couleur de leur liste. En renommant une liste (double-clic sur
+    son titre), une rangée de pastilles de la gamme permet de changer sa
+    couleur, appliquée tout de suite ; elle est écrite dans la liste
+    elle-même (clé « customcats », déjà sauvegardée et annulable).
+    mergeCustomCategories() recopie aussi la couleur des listes déjà
+    chargées, pour que ⌘Z et les autres onglets la suivent. À la création,
+    couleur toujours choisie automatiquement.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -604,9 +613,8 @@ header{
    Ligne du haut : à gauche le chiffre de la semaine, au milieu la phrase ;
    la barre court en dessous sur toute la largeur, le total en petit
    juste au-dessus de son extrémité droite (8.13 ; chiffre seul en 8.32).
-   Compteur en bloc justifié (8.35) : « 7 ACCOMPLIES » sur la 1re ligne,
-   « CETTE SEMAINE » dessous, les deux lignes de même largeur, de 0 à 99 —
-   voir fitCountBlock().
+   Compteur en bloc (8.36) : « 7 ACCOMPLIES » sur la 1re ligne, « CETTE
+   SEMAINE » dessous, les deux calées à droite.
    Sur téléphone : chiffre et total côte à côte, la barre, puis la phrase. */
 .progress-card{
   background:var(--surface);
@@ -622,6 +630,7 @@ header{
 .progress-count{
   display:flex;
   flex-direction:column;
+  align-items:flex-end;
   justify-self:start; /* le bloc garde sa largeur, même dans une colonne 1fr */
 }
 .progress-count, .progress-total{
@@ -640,15 +649,12 @@ header{
   letter-spacing:-0.03em;
   line-height:0.85;
 }
-/* 1re ligne étirée à la largeur du bloc : le surplus va entre le chiffre et le mot */
 .count-line{
   display:flex;
   align-items:baseline;
-  justify-content:space-between;
   gap:0.85em;
 }
-/* 2e ligne à sa largeur naturelle, pour pouvoir la mesurer */
-.count-week{ align-self:flex-start; margin-top:0.3rem; }
+.count-week{ margin-top:0.3rem; }
 .progress-count{ grid-column:1; grid-row:1; padding-right:1.6rem; }
 .progress-count b{ color:var(--relance); }
 .progress-total{
@@ -1051,15 +1057,16 @@ header{
 .cat-title{
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.74rem;
-  font-weight:600;
+  font-weight:700;
   letter-spacing:0.09em;
   text-transform:uppercase;
-  color:var(--ink-soft);
+  /* dans la couleur de la liste, un peu foncée pour rester lisible (8.36) */
+  color:color-mix(in srgb, var(--cat-color, var(--accent)) 78%, var(--ink));
   cursor:text;
   border-radius:4px;
 }
 .cat-title:hover{
-  color:var(--ink);
+  color:var(--cat-color, var(--accent));
   background:var(--surface-2);
 }
 .cat-title-input{
@@ -1079,6 +1086,27 @@ header{
   outline:2px solid var(--accent);
   outline-offset:1px;
 }
+/* pastilles de couleur sous le titre en cours de renommage (8.36) */
+.cat-swatches{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:-0.15rem;
+}
+.cat-swatch{
+  appearance:none;
+  -webkit-appearance:none;
+  width:18px;
+  height:18px;
+  padding:0;
+  border:none;
+  border-radius:5px;
+  background:var(--sw);
+  cursor:pointer;
+  transition:transform .12s ease;
+}
+.cat-swatch:hover{ transform:scale(1.12); }
+.cat-swatch.selected{ outline:2px solid var(--sw); outline-offset:2px; }
 .add-btn{
   appearance:none;
   border:1px solid var(--line);
@@ -2241,7 +2269,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.35</span>
+    <span class="version-tag">v8.36</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -2269,9 +2297,10 @@ function saveCustomCategories(list){
 let customCategories = loadCustomCategories();
 function mergeCustomCategories(){
   customCategories.forEach(c=>{
-    if(c && c.id && !DATA.some(d=>d.id === c.id)){
-      DATA.push({ id:c.id, title:c.title, color:c.color, items: [] });
-    }
+    if(!c || !c.id) return;
+    const d = DATA.find(x => x.id === c.id);
+    if(d) d.color = c.color; // 8.36 : la couleur peut changer (pastilles, ⌘Z, autre onglet)
+    else DATA.push({ id:c.id, title:c.title, color:c.color, items: [] });
   });
 }
 mergeCustomCategories();
@@ -2385,6 +2414,18 @@ function deleteCategory(catId){
   return true;
 }
 
+// 8.36 : nouvelle couleur choisie dans les pastilles du renommage, écrite
+// dans la liste elle-même (toutes les listes sont des listes ajoutées).
+function recolorCategory(catId, color){
+  customCategories = loadCustomCategories();
+  const c = customCategories.find(x => x && x.id === catId);
+  if(!c) return false;
+  c.color = color;
+  saveCustomCategories(customCategories);
+  const d = DATA.find(x => x.id === catId);
+  if(d) d.color = color;
+  return true;
+}
 function renameCategory(catId, newTitle){
   const t = newTitle.trim();
   if(!t) return false;
@@ -5190,6 +5231,30 @@ function render(){
       });
     }
     card.appendChild(head);
+    if(renamingThisCat){
+      // 8.36 : couleurs de la gamme ; un clic l'applique tout de suite, sans
+      // quitter le renommage (le titre en cours de frappe est gardé)
+      const shown = displayCatColor(cat.color);
+      const sw = document.createElement("div");
+      sw.className = "cat-swatches";
+      sw.setAttribute("role", "radiogroup");
+      sw.setAttribute("aria-label", "Couleur de la liste");
+      sw.innerHTML = NEW_CATEGORY_PALETTE.map(col =>
+        `<button type="button" class="cat-swatch${col === shown ? " selected" : ""}" role="radio" aria-checked="${col === shown}" aria-label="Couleur ${col}" data-color="${col}" style="--sw:${col}"></button>`).join("");
+      sw.querySelectorAll(".cat-swatch").forEach(b=>{
+        b.addEventListener("mousedown", e=> e.preventDefault()); // le curseur reste dans le titre
+        b.addEventListener("click", e=>{
+          e.stopPropagation();
+          if(!recolorCategory(cat.id, b.dataset.color)) return;
+          card.style.setProperty("--cat-color", b.dataset.color);
+          sw.querySelectorAll(".cat-swatch").forEach(o=>{
+            o.classList.toggle("selected", o === b);
+            o.setAttribute("aria-checked", o === b ? "true" : "false");
+          });
+        });
+      });
+      card.appendChild(sw);
+    }
 
     const ul = document.createElement("ul");
     ul.className = "items";
@@ -5567,24 +5632,6 @@ const MILESTONES = [
 
 let currentProgressMsg = null;
 
-// 8.35 : bloc du compteur justifié. Quand « chiffre + accomplies » est plus
-// large que « cette semaine », on espace les lettres de cette 2e ligne juste
-// assez pour qu'elle ait la même largeur (le cas inverse est réglé en CSS).
-function fitCountBlock(){
-  const line = document.querySelector(".count-line");
-  const week = document.querySelector(".count-week");
-  if(!line || !week) return;
-  week.style.letterSpacing = "";
-  const b = line.firstElementChild, word = line.lastElementChild;
-  const lineW = b.getBoundingClientRect().width + parseFloat(getComputedStyle(line).columnGap) + word.getBoundingClientRect().width;
-  const weekW = week.getBoundingClientRect().width;
-  if(!weekW || lineW <= weekW) return;
-  // l'espacement s'ajoute après chaque caractère (espace compris)
-  const base = parseFloat(getComputedStyle(week).letterSpacing) || 0;
-  week.style.letterSpacing = (base + (lineW - weekW) / week.textContent.length) + "px";
-}
-if(document.fonts) document.fonts.ready.then(fitCountBlock);
-
 function updateProgress(){
   const total = getTotalItems();
   const done = getDoneCount();
@@ -5593,7 +5640,6 @@ function updateProgress(){
   const weekDone = getWeekDoneCount();
   document.getElementById("doneCount").textContent = weekDone;
   document.getElementById("doneWord").textContent = weekDone > 1 ? "accomplies" : "accomplie";
-  fitCountBlock();
   // 8.10 : à droite, le total des tâches dans les listes (en cours compris,
   // œufs exclus) ; 8.32 : le chiffre seul
   const totalEl = document.getElementById("totalCount");
@@ -5716,6 +5762,7 @@ document.addEventListener("click", (e)=>{
   if(editingCategoryTitle){
     const titleInputEl = document.querySelector(".cat-title-input");
     if(titleInputEl && titleInputEl.contains(e.target)) return;
+    if(e.target.closest(".cat-swatches")) return; // choisir une couleur garde le renommage ouvert
     editingCategoryTitle = null;
     renderAll();
   }
