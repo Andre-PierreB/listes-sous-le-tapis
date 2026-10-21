@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.34 -->
+<!-- Sous le tapis — version AUTONOME 8.35 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -437,6 +437,13 @@
     réagit plus au clic (plus de saut vers la liste). Compteur en bloc : le
     chiffre à gauche, « accomplies » calé sur le haut du chiffre et « cette
     semaine » sur sa ligne de base, de 0 à 99.
+  - 8.35 : survol de la case urgente rétabli sur écran tactile (seul le voile
+    gris du toucher reste supprimé). Compteur en bloc justifié : 1re ligne
+    « chiffre + accomplies », 2e ligne « cette semaine », les deux de même
+    largeur. Si la 2e est plus large, l'espace entre le chiffre et le mot
+    s'agrandit (CSS) ; si la 1re l'est, « cette semaine » s'espace lettre
+    par lettre jusqu'à la même largeur (fitCountBlock, après chaque mise à
+    jour et au chargement des polices).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -597,9 +604,9 @@ header{
    Ligne du haut : à gauche le chiffre de la semaine, au milieu la phrase ;
    la barre court en dessous sur toute la largeur, le total en petit
    juste au-dessus de son extrémité droite (8.13 ; chiffre seul en 8.32).
-   Compteur en bloc (8.34) : le chiffre à gauche, à sa droite « accomplies »
-   calé sur le haut du chiffre et « cette semaine » sur sa ligne de base ;
-   même dessin de 0 à 99 (chiffres à chasse fixe).
+   Compteur en bloc justifié (8.35) : « 7 ACCOMPLIES » sur la 1re ligne,
+   « CETTE SEMAINE » dessous, les deux lignes de même largeur, de 0 à 99 —
+   voir fitCountBlock().
    Sur téléphone : chiffre et total côte à côte, la barre, puis la phrase. */
 .progress-card{
   background:var(--surface);
@@ -614,8 +621,8 @@ header{
 .progress-top{ display:contents; }
 .progress-count{
   display:flex;
-  align-items:stretch;
-  gap:0.9em;
+  flex-direction:column;
+  justify-self:start; /* le bloc garde sa largeur, même dans une colonne 1fr */
 }
 .progress-count, .progress-total{
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
@@ -631,15 +638,17 @@ header{
 .progress-count b{
   font-size:4.2em;
   letter-spacing:-0.03em;
-  line-height:0.72;
+  line-height:0.85;
 }
-.count-words{
+/* 1re ligne étirée à la largeur du bloc : le surplus va entre le chiffre et le mot */
+.count-line{
   display:flex;
-  flex-direction:column;
+  align-items:baseline;
   justify-content:space-between;
-  line-height:1;
-  padding:0.1em 0 0;
+  gap:0.85em;
 }
+/* 2e ligne à sa largeur naturelle, pour pouvoir la mesurer */
+.count-week{ align-self:flex-start; margin-top:0.3rem; }
 .progress-count{ grid-column:1; grid-row:1; padding-right:1.6rem; }
 .progress-count b{ color:var(--relance); }
 .progress-total{
@@ -2151,9 +2160,6 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
 @media (hover:none){
   /* les contrôles doivent rester repérables sans attendre un survol qui n'arrivera jamais */
   .item-controls, .item .drag-handle, .urgent-list .drag-handle{opacity:0.65;}
-  /* le survol resterait collé après un toucher (8.34) */
-  .urgent-list li:hover,
-  :root:not([data-theme="light"]) .urgent-list li:hover{ background:transparent; }
   [data-tip]::after{ display:none; }
 }
 
@@ -2207,7 +2213,7 @@ body.arrive footer{ animation-delay:.52s; }
 
   <div class="progress-card">
     <div class="progress-top">
-      <span class="progress-count"><b id="doneCount">0</b><span class="count-words"><span id="doneWord">accomplie</span><span>cette semaine</span></span></span>
+      <span class="progress-count"><span class="count-line"><b id="doneCount">0</b><span id="doneWord">accomplie</span></span><span class="count-week">cette semaine</span></span>
       <span class="progress-total" id="totalCount"></span>
       <span class="progress-msg" id="progressMsg">Prêt à démarrer ?</span>
     </div>
@@ -2235,7 +2241,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.34</span>
+    <span class="version-tag">v8.35</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5561,6 +5567,24 @@ const MILESTONES = [
 
 let currentProgressMsg = null;
 
+// 8.35 : bloc du compteur justifié. Quand « chiffre + accomplies » est plus
+// large que « cette semaine », on espace les lettres de cette 2e ligne juste
+// assez pour qu'elle ait la même largeur (le cas inverse est réglé en CSS).
+function fitCountBlock(){
+  const line = document.querySelector(".count-line");
+  const week = document.querySelector(".count-week");
+  if(!line || !week) return;
+  week.style.letterSpacing = "";
+  const b = line.firstElementChild, word = line.lastElementChild;
+  const lineW = b.getBoundingClientRect().width + parseFloat(getComputedStyle(line).columnGap) + word.getBoundingClientRect().width;
+  const weekW = week.getBoundingClientRect().width;
+  if(!weekW || lineW <= weekW) return;
+  // l'espacement s'ajoute après chaque caractère (espace compris)
+  const base = parseFloat(getComputedStyle(week).letterSpacing) || 0;
+  week.style.letterSpacing = (base + (lineW - weekW) / week.textContent.length) + "px";
+}
+if(document.fonts) document.fonts.ready.then(fitCountBlock);
+
 function updateProgress(){
   const total = getTotalItems();
   const done = getDoneCount();
@@ -5569,6 +5593,7 @@ function updateProgress(){
   const weekDone = getWeekDoneCount();
   document.getElementById("doneCount").textContent = weekDone;
   document.getElementById("doneWord").textContent = weekDone > 1 ? "accomplies" : "accomplie";
+  fitCountBlock();
   // 8.10 : à droite, le total des tâches dans les listes (en cours compris,
   // œufs exclus) ; 8.32 : le chiffre seul
   const totalEl = document.getElementById("totalCount");
