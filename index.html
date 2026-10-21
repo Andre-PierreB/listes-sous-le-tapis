@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.37 -->
+<!-- Sous le tapis — version AUTONOME 8.38 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -464,6 +464,13 @@
     Case trèfle refermée par le trèfle : plus de surbrillance tant que le
     pointeur n'en est pas sorti (classe « rest »). Titre de la case :
     « Une petite en passant ? ».
+  - 8.38 : case urgente sur écran tactile : case à cocher et boutons de
+    nouveau cachés au repos ; le toucher d'une ligne les fait apparaître
+    (classe « revealed ») ET déplie son détail, en un seul toucher. Le
+    dévoilement au survol est réservé aux souris (@media (hover:hover)),
+    sinon l'iPhone garde le 1er toucher pour lui. Cachés, case et boutons
+    ne réagissent pas (pas de coche par mégarde). Compteur : « accomplies »
+    et « cette semaine » plus serrés, bloc rapproché de la barre.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -668,8 +675,8 @@ header{
   gap:0.85em;
   align-self:stretch;
 }
-.count-week{ margin-top:0.1rem; }
-.progress-count{ grid-column:1; grid-row:1; padding-right:1.6rem; }
+.count-week{ margin-top:-0.1rem; line-height:1.1; }
+.progress-count{ grid-column:1; grid-row:1; padding-right:1.6rem; margin-bottom:-0.4rem; /* plus près de la barre (8.38) */ }
 .progress-count b{ color:var(--relance); }
 .progress-total{
   grid-column:3; grid-row:1;  /* tout au bout, juste au-dessus de la barre (8.13) */
@@ -793,7 +800,9 @@ header{
   opacity:0;
   transition:opacity .12s ease, border-color .12s ease, background .12s ease;
 }
-.urgent-list li:hover .urgent-check{ opacity:1; }
+/* dévoilement : au survol avec une souris ; au toucher, par la classe
+   « revealed » (8.38, voir la section des écrans tactiles) */
+@media (hover:hover){ .urgent-list li:hover .urgent-check{ opacity:1; } }
 .urgent-check:hover{ border-color:var(--urgent-ink); background:color-mix(in srgb, var(--urgent-ink) 12%, var(--surface)); }
 .urgent-actions{
   margin-left:auto;
@@ -807,8 +816,10 @@ header{
   pointer-events:none;
   transition:opacity .12s ease;
 }
-.urgent-list li:hover .urgent-actions,
-.urgent-list li:focus-within .urgent-actions{ opacity:1; pointer-events:auto; }
+@media (hover:hover){
+  .urgent-list li:hover .urgent-actions,
+  .urgent-list li:focus-within .urgent-actions{ opacity:1; pointer-events:auto; }
+}
 .urgent-actions button{ transition:color .12s ease, opacity .12s ease; }
 .urgent-actions .waiting-btn,
 .urgent-actions .waiting-btn:hover,
@@ -2202,10 +2213,12 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
 @media (hover:none){
   /* les contrôles doivent rester repérables sans attendre un survol qui n'arrivera jamais */
   .item-controls, .item .drag-handle, .urgent-list .drag-handle{opacity:0.65;}
-  /* 8.37 : rien ne doit apparaître au survol dans la case urgente, sinon
-     l'iPhone garde le 1er toucher pour l'afficher (et le clic est perdu) */
-  .urgent-check{ opacity:1; }
-  .urgent-actions{ opacity:0.65; pointer-events:auto; }
+  /* 8.38 : case urgente — case et boutons apparaissent au toucher de la
+     ligne ; cachés, ils ne réagissent pas */
+  .urgent-list li.revealed .urgent-check{ opacity:1; }
+  .urgent-list li.revealed .urgent-actions{ opacity:1; pointer-events:auto; }
+  .urgent-list li:not(.revealed) .urgent-check,
+  .urgent-list li:not(.revealed) .haptic-wrap{ pointer-events:none; }
   [data-tip]::after{ display:none; }
 }
 
@@ -2287,7 +2300,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.37</span>
+    <span class="version-tag">v8.38</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4339,6 +4352,12 @@ function renderUrgentBanner(){
       saveOverrides(overrides);
       currentProgressMsg = null;
       renderAll();
+    });
+    // 8.38 : sur écran tactile, toucher une ligne fait apparaître sa case et
+    // ses boutons (une seule ligne à la fois) ; sans effet visible à la souris
+    li.addEventListener("click", ()=>{
+      ul.querySelectorAll("li.revealed").forEach(o=>{ if(o !== li) o.classList.remove("revealed"); });
+      li.classList.add("revealed");
     });
     wireDragRow(li, entry.key, "urgent", null);
     ul.appendChild(li);
