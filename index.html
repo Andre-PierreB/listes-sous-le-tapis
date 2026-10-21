@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.36 -->
+<!-- Sous le tapis — version AUTONOME 8.37 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -453,6 +453,17 @@
     mergeCustomCategories() recopie aussi la couleur des listes déjà
     chargées, pour que ⌘Z et les autres onglets la suivent. À la création,
     couleur toujours choisie automatiquement.
+  - 8.37 : compteur en vrai bloc, de 0 à 99 : les deux lignes ont la largeur
+    de « cette semaine » ; avec un chiffre, l'espace avant « accomplies »
+    s'agrandit (CSS) ; avec deux, le chiffre rapetisse juste assez pour
+    tenir (jusqu'à 62 % ; au-delà, « cette semaine » s'espace un peu) —
+    fitCountBlock(). Lignes un rien plus serrées. Case urgente sur écran
+    tactile : case à cocher et boutons toujours visibles (comme dans les
+    listes) ; avant, l'iPhone gardait le 1er toucher pour faire apparaître
+    ces éléments, et il fallait toucher deux fois pour déplier le détail.
+    Case trèfle refermée par le trèfle : plus de surbrillance tant que le
+    pointeur n'en est pas sorti (classe « rest »). Titre de la case :
+    « Une petite en passant ? ».
 -->
 <title>Sous le tapis</title>
 <style>
@@ -613,8 +624,8 @@ header{
    Ligne du haut : à gauche le chiffre de la semaine, au milieu la phrase ;
    la barre court en dessous sur toute la largeur, le total en petit
    juste au-dessus de son extrémité droite (8.13 ; chiffre seul en 8.32).
-   Compteur en bloc (8.36) : « 7 ACCOMPLIES » sur la 1re ligne, « CETTE
-   SEMAINE » dessous, les deux calées à droite.
+   Compteur en bloc (8.37) : « 7 ACCOMPLIES » sur la 1re ligne, « CETTE
+   SEMAINE » dessous, les deux de même largeur — voir fitCountBlock().
    Sur téléphone : chiffre et total côte à côte, la barre, puis la phrase. */
 .progress-card{
   background:var(--surface);
@@ -630,7 +641,7 @@ header{
 .progress-count{
   display:flex;
   flex-direction:column;
-  align-items:flex-end;
+  align-items:flex-start;
   justify-self:start; /* le bloc garde sa largeur, même dans une colonne 1fr */
 }
 .progress-count, .progress-total{
@@ -649,12 +660,15 @@ header{
   letter-spacing:-0.03em;
   line-height:0.85;
 }
+/* 1re ligne à la largeur du bloc : un éventuel surplus va avant « accomplies » */
 .count-line{
   display:flex;
   align-items:baseline;
+  justify-content:space-between;
   gap:0.85em;
+  align-self:stretch;
 }
-.count-week{ margin-top:0.3rem; }
+.count-week{ margin-top:0.1rem; }
 .progress-count{ grid-column:1; grid-row:1; padding-right:1.6rem; }
 .progress-count b{ color:var(--relance); }
 .progress-total{
@@ -882,19 +896,19 @@ header{
    machine à sous avant de s'arrêter sur celles du jour. */
 .lucky-line.closed{ cursor:pointer; padding-bottom:0.7rem; transition:opacity .4s ease, filter .4s ease, box-shadow .2s ease, transform .2s ease; }
 .lucky-line.closed .lucky-head{ margin-bottom:0; }
-.lucky-line.closed:hover, .lucky-line.closed:focus-visible{
+.lucky-line.closed:not(.rest):hover, .lucky-line.closed:focus-visible{
   outline:none;
   box-shadow:var(--shadow), 0 0 0 3px color-mix(in srgb, var(--lucky-gold) 30%, transparent), 0 6px 20px -4px color-mix(in srgb, var(--lucky-gold) 60%, transparent);
   transform:translateY(-1px);
 }
-.lucky-line.closed:hover .lucky-clover, .lucky-line.closed:focus-visible .lucky-clover{ transform:rotate(-30deg); }
+.lucky-line.closed:not(.rest):hover .lucky-clover, .lucky-line.closed:focus-visible .lucky-clover{ transform:rotate(-30deg); }
 .lucky-line.closed:active{ transform:translateY(0); }
 .lucky-crank{
   margin-left:auto; flex:none; line-height:0; padding:4px;
   color:color-mix(in srgb, var(--lucky-gold) 55%, var(--ink)); opacity:.75;
   transition:transform .3s ease, opacity .2s ease;
 }
-.lucky-line.closed:hover .lucky-crank{ opacity:1; transform:translateY(2px); }
+.lucky-line.closed:not(.rest):hover .lucky-crank{ opacity:1; transform:translateY(2px); }
 .lucky-clover-btn{
   appearance:none; border:none; background:transparent; padding:3px; margin:-3px;
   border-radius:50%; line-height:0; cursor:pointer; color:inherit; flex:none;
@@ -2188,6 +2202,10 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
 @media (hover:none){
   /* les contrôles doivent rester repérables sans attendre un survol qui n'arrivera jamais */
   .item-controls, .item .drag-handle, .urgent-list .drag-handle{opacity:0.65;}
+  /* 8.37 : rien ne doit apparaître au survol dans la case urgente, sinon
+     l'iPhone garde le 1er toucher pour l'afficher (et le clic est perdu) */
+  .urgent-check{ opacity:1; }
+  .urgent-actions{ opacity:0.65; pointer-events:auto; }
   [data-tip]::after{ display:none; }
 }
 
@@ -2269,7 +2287,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.36</span>
+    <span class="version-tag">v8.37</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4334,7 +4352,7 @@ function renderUrgentBanner(){
 // La note d'une tâche ne dépend que d'elle : en cocher une ne change pas
 // l'autre, la suivante prend simplement sa place.
 // Écartées : urgentes, échéance proche, RDV, « en cours », cochées.
-const LUCKY_LEAD = "Une petite en douceur sur le pouce ?";
+const LUCKY_LEAD = "Une petite en passant ?";
 function hashStr(str){
   let h = 2166136261;
   for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
@@ -4464,6 +4482,10 @@ function closeLucky(){
     el.classList.remove("closing");
     el.style.overflow = ""; el.style.height = "";
     renderLuckyLine();
+    // 8.37 : on vient d'y renoncer, pas de surbrillance « ouvre-moi » tant
+    // que le pointeur ne l'a pas quittée
+    el.classList.add("rest");
+    el.addEventListener("pointerleave", ()=> el.classList.remove("rest"), { once:true });
   };
   if(!el || luckyReduceMotion()){ finish(); return; }
   el.classList.add("closing");
@@ -5632,6 +5654,37 @@ const MILESTONES = [
 
 let currentProgressMsg = null;
 
+// 8.37 : compteur en bloc, les deux lignes à la largeur de « cette semaine ».
+// Plus étroite, la 1re ligne s'étire en CSS (espace avant « accomplies »).
+// Plus large (deux chiffres), le chiffre rapetisse juste assez pour tenir,
+// sans descendre sous 62 % ; s'il ne tient toujours pas, « cette semaine »
+// s'espace lettre par lettre pour le reste.
+const COUNT_NUMBER_EM = 4.2, COUNT_NUMBER_MIN = 0.62;
+function fitCountBlock(){
+  const line = document.querySelector(".count-line");
+  const week = document.querySelector(".count-week");
+  if(!line || !week) return;
+  const num = line.firstElementChild, word = line.lastElementChild;
+  num.style.fontSize = "";
+  week.style.letterSpacing = "";
+  const weekW = week.getBoundingClientRect().width;
+  if(!weekW) return; // pas affiché : on réessaiera au prochain rendu
+  const gap = parseFloat(getComputedStyle(line).columnGap) || 0;
+  const numW = num.getBoundingClientRect().width;
+  const room = weekW - gap - word.getBoundingClientRect().width;
+  if(numW <= room) return;
+  // un seul chiffre garde toujours sa taille (0 et 7 pareils) ; seuls les
+  // nombres à deux chiffres rapetissent, tous de la même façon
+  const ratio = num.textContent.length > 1 ? Math.max(COUNT_NUMBER_MIN, room / numW) : 1;
+  if(ratio < 1) num.style.fontSize = (COUNT_NUMBER_EM * ratio) + "em";
+  const over = numW * ratio - room;
+  if(over > 0.5){
+    const base = parseFloat(getComputedStyle(week).letterSpacing) || 0;
+    week.style.letterSpacing = (base + over / week.textContent.length) + "px";
+  }
+}
+if(document.fonts) document.fonts.ready.then(fitCountBlock);
+
 function updateProgress(){
   const total = getTotalItems();
   const done = getDoneCount();
@@ -5640,6 +5693,7 @@ function updateProgress(){
   const weekDone = getWeekDoneCount();
   document.getElementById("doneCount").textContent = weekDone;
   document.getElementById("doneWord").textContent = weekDone > 1 ? "accomplies" : "accomplie";
+  fitCountBlock();
   // 8.10 : à droite, le total des tâches dans les listes (en cours compris,
   // œufs exclus) ; 8.32 : le chiffre seul
   const totalEl = document.getElementById("totalCount");
