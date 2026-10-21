@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.38 -->
+<!-- Sous le tapis — version AUTONOME 8.39 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -471,6 +471,15 @@
     sinon l'iPhone garde le 1er toucher pour lui. Cachés, case et boutons
     ne réagissent pas (pas de coche par mégarde). Compteur : « accomplies »
     et « cette semaine » plus serrés, bloc rapproché de la barre.
+  - 8.39 : listes et « En cours » sur écran tactile : ↳ ⚠ × cachés au
+    repos (ils étaient toujours visibles à 65 % depuis la 8.12), dévoilés
+    par le toucher de la ligne (classe « revealed », une ligne à la fois),
+    comme la case urgente ; cachés, ils ne réagissent pas. Le survol ne les
+    dévoile plus qu'à la souris, et un clic de souris ne les laisse plus
+    affichés (focus clavier seulement : :has(:focus-visible)). Le sigle du
+    détail suit directement le titre (avant le nom de liste et le badge),
+    collé au dernier mot (titleWithToggle), partout. Mode clair : fond uni, teinte claire du
+    bleu ardoise de l'icône (#34495A), plus de dégradé.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -487,8 +496,9 @@
 /* ---------- couleurs (clair, puis sombre deux fois : réglage du système, ou
    thème forcé par la page hôte via data-theme) ---------- */
 :root{
-  --bg:#F8F6EF;
-  --bg-top:#F3F8FA;
+  /* 8.39 : fond uni, teinte claire du bleu ardoise de l'icône (#34495A) */
+  --bg:#E1E5E9;
+  --bg-top:#E1E5E9;
   --bg-bottom:#ECEFEF;
   --surface:#FFFFFF;
   --surface-2:#FBF9F3;
@@ -1271,7 +1281,10 @@ ul.items{
   cursor:pointer;
 }
 .item:hover{background:var(--surface-2);}
-.item:hover .item-controls, .item:focus-within .item-controls{opacity:1;}
+/* dévoilés au survol de la souris ou au focus clavier ; au toucher, par la
+   classe « revealed » (8.39, voir la section des écrans tactiles) */
+@media (hover:hover){ .item:hover .item-controls{opacity:1;} }
+.item:has(:focus-visible) .item-controls{opacity:1;}
 .item .drag-handle{ opacity:0; transition:opacity .15s ease; }
 .item:hover .drag-handle{ opacity:1; }
 .item.dragging{opacity:0.4;}
@@ -1315,6 +1328,7 @@ ul.items{
   transition:color .15s ease, background .15s ease;
 }
 .note-toggle svg{ display:block; }
+.note-tail{ white-space:nowrap; } /* dernier mot + sigle (8.39) */
 .item[data-note-key], .note-toggle{ -webkit-tap-highlight-color:transparent; }
 .note-toggle:hover{ color:var(--ink-soft); }
 .note-open .note-toggle{ color:var(--accent-strong); background:var(--accent-soft); }
@@ -2212,7 +2226,11 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
 /* ---------- appareils tactiles : pas de survol ---------- */
 @media (hover:none){
   /* les contrôles doivent rester repérables sans attendre un survol qui n'arrivera jamais */
-  .item-controls, .item .drag-handle, .urgent-list .drag-handle{opacity:0.65;}
+  .item .drag-handle, .urgent-list .drag-handle, .trash-item .item-controls{opacity:0.65;}
+  /* 8.39 : ↳ ⚠ × d'une ligne apparaissent au toucher de la ligne ; cachés,
+     ils ne réagissent pas */
+  .item.revealed .item-controls{ opacity:1; }
+  .item:not(.revealed) .item-controls{ pointer-events:none; }
   /* 8.38 : case urgente — case et boutons apparaissent au toucher de la
      ligne ; cachés, ils ne réagissent pas */
   .urgent-list li.revealed .urgent-check{ opacity:1; }
@@ -2300,7 +2318,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.38</span>
+    <span class="version-tag">v8.39</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4318,7 +4336,7 @@ function renderUrgentBanner(){
     li.innerHTML = `
       <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
       <button type="button" class="urgent-check" aria-label="Marquer cette tâche comme faite"></button>
-      <button type="button" class="urgent-jump"><span class="urgent-bullet" aria-hidden="true">&#8226;</span>${escapeAttr(entry.text)}<span class="urgent-jump-cat">${escapeAttr(entry.catTitle)}</span>${badge}${entry.note ? noteToggleHtml(false) + noteFoldHtml(entry.note, "urgent-note") : ""}</button>
+      <button type="button" class="urgent-jump"><span class="urgent-bullet" aria-hidden="true">&#8226;</span>${entry.note ? titleWithToggle(entry.text, noteToggleHtml(false)) : escapeAttr(entry.text)}<span class="urgent-jump-cat">${escapeAttr(entry.catTitle)}</span>${badge}${entry.note ? noteFoldHtml(entry.note, "urgent-note") : ""}</button>
       <span class="urgent-actions">
         ${entry.relance
           ? `<button type="button" class="waiting-btn postpone-btn" aria-label="Reporter la relance" data-tip="Reporter la relance"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 2.5h6"/></svg></button><button type="button" class="waiting-btn back-btn" aria-label="Sortir de « En cours »" data-tip="Sortir de « En cours »">${hookArrowSvg(15, true)}</button>`
@@ -4834,6 +4852,15 @@ function noteToggleHtml(asButton, open){
     ? `<button type="button" class="note-toggle" aria-expanded="${open ? "true" : "false"}" aria-label="Détail">${noteSvg(14)}</button>`
     : `<span class="note-toggle" aria-hidden="true">${noteSvg(13)}</span>`;
 }
+// 8.39 : le sigle suit directement le titre, collé à son dernier mot (les
+// deux dans un même bloc insécable : ils passent à la ligne ensemble).
+function titleWithToggle(title, toggleHtml){
+  const t = String(title || "");
+  const i = t.trimEnd().lastIndexOf(" ");
+  const head = i > -1 ? t.slice(0, i + 1) : "";
+  const last = i > -1 ? t.slice(i + 1) : t;
+  return `${escapeAttr(head)}<span class="note-tail">${escapeAttr(last)}${toggleHtml}</span>`;
+}
 function noteFoldHtml(note, cls){
   return `<span class="note-fold"><span class="${cls}">${escapeAttr(note)}</span></span>`;
 }
@@ -5022,7 +5049,7 @@ function buildItemLi(cat, idx, base, key, opts){
   li.innerHTML = `
     ${dragHandleHtml}
     ${isEgg ? `<span class="egg-dot" title="En couvaison">${eggSvg(20)}</span>` : `<input type="checkbox" ${checked ? "checked" : ""} aria-label="${escapeAttr(eff.t)}">`}
-    <span class="item-text">${whoTag}${personTag}<span class="item-title">${escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteToggleHtml(true, isNoteOpen(key)) + noteFoldHtml(eff.note, "note") : ""}</span>
+    <span class="item-text">${whoTag}${personTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
     <span class="item-controls">
       <button type="button" class="waiting-btn${eff.waiting ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${waitingBtnTitle}" data-tip="${waitingBtnTitle}">${waitingBtnIcon}</button>
       ${isEgg ? `<button type="button" class="hatch-btn" aria-label="Faire éclore" data-tip="Faire éclore"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="chick" cx="12" cy="8.2" r="3.6"/><path class="beak" d="M15.5 8.1l2 .7-2 .7"/><circle cx="13.1" cy="7.3" r=".55" fill="currentColor" stroke="none"/><path class="shell" d="M5.2 13.6c0 4.3 3 7.6 6.8 7.6s6.8-3.3 6.8-7.6l-2.3 1.5-2.2-1.7-2.3 1.7-2.3-1.7-2.2 1.7z"/></svg></button>` : `<button type="button" class="urgent-btn${eff.urgent ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}" data-tip="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}">${triangleSvg(15)}</button>`}
@@ -5034,6 +5061,12 @@ function buildItemLi(cat, idx, base, key, opts){
   const checkbox = li.querySelector("input");
   if(checkbox) checkbox.addEventListener("change", ()=> setDone(key, checkbox.checked));
   haptic.attach(checkbox);
+  // 8.39 : sur écran tactile, toucher la ligne dévoile ses boutons (une
+  // ligne à la fois) ; sans effet visible à la souris
+  li.addEventListener("click", ()=>{
+    document.querySelectorAll(".item.revealed").forEach(o=>{ if(o !== li) o.classList.remove("revealed"); });
+    li.classList.add("revealed");
+  });
   if(eff.note){
     // 8.31 : un clic sur la ligne (hors case, poignée et boutons de droite)
     // déplie / replie le détail. Le 2e clic d'un double-clic est ignoré.
