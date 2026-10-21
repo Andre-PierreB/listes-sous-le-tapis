@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.31 -->
+<!-- Sous le tapis — version AUTONOME 8.32 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -408,6 +408,19 @@
     soulevée, emplacement qui s'aimante, ligne posée, rouleaux du trèfle qui
     s'arrêtent — navigator.vibrate sur Android, interrupteur caché
     (<input switch>) sur iPhone iOS 18+.
+  - 8.32 : flèche « en cours » vers le bas (la case est en dessous), retour
+    vers le haut. Compteur : le gros chiffre prend la place du mot
+    « tâches » (« 3 ACCOMPLIES / CETTE SEMAINE ») ; total sans le mot
+    « Total », un rien plus petit et plus près de la barre. Vibrations
+    revues : depuis iOS 26.5, Safari ne donne plus le tic pour un clic
+    déclenché par le code (8.31 muette sur iPhone) ; seul un vrai toucher
+    sur l'interrupteur (ou son label) le donne. haptic.attach() pose donc
+    un label transparent, relié à l'interrupteur caché, sur les cases à
+    cocher (listes, case urgente, trèfle), le sigle du détail et la case
+    trèfle fermée ; il fait suivre le clic à l'élément d'origine. Glisser
+    et rouleaux restent sans tic sur iPhone (pas de toucher à ce moment).
+    Sur Android, les rouleaux du trèfle « cliquettent » à chaque tâche qui
+    défile, comme une roue de sélection.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -566,8 +579,9 @@ header{
 
 /* ---------- compteur « tableau de bord » (8.10) ----------
    Ligne du haut : à gauche le chiffre de la semaine, au milieu la phrase ;
-   la barre court en dessous sur toute la largeur, « Total x » en petit
-   juste au-dessus de son extrémité droite (8.13).
+   la barre court en dessous sur toute la largeur, le total en petit
+   juste au-dessus de son extrémité droite (8.13 ; chiffre seul en 8.32).
+   Le gros chiffre est sur la ligne de « accomplies » (8.32).
    Sur téléphone : chiffre et total côte à côte, la barre, puis la phrase. */
 .progress-card{
   background:var(--surface);
@@ -595,24 +609,28 @@ header{
   font-variant-numeric:tabular-nums;
   color:var(--count-ink);
 }
+.count-line{
+  display:flex;
+  align-items:baseline;
+  gap:0.5em;
+}
 .progress-count b{
   font-size:4.2em;
   letter-spacing:-0.03em;
   line-height:0.85;
-  margin-bottom:0.35rem;
 }
 .progress-count{ grid-column:1; grid-row:1; padding-right:1.6rem; }
 .progress-count b{ color:var(--relance); }
 .progress-total{
   grid-column:3; grid-row:1;  /* tout au bout, juste au-dessus de la barre (8.13) */
   align-self:end;
-  margin-bottom:-0.5rem;
+  margin-bottom:-0.72rem;
   padding-left:1.2rem;
   white-space:nowrap;
   line-height:1;
+  font-size:0.68rem;
   color:var(--ink-soft);
 }
-.progress-total b{ font-size:1.15em; }
 .progress-msg{
   grid-column:2;
   grid-row:1;
@@ -1242,7 +1260,7 @@ ul.items{
   border-width:0 2px 2px 0;
   transform:rotate(40deg);
 }
-.item input:checked ~ .item-text{
+.item.is-checked .item-text{
   color:var(--ink-faint);
   text-decoration:line-through;
   text-decoration-color:var(--ink-faint);
@@ -1252,8 +1270,8 @@ ul.items{
    inline-block n'hérite jamais du trait barré de son parent (spec CSS), donc
    sans cette règle explicite la tâche a l'air "pas tout à fait finie" une
    fois cochée. On barre le badge lui-même, avec sa propre couleur. */
-.item input:checked ~ .item-text .who-tag,
-.item input:checked ~ .item-text .person-tag{
+.item.is-checked .item-text .who-tag,
+.item.is-checked .item-text .person-tag{
   text-decoration:line-through;
   text-decoration-color:currentColor;
   text-decoration-thickness:1px;
@@ -1263,9 +1281,9 @@ ul.items{
    Ne joue qu'une fois, sur l'élément qui vient d'être coché (voir
    justCheckedKey en JS) — les autres re-rendus retombent sur le simple
    text-decoration ci-dessus. */
-.item.just-checked input:checked ~ .item-text .item-title,
-.item.just-checked input:checked ~ .item-text .who-tag,
-.item.just-checked input:checked ~ .item-text .person-tag{
+.item.just-checked.is-checked .item-text .item-title,
+.item.just-checked.is-checked .item-text .who-tag,
+.item.just-checked.is-checked .item-text .person-tag{
   text-decoration:none;
   background-image:linear-gradient(currentColor, currentColor);
   background-repeat:no-repeat;
@@ -1273,11 +1291,11 @@ ul.items{
   background-size:0% 2px;
   animation:item-strike 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
-.item.just-checked input:checked ~ .item-text .who-tag,
-.item.just-checked input:checked ~ .item-text .person-tag{
+.item.just-checked.is-checked .item-text .who-tag,
+.item.just-checked.is-checked .item-text .person-tag{
   animation-delay:0.12s;
 }
-.item.just-checked input:checked ~ .item-text{
+.item.just-checked.is-checked .item-text{
   animation:item-fade-in 0.4s ease forwards;
 }
 /* tâche urgente (marquée, ou échéance proche) */
@@ -1286,7 +1304,7 @@ ul.items{
   font-weight:600;
 }
 .item.item-urgent .item-text .note{ font-weight:400; }
-.item.item-urgent input:checked ~ .item-text{
+.item.item-urgent.is-checked .item-text{
   color:var(--ink-faint);
   font-weight:400;
   text-decoration:line-through;
@@ -2090,6 +2108,18 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
 }
 [data-tip]:hover::after{ opacity:1; transform:translateY(0); }
 
+/* ---------- vibrations sur iPhone (8.32) : label transparent par-dessus
+   l'élément touché, voir haptic.attach() ---------- */
+.haptic-host{ position:relative; }
+.haptic-wrap{ display:inline-flex; flex:none; }
+.haptic-tap{
+  position:absolute;
+  inset:-6px;
+  z-index:1;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+
 /* ---------- appareils tactiles : pas de survol ---------- */
 @media (hover:none){
   /* les contrôles doivent rester repérables sans attendre un survol qui n'arrivera jamais */
@@ -2147,8 +2177,7 @@ body.arrive footer{ animation-delay:.52s; }
 
   <div class="progress-card">
     <div class="progress-top">
-      <span class="progress-count"><b id="doneCount">0</b><span id="doneLabel">tâche accomplie
-cette semaine</span></span>
+      <span class="progress-count"><span class="count-line"><b id="doneCount">0</b><span id="doneWord">accomplie</span></span><span>cette semaine</span></span>
       <span class="progress-total" id="totalCount"></span>
       <span class="progress-msg" id="progressMsg">Prêt à démarrer ?</span>
     </div>
@@ -2176,7 +2205,7 @@ cette semaine</span></span>
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.31</span>
+    <span class="version-tag">v8.32</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -3784,35 +3813,69 @@ function collectUrgentItems(){
 // ---------- glisser-déposer avec prévisualisation en direct ----------
 let dragState = null; // { el, value, dragMode, cat }
 
-// ---------- petites vibrations (8.31) ----------
-// Un « tic » quand quelque chose se met en place : tâche cochée, ligne
-// soulevée, emplacement qui s'aimante, ligne posée, rouleau du trèfle qui
-// s'arrête. Un seul chemin : haptic.tick() (léger) / haptic.tap() (net).
-// - Android : navigator.vibrate (durée en ms).
-// - iPhone : Safari n'a pas navigator.vibrate ; depuis iOS 18, basculer un
-//   interrupteur <input type="checkbox" switch> donne le tic du système. On
-//   en garde un, caché, qu'on bascule par son <label>. C'est une astuce, pas
-//   une API prévue pour ça : si Apple la ferme, il ne se passe rien.
-//   Le clic est arrêté sur le conteneur pour ne pas atteindre les écouteurs
-//   de la page (fermeture d'un formulaire, du choix du trèfle…).
+// ---------- petites vibrations (8.31, revues en 8.32) ----------
+// Deux mécanismes, selon le téléphone :
+// - Android : navigator.vibrate. haptic.tick() (léger : emplacement qui
+//   s'aimante, ligne soulevée, tâche qui défile dans un rouleau) et
+//   haptic.tap() (net : tâche cochée, ligne posée), appelables n'importe
+//   quand. Les tics trop rapprochés (< 30 ms) sont fondus en un seul.
+// - iPhone : pas de navigator.vibrate. Le seul tic possible est celui de
+//   l'interrupteur système (<input type="checkbox" switch>, Safari 17.4+),
+//   et depuis iOS 26.5 il faut un VRAI toucher dessus ou sur son label :
+//   un clic déclenché par le code reste muet. haptic.attach(el) pose donc
+//   sur el un label transparent relié à un interrupteur caché ; le toucher
+//   bascule l'interrupteur (tic), puis le clic est rejoué sur el. tick() et
+//   tap() n'y font rien : pas de tic pendant un glisser ni sur les rouleaux.
+//   C'est une astuce, pas une API prévue pour ça : si Apple la ferme, il ne
+//   se passe simplement rien.
 const haptic = (()=>{
-  let label = null;
-  const switchTick = ()=>{
-    if(!label){
-      const box = document.createElement("span");
-      box.hidden = true;
-      box.innerHTML = `<input type="checkbox" switch id="hapticSwitch" tabindex="-1" aria-hidden="true"><label for="hapticSwitch"></label>`;
-      ["click", "input", "change"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
-      document.body.appendChild(box);
-      label = box.querySelector("label");
-    }
-    label.click();
-  };
+  const canVibrate = typeof navigator.vibrate === "function";
+  // iPhone / iPad : écran tactile et pas de vibrate (tous les navigateurs y sont des Safari)
+  const useSwitch = !canVibrate && window.matchMedia("(pointer: coarse)").matches;
+  let lastBuzz = 0;
   const buzz = ms => {
-    if(typeof navigator.vibrate === "function"){ try{ navigator.vibrate(ms); }catch(e){} }
-    else switchTick();
+    if(!canVibrate) return;
+    const now = performance.now();
+    if(now - lastBuzz < 30) return;
+    lastBuzz = now;
+    try{ navigator.vibrate(ms); }catch(e){}
   };
-  return { tick: ()=> buzz(8), tap: ()=> buzz(15) };
+  let ready = false;
+  const ensureSwitch = ()=>{
+    if(ready) return;
+    ready = true;
+    const box = document.createElement("span");
+    box.hidden = true;
+    box.innerHTML = `<input type="checkbox" switch id="hapticSwitch" tabindex="-1" aria-hidden="true">`;
+    // la bascule de l'interrupteur ne doit atteindre aucun écouteur de la page
+    ["click", "input", "change"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
+    document.body.appendChild(box);
+  };
+  // el : un contrôle (case, bouton : le label est posé dans une enveloppe)
+  // ou un conteneur (le label le recouvre). Le clic d'origine est arrêté
+  // puis rejoué sur el juste après, une fois l'interrupteur basculé — el
+  // peut alors être redessiné sans couper le tic.
+  const attach = el => {
+    if(!useSwitch || !el) return;
+    ensureSwitch();
+    const label = document.createElement("label");
+    label.className = "haptic-tap";
+    label.htmlFor = "hapticSwitch";
+    label.addEventListener("click", e=>{
+      e.stopPropagation();
+      setTimeout(()=> el.click(), 0);
+    });
+    if(el.matches("input, button")){
+      const wrap = document.createElement("span");
+      wrap.className = "haptic-host haptic-wrap";
+      el.replaceWith(wrap);
+      wrap.append(el, label);
+    }else{
+      el.classList.add("haptic-host");
+      el.append(label);
+    }
+  };
+  return { tick: ()=> buzz(8), tap: ()=> buzz(15), attach };
 })();
 
 function flipMoveMulti(parents, moveFn){
@@ -4161,10 +4224,12 @@ function renderUrgentBanner(){
       const cardEl = document.getElementById("cat-" + entry.catId);
       if(cardEl) cardEl.scrollIntoView({behavior:"smooth", block:"center"});
     });
-    li.querySelector(".urgent-check").addEventListener("click", (e)=>{
+    const urgentCheck = li.querySelector(".urgent-check");
+    urgentCheck.addEventListener("click", (e)=>{
       e.stopPropagation();
       setDone(entry.key, true); // raccourci : cocher directement depuis la case urgente
     });
+    haptic.attach(urgentCheck);
     if(entry.relance){
       li.querySelector(".urgent-actions .back-btn").addEventListener("click", (e)=>{ e.stopPropagation(); askBringBack(e.currentTarget, entry.key); });
       const pb = li.querySelector(".urgent-actions .postpone-btn");
@@ -4359,6 +4424,20 @@ function luckyFillerTexts(excludeKeys){
 }
 // Machine à sous : chaque proposition défile, floue, puis se pose sur la
 // tâche du jour. Purement visuel : le texte réel reste dans la case.
+// 8.32 : pendant que le rouleau tourne, un tic à chaque tâche qui passe la
+// fenêtre, lu sur la position réelle de la bande : les tics suivent donc le
+// ralenti de l'animation, comme une roue de sélection, jusqu'à l'arrêt.
+function tickAlongReel(anim, strip, H){
+  let passed = 0;
+  const step = ()=>{
+    if(anim.playState !== "running" || !strip.isConnected) return;
+    const y = new DOMMatrixReadOnly(getComputedStyle(strip).transform).m42;
+    const n = Math.floor(-y / H + 0.02);
+    if(n > passed){ passed = n; haptic.tick(); }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 function spinLuckyReels(el, mode){
   if(luckyReduceMotion()) return;
   const picks = [...el.querySelectorAll(".lucky-pick")];
@@ -4415,10 +4494,10 @@ function spinLuckyReels(el, mode){
       { transform:`translateY(${-(dist + H * 0.14)}px)`, filter:"blur(0)", offset:.9, easing:"ease-out" },
       { transform:`translateY(${-dist}px)`, filter:"blur(0)" }
     ], { duration:dur, delay:startDelay, fill:"both" });
+    tickAlongReel(anim, strip, H);
     const cleanup = ()=>{ reel.remove(); pick.classList.remove("spinning"); };
     anim.onfinish = ()=>{
       cleanup();
-      haptic.tick(); // en même temps que la petite pulsation
       pick.animate([{ transform:"scale(1)" }, { transform:"scale(1.025)" }, { transform:"scale(1)" }], { duration:260, easing:"ease-out" });
     };
     anim.oncancel = cleanup;
@@ -4504,6 +4583,7 @@ function renderLuckyLine(){
     el.classList.remove("can-reset");
     el.onclick = ()=> openLucky();
     el.onkeydown = (e)=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openLucky(); } };
+    haptic.attach(el);
     return;
   }
   el.onkeydown = null;
@@ -4552,6 +4632,7 @@ function renderLuckyLine(){
       e.stopPropagation();
       setDone(check.closest(".lucky-pick").dataset.key, check.checked);
     });
+    haptic.attach(check);
   }
 }
 
@@ -4560,8 +4641,9 @@ function renderLuckyLine(){
 const eggSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="egg" d="M12 2.8c-3.7 0-6.6 5.6-6.6 10.6A6.6 6.6 0 0 0 12 21.2a6.6 6.6 0 0 0 6.6-7.8C18.6 8.4 15.7 2.8 12 2.8z"/><circle class="speck" cx="10" cy="11" r=".8" fill="currentColor" stroke="none"/><circle class="speck" cx="14" cy="14.5" r=".8" fill="currentColor" stroke="none"/><circle class="speck" cx="10.8" cy="16.6" r=".6" fill="currentColor" stroke="none"/></svg>`;
 const triangleSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="tri" d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5"/><path d="M12 17.4v.2"/></svg>`;
 // 8.31 : flèche dessinée plutôt que les caractères ↪ / ↩, que l'iPhone
-// remplace par son émoji (blanc sur carré gris). back = ↩ (retour).
-const hookArrowSvg = (size, back) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${back ? ' style="transform:scaleX(-1)"' : ""}><path d="M14 4l5 5-5 5"/><path d="M19 9H9.5a5.5 5.5 0 0 0 0 11H12"/></svg>`;
+// remplace par son émoji (blanc sur carré gris). 8.32 : elle descend vers
+// « En cours » (plus bas dans la page) ; back = retour, elle remonte.
+const hookArrowSvg = (size, back) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${back ? ' style="transform:scaleY(-1)"' : ""}><path d="M3.5 5h8a5 5 0 0 1 5 5v9.5"/><path d="M12.5 15.5l4 4 4-4"/></svg>`;
 const noteSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg>`;
 const EGG_TIP = { on:"En couvaison — cliquer pour retirer", off:"Mettre en couvaison" };
 const URGENT_TIP = { on:"Urgent — cliquer pour retirer", off:"Marquer comme urgent" };
@@ -4830,6 +4912,8 @@ function buildItemLi(cat, idx, base, key, opts){
   `;
   const checkbox = li.querySelector("input");
   if(checkbox) checkbox.addEventListener("change", ()=> setDone(key, checkbox.checked));
+  haptic.attach(checkbox);
+  haptic.attach(li.querySelector(".note-toggle"));
   if(eff.note){
     // 8.31 : un clic sur la ligne (hors case, poignée et boutons de droite)
     // déplie / replie le détail. Le 2e clic d'un double-clic est ignoré.
@@ -5452,9 +5536,12 @@ function updateProgress(){
   // semaine). La barre et les messages gardent le calcul faites / total.
   const weekDone = getWeekDoneCount();
   document.getElementById("doneCount").textContent = weekDone;
-  document.getElementById("doneLabel").textContent = (weekDone > 1 ? "tâches accomplies" : "tâche accomplie") + "\ncette semaine";
-  // 8.10 : à droite, le total des tâches dans les listes (en cours compris, œufs exclus)
-  document.getElementById("totalCount").innerHTML = `Total <b>${total}</b>`;
+  document.getElementById("doneWord").textContent = weekDone > 1 ? "accomplies" : "accomplie";
+  // 8.10 : à droite, le total des tâches dans les listes (en cours compris,
+  // œufs exclus) ; 8.32 : le chiffre seul
+  const totalEl = document.getElementById("totalCount");
+  totalEl.textContent = total;
+  totalEl.title = total > 1 ? total + " tâches dans les listes" : total + " tâche dans les listes";
   const pct = total ? Math.round((done/total)*100) : 0;
   document.getElementById("barFill").style.width = pct + "%";
 
