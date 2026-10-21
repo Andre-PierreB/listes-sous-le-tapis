@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.40 -->
+<!-- Sous le tapis — version AUTONOME 8.41 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -482,6 +482,10 @@
     bleu ardoise de l'icône (#34495A), plus de dégradé.
   - 8.40 : fond clair : sauge pâle, lumineuse et peu grise (#ECF4EB), uni,
     choisi parmi quatre pistes (ciel, lin, sauge, ardoise).
+  - 8.41 : sauge beaucoup plus claire (#F5F9F4). Boutons du bas Corbeille et
+    Restaurer : fond blanc et fin liseré, texte dans une ardoise de la
+    famille de l'icône (--btn-ink) au lieu du mauve ; Sauvegarder garde sa
+    teinte bleu-vert.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -498,9 +502,9 @@
 /* ---------- couleurs (clair, puis sombre deux fois : réglage du système, ou
    thème forcé par la page hôte via data-theme) ---------- */
 :root{
-  /* fond uni (8.39), sauge pâle (8.40) */
-  --bg:#ECF4EB;
-  --bg-top:#ECF4EB;
+  /* fond uni (8.39), sauge très pâle (8.40, plus claire en 8.41) */
+  --bg:#F5F9F4;
+  --bg-top:#F5F9F4;
   --bg-bottom:#ECEFEF;
   --surface:#FFFFFF;
   --surface-2:#FBF9F3;
@@ -509,6 +513,7 @@
   --ink-faint:#A39C94;
   --accent:#4993A2;
   --accent-strong:#6B728E;
+  --btn-ink:#4A5E6E;  /* boutons du bas : ardoise, famille de l'icône (8.41) */
   --accent-soft:#E4ECF3;
   --urgent:#DD5236;
   --urgent-soft:#FBE3DA;
@@ -537,6 +542,7 @@
     --ink-faint:#78838A;
     --accent:#7DBFCB;
     --accent-strong:#A8AFCB;
+    --btn-ink:#AFC0CC;
     --accent-soft:#1C2B30;
     --urgent:#F07B8E;
     --urgent-soft:#2C1D24;
@@ -564,6 +570,7 @@
   --ink-faint:#78838A;
   --accent:#7DBFCB;
   --accent-strong:#A8AFCB;
+  --btn-ink:#AFC0CC;
   --accent-soft:#1C2B30;
   --urgent:#F07B8E;
   --urgent-soft:#2C1D24;
@@ -1864,7 +1871,7 @@ footer{
 .backup-nudge{ font-family:'Public Sans', system-ui, sans-serif; font-size:0.8rem; color:var(--relance); margin-right:0.35rem; }
 /* boutons du bas : même forme ; seule « Sauvegarder » est en couleur */
 .trash-link, .backup-btn{
-  --btn:var(--accent-strong);
+  --btn:var(--btn-ink);
   appearance:none;
   display:inline-flex;
   align-items:center;
@@ -1872,7 +1879,9 @@ footer{
   padding:0.5rem 0.95rem;
   border:none;
   border-radius:999px;
-  background:color-mix(in srgb, var(--btn) 11%, var(--surface));
+  /* fond blanc et fin liseré (8.41) ; Sauvegarder garde sa teinte, plus bas */
+  background:var(--surface);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--btn) 28%, transparent);
   color:var(--btn);
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.7rem;
@@ -1882,7 +1891,7 @@ footer{
   cursor:pointer;
   transition:background .15s ease, color .15s ease, transform .15s ease;
 }
-.backup-btn-primary{ --btn:var(--accent); background:color-mix(in srgb, var(--accent) 15%, var(--surface)); }
+.backup-btn-primary{ --btn:var(--accent); background:color-mix(in srgb, var(--accent) 15%, var(--surface)); box-shadow:none; }
 .trash-link:hover, .trash-link.open, .backup-btn:hover{ background:var(--btn); color:var(--surface); transform:translateY(-1px); }
 .backup-btn svg{ width:14px; height:14px; display:block; }
 .trash-link{ margin-right:auto; }
@@ -2320,7 +2329,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.40</span>
+    <span class="version-tag">v8.41</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
