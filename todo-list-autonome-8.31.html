@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.30 -->
+<!-- Sous le tapis — version AUTONOME 8.31 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -396,6 +396,18 @@
     toujours à la même place) : on ne perd plus le survol en allant cocher.
     Case à cocher et poignée dans le flux, centrées sur la 1re ligne ;
     plus d'espace perdu entre la case et la puce. Puce un rien moins vive.
+  - 8.31 : détail replié : une tâche qui a un détail montre un petit sigle
+    (trois lignes) à côté de son titre ; clic sur le sigle, ou sur la ligne
+    dans les listes, pour le déplier / replier (hauteur animée). Le choix est
+    gardé par tâche et partagé avec la case urgente (là, seul le sigle
+    déplie : la ligne garde son saut vers la liste). Nouvelle clé
+    « fauconnerie-v2-notesopen » (seulement les tâches dépliées), préférence
+    d'affichage hors annulation et sauvegardes. Flèches ↪ / ↩ dessinées en
+    SVG (l'iPhone les remplaçait par son émoji, blanc sur carré gris).
+    Petites vibrations (objet haptic) : tâche cochée, ligne ou liste
+    soulevée, emplacement qui s'aimante, ligne posée, rouleaux du trèfle qui
+    s'arrêtent — navigator.vibrate sur Android, interrupteur caché
+    (<input switch>) sur iPhone iOS 18+.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -776,14 +788,18 @@ header{
   color:var(--ink-faint); /* le nom de la liste, en gris (8.14) */
   margin:0 0.5rem;
 }
-/* détail de la tâche sous son titre, aligné sur le titre (8.28, plus clair en 8.29) */
+/* détail de la tâche sous son titre, aligné sur le titre (8.28, plus clair en 8.29) ;
+   replié derrière le sigle (8.31, voir .note-fold) */
 .urgent-note{
   display:block;
   font-size:0.8rem;
   color:color-mix(in srgb, var(--ink-soft) 70%, transparent);
-  margin-top:0.1rem;
+  padding-top:0.1rem;
   line-height:1.4;
 }
+.urgent-list .note-toggle{ color:color-mix(in srgb, var(--urgent-ink) 45%, transparent); }
+.urgent-list .note-toggle:hover{ color:var(--urgent-ink); }
+.urgent-list li.note-open .note-toggle{ color:var(--urgent-ink); background:var(--urgent-soft); }
 /* relance arrivée (tâche en cours dont la date est là) */
 .urgent-list li.is-relance .urgent-jump{ color:var(--relance); }
 .urgent-list li.is-relance .urgent-bullet{ background:var(--relance); }
@@ -1167,9 +1183,38 @@ ul.items{
   display:block;
   font-size:0.86rem;
   color:var(--ink-soft);
-  margin-top:0.15rem;
+  padding-top:0.15rem;
   line-height:1.4;
 }
+/* détail replié (8.31) : la rangée de la grille passe de 0 à la hauteur du
+   texte, ce qui anime le dépliage sans connaître cette hauteur */
+.note-fold{
+  display:grid;
+  grid-template-rows:0fr;
+  transition:grid-template-rows .24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.note-fold > *{ overflow:hidden; min-height:0; }
+.note-open .note-fold{ grid-template-rows:1fr; }
+/* le sigle qui signale un détail, à côté du titre */
+.note-toggle{
+  appearance:none;
+  -webkit-appearance:none;
+  border:none;
+  background:transparent;
+  display:inline-flex;
+  align-items:center;
+  vertical-align:-2px;
+  margin-left:0.35rem;
+  padding:1px 4px;
+  border-radius:5px;
+  color:var(--ink-faint);
+  cursor:pointer;
+  transition:color .15s ease, background .15s ease;
+}
+.note-toggle svg{ display:block; }
+.note-toggle:hover{ color:var(--ink-soft); }
+.note-open .note-toggle{ color:var(--accent-strong); background:var(--accent-soft); }
+.item.is-checked .note-toggle{ opacity:0.6; }
 .item input[type="checkbox"]{
   appearance:none;
   -webkit-appearance:none;
@@ -1274,6 +1319,7 @@ ul.items{
 .waiting-btn.active{
   color:var(--accent-strong);
 }
+.waiting-btn svg{ display:block; }
 .urgent-btn, .delete-btn{
   appearance:none;
   border:none;
@@ -2130,7 +2176,7 @@ cette semaine</span></span>
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.30</span>
+    <span class="version-tag">v8.31</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -3738,7 +3784,37 @@ function collectUrgentItems(){
 // ---------- glisser-déposer avec prévisualisation en direct ----------
 let dragState = null; // { el, value, dragMode, cat }
 
-function flipMove(parent, moveFn){ flipMoveMulti([parent], moveFn); }
+// ---------- petites vibrations (8.31) ----------
+// Un « tic » quand quelque chose se met en place : tâche cochée, ligne
+// soulevée, emplacement qui s'aimante, ligne posée, rouleau du trèfle qui
+// s'arrête. Un seul chemin : haptic.tick() (léger) / haptic.tap() (net).
+// - Android : navigator.vibrate (durée en ms).
+// - iPhone : Safari n'a pas navigator.vibrate ; depuis iOS 18, basculer un
+//   interrupteur <input type="checkbox" switch> donne le tic du système. On
+//   en garde un, caché, qu'on bascule par son <label>. C'est une astuce, pas
+//   une API prévue pour ça : si Apple la ferme, il ne se passe rien.
+//   Le clic est arrêté sur le conteneur pour ne pas atteindre les écouteurs
+//   de la page (fermeture d'un formulaire, du choix du trèfle…).
+const haptic = (()=>{
+  let label = null;
+  const switchTick = ()=>{
+    if(!label){
+      const box = document.createElement("span");
+      box.hidden = true;
+      box.innerHTML = `<input type="checkbox" switch id="hapticSwitch" tabindex="-1" aria-hidden="true"><label for="hapticSwitch"></label>`;
+      ["click", "input", "change"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
+      document.body.appendChild(box);
+      label = box.querySelector("label");
+    }
+    label.click();
+  };
+  const buzz = ms => {
+    if(typeof navigator.vibrate === "function"){ try{ navigator.vibrate(ms); }catch(e){} }
+    else switchTick();
+  };
+  return { tick: ()=> buzz(8), tap: ()=> buzz(15) };
+})();
+
 function flipMoveMulti(parents, moveFn){
   const children = [];
   new Set(parents).forEach(p=>{ if(p) children.push(...p.children); });
@@ -3760,6 +3836,12 @@ function flipMoveMulti(parents, moveFn){
       el.style.transform = "";
     });
   });
+}
+
+// Pendant un glisser, l'emplacement change de place : animation + petit tic.
+function moveDragSlot(parents, moveFn){
+  flipMoveMulti(parents, moveFn);
+  haptic.tick();
 }
 
 // Glisser-déposer via Pointer Events (souris ET tactile unifiés) : l'API
@@ -3802,10 +3884,12 @@ function wireDragRow(li, value, dragMode, cat){
         ghost, startX: e.clientX, startY: e.clientY, ghostLeft: r.left, ghostTop: r.top };
       li.classList.add("dragging-row");
       document.body.classList.add("dragging-lists");
+      haptic.tick();
       return;
     }
     dragState = { el: li, value, dragMode, cat, pointerId: e.pointerId };
     li.classList.add("dragging");
+    haptic.tick();
   });
 }
 
@@ -3859,6 +3943,7 @@ function wireDragCard(card, grip, catIdx){
       ghost, startX: e.clientX, startY: e.clientY, ghostLeft: r.left, ghostTop: r.top, w: r.width, h: r.height };
     card.classList.add("dragging-card");
     document.body.classList.add("dragging-lists");
+    haptic.tick();
   });
 }
 
@@ -3894,7 +3979,7 @@ function handleListDragMove(x, y){
   const r = layoutRect(best);
   if(bestDist > Math.max(r.width, r.height) * 0.7) return; // trop loin : pas encore aimanté
   const idxBest = cards.indexOf(best), idxEl = cards.indexOf(d.el);
-  flipMove(parent, ()=>{
+  moveDragSlot([parent], ()=>{
     parent.insertBefore(d.el, idxEl < idxBest ? best.nextSibling : best);
   });
 }
@@ -3917,7 +4002,7 @@ function handleRowDragMove(x, y){
   }
   const ref = before || (rows.length ? rows[rows.length - 1].nextSibling : null);
   if(d.el.parentElement === ul && (d.el === ref || d.el.nextSibling === ref)) return;
-  flipMoveMulti([d.el.parentElement, ul], ()=>{ ul.insertBefore(d.el, ref); });
+  moveDragSlot([d.el.parentElement, ul], ()=>{ ul.insertBefore(d.el, ref); });
 }
 
 function endDragGesture(){
@@ -3933,10 +4018,12 @@ function endDragGesture(){
       d.ghost.remove();
       d.el.classList.remove("dragging-card", "dragging-row");
       document.body.classList.remove("dragging-lists");
+      haptic.tap(); // le fantôme touche sa place
       commitDragOrder();
     }, 200);
     return;
   }
+  haptic.tap();
   dragState.el.classList.remove("dragging", "dragging-card");
   document.body.classList.remove("dragging-lists");
   commitDragOrder();
@@ -3973,7 +4060,7 @@ function handleDragPointerMove(x, y){
   }
   const alreadyThere = after ? (li.nextSibling === dragState.el) : (li.previousSibling === dragState.el);
   if(alreadyThere) return;
-  flipMove(parent, ()=>{
+  moveDragSlot([parent], ()=>{
     parent.insertBefore(dragState.el, after ? li.nextSibling : li);
   });
 }
@@ -4059,15 +4146,18 @@ function renderUrgentBanner(){
     li.innerHTML = `
       <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
       <button type="button" class="urgent-check" aria-label="Marquer cette tâche comme faite"></button>
-      <button type="button" class="urgent-jump"><span class="urgent-bullet" aria-hidden="true">&#8226;</span>${escapeAttr(entry.text)}<span class="urgent-jump-cat">${escapeAttr(entry.catTitle)}</span>${badge}${entry.note ? `<span class="urgent-note">${escapeAttr(entry.note)}</span>` : ""}</button>
+      <button type="button" class="urgent-jump"><span class="urgent-bullet" aria-hidden="true">&#8226;</span>${escapeAttr(entry.text)}<span class="urgent-jump-cat">${escapeAttr(entry.catTitle)}</span>${badge}${entry.note ? noteToggleHtml(false) + noteFoldHtml(entry.note, "urgent-note") : ""}</button>
       <span class="urgent-actions">
         ${entry.relance
-          ? `<button type="button" class="waiting-btn postpone-btn" aria-label="Reporter la relance" data-tip="Reporter la relance"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 2.5h6"/></svg></button><button type="button" class="waiting-btn back-btn" aria-label="Sortir de « En cours »" data-tip="Sortir de « En cours »">&#8617;</button>`
-          : `<button type="button" class="waiting-btn" aria-label="Classé, suivi en cours" data-tip="Classé, suivi en cours">&#8618;</button>`}
+          ? `<button type="button" class="waiting-btn postpone-btn" aria-label="Reporter la relance" data-tip="Reporter la relance"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 2.5h6"/></svg></button><button type="button" class="waiting-btn back-btn" aria-label="Sortir de « En cours »" data-tip="Sortir de « En cours »">${hookArrowSvg(15, true)}</button>`
+          : `<button type="button" class="waiting-btn" aria-label="Classé, suivi en cours" data-tip="Classé, suivi en cours">${hookArrowSvg(15)}</button>`}
         ${entry.manual ? `<button type="button" class="urgent-btn active" aria-label="Ne plus marquer urgent" data-tip="Ne plus marquer urgent">${triangleSvg(15)}</button>` : ""}
       </span>
     `;
-    li.querySelector(".urgent-jump").addEventListener("click", ()=>{
+    if(entry.note) markNoteHolder(li, entry.key);
+    li.querySelector(".urgent-jump").addEventListener("click", (e)=>{
+      // le sigle déplie le détail ; le reste de la ligne mène à la liste
+      if(e.target.closest(".note-toggle")){ toggleNoteOpen(entry.key); return; }
       const cardEl = document.getElementById("cat-" + entry.catId);
       if(cardEl) cardEl.scrollIntoView({behavior:"smooth", block:"center"});
     });
@@ -4328,6 +4418,7 @@ function spinLuckyReels(el, mode){
     const cleanup = ()=>{ reel.remove(); pick.classList.remove("spinning"); };
     anim.onfinish = ()=>{
       cleanup();
+      haptic.tick(); // en même temps que la petite pulsation
       pick.animate([{ transform:"scale(1)" }, { transform:"scale(1.025)" }, { transform:"scale(1)" }], { duration:260, easing:"ease-out" });
     };
     anim.oncancel = cleanup;
@@ -4464,9 +4555,14 @@ function renderLuckyLine(){
   }
 }
 
-// Icônes dessinées à plusieurs endroits : l'œuf (couvaison) et le triangle (urgent).
+// Icônes dessinées à plusieurs endroits : l'œuf (couvaison), le triangle
+// (urgent), la flèche « en cours » et le sigle du détail.
 const eggSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="egg" d="M12 2.8c-3.7 0-6.6 5.6-6.6 10.6A6.6 6.6 0 0 0 12 21.2a6.6 6.6 0 0 0 6.6-7.8C18.6 8.4 15.7 2.8 12 2.8z"/><circle class="speck" cx="10" cy="11" r=".8" fill="currentColor" stroke="none"/><circle class="speck" cx="14" cy="14.5" r=".8" fill="currentColor" stroke="none"/><circle class="speck" cx="10.8" cy="16.6" r=".6" fill="currentColor" stroke="none"/></svg>`;
 const triangleSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="tri" d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5"/><path d="M12 17.4v.2"/></svg>`;
+// 8.31 : flèche dessinée plutôt que les caractères ↪ / ↩, que l'iPhone
+// remplace par son émoji (blanc sur carré gris). back = ↩ (retour).
+const hookArrowSvg = (size, back) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${back ? ' style="transform:scaleX(-1)"' : ""}><path d="M14 4l5 5-5 5"/><path d="M19 9H9.5a5.5 5.5 0 0 0 0 11H12"/></svg>`;
+const noteSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg>`;
 const EGG_TIP = { on:"En couvaison — cliquer pour retirer", off:"Mettre en couvaison" };
 const URGENT_TIP = { on:"Urgent — cliquer pour retirer", off:"Marquer comme urgent" };
 // L'œuf et le triangle en bas à droite des formulaires (création, modification, nouvelle liste).
@@ -4507,6 +4603,42 @@ function wireEditUrgent(li){
     });
   });
   return { value: ()=> urg.on, egg: ()=> egg.on };
+}
+
+// ---------- détail d'une tâche : replié / déplié (8.31) ----------
+// Une tâche qui a un détail montre un petit sigle à côté de son titre ; un
+// clic dessus (ou sur la ligne, dans les listes) déplie le détail. Le choix
+// est gardé par tâche et partagé entre la liste et la case urgente (même
+// clé d'élément). Préférence d'affichage : hors annulation et sauvegardes,
+// comme « luckyopen ». On n'enregistre que les tâches dépliées.
+const NOTES_OPEN_KEY = "fauconnerie-v2-notesopen";
+function isNoteOpen(key){ return !!loadJSONKey(NOTES_OPEN_KEY, {})[key]; }
+function toggleNoteOpen(key){
+  const open = loadJSONKey(NOTES_OPEN_KEY, {});
+  if(open[key]) delete open[key]; else open[key] = true;
+  saveJSONKey(NOTES_OPEN_KEY, open);
+  // pas de renderAll : on bascule la classe sur place pour que l'animation joue
+  document.querySelectorAll(`[data-note-key="${CSS.escape(key)}"]`).forEach(el=>{
+    el.classList.toggle("note-open", !!open[key]);
+    const t = el.querySelector(".note-toggle");
+    if(t && t.tagName === "BUTTON") t.setAttribute("aria-expanded", open[key] ? "true" : "false");
+  });
+}
+// Le sigle (bouton dans les listes ; simple repère dans la case urgente, déjà
+// entièrement cliquable) et le détail enveloppé dans son pli animé.
+function noteToggleHtml(asButton, open){
+  return asButton
+    ? `<button type="button" class="note-toggle" aria-expanded="${open ? "true" : "false"}" aria-label="Détail">${noteSvg(14)}</button>`
+    : `<span class="note-toggle" aria-hidden="true">${noteSvg(13)}</span>`;
+}
+function noteFoldHtml(note, cls){
+  return `<span class="note-fold"><span class="${cls}">${escapeAttr(note)}</span></span>`;
+}
+// Mise en place commune sur l'élément qui porte la tâche (ligne de liste ou
+// ligne de la case urgente).
+function markNoteHolder(el, key){
+  el.dataset.noteKey = key;
+  if(isNoteOpen(key)) el.classList.add("note-open");
 }
 
 function buildItemLi(cat, idx, base, key, opts){
@@ -4676,7 +4808,7 @@ function buildItemLi(cat, idx, base, key, opts){
   const whoTag = eff.who ? `<span class="who-tag">${escapeAttr(eff.who)}</span>` : "";
   const dragHandleHtml = `<span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>`;
   const waitingBtnTitle = eff.waiting ? `Faire revenir dans ${escapeAttr(cat.title)}` : "Classé, suivi en cours";
-  const waitingBtnIcon = eff.waiting ? "&#8617;" : "&#8618;";
+  const waitingBtnIcon = hookArrowSvg(15, eff.waiting);
   const isRdv = isRdvTitle(eff.t);
   // une fois cochée, la tâche est faite : plus de sens à afficher un badge d'échéance (encore moins "en retard")
   const dueBadgeHtml = checked ? ""
@@ -4687,7 +4819,7 @@ function buildItemLi(cat, idx, base, key, opts){
   li.innerHTML = `
     ${dragHandleHtml}
     ${isEgg ? `<span class="egg-dot" title="En couvaison">${eggSvg(20)}</span>` : `<input type="checkbox" ${checked ? "checked" : ""} aria-label="${escapeAttr(eff.t)}">`}
-    <span class="item-text">${whoTag}${personTag}<span class="item-title">${escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? `<span class="note">${escapeAttr(eff.note)}</span>` : ""}</span>
+    <span class="item-text">${whoTag}${personTag}<span class="item-title">${escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteToggleHtml(true, isNoteOpen(key)) + noteFoldHtml(eff.note, "note") : ""}</span>
     <span class="item-controls">
       <button type="button" class="waiting-btn${eff.waiting ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${waitingBtnTitle}" data-tip="${waitingBtnTitle}">${waitingBtnIcon}</button>
       ${isEgg ? `<button type="button" class="hatch-btn" aria-label="Faire éclore" data-tip="Faire éclore"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="chick" cx="12" cy="8.2" r="3.6"/><path class="beak" d="M15.5 8.1l2 .7-2 .7"/><circle cx="13.1" cy="7.3" r=".55" fill="currentColor" stroke="none"/><path class="shell" d="M5.2 13.6c0 4.3 3 7.6 6.8 7.6s6.8-3.3 6.8-7.6l-2.3 1.5-2.2-1.7-2.3 1.7-2.3-1.7-2.2 1.7z"/></svg></button>` : `<button type="button" class="urgent-btn${eff.urgent ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}" data-tip="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}">${triangleSvg(15)}</button>`}
@@ -4698,7 +4830,17 @@ function buildItemLi(cat, idx, base, key, opts){
   `;
   const checkbox = li.querySelector("input");
   if(checkbox) checkbox.addEventListener("change", ()=> setDone(key, checkbox.checked));
+  if(eff.note){
+    // 8.31 : un clic sur la ligne (hors case, poignée et boutons de droite)
+    // déplie / replie le détail. Le 2e clic d'un double-clic est ignoré.
+    markNoteHolder(li, key);
+    li.addEventListener("click", (e)=>{
+      if(e.detail > 1 || e.target.closest("input, .drag-handle, .item-controls")) return;
+      toggleNoteOpen(key);
+    });
+  }
   li.querySelector(".item-text").addEventListener("dblclick", ()=>{
+    if(eff.note) toggleNoteOpen(key); // rend l'état d'avant le 1er clic du double-clic
     editingKey = key;
     renderAll();
   });
@@ -5246,7 +5388,7 @@ function renderTrash(){
       li.innerHTML = `
         <span class="trash-tick" aria-hidden="true">${isDoneEntry(entry) ? "&#10003;" : "&ndash;"}</span>
         <span class="item-text">${who}${escapeAttr(entry.t || "")}${entry.note ? `<span class="note">${escapeAttr(entry.note)}</span>` : ""}</span><span class="trash-date">${entry.doneOn ? shortDateFR(entry.doneOn) : ""}</span>
-        <span class="item-controls"><button type="button" class="waiting-btn" aria-label="Remettre dans la liste" data-tip="Remettre dans la liste">&#8617;</button><button type="button" class="delete-btn" aria-label="Supprimer de la corbeille" data-tip="Supprimer de la corbeille">&times;</button></span>
+        <span class="item-controls"><button type="button" class="waiting-btn" aria-label="Remettre dans la liste" data-tip="Remettre dans la liste">${hookArrowSvg(15, true)}</button><button type="button" class="delete-btn" aria-label="Supprimer de la corbeille" data-tip="Supprimer de la corbeille">&times;</button></span>
       `;
       li.querySelector(".waiting-btn").addEventListener("click", (e)=>{
         e.stopPropagation();
@@ -5284,6 +5426,7 @@ function setDone(key, checked){
   markChecked(key, checked);
   currentProgressMsg = null;
   if(checked){
+    haptic.tap();
     justCheckedKey = key;
     const newPct = pctFromState();
     const crossed = MILESTONES.find(m => prevPct < m.p && newPct >= m.p);
