@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 8.32 -->
+<!-- Sous le tapis — version AUTONOME 8.33 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -421,6 +421,14 @@
     et rouleaux restent sans tic sur iPhone (pas de toucher à ce moment).
     Sur Android, les rouleaux du trèfle « cliquettent » à chaque tâche qui
     défile, comme une roue de sélection.
+  - 8.33 : flèche « en cours » qui descend puis tourne à gauche (retour :
+    elle monte puis tourne à gauche). Plus d'air entre le gros chiffre et
+    « accomplies ». Vibrations : plus de tic à l'ouverture de la case trèfle ;
+    tic au ⟳ et à la fermeture par le trèfle ; tâche cochée plus marquée sur
+    Android (haptic.strong). Case urgente : un clic sur une tâche qui a un
+    détail le déplie (sans détail : on va toujours à la liste).
+    Formulaires (nouvelle tâche, modification, nouvelle liste) : œuf et
+    triangle à gauche, Annuler puis le bouton qui valide tout à droite.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -612,7 +620,7 @@ header{
 .count-line{
   display:flex;
   align-items:baseline;
-  gap:0.5em;
+  gap:0.85em;
 }
 .progress-count b{
   font-size:4.2em;
@@ -888,10 +896,10 @@ header{
   letter-spacing:0.07em;
   text-transform:uppercase;
   color:color-mix(in srgb, var(--lucky-gold) 55%, var(--ink));
+  margin-right:auto; /* pousse ⟳ à droite, même enveloppé (8.33) */
 }
 .lucky-reroll{
   appearance:none;
-  margin-left:auto;
   border:none;
   background:transparent;
   color:color-mix(in srgb, var(--lucky-gold) 55%, var(--ink));
@@ -1597,7 +1605,7 @@ ul.items{
   border-color:var(--ink-faint);
   color:var(--ink);
 }
-/* œuf et triangle, en bas à droite (toujours dans cet ordre) */
+/* œuf et triangle à gauche ; Annuler puis le bouton qui valide, à droite (8.33) */
 .edit-actions .edit-egg,
 .edit-actions .edit-urgent{
   display:flex;
@@ -1609,7 +1617,10 @@ ul.items{
   color:var(--ink-faint);
   transition:color .12s ease, background .12s ease;
 }
-.edit-actions .edit-egg{ margin-left:auto; }
+.edit-actions .edit-cancel,
+.edit-actions .add-cancel{ margin-left:auto; }
+.edit-actions .edit-egg::after,
+.edit-actions .edit-urgent::after{ right:auto; left:0; } /* infobulle vers la droite */
 .edit-actions .edit-egg .speck{ opacity:0.7; transition:opacity .12s ease; }
 .edit-actions .edit-egg:hover,
 .edit-actions .edit-urgent:hover{ background:var(--surface-2); color:var(--ink-soft); }
@@ -2205,7 +2216,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v8.32</span>
+    <span class="version-tag">v8.33</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -3395,9 +3406,9 @@ function renderAddCategoryRow(){
           </label>
         </div>
         <div class="edit-actions">
-          <button type="button" class="add-save nl-save">Créer</button>
-          <button type="button" class="add-cancel nl-cancel">Annuler</button>
           ${formToggles(false, false)}
+          <button type="button" class="add-cancel nl-cancel">Annuler</button>
+          <button type="button" class="add-save nl-save">Créer</button>
         </div>
       </div>
     </div>
@@ -3817,7 +3828,7 @@ let dragState = null; // { el, value, dragMode, cat }
 // Deux mécanismes, selon le téléphone :
 // - Android : navigator.vibrate. haptic.tick() (léger : emplacement qui
 //   s'aimante, ligne soulevée, tâche qui défile dans un rouleau) et
-//   haptic.tap() (net : tâche cochée, ligne posée), appelables n'importe
+//   haptic.tap() (net) et haptic.strong() (tâche cochée), appelables n'importe
 //   quand. Les tics trop rapprochés (< 30 ms) sont fondus en un seul.
 // - iPhone : pas de navigator.vibrate. Le seul tic possible est celui de
 //   l'interrupteur système (<input type="checkbox" switch>, Safari 17.4+),
@@ -3875,7 +3886,8 @@ const haptic = (()=>{
       el.append(label);
     }
   };
-  return { tick: ()=> buzz(8), tap: ()=> buzz(15), attach };
+  // tick : léger ; tap : net (ligne posée, ⟳, fermeture) ; strong : tâche cochée
+  return { tick: ()=> buzz(8), tap: ()=> buzz(18), strong: ()=> buzz(35), attach };
 })();
 
 function flipMoveMulti(parents, moveFn){
@@ -4218,9 +4230,9 @@ function renderUrgentBanner(){
       </span>
     `;
     if(entry.note) markNoteHolder(li, entry.key);
-    li.querySelector(".urgent-jump").addEventListener("click", (e)=>{
-      // le sigle déplie le détail ; le reste de la ligne mène à la liste
-      if(e.target.closest(".note-toggle")){ toggleNoteOpen(entry.key); return; }
+    li.querySelector(".urgent-jump").addEventListener("click", ()=>{
+      // 8.33 : une tâche qui a un détail le déplie ; sinon, on va à sa liste
+      if(entry.note){ toggleNoteOpen(entry.key); return; }
       const cardEl = document.getElementById("cat-" + entry.catId);
       if(cardEl) cardEl.scrollIntoView({behavior:"smooth", block:"center"});
     });
@@ -4298,6 +4310,7 @@ function drawLuckyKeys(reroll, exclude){
   return pick.slice(0, 2).map(p => p.key);
 }
 function rerollLucky(){
+  haptic.tap();
   const saved = loadJSONKey(LUCKY_KEY, null);
   const today = todayISO();
   const prev = (saved && saved.date === today && Array.isArray(saved.keys)) ? saved.keys : [];
@@ -4381,6 +4394,7 @@ function openLucky(){
 // tâches s'effacent (sans tourner : le défilement sert à piquer la curiosité,
 // pas à la refermer) et la case se replie. Le tirage et le choix sont gardés.
 function closeLucky(){
+  haptic.tap();
   const el = document.getElementById("luckyLine");
   const finish = ()=>{
     try{ localStorage.removeItem(LUCKY_OPEN_KEY); }catch(e){}
@@ -4583,7 +4597,6 @@ function renderLuckyLine(){
     el.classList.remove("can-reset");
     el.onclick = ()=> openLucky();
     el.onkeydown = (e)=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openLucky(); } };
-    haptic.attach(el);
     return;
   }
   el.onkeydown = null;
@@ -4624,8 +4637,10 @@ function renderLuckyLine(){
   el.classList.toggle("can-reset", !done && !!winner);
   const reroll = el.querySelector(".lucky-reroll");
   if(reroll) reroll.addEventListener("click", (e)=>{ e.stopPropagation(); rerollLucky(); });
+  haptic.attach(reroll);
   const cloverBtn = el.querySelector(".lucky-clover-btn");
   if(cloverBtn) cloverBtn.addEventListener("click", (e)=>{ e.stopPropagation(); closeLucky(); });
+  haptic.attach(cloverBtn);
   const check = el.querySelector(".lucky-check");
   if(check){
     check.addEventListener("change", (e)=>{
@@ -4642,8 +4657,9 @@ const eggSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}
 const triangleSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="tri" d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5"/><path d="M12 17.4v.2"/></svg>`;
 // 8.31 : flèche dessinée plutôt que les caractères ↪ / ↩, que l'iPhone
 // remplace par son émoji (blanc sur carré gris). 8.32 : elle descend vers
-// « En cours » (plus bas dans la page) ; back = retour, elle remonte.
-const hookArrowSvg = (size, back) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${back ? ' style="transform:scaleY(-1)"' : ""}><path d="M3.5 5h8a5 5 0 0 1 5 5v9.5"/><path d="M12.5 15.5l4 4 4-4"/></svg>`;
+// « En cours » (plus bas dans la page) ; 8.33 : elle descend puis tourne à
+// gauche ; back = retour, elle monte puis tourne à gauche.
+const hookArrowSvg = (size, back) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${back ? ' style="transform:scaleY(-1)"' : ""}><path d="M18 3.5v8a5.5 5.5 0 0 1-5.5 5.5H5"/><path d="M9 13l-4 4 4 4"/></svg>`;
 const noteSvg = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg>`;
 const EGG_TIP = { on:"En couvaison — cliquer pour retirer", off:"Mettre en couvaison" };
 const URGENT_TIP = { on:"Urgent — cliquer pour retirer", off:"Marquer comme urgent" };
@@ -4757,9 +4773,9 @@ function buildItemLi(cat, idx, base, key, opts){
           <button type="button" class="edit-clear-due" aria-label="Effacer la date et l'heure" title="Effacer la date et l'heure">&times;</button>
         </div>
         <div class="edit-actions">
-          <button type="button" class="edit-save">Enregistrer</button>
-          <button type="button" class="edit-cancel">Annuler</button>
           ${formToggles(eff.egg, eff.urgent)}
+          <button type="button" class="edit-cancel">Annuler</button>
+          <button type="button" class="edit-save">Enregistrer</button>
         </div>
       </div>
     `;
@@ -5186,9 +5202,9 @@ function render(){
             </label>
           </div>
           <div class="edit-actions">
-            <button type="button" class="add-save">Ajouter</button>
-            <button type="button" class="add-cancel">Annuler</button>
             ${formToggles(false, false)}
+            <button type="button" class="add-cancel">Annuler</button>
+            <button type="button" class="add-save">Ajouter</button>
           </div>
         </div>
       `;
@@ -5510,7 +5526,7 @@ function setDone(key, checked){
   markChecked(key, checked);
   currentProgressMsg = null;
   if(checked){
-    haptic.tap();
+    haptic.strong();
     justCheckedKey = key;
     const newPct = pctFromState();
     const crossed = MILESTONES.find(m => prevPct < m.p && newPct >= m.p);
