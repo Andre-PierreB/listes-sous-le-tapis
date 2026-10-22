@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 9.4 -->
+<!-- Sous le tapis — version AUTONOME 10.0 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -27,12 +27,15 @@
   - EN LIGNE (depuis la 8.17) : l'appli est publiée sur GitHub Pages
     (dépôt Andre-PierreB/listes-sous-le-tapis), où ce fichier s'appelle
     index.html, à côté de l'icône icon-faisan-v2-180.png. Les données restent
-    dans le navigateur de chacun (localStorage) : chaque personne a sa liste.
+    dans le navigateur de chacun (localStorage) : chaque personne a sa liste
+    (jusqu'à la synchro en ligne, prévue après la 10.0 — voir FICHES).
 
   RÈGLES DE LA MAISON
-  - Ne jamais abîmer l'appli ni perdre d'anciennes tâches : toutes les
-    données vivent dans localStorage (clés « fauconnerie-v2-… »), on ne
-    renomme ni ne supprime une clé existante. Le préfixe « fauconnerie » est
+  - Ne jamais abîmer l'appli ni perdre d'anciennes tâches. Depuis la 10.0,
+    les données vivent dans des FICHES (clés « sltapis:… », voir plus bas) ;
+    les anciennes clés « fauconnerie-v2-… » sont gelées telles qu'au passage
+    en 10.0 (copie de secours) : on ne les modifie ni ne les supprime jamais,
+    et on ne renomme ni ne supprime une fiche existante. Le préfixe « fauconnerie » est
     un vestige interne invisible : l'appli s'appelle « Sous le tapis »
     partout ailleurs (depuis la 8.19) ; ne pas réintroduire ce nom à l'écran.
   - Fichier autonome : un seul .html, rien d'autre que les polices Google
@@ -64,7 +67,40 @@
   - Annuler (⌘Z / Ctrl+Z) : après chaque renderAll(), noteUndoPoint() compare
     les clés du stockage (UNDO_KEYS) à leur état précédent. Toute nouvelle
     clé de données doit donc entrer dans BACKUP_KEYS pour être annulable et
-    sauvegardée.
+    sauvegardée — ET avoir sa place dans les fiches (Store : K, PROJECT,
+    WRITE), sinon elle ne serait lue / écrite nulle part.
+
+  FICHES (depuis la 10.0) — préparation de la synchro et du partage
+  - sltapis:list:<id> : une fiche par liste (id = l'ancien identifiant de la
+    liste) : title, color, reversed (sens), rank (place de création), order
+    (ordre des tâches, par identifiant), members (["moi"] pour l'instant),
+    deleted, et items : chaque tâche { id stable, base (champs à la
+    création), edits (modifications), done (coche), checkedAt (date) }.
+    « ghosts » : places de tâches disparues (⌘Z d'un ajout…), gardées pour
+    qu'une tâche qui revient à cette place retrouve sa coche, comme avant.
+  - sltapis:user:moi : listOrder (ordre de mes listes), urgentOrder /
+    urgentDue / waitingOrder, trash (corbeille ; « item » = la tâche
+    d'origine, catId = la liste), waitLog (journal « en cours »), lastPurge.
+    Une référence de tâche s'écrit [idListe, idTâche].
+  - sltapis:local : réglages de cet appareil (trèfle du jour, détails
+    dépliés, graphique, rappel de sauvegarde) ; ne partira jamais en ligne.
+  - sltapis:residue : tenue de compte interne de cet appareil (clés
+    présentes, restes sans liste, garde-fou « anomalies ») ; sltapis:meta
+    (format 10, date de migration) ; sltapis:rev (change à chaque écriture).
+  - Le code de l'appli lit / écrit encore les anciennes clés : Store les
+    calcule à la volée depuis les fiches et répartit chaque écriture dans
+    les fiches (même sens qu'avant, repérage par position compris). Étapes
+    suivantes : brancher Firebase dans Store (fiches list + user), puis
+    faire lire les fiches directement au code, morceau par morceau.
+  - Migration au 1er chargement, en mémoire, vérifiée clé par clé avant
+    d'écrire quoi que ce soit ; en cas d'écart : aucune fiche écrite, l'appli
+    tourne sur les anciennes clés comme en 9.4 (Store.mode === "legacy").
+  - Sauvegarde : format 10 (fiches + « snapshot », la photo autonome que les
+    versions d'avant savent relire). Restauration : format 10, et toujours
+    les anciennes sauvegardes (photo, ou clés brutes).
+  - Tests (hors fichier) : comparaison Playwright 9.4 / 10.0 sur les mêmes
+    gestes, et fuzz du Store (écritures, effacements, ⌘Z, deux onglets,
+    rechargement, export / import).
 
   HISTORIQUE RÉCENT
   - 5.2 : case trèfle « Une petite sur le pouce ? » sous les urgences —
@@ -514,6 +550,20 @@
     du titre et les pastilles de couleur restent actifs.
   - 9.4 : Échap referme le renommage d'une liste même quand le curseur n'est
     pas dans le champ du titre (il ne l'était pas après le double-clic).
+  - 10.0 : nouveau rangement des données en fiches (voir FICHES), sans aucun
+    changement visible : une fiche par liste avec des tâches à identifiant
+    stable, une fiche « moi » (corbeille, journal en cours, ordres). Migration
+    automatique et vérifiée ; les anciennes clés restent intactes, en
+    secours. La corbeille note désormais la tâche d'origine. Sauvegarder
+    exporte le nouveau format ; les anciennes sauvegardes restent lisibles.
+    Prochaines étapes déjà décidées : Firebase (plan Spark, Firestore
+    europe-west1, mode production, connexion Google) ; plume
+    plume-connexion.svg à droite du titre (~44 px, pointe au-dessus ; bleu
+    --accent connecté, #B08478 déconnecté) ; bouton « Partage » en bas
+    (panneau comme la corbeille, Échap le ferme) avec carnet d'invités par
+    lien (copier / WhatsApp), noms à cocher dans l'édition d'une liste ;
+    plus tard, phrases d'encouragement par utilisateur (celles du faisan
+    restent la base, dans le code).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2364,7 +2414,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v9.4</span>
+    <span class="version-tag">v10.0</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -2375,17 +2425,708 @@ body.arrive footer{ animation-delay:.52s; }
 <script>
 // ---- 9.2 : porte unique vers le stockage ----
 // Toutes les lectures / écritures des données passent par Store (et plus
-// jamais directement par localStorage). Aujourd'hui, Store ne fait que
-// relayer localStorage, à l'identique : mêmes clés, mêmes valeurs, mêmes
-// erreurs (chaque appel garde son propre try/catch là où il est). Demain, la
-// synchro en ligne (Firebase) se branchera ici, à un seul endroit :
-// Store.set / Store.remove pour envoyer, applyExternalChange() (plus bas)
-// pour recevoir ce qui vient d'un autre appareil.
-const Store = {
-  get(k){ return localStorage.getItem(k); },
-  set(k, v){ localStorage.setItem(k, v); },
-  remove(k){ localStorage.removeItem(k); },
-};
+// jamais directement par localStorage). Ce qui arrive d'ailleurs (autre
+// onglet, et demain autre appareil) passe par applyExternalChange() (plus bas).
+// ---- 10.0 : nouveau rangement des données (préparation synchro / partage) ----
+// Les données ne vivent plus dans ~19 clés communes « fauconnerie-v2-… » où une
+// tâche est repérée par sa position (« idListe:index »), mais dans des FICHES :
+//   sltapis:list:<id>  une fiche par liste : titre, couleur, sens, ordre,
+//                      membres, et ses tâches, chacune avec un identifiant
+//                      stable (id) — sa coche, sa date de coche et ses
+//                      modifications voyagent avec elle ;
+//   sltapis:user:moi   la fiche « moi » : ordre de mes listes, ordre des cases
+//                      urgente / en cours, corbeille, journal « en cours »,
+//                      date de la dernière purge ;
+//   sltapis:local      réglages de CET appareil (trèfle du jour, détails
+//                      dépliés, switch du graphique, rappel de sauvegarde) ;
+//   sltapis:residue    tenue de compte interne, propre à cet appareil (voir
+//                      plus bas) ; sltapis:meta (version), sltapis:rev (jeton
+//                      qui change à chaque écriture, pour les autres onglets).
+// Demain (synchro), seules les fiches « list » et « user » partiront en ligne.
+//
+// Le reste du code n'a PAS changé : il continue de lire / écrire les anciennes
+// clés via Store.get / Store.set / Store.remove. Store traduit au vol : une
+// ancienne clé n'est plus qu'une « vue » calculée à partir des fiches (et une
+// écriture est répartie dans les fiches concernées). Chaque ancienne clé garde
+// exactement son sens d'avant, y compris le repérage par position : c'est ce
+// qui garantit que l'écran ne change pas. Les vraies anciennes clés, elles,
+// ne sont plus jamais ni modifiées ni supprimées : elles restent telles
+// qu'elles étaient au passage en 10.0, comme copie de secours.
+//
+// Migration : au premier chargement, les anciennes clés sont lues et rangées
+// dans les fiches, en mémoire, puis on vérifie que chaque ancienne clé se
+// recalcule à l'identique. Seulement alors les fiches sont écrites (et
+// sltapis:meta en dernier). Si la vérification échoue, rien n'est écrit et
+// l'appli tourne comme en 9.4, directement sur les anciennes clés (Store.mode
+// = "legacy") — rien n'est perdu.
+const Store = (()=>{
+  const LS = localStorage;
+  const P = "fauconnerie-v2-";
+  // anciennes clés gérées par les fiches (nom court → clé complète)
+  const K = {
+    customcats: P+"customcats", cattitles: P+"cattitles", deletedcats: P+"deletedcats",
+    catreverse: P+"catreverse", custom: P+"custom", todo: P+"todo",
+    overrides: P+"overrides", checkedat: P+"checkedat", order: P+"order",
+    trash: P+"trash", waitlog: P+"waitlog", lastpurge: P+"lastpurge",
+    purgefix: P+"purge-waiting-fix", lucky: P+"lucky", luckyopen: P+"luckyopen",
+    notesopen: P+"notesopen", trashchart: P+"trashchart",
+    lastbackup: P+"lastbackup", backupwatch: P+"backupwatch",
+  };
+  const ASPECTS = Object.keys(K); // aussi l'ordre de la migration
+  const BY_KEY = {}; ASPECTS.forEach(a => BY_KEY[K[a]] = a);
+  // valeurs simples (texte), pas du JSON — et où elles sont rangées
+  const PLAIN = { lastpurge:"user", purgefix:"local", luckyopen:"local",
+                  trashchart:"local", lastbackup:"local", backupwatch:"local" };
+  const PLAIN_FIELD = { lastpurge:"lastPurge", purgefix:"purgeWaitingFix", luckyopen:"luckyOpen",
+                        trashchart:"trashChart", lastbackup:"lastBackup", backupwatch:"backupWatch" };
+  // ce qui part dans une sauvegarde (= les anciennes BACKUP_KEYS)
+  const BACKUP_ASPECTS = ["todo","order","overrides","custom","customcats","deletedcats",
+    "cattitles","checkedat","trash","lastpurge","catreverse","waitlog"];
+  // champ d'une tâche qui porte chaque clé « par tâche »
+  const SLOT_FIELD = { todo:"done", overrides:"edits", checkedat:"checkedAt" };
+
+  const NS = "sltapis:";
+  const META = NS+"meta", REV = NS+"rev", USER = NS+"user:moi", LOCAL = NS+"local",
+        RESIDUE = NS+"residue", LISTP = NS+"list:";
+
+  const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+  const isObj = v => !!v && typeof v === "object" && !Array.isArray(v);
+  const isRef = x => Array.isArray(x) && x.length === 2 && typeof x[0] === "string" && typeof x[1] === "string";
+  // forme canonique (clés triées) : deux valeurs « pareilles » à l'ordre des clés près
+  function canon(v){
+    if(Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
+    if(isObj(v)) return "{" + Object.keys(v).sort().filter(k => v[k] !== undefined)
+      .map(k => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}";
+    return v === undefined ? "null" : JSON.stringify(v);
+  }
+  // (crypto plutôt que Math.random : les tirages de l'appli — phrases, trèfle —
+  // gardent exactement la même suite qu'avant)
+  function rand36(n){
+    const a = new Uint8Array(n);
+    crypto.getRandomValues(a);
+    return Array.from(a, b => (b % 36).toString(36)).join("");
+  }
+  function newId(){
+    return "t" + Date.now().toString(36).slice(-5) + rand36(6);
+  }
+
+  let mode = "doc";
+  let lists = new Map();        // id → fiche de liste
+  let user = {}, local = {}, residue = {};
+  let docStr = new Map();       // clé de stockage → dernier texte lu / écrit
+  let knownRev = null;
+  let ver = 0;                  // change à chaque modification du modèle en mémoire
+  const memo = {};              // aspect → { ver, str }
+  const lastGood = {};          // aspect → dernier texte calculé sans erreur
+  let extBase = {};             // aspect → texte déjà signalé à l'appli (autres onglets)
+  let noAnomaly = false;        // tests : ignorer le garde-fou (vérifier les vues seules)
+
+  function freshResidue(){
+    return { present:{}, anomalies:{}, orphans:{ todo:{}, overrides:{}, checkedat:{}, cattitles:{},
+             catreverse:{}, deletedcats:[], order:{} } };
+  }
+  function fixResidue(){
+    if(!isObj(residue)) residue = {};
+    const f = freshResidue();
+    if(!isObj(residue.present)) residue.present = {};
+    if(!isObj(residue.anomalies)) residue.anomalies = {};
+    if(!isObj(residue.orphans)) residue.orphans = f.orphans;
+    Object.keys(f.orphans).forEach(k=>{
+      const ok = k === "deletedcats" ? Array.isArray(residue.orphans[k]) : isObj(residue.orphans[k]);
+      if(!ok) residue.orphans[k] = f.orphans[k];
+    });
+  }
+  function newList(id){
+    return { v:1, id, members:["moi"], rank:null, items:[] };
+  }
+
+  // ---------- lecture / écriture des fiches ----------
+  function parseOr(raw, fb){ try{ const v = JSON.parse(raw); return v == null ? fb : v; }catch(e){ return fb; } }
+  function loadDocs(){
+    const nl = new Map(), ns = new Map();
+    let u = {}, l = {}, r = {};
+    for(let i = 0; i < LS.length; i++){
+      const k = LS.key(i);
+      if(!k || k.indexOf(NS) !== 0) continue;
+      const raw = LS.getItem(k);
+      if(k.indexOf(LISTP) === 0){
+        const id = k.slice(LISTP.length);
+        const prev = docStr.get(k) === raw ? lists.get(id) : null;
+        const d = prev || parseOr(raw, null);
+        if(isObj(d)){
+          if(!Array.isArray(d.items)) d.items = [];
+          d.id = id; nl.set(id, d); ns.set(k, raw);
+        }
+      }else if(k === USER){ u = docStr.get(k) === raw ? user : parseOr(raw, {}); ns.set(k, raw); }
+      else if(k === LOCAL){ l = docStr.get(k) === raw ? local : parseOr(raw, {}); ns.set(k, raw); }
+      else if(k === RESIDUE){ r = docStr.get(k) === raw ? residue : parseOr(raw, {}); ns.set(k, raw); }
+    }
+    lists = nl; user = isObj(u) ? u : {}; local = isObj(l) ? l : {}; residue = r;
+    fixResidue();
+    docStr = ns;
+    knownRev = LS.getItem(REV);
+    ver++;
+  }
+  function syncRev(){
+    if(mode !== "doc") return;
+    if(LS.getItem(REV) !== knownRev) loadDocs();
+  }
+  function allDocs(){
+    const out = new Map();
+    lists.forEach((d, id) => out.set(LISTP + id, JSON.stringify(d)));
+    out.set(USER, JSON.stringify(user));
+    out.set(LOCAL, JSON.stringify(local));
+    out.set(RESIDUE, JSON.stringify(residue));
+    return out;
+  }
+  // Écrit seulement les fiches qui ont changé. En cas d'échec (stockage
+  // plein…), on remet ce qui avait déjà été écrit et on relit tout : comme
+  // avant, l'écriture échoue en entier, sans état à moitié écrit.
+  function commit(){
+    const next = allDocs();
+    const done = [];
+    try{
+      next.forEach((str, k)=>{
+        if(docStr.get(k) === str) return;
+        done.push([k, docStr.has(k) ? docStr.get(k) : null]);
+        LS.setItem(k, str);
+      });
+      docStr.forEach((str, k)=>{
+        if(next.has(k)) return;
+        done.push([k, str]);
+        LS.removeItem(k);
+      });
+    }catch(err){
+      done.reverse().forEach(([k, old])=>{ try{ if(old === null) LS.removeItem(k); else LS.setItem(k, old); }catch(e){} });
+      loadDocs();
+      throw err;
+    }
+    next.forEach((str, k) => docStr.set(k, str));
+    Array.from(docStr.keys()).forEach(k => { if(!next.has(k)) docStr.delete(k); });
+    if(done.length){
+      knownRev = Date.now().toString(36) + rand36(5);
+      try{ LS.setItem(REV, knownRev); }catch(e){}
+    }
+  }
+
+  // ---------- repérage des tâches ----------
+  const slotsOf = L => L.ghosts ? L.items.concat(L.ghosts) : L.items;
+  function sortedLists(){
+    return Array.from(lists.values()).sort((a, b)=>{
+      const ra = a.rank == null ? Infinity : a.rank, rb = b.rank == null ? Infinity : b.rank;
+      if(ra !== rb) return ra - rb;
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    });
+  }
+  const rankedLists = () => sortedLists().filter(L => L.rank != null);
+  // « idListe:index » → { L, s, idx } si la tâche existe (ou a existé à cette place)
+  function resolveKey(k){
+    if(typeof k !== "string") return null;
+    const i = k.lastIndexOf(":");
+    if(i < 0) return null;
+    const n = k.slice(i + 1);
+    if(!/^(0|[1-9]\d*)$/.test(n)) return null;
+    const L = lists.get(k.slice(0, i));
+    if(!L) return null;
+    const s = slotsOf(L)[+n];
+    return s ? { L, s, idx:+n } : null;
+  }
+  // une référence de tâche est rangée [idListe, idTâche] ; à défaut (tâche
+  // inconnue à ce moment), l'ancienne clé telle quelle
+  function toRef(k){ const r = resolveKey(k); return r ? [r.L.id, r.s.id] : k; }
+  function fromRef(x){
+    if(!isRef(x)) return x;
+    const L = lists.get(x[0]);
+    const idx = L ? slotsOf(L).findIndex(s => s.id === x[1]) : -1;
+    return x[0] + ":" + (idx > -1 ? idx : x[1]);
+  }
+  function renameField(o, from, to, conv){
+    if(!isObj(o) || !own(o, from)) return o;
+    const out = {};
+    Object.keys(o).forEach(k => { if(k === from) out[to] = conv(o[k]); else out[k] = o[k]; });
+    return out;
+  }
+  function ensureList(id){
+    let L = lists.get(id);
+    if(!L){ L = newList(id); lists.set(id, L); }
+    return L;
+  }
+
+  // ---------- vues : chaque ancienne clé recalculée depuis les fiches ----------
+  const PROJECT = {
+    customcats(){
+      return rankedLists().map(L=>{
+        const o = { id:L.id, title: L.renamed ? L.titleOriginal : L.title, color:L.color };
+        if(isObj(L.catExtra)) Object.keys(L.catExtra).forEach(k => { if(!own(o, k)) o[k] = L.catExtra[k]; });
+        return o;
+      });
+    },
+    cattitles(){
+      const o = {};
+      sortedLists().forEach(L => { if(L.renamed) o[L.id] = L.title; });
+      return Object.assign(o, residue.orphans.cattitles);
+    },
+    deletedcats(){
+      const e = [];
+      sortedLists().forEach(L => { if(L.deleted != null) e.push({ id:L.id, seq:L.deleted }); });
+      residue.orphans.deletedcats.forEach(x => e.push(x));
+      return e.sort((a, b) => a.seq - b.seq).map(x => x.id);
+    },
+    catreverse(){
+      const o = {};
+      sortedLists().forEach(L => { if(own(L, "reversed")) o[L.id] = L.reversed; });
+      return Object.assign(o, residue.orphans.catreverse);
+    },
+    custom(){
+      const o = {};
+      sortedLists().forEach(L => { if(L.hasItems) o[L.id] = L.items.map(s => s.base); });
+      return o;
+    },
+    order(){
+      const o = {};
+      sortedLists().forEach(L=>{
+        if(!Array.isArray(L.order)) return;
+        const slots = slotsOf(L);
+        o[L.id] = L.order.map(x=>{
+          if(typeof x !== "string") return x;
+          const i = slots.findIndex(s => s.id === x);
+          return i > -1 ? i : x;
+        });
+      });
+      if(Array.isArray(user.listOrder)){
+        const ranked = rankedLists();
+        o.__categories__ = user.listOrder.map(x=>{
+          if(typeof x !== "string") return x;
+          const i = ranked.findIndex(L => L.id === x);
+          return i > -1 ? i : x;
+        });
+      }
+      if(Array.isArray(user.urgentOrder)) o.__urgent__ = user.urgentOrder.map(fromRef);
+      if(Array.isArray(user.urgentDue)) o.__urgentDue__ = user.urgentDue.map(fromRef);
+      if(Array.isArray(user.waitingOrder)) o.__waiting__ = user.waitingOrder.map(fromRef);
+      return Object.assign(o, residue.orphans.order);
+    },
+    trash(){ return Array.isArray(user.trash) ? user.trash.map(e => renameField(e, "item", "key", fromRef)) : user.trash; },
+    waitlog(){ return Array.isArray(user.waitLog) ? user.waitLog.map(e => renameField(e, "item", "key", fromRef)) : user.waitLog; },
+    lucky(){
+      const v = local.lucky;
+      if(!isObj(v)) return v;
+      const o = Object.assign({}, v);
+      if(Array.isArray(o.keys)) o.keys = o.keys.map(fromRef);
+      if(isRef(o.chosen)) o.chosen = fromRef(o.chosen);
+      return o;
+    },
+    notesopen(){
+      const o = {};
+      (Array.isArray(local.notesOpen) ? local.notesOpen : []).forEach(([r, v]) => { o[fromRef(r)] = v; });
+      return o;
+    },
+  };
+  ["todo","overrides","checkedat"].forEach(a=>{
+    const f = SLOT_FIELD[a];
+    PROJECT[a] = ()=>{
+      const o = {};
+      sortedLists().forEach(L => slotsOf(L).forEach((s, i) => { if(own(s, f)) o[L.id + ":" + i] = s[f]; }));
+      return Object.assign(o, residue.orphans[a]);
+    };
+  });
+
+  function projectStr(a){
+    if(memo[a] && memo[a].ver === ver) return memo[a].str;
+    let str;
+    if(!residue.present[a]) str = null;
+    else if(PLAIN[a]){
+      const doc = PLAIN[a] === "user" ? user : local;
+      const v = doc[PLAIN_FIELD[a]];
+      str = v === undefined ? null : String(v);
+    }else{
+      const v = PROJECT[a]();
+      str = v === undefined ? null : JSON.stringify(v);
+    }
+    memo[a] = { ver, str };
+    return str;
+  }
+  // empreinte d'une vue, insensible à l'ordre des clés
+  const shadowMemo = {};
+  function shadowOf(a, str){
+    if(shadowMemo[a] && shadowMemo[a].ver === ver && shadowMemo[a].str === str) return shadowMemo[a].sh;
+    let sh;
+    try{ sh = str === null ? null : canon(JSON.parse(str)); }catch(e){ sh = str; }
+    shadowMemo[a] = { ver, str, sh };
+    return sh;
+  }
+  function viewStr(a){
+    const str = projectStr(a);
+    const an = residue.anomalies[a];
+    if(an && !noAnomaly && an.shadow === shadowOf(a, str)) return an.raw;
+    return str;
+  }
+
+  // ---------- écritures : une ancienne clé est répartie dans les fiches ----------
+  // Chaque écriture REMPLACE entièrement ce que représente l'ancienne clé
+  // (comme un setItem le faisait), sans toucher à ce que portent les autres.
+  const WRITE = {
+    customcats(v){
+      // __categories__ repère les listes par position dans customcats : on
+      // garde ces positions telles quelles, comme avant (fixup ci-dessous).
+      const fix = Array.isArray(user.listOrder) ? PROJECT.order().__categories__ : null;
+      lists.forEach(L => { L.rank = null; });
+      if(Array.isArray(v)){
+        const seen = new Set();
+        v.forEach((c, p)=>{
+          if(!isObj(c) || typeof c.id !== "string" || !c.id || seen.has(c.id)) return;
+          seen.add(c.id);
+          const L = ensureList(c.id);
+          L.rank = p;
+          if(L.renamed) L.titleOriginal = c.title; else L.title = c.title;
+          L.color = c.color;
+          const extra = {};
+          Object.keys(c).forEach(k => { if(k !== "id" && k !== "title" && k !== "color") extra[k] = c[k]; });
+          if(Object.keys(extra).length) L.catExtra = extra; else delete L.catExtra;
+        });
+      }
+      if(fix){
+        const ranked = rankedLists();
+        user.listOrder = fix.map(i => (Number.isInteger(i) && i >= 0 && ranked[i]) ? ranked[i].id : i);
+      }
+    },
+    cattitles(v){
+      const o = isObj(v) ? v : {};
+      lists.forEach(L=>{
+        if(own(o, L.id)){
+          if(!L.renamed){ L.renamed = true; L.titleOriginal = L.title; }
+          L.title = o[L.id];
+        }else if(L.renamed){
+          L.title = L.titleOriginal; delete L.renamed; delete L.titleOriginal;
+        }
+      });
+      residue.orphans.cattitles = {};
+      Object.keys(o).forEach(k => { if(!lists.has(k)) residue.orphans.cattitles[k] = o[k]; });
+    },
+    deletedcats(v){
+      lists.forEach(L => { delete L.deleted; });
+      residue.orphans.deletedcats = [];
+      (Array.isArray(v) ? v : []).forEach((id, seq)=>{
+        const L = typeof id === "string" ? lists.get(id) : null;
+        if(L && L.deleted == null) L.deleted = seq;
+        else residue.orphans.deletedcats.push({ id, seq });
+      });
+    },
+    catreverse(v){
+      const o = isObj(v) ? v : {};
+      lists.forEach(L => { if(own(o, L.id)) L.reversed = o[L.id]; else delete L.reversed; });
+      residue.orphans.catreverse = {};
+      Object.keys(o).forEach(k => { if(!lists.has(k)) residue.orphans.catreverse[k] = o[k]; });
+    },
+    custom(v){
+      const o = isObj(v) ? v : {};
+      Object.keys(o).forEach(id => ensureList(id));
+      lists.forEach(L=>{
+        if(own(o, L.id)){ L.hasItems = true; applyItems(L, Array.isArray(o[L.id]) ? o[L.id] : []); }
+        else{ delete L.hasItems; if(L.items.length) applyItems(L, []); }
+      });
+    },
+    order(v){
+      const o = isObj(v) ? v : {};
+      lists.forEach(L => { delete L.order; });
+      delete user.listOrder; delete user.urgentOrder; delete user.urgentDue; delete user.waitingOrder;
+      residue.orphans.order = {};
+      const SPECIAL = { __urgent__:"urgentOrder", __urgentDue__:"urgentDue", __waiting__:"waitingOrder" };
+      Object.keys(o).forEach(k=>{
+        const val = o[k];
+        if(k === "__categories__" && Array.isArray(val)){
+          const ranked = rankedLists();
+          user.listOrder = val.map(i => (Number.isInteger(i) && i >= 0 && ranked[i]) ? ranked[i].id : i);
+        }else if(SPECIAL[k] && Array.isArray(val)){
+          user[SPECIAL[k]] = val.map(x => typeof x === "string" ? toRef(x) : x);
+        }else if(!SPECIAL[k] && k !== "__categories__" && lists.has(k) && Array.isArray(val)){
+          const slots = slotsOf(lists.get(k));
+          lists.get(k).order = val.map(i => (Number.isInteger(i) && i >= 0 && slots[i]) ? slots[i].id : i);
+        }else residue.orphans.order[k] = val;
+      });
+    },
+    trash(v){ user.trash = Array.isArray(v) ? v.map(e => renameField(e, "key", "item", x => typeof x === "string" ? toRef(x) : x)) : v; },
+    waitlog(v){ user.waitLog = Array.isArray(v) ? v.map(e => renameField(e, "key", "item", x => typeof x === "string" ? toRef(x) : x)) : v; },
+    lucky(v){
+      if(!isObj(v)){ local.lucky = v; return; }
+      const o = Object.assign({}, v);
+      if(Array.isArray(o.keys)) o.keys = o.keys.map(x => typeof x === "string" ? toRef(x) : x);
+      if(typeof o.chosen === "string") o.chosen = toRef(o.chosen);
+      local.lucky = o;
+    },
+    notesopen(v){
+      const o = isObj(v) ? v : {};
+      local.notesOpen = Object.keys(o).map(k => [toRef(k), o[k]]);
+    },
+  };
+  ["todo","overrides","checkedat"].forEach(a=>{
+    const f = SLOT_FIELD[a];
+    WRITE[a] = (v)=>{
+      const o = isObj(v) ? v : {};
+      lists.forEach(L => slotsOf(L).forEach(s => { delete s[f]; }));
+      residue.orphans[a] = {};
+      Object.keys(o).forEach(k=>{
+        const r = resolveKey(k);
+        if(r) r.s[f] = o[k]; else residue.orphans[a][k] = o[k];
+      });
+    };
+  });
+  // Les tâches d'une liste, dans l'ordre de leur position (= l'ancien index).
+  // Une place qui disparaît (⌘Z d'un ajout, restauration plus courte) est
+  // gardée de côté (« ghosts ») avec sa coche éventuelle : si une tâche
+  // revient à cette place, elle la retrouve, exactement comme avant.
+  function applyItems(L, arr){
+    const slots = slotsOf(L);
+    L.items = arr.map((b, i)=>{
+      const s = slots[i] || { id: uniqueId(L) };
+      s.base = b;
+      return s;
+    });
+    const ghosts = slots.slice(arr.length);
+    ghosts.forEach(s => { delete s.base; });
+    if(ghosts.length) L.ghosts = ghosts; else delete L.ghosts;
+  }
+  function uniqueId(L){
+    const used = new Set(slotsOf(L).map(s => s.id));
+    let id; do{ id = newId(); }while(used.has(id));
+    return id;
+  }
+  // ce qui ne trouvait pas sa place (liste ou tâche pas encore là) la retrouve
+  function rehome(){
+    const O = residue.orphans;
+    ["todo","overrides","checkedat"].forEach(a=>{
+      Object.keys(O[a]).forEach(k=>{
+        const r = resolveKey(k);
+        if(r && !own(r.s, SLOT_FIELD[a])){ r.s[SLOT_FIELD[a]] = O[a][k]; delete O[a][k]; }
+      });
+    });
+    Object.keys(O.cattitles).forEach(id=>{
+      const L = lists.get(id);
+      if(!L || L.renamed) return;
+      L.renamed = true; L.titleOriginal = L.title; L.title = O.cattitles[id];
+      delete O.cattitles[id];
+    });
+    Object.keys(O.catreverse).forEach(id=>{
+      const L = lists.get(id);
+      if(!L || own(L, "reversed")) return;
+      L.reversed = O.catreverse[id]; delete O.catreverse[id];
+    });
+    O.deletedcats = O.deletedcats.filter(x=>{
+      const L = typeof x.id === "string" ? lists.get(x.id) : null;
+      if(!L || L.deleted != null) return true;
+      L.deleted = x.seq; return false;
+    });
+    Object.keys(O.order).forEach(k=>{
+      if(k.indexOf("__") === 0) return;
+      const L = lists.get(k), val = O.order[k];
+      if(!L || Array.isArray(L.order) || !Array.isArray(val)) return;
+      const slots = slotsOf(L);
+      L.order = val.map(i => (Number.isInteger(i) && i >= 0 && slots[i]) ? slots[i].id : i);
+      delete O.order[k];
+    });
+  }
+  // une liste qui ne porte plus rien du tout disparaît
+  function cleanup(){
+    lists.forEach((L, id)=>{
+      if(L.rank == null && !L.hasItems && !L.items.length && !L.ghosts && !Array.isArray(L.order)
+         && L.deleted == null && !L.renamed && !own(L, "reversed")) lists.delete(id);
+    });
+  }
+
+  function writeAspect(a, raw){
+    if(PLAIN[a]){
+      (PLAIN[a] === "user" ? user : local)[PLAIN_FIELD[a]] = String(raw);
+      residue.present[a] = true;
+      delete residue.anomalies[a];
+      ver++;
+      return;
+    }
+    let v, parsed = true;
+    try{ v = JSON.parse(raw); }catch(e){ parsed = false; v = undefined; }
+    WRITE[a](v);
+    rehome();
+    cleanup();
+    residue.present[a] = true;
+    ver++;
+    // garde-fou : si la valeur écrite ne se recalcule pas à l'identique (à
+    // l'ordre des clés près), on garde le texte exact tant que rien d'autre
+    // n'y touche.
+    const str = projectStr(a);
+    let same = false;
+    try{ same = parsed && canon(v) === canon(JSON.parse(str)); }catch(e){}
+    if(same) delete residue.anomalies[a];
+    else residue.anomalies[a] = { raw:String(raw), shadow:shadowOf(a, str) };
+  }
+  function removeAspect(a){
+    if(PLAIN[a]) delete (PLAIN[a] === "user" ? user : local)[PLAIN_FIELD[a]];
+    else{
+      const EMPTY_ARR = { customcats:1, deletedcats:1 };
+      if(a === "trash") delete user.trash;
+      else if(a === "waitlog") delete user.waitLog;
+      else if(a === "lucky") delete local.lucky;
+      else if(a === "notesopen") delete local.notesOpen;
+      else WRITE[a](EMPTY_ARR[a] ? [] : {});
+      rehome(); cleanup();
+    }
+    delete residue.present[a];
+    delete residue.anomalies[a];
+    ver++;
+  }
+  function allViews(){ const o = {}; ASPECTS.forEach(a => { o[a] = viewStr(a); }); return o; }
+
+  // ---------- migration depuis les anciennes clés ----------
+  function migrate(){
+    // départ propre : un éventuel essai interrompu est effacé (les anciennes
+    // clés, elles, ne sont jamais touchées)
+    const stale = [];
+    for(let i = 0; i < LS.length; i++){ const k = LS.key(i); if(k && k.indexOf(NS) === 0) stale.push(k); }
+    stale.forEach(k => LS.removeItem(k));
+    lists = new Map(); user = {}; local = {}; residue = freshResidue(); docStr = new Map();
+    ver++;
+    ASPECTS.forEach(a=>{
+      const raw = LS.getItem(K[a]);
+      if(raw !== null) writeAspect(a, raw);
+    });
+    // vérification : chaque ancienne clé doit se recalculer à l'identique
+    const bad = ASPECTS.filter(a=>{
+      const raw = LS.getItem(K[a]), got = viewStr(a);
+      if(raw === got) return false;
+      if(raw === null || got === null) return true;
+      if(PLAIN[a]) return true;
+      try{ return canon(JSON.parse(raw)) !== canon(JSON.parse(got)); }catch(e){ return true; }
+    });
+    if(bad.length) throw new Error("vérification de la migration : " + bad.join(", "));
+    commit();
+    LS.setItem(META, JSON.stringify({ format:10, migratedAt:new Date().toISOString(), from:"fauconnerie-v2" }));
+  }
+
+  function init(){
+    try{
+      if(LS.getItem(META)) loadDocs();
+      else migrate();
+      extBase = allViews();
+    }catch(err){
+      console.error("[Sous le tapis 10.0] nouveau rangement indisponible, l'appli tourne sur les anciennes clés :", err);
+      mode = "legacy";
+    }
+  }
+  init();
+
+  const api = {
+    get mode(){ return mode; },
+    get(k){
+      if(mode !== "doc" || !own(BY_KEY, k)) return LS.getItem(k);
+      const a = BY_KEY[k];
+      try{
+        syncRev();
+        const s = viewStr(a);
+        lastGood[a] = s;
+        return s;
+      }catch(err){
+        console.error("[Store] lecture", k, err);
+        if(own(lastGood, a)) return lastGood[a];
+        throw err;
+      }
+    },
+    set(k, v){
+      if(mode !== "doc" || !own(BY_KEY, k)){ LS.setItem(k, v); return; }
+      const a = BY_KEY[k];
+      syncRev();
+      const before = allViews();
+      try{ writeAspect(a, String(v)); commit(); }
+      catch(err){ loadDocs(); throw err; }
+      const after = allViews();
+      ASPECTS.forEach(x => { if(before[x] !== after[x]) extBase[x] = after[x]; });
+    },
+    remove(k){
+      if(mode !== "doc" || !own(BY_KEY, k)){ LS.removeItem(k); return; }
+      const a = BY_KEY[k];
+      syncRev();
+      const before = allViews();
+      try{ removeAspect(a); commit(); }
+      catch(err){ loadDocs(); throw err; }
+      const after = allViews();
+      ASPECTS.forEach(x => { if(before[x] !== after[x]) extBase[x] = after[x]; });
+    },
+    // Un autre onglet a écrit (événement « storage ») : on relit les fiches et
+    // on renvoie les anciennes clés dont la vue a changé depuis la dernière fois.
+    receive(storageKey){
+      if(mode !== "doc") return storageKey == null ? [] : [storageKey];
+      if(storageKey != null && storageKey.indexOf(NS) !== 0) return [];
+      loadDocs();
+      const now = allViews();
+      const changed = ASPECTS.filter(a => now[a] !== extBase[a]).map(a => K[a]);
+      extBase = now;
+      return changed;
+    },
+    // Sauvegarde au nouveau format : les fiches telles quelles.
+    exportModel(){
+      syncRev();
+      const pick = (o, keys) => { const r = {}; keys.forEach(k => { if(own(o, k)) r[k] = o[k]; }); return r; };
+      const userCopy = JSON.parse(JSON.stringify(user));
+      const O = residue.orphans;
+      return {
+        lists: sortedLists().map(L => JSON.parse(JSON.stringify(L))),
+        user: userCopy,
+        residue: JSON.parse(JSON.stringify({
+          present: pick(residue.present, BACKUP_ASPECTS),
+          anomalies: pick(residue.anomalies, BACKUP_ASPECTS),
+          orphans: { todo:O.todo, overrides:O.overrides, checkedat:O.checkedat, cattitles:O.cattitles,
+                     catreverse:O.catreverse, deletedcats:O.deletedcats, order:O.order },
+        })),
+      };
+    },
+    // Restauration d'une sauvegarde au nouveau format : remplace les fiches
+    // (listes + « moi ») ; les réglages de cet appareil restent.
+    isModelDump(d){ return isObj(d) && d.format === 10 && Array.isArray(d.lists) && isObj(d.user); },
+    importModel(d){
+      if(mode !== "doc" || !api.isModelDump(d)) return false;
+      syncRev();
+      // trèfle et détails dépliés repèrent les tâches par position : on les
+      // retraduit après coup, comme une ancienne restauration le faisait
+      const keepLucky = residue.present.lucky ? projectStr("lucky") : null;
+      const keepNotes = residue.present.notesopen ? projectStr("notesopen") : null;
+      const nl = new Map();
+      d.lists.forEach(L=>{
+        if(!isObj(L) || typeof L.id !== "string" || !L.id) return;
+        const c = JSON.parse(JSON.stringify(L));
+        if(!Array.isArray(c.items)) c.items = [];
+        nl.set(c.id, c);
+      });
+      lists = nl;
+      user = JSON.parse(JSON.stringify(d.user));
+      const r = isObj(d.residue) ? d.residue : {};
+      const present = isObj(r.present) ? r.present : null;
+      BACKUP_ASPECTS.forEach(a=>{
+        if(present) { if(present[a]) residue.present[a] = true; else delete residue.present[a]; }
+        else residue.present[a] = true;
+        delete residue.anomalies[a];
+        if(isObj(r.anomalies) && isObj(r.anomalies[a])) residue.anomalies[a] = r.anomalies[a];
+      });
+      const fresh = freshResidue().orphans;
+      const ro = isObj(r.orphans) ? r.orphans : {};
+      Object.keys(fresh).forEach(k=>{
+        const ok = k === "deletedcats" ? Array.isArray(ro[k]) : isObj(ro[k]);
+        residue.orphans[k] = ok ? JSON.parse(JSON.stringify(ro[k])) : fresh[k];
+      });
+      if(!residue.present.lastpurge) delete user.lastPurge;
+      ver++;
+      if(keepLucky !== null) writeAspect("lucky", keepLucky);
+      if(keepNotes !== null) writeAspect("notesopen", keepNotes);
+      rehome(); cleanup(); ver++;
+      commit();
+      extBase = allViews();
+      return true;
+    },
+    isDocKey(k){ return typeof k === "string" && k.indexOf(NS) === 0; },
+    // pour les tests
+    _views: allViews,
+    _projectStr: projectStr,
+    get _noAnomaly(){ return noAnomaly; },
+    set _noAnomaly(v){ noAnomaly = !!v; ver++; },
+  };
+  return api;
+})();
 
 const DATA = [];  // édition autonome : aucune base en dur, tout vient des sauvegardes;
 
@@ -2873,6 +3614,7 @@ function purgeCheckedBefore(thisMonday, onlyWaiting){
       trash.push({
         t: eff.t, note: eff.note || "", who: eff.who || "", due: eff.due || "",
         catId: cat.id, catTitle: cat.title, doneOn, purgedOn: today, kind: "done",
+        key, // 10.0 : la tâche d'origine (rangée par son identifiant stable)
       });
       purgedKeys.push(key);
     });
@@ -3288,11 +4030,18 @@ async function idbGetHandle(){
 }
 
 async function exportData(){
-  const dump = { app:"sous-le-tapis", version:1, exportedAt:new Date().toISOString(), data:{} };
-  BACKUP_KEYS.forEach(k=>{
-    const raw = Store.get(k);
-    if(raw !== null) dump.data[k] = raw;
-  });
+  // 10.0 : nouveau format = les fiches (listes + « moi ») telles quelles.
+  // La photo autonome reste jointe : une version d'avant la 10.0 sait la relire.
+  let dump;
+  if(Store.mode === "doc"){
+    dump = Object.assign({ app:"sous-le-tapis", version:2, format:10, exportedAt:new Date().toISOString() }, Store.exportModel());
+  }else{
+    dump = { app:"sous-le-tapis", version:1, exportedAt:new Date().toISOString(), data:{} };
+    BACKUP_KEYS.forEach(k=>{
+      const raw = Store.get(k);
+      if(raw !== null) dump.data[k] = raw;
+    });
+  }
   dump.snapshot = buildSnapshot(); // photo autonome, relisible partout
   const text = JSON.stringify(dump, null, 2);
   const stamp = new Date().toISOString().slice(0,10);
@@ -3431,6 +4180,16 @@ function importData(file){
     let dump;
     try{ dump = JSON.parse(reader.result); }
     catch(err){ alert("Ce fichier n'est pas une sauvegarde lisible."); return; }
+    // 10.0 : sauvegarde au nouveau format (fiches) : remise telle quelle.
+    if(Store.mode === "doc" && Store.isModelDump(dump)){
+      if(!confirm("Importer cette sauvegarde ? Elle remplacera la liste actuelle de ce fichier.")) return;
+      Store.importModel(dump);
+      DATA.length = 0; // la liste est entièrement remplacée
+      reloadAllFromStorage();
+      renderAll();
+      celebrate("Sauvegarde importée");
+      return;
+    }
     // Sauvegarde autonome (photo) : reconstruit toute la liste, quelle que soit
     // la version d'origine. C'est le chemin normal ici.
     if(dump && dump.snapshot && Array.isArray(dump.snapshot.categories)){
@@ -5187,6 +5946,7 @@ function buildItemLi(cat, idx, base, key, opts){
       catId: cat.id, catTitle: cat.title,
       doneOn: wasDone ? (checkedAt[key] || "") : "",
       purgedOn: todayISO(), kind: wasDone ? "done" : "deleted",
+      key, // 10.0 : la tâche d'origine (rangée par son identifiant stable)
     });
     if(wasDone) saveJSONKey(TRASH_KEY, trash);
     if(checkedAt[key]){ delete checkedAt[key]; saveJSONKey(CHECKED_AT_KEY, checkedAt); }
@@ -5967,7 +6727,14 @@ function applyExternalChange(key){
   undoCurrent = null; // un autre onglet a écrit : son changement n'est pas un geste d'ici à annuler
   renderAll();
 }
-window.addEventListener("storage", (e)=> applyExternalChange(e.key));
+// 10.0 : un autre onglet écrit dans les fiches (sltapis:…) ; Store relit et
+// dit quelles anciennes clés ont changé de contenu.
+window.addEventListener("storage", (e)=>{
+  const changed = Store.receive(e.key);
+  if(changed.includes(LAST_BACKUP_KEY)) applyExternalChange(LAST_BACKUP_KEY);
+  const k = changed.find(x => BACKUP_KEYS.includes(x));
+  if(k) applyExternalChange(k);
+});
 
 // ---- 8.1 : annuler le dernier geste (⌘Z / Ctrl+Z) ----
 // Toutes les tâches vivent dans quelques clés du stockage : après chaque
