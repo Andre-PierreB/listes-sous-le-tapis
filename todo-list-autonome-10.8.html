@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.7 -->
+<!-- Sous le tapis — version AUTONOME 10.8 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -122,7 +122,8 @@
     tâche par tâche, à partir de la dernière version vue en ligne
     (« bases », clé sltapis:sync) ; conflit sur le même champ : ici gagne ;
     corbeille et journal : ajouts / retraits gardés des deux côtés.
-  - Un seul onglet parle à Firebase (navigator.locks) ; l'état de la plume
+  - Un seul onglet parle à Firebase (navigator.locks ; repris au bout de 4 s
+    s'il n'arrive pas, depuis la 10.8) ; l'état de la plume
     est partagé par sltapis:syncstatus.
   - Premier branchement d'un compte : compte vide → on envoie les listes de
     l'appareil (après confirmation) ; compte déjà rempli → ses listes
@@ -671,6 +672,14 @@
     déplacer. Elle se rouvre quand on y ajoute une tâche (express ou « + »)
     ou quand on glisse une tâche dessus. Mémorisé par appareil
     (localStorage « sltapis-volets », hors sauvegarde et hors synchro).
+  - 10.8 : synchro sur l'icône d'écran d'accueil (iPhone) : si le verrou
+    « un seul onglet parle à Firebase » n'arrive pas en 4 s, page à l'écran,
+    l'onglet le reprend (l'icône restait sinon débranchée, avec « tout est à
+    jour » et ses anciennes listes). Et un changement arrivé d'ailleurs pendant qu'une fenêtre ou une
+    édition était ouverte (ex. les listes en ligne arrivant pendant la
+    fenêtre de connexion : liste partagée absente sur l'icône d'écran
+    d'accueil) n'est plus perdu jusqu'au rechargement ; il s'affiche dès
+    que la fenêtre se ferme (externalPending).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2679,7 +2688,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.7</span>
+    <span class="version-tag">v10.8</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4253,6 +4262,9 @@ function closeRelancePop(){
   relancePop.remove(); relancePop = null;
   document.removeEventListener("pointerdown", relanceOutside, true);
   document.removeEventListener("keydown", relanceEsc, true);
+  // 10.8 : ce qui est arrivé d'ailleurs pendant que la fenêtre était ouverte
+  // (ex. les listes en ligne, à la connexion) s'affiche maintenant
+  if(externalPending && !hasActiveEdit()) renderAll();
 }
 function askRelance(anchor, key){
   closeRelancePop();
@@ -6639,7 +6651,17 @@ function renderWaitingSection(){
 
 // Tout ce qui se redessine, dans l'ordre.
 const RENDERERS = [render, renderWaitingSection, renderAddCategoryRow, updateProgress, renderTrash, renderShare, renderBackupNudge];
+// 10.8 : un changement venu d'ailleurs (autre onglet, en ligne) arrivé
+// pendant une édition ou une petite fenêtre n'est plus perdu : il est
+// appliqué au rendu suivant (avant, il n'apparaissait qu'au rechargement)
+let externalPending = false;
 function renderAll(){
+  if(externalPending && !hasActiveEdit()){
+    externalPending = false;
+    DATA.length = 0;
+    reloadAllFromStorage();
+    undoCurrent = null;
+  }
   try{ maybeRollover(); }catch(err){ console.error("[semaine]", err); }
   try{
     document.body.classList.toggle("has-editing", !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle);
@@ -7598,7 +7620,7 @@ document.addEventListener("keydown", (e)=>{
 function applyExternalChange(key){
   if(key === LAST_BACKUP_KEY){ renderBackupNudge(); return; }
   if(!BACKUP_KEYS.includes(key)) return;
-  if(hasActiveEdit()) return; // on ne casse jamais un formulaire ouvert ici
+  if(hasActiveEdit()){ externalPending = true; return; } // on ne casse jamais un formulaire ouvert ici (10.8 : appliqué ensuite)
   DATA.length = 0; // 10.1 : une liste peut aussi disparaître (synchro, restauration ailleurs)
   reloadAllFromStorage();
   undoCurrent = null; // un autre onglet a écrit : son changement n'est pas un geste d'ici à annuler
@@ -7615,7 +7637,7 @@ function storeChangedElsewhere(storageKey){
   if(changed.includes(LAST_BACKUP_KEY)) applyExternalChange(LAST_BACKUP_KEY);
   const k = changed.find(x => BACKUP_KEYS.includes(x));
   if(k) applyExternalChange(k);
-  else if(changed.includes(Store.sharingKey) && !hasActiveEdit()) renderAll(); // 10.2 : membres, noms, carnet
+  else if(changed.includes(Store.sharingKey)){ if(hasActiveEdit()) externalPending = true; else renderAll(); } // 10.2 : membres, noms, carnet
 }
 window.addEventListener("storage", (e)=>{
   storeChangedElsewhere(e.key);
@@ -8415,6 +8437,8 @@ const Sync = (()=>{
   }
   function getStatus(){
     const s = readJSON(STATUS_KEY, {});
+    // 10.8 : connecté mais pas encore chef depuis peu : l'état écrit est peut-être ancien
+    if(user && !leader && askedAt && Date.now() - askedAt < LEAD_WAIT + 2000) return { state:"connecting", email: user.email || "" };
     if(!user && s.state !== "off") return { state: auth ? "off" : (readJSON(STATE_KEY, {}).uid ? "connecting" : "off"), email: "" };
     return s.state ? s : { state: "off", email: "" };
   }
@@ -8445,13 +8469,37 @@ const Sync = (()=>{
     if(!leaderAsked){
       leaderAsked = true;
       if(navigator.locks && navigator.locks.request){
-        navigator.locks.request((ESSAI ? "essai-" : "") + "sltapis-sync", ()=> new Promise(()=>{ leader = true; if(user) link(); }));
+        askLead(false);
+        askedAt = Date.now();
+        setTimeout(stealIfStuck, LEAD_WAIT + 50);
         return;
       }
       leader = true;
     }
     if(leader) link();
   }
+  // 10.8 : sur iPhone, l'icône d'écran d'accueil pouvait attendre le verrou
+  // indéfiniment (tenu par un onglet fantôme) : jamais branchée, ses listes
+  // restaient celles d'avant. Si le verrou n'arrive pas en quelques secondes
+  // et que la page est à l'écran, on le reprend ; l'onglet qui le tenait
+  // (s'il existe) lui laisse la synchro et se remet dans la file.
+  const LOCK = (ESSAI ? "essai-" : "") + "sltapis-sync";
+  const LEAD_WAIT = 4000;
+  let askedAt = 0;
+  function askLead(steal){
+    navigator.locks.request(LOCK, steal ? { steal:true } : {}, ()=> new Promise(()=>{ leader = true; if(user) link(); }))
+      .catch(()=>{
+        if(leader){ leader = false; linked = false; stopListening(); }
+        askLead(false);
+      });
+  }
+  function stealIfStuck(){
+    if(leader || !user || !askedAt || Date.now() - askedAt < LEAD_WAIT) return;
+    if(document.visibilityState !== "visible") return;   // repris quand la page revient à l'écran
+    console.warn("[Sync] verrou de synchro introuvable : repris par cet onglet");
+    askLead(true);
+  }
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState === "visible") stealIfStuck(); });
   function stopListening(){ unsubs.forEach(f => { try{ f(); }catch(e){} }); unsubs = []; }
 
   async function link(){
