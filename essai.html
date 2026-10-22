@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.4 -->
+<!-- Sous le tapis — version AUTONOME 10.5 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -651,6 +651,10 @@
   - 10.4 : plume et titre décalés de 24 px vers la gauche : la pointe de la
     plume s'aligne sur le bout droit de la barre de comptage ; même écart
     entre le titre et la plume.
+  - 10.5 : fenêtre de connexion : titre et « Mot de passe oublié ? » centrés,
+    « Se connecter » et « Créer un compte » de même largeur ; bouton Partage :
+    survol (et panneau ouvert) en jaune --lucky-gold, texte foncé ; Restaurer
+    reprend le survol bleu de Sauvegarder.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2064,6 +2068,10 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 }
 .sp-email:focus, .sp-pw:focus{ outline:none; border-color:var(--accent); }
 .sp-forgot{ appearance:none; border:0; background:none; padding:0; margin-top:0.55rem; font-family:inherit; font-size:0.78rem; color:var(--ink-soft); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.sync-pop .rp-title{ text-align:center; }
+.sync-pop .rp-opts:has(.sp-login){ display:grid; grid-template-columns:1fr 1fr; }
+.sync-pop .rp-opts:has(.sp-login) button{ text-align:center; white-space:nowrap; padding-inline:0.3rem; font-size:0.82rem; }
+.sync-pop .sp-forgot{ display:block; margin-inline:auto; }
 .sp-msg{ font-size:0.8rem; color:var(--urgent-ink); margin-top:0.45rem; }
 .sp-msg:empty{ display:none; }
 .sp-who{ font-size:0.9rem; font-weight:600; color:var(--ink); margin:-0.2rem 0 0.25rem; word-break:break-all; }
@@ -2153,6 +2161,10 @@ footer{
 .trash-link{ margin-right:auto; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--btn) 28%, transparent); }
 /* 10.2 : Partage juste à droite de Corbeille, c'est lui qui pousse le reste à droite */
 footer:has(#shareLink:not([hidden])) #trashLink{ margin-right:0; }
+/* 10.5 : Partage en jaune au survol (texte foncé dans les deux thèmes) ;
+   Restaurer reprend le survol bleu de Sauvegarder */
+.share-link:hover, .share-link.open{ background:var(--lucky-gold); color:#2A2725; box-shadow:inset 0 0 0 1px var(--lucky-gold); }
+#importBtn:hover{ background:var(--accent); color:var(--surface); }
 .share-link svg{ width:16px; height:16px; display:block; flex:none; }
 .trash-link svg{ width:15px; height:15px; display:block; flex:none; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 .trash-link svg .lid{ transform-box:fill-box; transform-origin:right bottom; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
@@ -2626,7 +2638,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.4</span>
+    <span class="version-tag">v10.5</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
