@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 9.2 -->
+<!-- Sous le tapis — version AUTONOME 9.3 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -509,6 +509,9 @@
     (Store), et la réception des changements d'un autre onglet devient la
     fonction applyExternalChange(), réutilisable pour un autre appareil.
     Clés, valeurs et sauvegardes strictement identiques.
+  - 9.3 : en renommant une liste (titre + couleurs), ses propres tâches et ses
+    boutons (+, sens, poignée, ×) s'estompent comme le reste ; seuls le champ
+    du titre et les pastilles de couleur restent actifs.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1788,7 +1791,10 @@ body.has-editing .add-category-row.active{
 }
 body.has-editing .category:has(.item.editing) ul.items > li.item:not(.editing),
 body.has-editing .category:has(.add-form-row) ul.items > li.item:not(.add-form-row),
-body.has-editing .section-block:has(.item.editing) ul.items > li.item:not(.editing){
+body.has-editing .section-block:has(.item.editing) ul.items > li.item:not(.editing),
+body.has-editing .category:has(.cat-title-input) > *:not(.cat-head):not(.cat-swatches),
+body.has-editing .category:has(.cat-title-input) .cat-head .add-btn,
+body.has-editing .category:has(.cat-title-input) .cat-head-right{
   opacity:0.32;
   filter:grayscale(0.7);
   pointer-events:none;
@@ -2356,7 +2362,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v9.2</span>
+    <span class="version-tag">v9.3</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
