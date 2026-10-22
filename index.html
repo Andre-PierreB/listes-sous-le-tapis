@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.0 -->
+<!-- Sous le tapis — version AUTONOME 10.1 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -39,7 +39,9 @@
     un vestige interne invisible : l'appli s'appelle « Sous le tapis »
     partout ailleurs (depuis la 8.19) ; ne pas réintroduire ce nom à l'écran.
   - Fichier autonome : un seul .html, rien d'autre que les polices Google
-    en externe.
+    en externe — SAUF, depuis la 10.1, le code de Firebase (connexion et
+    synchro), chargé depuis www.gstatic.com seulement quand on se connecte
+    (ou si on l'était déjà) ; sans réseau, l'appli marche comme avant.
   - Ton des messages : humour, faisan, folklore plutôt belge ; rien de
     trop perso (l'appli peut être partagée).
   - Tout texte saisi (titre, note, nom…) passe par escapeAttr() avant
@@ -101,6 +103,36 @@
   - Tests (hors fichier) : comparaison Playwright 9.4 / 10.0 sur les mêmes
     gestes, et fuzz du Store (écritures, effacements, ⌘Z, deux onglets,
     rechargement, export / import).
+
+  SYNCHRO EN LIGNE (depuis la 10.1) — Firebase, projet « sous-le-tapis »
+  - Plan Spark (gratuit), Firestore europe-west1 en mode production,
+    connexion Google ou e-mail + mot de passe ; domaine autorisé :
+    andre-pierreb.github.io. Règles d'accès : firestore.rules (dans le dépôt,
+    à recoller dans la console Firestore → Règles à chaque changement).
+  - En ligne : lists/<cloudId> (champs de la fiche + owner, members,
+    updatedAt ; cloudId = <uid du créateur>_<id de la liste>) et
+    users/<uid> (fiche « moi », privée). Un tableau dans un tableau est
+    emballé { __arr: […] } (Firestore ne les accepte pas).
+  - Sync (fin du script) : l'appli travaille toujours d'abord en local ;
+    Sync recopie les fiches en ligne (transactions) et pose ici ce qui
+    arrive, par le même chemin qu'un autre onglet (storeChangedElsewhere).
+    Fusion des modifications simultanées (SyncMerge) : champ par champ et
+    tâche par tâche, à partir de la dernière version vue en ligne
+    (« bases », clé sltapis:sync) ; conflit sur le même champ : ici gagne ;
+    corbeille et journal : ajouts / retraits gardés des deux côtés.
+  - Un seul onglet parle à Firebase (navigator.locks) ; l'état de la plume
+    est partagé par sltapis:syncstatus.
+  - Premier branchement d'un compte : compte vide → on envoie les listes de
+    l'appareil (après confirmation) ; compte déjà rempli → ses listes
+    remplacent celles de l'appareil (copie gardée : sltapis:avant-synchro).
+  - Plume (#plume, à droite du titre) : #B08478 déconnecté, bleu --accent
+    connecté, bleu pâle si des changements attendent le réseau ; clic →
+    fenêtre de connexion (Échap la ferme).
+  - Page d'essai essai.html (même fichier) : données à part (préfixe
+    « essai: » dans le navigateur, collections essai_lists / essai_users).
+  - Tests (hors fichier) : faux Firebase (serveur + modules) — deux
+    appareils, hors ligne, modifications simultanées, ⌘Z, deux onglets,
+    déconnexion, purge du lundi, compte séparé et règles.
 
   HISTORIQUE RÉCENT
   - 5.2 : case trèfle « Une petite sur le pouce ? » sous les urgences —
@@ -564,6 +596,11 @@
     lien (copier / WhatsApp), noms à cocher dans l'édition d'une liste ;
     plus tard, phrases d'encouragement par utilisateur (celles du faisan
     restent la base, dans le code).
+  - 10.1 : connexion et synchro en ligne (voir SYNCHRO EN LIGNE) : plume à
+    droite du titre, connexion Google ou e-mail + mot de passe, listes
+    recopiées en ligne et fusionnées entre appareils ; sans connexion, rien
+    ne change. Sur une autre page (restauration, synchro), une liste
+    disparue disparaît aussi de l'écran. Testée d'abord sur essai.html.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -722,7 +759,19 @@ header{
   height:1px;
   background:currentColor;
 }
-.lucky-line[hidden], .urgent-banner[hidden], #waitingSection[hidden], .backup-nudge[hidden]{display:none;}
+/* 10.1 : plume de connexion, à droite du titre, pointe au-dessus (dessin :
+   plume-connexion.svg) ; bleu = connecté, #B08478 = déconnecté */
+.plume{
+  position:absolute; right:-10px; top:-24px; width:44px; height:44px;
+  appearance:none; border:0; background:none; padding:0; cursor:pointer;
+  color:#B08478; transition:color .25s ease, opacity .25s ease, transform .15s ease;
+}
+.plume svg{ display:block; width:100%; height:100%; }
+.plume.on{ color:var(--accent); }
+.plume.waiting{ opacity:.55; }
+.plume:hover{ transform:rotate(-6deg); }
+.plume:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:8px; }
+.lucky-line[hidden], .urgent-banner[hidden], #waitingSection[hidden], .backup-nudge[hidden], .plume[hidden]{display:none;}
 
 /* ---------- compteur « tableau de bord » (8.10) ----------
    Ligne du haut : à gauche le chiffre de la semaine, au milieu la phrase ;
@@ -1897,6 +1946,27 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 .rp-skip:hover{ background:var(--wait); border-color:var(--wait); color:var(--surface); }
 .rp-date{ display:flex; gap:0.4rem; margin-top:0.55rem; }
 .rp-date input{ flex:1; min-width:0; font-family:inherit; font-size:0.86rem; padding:0.3rem 0.5rem; border:1px solid color-mix(in srgb, var(--wait) 30%, var(--line)); border-radius:8px; background:var(--surface); color:var(--ink); }
+/* 10.1 : fenêtre de la plume (connexion), même forme, aux couleurs de l'accent */
+.sync-pop{ width:min(290px, calc(100vw - 32px)); background:var(--surface); border-color:color-mix(in srgb, var(--accent) 30%, var(--line)); }
+.sync-pop .rp-title{ color:var(--accent); }
+.sync-pop .rp-opts button:hover{ background:var(--accent); border-color:var(--accent); }
+.sp-google{
+  display:block; width:100%; appearance:none; cursor:pointer; font-family:inherit; font-size:0.86rem; font-weight:600;
+  padding:0.45rem 0.65rem; border-radius:999px; border:1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  background:var(--surface); color:var(--ink); transition:background .12s ease, color .12s ease;
+}
+.sp-google:hover{ background:var(--accent); color:var(--surface); }
+.sp-or{ text-align:center; font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); margin:0.5rem 0; }
+.sp-email, .sp-pw{
+  display:block; width:100%; margin:0 0 0.4rem; font-family:inherit; font-size:0.86rem; padding:0.35rem 0.55rem;
+  border:1px solid color-mix(in srgb, var(--accent) 25%, var(--line)); border-radius:8px; background:var(--surface); color:var(--ink);
+}
+.sp-email:focus, .sp-pw:focus{ outline:none; border-color:var(--accent); }
+.sp-forgot{ appearance:none; border:0; background:none; padding:0; margin-top:0.55rem; font-family:inherit; font-size:0.78rem; color:var(--ink-soft); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.sp-msg{ font-size:0.8rem; color:var(--urgent-ink); margin-top:0.45rem; }
+.sp-msg:empty{ display:none; }
+.sp-who{ font-size:0.9rem; font-weight:600; color:var(--ink); margin:-0.2rem 0 0.25rem; word-break:break-all; }
+.sp-state{ font-size:0.8rem; color:var(--ink-soft); margin:0 0 0.6rem; }
 
 /* ---------- petit message flottant ---------- */
 #toast{
@@ -2382,6 +2452,7 @@ body.arrive footer{ animation-delay:.52s; }
 <div class="wrap">
   <header>
     <span class="eyebrow">Sous le t<span class="ap-nod">ap</span>is</span>
+    <button type="button" class="plume" id="plume" hidden><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(4 24 24)"><path d="M23.6 35.6 C19.7 33 17.3 29 17.2 24.7 L20.9 22.7 L18.2 20.7 C18.4 13.6 21.5 7 26 1.8 C28.9 6.8 30.8 10.9 31 14.9 L27.9 16.7 L30.9 17.7 C30.7 24 28.6 30.6 24.8 35.6"/><path d="M24.15 44.6 C24 36.2 24.6 19.6 26 1.8"/><path stroke-width=".95" d="M24.4 29.4 L20.6 26.9 M25 18.4 L22.3 15.7 M24.8 25.6 L28.4 22.9 M25.6 10.8 L27.6 8.6"/><path stroke-width="1.05" d="M23.9 36.2 c-1.9 .3 -3.4 1.4 -4.2 3.1 M24.5 36.2 c1.8 .4 3.1 1.5 3.8 3.1 M24.1 38.3 c-1.2 .8 -1.9 1.9 -2.1 3.2"/></g></svg></button>
   </header>
 
   <div class="progress-card">
@@ -2414,7 +2485,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.0</span>
+    <span class="version-tag">v10.1</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -2459,8 +2530,13 @@ body.arrive footer{ animation-delay:.52s; }
 // sltapis:meta en dernier). Si la vérification échoue, rien n'est écrit et
 // l'appli tourne comme en 9.4, directement sur les anciennes clés (Store.mode
 // = "legacy") — rien n'est perdu.
+// 10.1 : la page d'essai (essai.html) a ses propres données, à part : tout ce
+// qu'elle range dans le navigateur porte le préfixe « essai: », et en ligne ses
+// fiches vont dans des collections « essai_… ». L'appli elle-même n'y touche jamais.
+const ESSAI = /essai/i.test(location.pathname);
 const Store = (()=>{
   const LS = localStorage;
+  const LP = ESSAI ? "essai:" : "";   // préfixe réel des anciennes clés dans le navigateur
   const P = "fauconnerie-v2-";
   // anciennes clés gérées par les fiches (nom court → clé complète)
   const K = {
@@ -2485,7 +2561,7 @@ const Store = (()=>{
   // champ d'une tâche qui porte chaque clé « par tâche »
   const SLOT_FIELD = { todo:"done", overrides:"edits", checkedat:"checkedAt" };
 
-  const NS = "sltapis:";
+  const NS = (ESSAI ? "essai:" : "") + "sltapis:";
   const META = NS+"meta", REV = NS+"rev", USER = NS+"user:moi", LOCAL = NS+"local",
         RESIDUE = NS+"residue", LISTP = NS+"list:";
 
@@ -2520,6 +2596,8 @@ const Store = (()=>{
   const lastGood = {};          // aspect → dernier texte calculé sans erreur
   let extBase = {};             // aspect → texte déjà signalé à l'appli (autres onglets)
   let noAnomaly = false;        // tests : ignorer le garde-fou (vérifier les vues seules)
+  let localHook = null;         // 10.1 : prévenu après chaque écriture faite ici (synchro)
+  function notifyLocal(){ if(localHook){ try{ localHook(); }catch(e){ console.error("[Store] synchro", e); } } }
 
   function freshResidue(){
     return { present:{}, anomalies:{}, orphans:{ todo:{}, overrides:{}, checkedat:{}, cattitles:{},
@@ -2984,12 +3062,12 @@ const Store = (()=>{
     lists = new Map(); user = {}; local = {}; residue = freshResidue(); docStr = new Map();
     ver++;
     ASPECTS.forEach(a=>{
-      const raw = LS.getItem(K[a]);
+      const raw = LS.getItem(LP + K[a]);
       if(raw !== null) writeAspect(a, raw);
     });
     // vérification : chaque ancienne clé doit se recalculer à l'identique
     const bad = ASPECTS.filter(a=>{
-      const raw = LS.getItem(K[a]), got = viewStr(a);
+      const raw = LS.getItem(LP + K[a]), got = viewStr(a);
       if(raw === got) return false;
       if(raw === null || got === null) return true;
       if(PLAIN[a]) return true;
@@ -3015,7 +3093,7 @@ const Store = (()=>{
   const api = {
     get mode(){ return mode; },
     get(k){
-      if(mode !== "doc" || !own(BY_KEY, k)) return LS.getItem(k);
+      if(mode !== "doc" || !own(BY_KEY, k)) return LS.getItem(LP + k);
       const a = BY_KEY[k];
       try{
         syncRev();
@@ -3029,7 +3107,7 @@ const Store = (()=>{
       }
     },
     set(k, v){
-      if(mode !== "doc" || !own(BY_KEY, k)){ LS.setItem(k, v); return; }
+      if(mode !== "doc" || !own(BY_KEY, k)){ LS.setItem(LP + k, v); return; }
       const a = BY_KEY[k];
       syncRev();
       const before = allViews();
@@ -3037,9 +3115,10 @@ const Store = (()=>{
       catch(err){ loadDocs(); throw err; }
       const after = allViews();
       ASPECTS.forEach(x => { if(before[x] !== after[x]) extBase[x] = after[x]; });
+      notifyLocal();
     },
     remove(k){
-      if(mode !== "doc" || !own(BY_KEY, k)){ LS.removeItem(k); return; }
+      if(mode !== "doc" || !own(BY_KEY, k)){ LS.removeItem(LP + k); return; }
       const a = BY_KEY[k];
       syncRev();
       const before = allViews();
@@ -3047,6 +3126,7 @@ const Store = (()=>{
       catch(err){ loadDocs(); throw err; }
       const after = allViews();
       ASPECTS.forEach(x => { if(before[x] !== after[x]) extBase[x] = after[x]; });
+      notifyLocal();
     },
     // Un autre onglet a écrit (événement « storage ») : on relit les fiches et
     // on renvoie les anciennes clés dont la vue a changé depuis la dernière fois.
@@ -3116,9 +3196,50 @@ const Store = (()=>{
       rehome(); cleanup(); ver++;
       commit();
       extBase = allViews();
+      notifyLocal();
       return true;
     },
     isDocKey(k){ return typeof k === "string" && k.indexOf(NS) === 0; },
+    // ---- 10.1 : accès aux fiches pour la synchro en ligne (Sync, plus bas) ----
+    // Les fiches telles quelles (copies) : listes et « moi ».
+    readDocs(){
+      syncRev();
+      const out = { lists:{}, user: JSON.parse(JSON.stringify(user)) };
+      lists.forEach((L, id) => { out.lists[id] = JSON.parse(JSON.stringify(L)); });
+      return out;
+    },
+    // Pose des fiches venues d'ailleurs (null = fiche supprimée) ; replaceAll :
+    // les fiches absentes disparaissent (premier branchement d'un appareil).
+    // L'appli est prévenue comme pour un autre onglet (Store.receive).
+    writeDocs(d, replaceAll){
+      if(mode !== "doc") return;
+      syncRev();
+      if(replaceAll){
+        lists = new Map(); user = {};
+        const O = freshResidue().orphans;
+        residue.orphans = O; residue.anomalies = {};
+      }
+      Object.keys(d.lists || {}).forEach(id=>{
+        const L = d.lists[id];
+        if(L == null){ lists.delete(id); return; }
+        const c = JSON.parse(JSON.stringify(L));
+        c.id = id;
+        if(!Array.isArray(c.items)) c.items = [];
+        lists.set(id, c);
+      });
+      if(isObj(d.user)) user = JSON.parse(JSON.stringify(d.user));
+      // ce qui arrive doit se lire : les clés concernées sont « présentes »
+      if(lists.size) ["customcats","cattitles","deletedcats","catreverse","custom","todo","overrides","checkedat","order"]
+        .forEach(a => { residue.present[a] = true; });
+      if(own(user, "trash")) residue.present.trash = true;
+      if(own(user, "waitLog")) residue.present.waitlog = true;
+      if(own(user, "lastPurge")) residue.present.lastpurge = true;
+      if(Array.isArray(user.listOrder) || Array.isArray(user.urgentOrder) || Array.isArray(user.waitingOrder)) residue.present.order = true;
+      ver++;
+      commit();
+    },
+    get ns(){ return NS; },
+    set onLocalChange(fn){ localHook = fn; },
     // pour les tests
     _views: allViews,
     _projectStr: projectStr,
@@ -6723,17 +6844,23 @@ function applyExternalChange(key){
   if(key === LAST_BACKUP_KEY){ renderBackupNudge(); return; }
   if(!BACKUP_KEYS.includes(key)) return;
   if(hasActiveEdit()) return; // on ne casse jamais un formulaire ouvert ici
+  DATA.length = 0; // 10.1 : une liste peut aussi disparaître (synchro, restauration ailleurs)
   reloadAllFromStorage();
   undoCurrent = null; // un autre onglet a écrit : son changement n'est pas un geste d'ici à annuler
   renderAll();
 }
 // 10.0 : un autre onglet écrit dans les fiches (sltapis:…) ; Store relit et
 // dit quelles anciennes clés ont changé de contenu.
-window.addEventListener("storage", (e)=>{
-  const changed = Store.receive(e.key);
+// 10.1 : même chemin pour ce qui arrive d'en ligne (Sync, en fin de script).
+function storeChangedElsewhere(storageKey){
+  const changed = Store.receive(storageKey);
   if(changed.includes(LAST_BACKUP_KEY)) applyExternalChange(LAST_BACKUP_KEY);
   const k = changed.find(x => BACKUP_KEYS.includes(x));
   if(k) applyExternalChange(k);
+}
+window.addEventListener("storage", (e)=>{
+  storeChangedElsewhere(e.key);
+  if(typeof Sync !== "undefined") Sync.storageEvent(e.key);
 });
 
 // ---- 8.1 : annuler le dernier geste (⌘Z / Ctrl+Z) ----
@@ -7327,4 +7454,574 @@ const TAPIS = (()=>{
   const warm = ()=>{ try{ if(target === 0){ const m = measure(); place(m); build(m); } }catch(e){} };
   if("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 3000 }); else setTimeout(warm, 1200);
 })();
+
+// ---- 10.1 : synchro en ligne (Firebase : connexion + Firestore) ----
+// Principe : l'appli travaille toujours d'abord dans ce navigateur (les fiches
+// de Store) ; Sync recopie en ligne les fiches « list » et « user », et pose
+// ici celles qui arrivent d'ailleurs. Rien ne change pour l'appli : ce qui
+// arrive d'en ligne suit le même chemin qu'un changement fait dans un autre
+// onglet (storeChangedElsewhere).
+//
+// En ligne (Firestore) :
+//   lists/<cloudId>   une liste : les champs de sa fiche + owner (son
+//                     créateur), members (les comptes qui la voient),
+//                     updatedAt. cloudId = <uid du créateur>_<id de la liste>.
+//   users/<uid>       la fiche « moi » de chaque compte (privée).
+//   (page d'essai : collections essai_lists / essai_users)
+//
+// Modifications faites en même temps sur deux appareils : chaque appareil
+// garde la dernière version vue en ligne (« base ») ; on fusionne alors
+// champ par champ et tâche par tâche (identifiants stables) : chacun garde
+// ce que l'autre n'a pas touché ; en cas de conflit sur le même champ, la
+// modification faite ici l'emporte. Corbeille et journal « en cours » :
+// les ajouts des deux côtés sont gardés (sans doublon), les retraits aussi.
+//
+// Un seul onglet parle à Firebase (verrou navigator.locks) : les autres
+// suivent par le stockage du navigateur, comme d'habitude.
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCGk8dIiewC2Bc3fpr0vUR_KrDLfigmJIQ",
+  authDomain: "sous-le-tapis.firebaseapp.com",
+  projectId: "sous-le-tapis",
+  storageBucket: "sous-le-tapis.firebasestorage.app",
+  messagingSenderId: "555145609517",
+  appId: "1:555145609517:web:5668068042473281c313a4",
+};
+const FIREBASE_VERSION = "13.1.0";
+
+const SyncMerge = (()=>{
+  const isObj = v => !!v && typeof v === "object" && !Array.isArray(v);
+  function canon(v){
+    if(Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
+    if(isObj(v)) return "{" + Object.keys(v).sort().filter(k => v[k] !== undefined)
+      .map(k => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}";
+    return v === undefined ? "~" : JSON.stringify(v);
+  }
+  const eq = (a, b) => canon(a) === canon(b);
+  const clone = v => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
+  // un champ : celui qui a changé depuis la base l'emporte ; les deux → ici
+  function pick(b, l, r){ if(eq(l, b)) return clone(r); if(eq(r, b)) return clone(l); return clone(l); }
+  function fields(b, l, r, skip){
+    b = isObj(b) ? b : {}; l = isObj(l) ? l : {}; r = isObj(r) ? r : {};
+    const out = {};
+    const keys = [];
+    [l, r, b].forEach(o => Object.keys(o).forEach(k => { if(!keys.includes(k)) keys.push(k); }));
+    keys.forEach(k=>{
+      if(skip && skip.includes(k)) return;
+      const v = pick(b[k], l[k], r[k]);
+      if(v !== undefined) out[k] = v;
+    });
+    return out;
+  }
+  // tâches (par identifiant) : ordre d'en ligne, puis les nouvelles d'ici
+  function slots(b, l, r){
+    b = Array.isArray(b) ? b : []; l = Array.isArray(l) ? l : []; r = Array.isArray(r) ? r : [];
+    const B = new Map(b.map(s => [s.id, s])), L = new Map(l.map(s => [s.id, s])), R = new Map(r.map(s => [s.id, s]));
+    const out = [];
+    const one = id=>{
+      const bs = B.get(id), ls = L.get(id), rs = R.get(id);
+      if(ls && rs) return fields(bs, ls, rs);
+      if(ls && !rs){ if(bs && eq(ls, bs)) return null; return clone(ls); }      // retirée en ligne
+      if(rs && !ls){ if(bs && eq(rs, bs)) return null; return clone(rs); }      // retirée ici
+      return null;
+    };
+    r.forEach(s => { const m = one(s.id); if(m) out.push(m); });
+    l.forEach(s => { if(R.has(s.id)) return; const m = one(s.id); if(m) out.push(m); });
+    return out;
+  }
+  function idOrder(b, l, r){
+    if(eq(l, b)) return clone(r);
+    if(eq(r, b) || !Array.isArray(r)) return clone(l);
+    if(!Array.isArray(l)) return clone(r);
+    const out = l.slice();
+    r.forEach(x => { if(!out.some(y => eq(x, y))) out.push(x); });
+    return clone(out);
+  }
+  // corbeille, journal : ajouts et retraits de chaque côté (sans doublon)
+  function multiset(b, l, r){
+    if(!Array.isArray(l) || !Array.isArray(r)) return pick(b, l, r);
+    b = Array.isArray(b) ? b : [];
+    const count = a => { const m = new Map(); a.forEach(x => { const k = canon(x); m.set(k, (m.get(k) || 0) + 1); }); return m; };
+    const cb = count(b), cl = count(l), cr = count(r);
+    const out = [];
+    const used = new Map();
+    // ce qui est en ligne, moins ce qui a été retiré ici
+    r.forEach(x=>{
+      const k = canon(x);
+      const n = (used.get(k) || 0) + 1;
+      const removedHere = Math.max(0, (cb.get(k) || 0) - (cl.get(k) || 0));
+      const keepMax = (cr.get(k) || 0) - removedHere;
+      if(n <= keepMax){ out.push(clone(x)); used.set(k, n); }
+    });
+    // + ce qui a été ajouté ici et pas déjà ajouté en ligne
+    const addedThere = k => Math.max(0, (cr.get(k) || 0) - (cb.get(k) || 0));
+    const seenL = new Map();
+    l.forEach(x=>{
+      const k = canon(x);
+      const n = (seenL.get(k) || 0) + 1; seenL.set(k, n);
+      const addedHere = (cl.get(k) || 0) - (cb.get(k) || 0);
+      if(n > (cb.get(k) || 0) && n - (cb.get(k) || 0) <= addedHere && n - (cb.get(k) || 0) > addedThere(k)) out.push(clone(x));
+    });
+    return out;
+  }
+  function list(b, l, r){
+    b = isObj(b) ? b : {};
+    const out = fields(b, l, r, ["items", "ghosts", "order"]);
+    out.items = slots(b.items, l.items, r.items);
+    const ghosts = slots(b.ghosts, l.ghosts, r.ghosts).filter(g => !out.items.some(s => s.id === g.id));
+    if(ghosts.length) out.ghosts = ghosts;
+    const ord = idOrder(b.order, l.order, r.order);
+    if(ord !== undefined) out.order = ord;
+    return out;
+  }
+  function user(b, l, r){
+    b = isObj(b) ? b : {};
+    const out = fields(b, l, r, ["trash", "waitLog", "lastPurge"]);
+    ["trash", "waitLog"].forEach(k=>{
+      const v = multiset(b[k], l[k], r[k]);
+      if(v !== undefined) out[k] = v;
+    });
+    const lp = (!eq(l.lastPurge, b.lastPurge) && !eq(r.lastPurge, b.lastPurge))
+      ? [l.lastPurge, r.lastPurge].filter(x => typeof x === "string").sort().pop()
+      : pick(b.lastPurge, l.lastPurge, r.lastPurge);
+    if(lp !== undefined) out.lastPurge = lp;
+    return out;
+  }
+  // Firestore n'accepte pas un tableau dans un tableau : on l'emballe
+  function toCloud(v){
+    if(Array.isArray(v)) return v.map(x => Array.isArray(x) ? { __arr: toCloud(x) } : toCloud(x));
+    if(isObj(v)){ const o = {}; Object.keys(v).forEach(k => { if(v[k] !== undefined) o[k] = toCloud(v[k]); }); return o; }
+    return v;
+  }
+  function fromCloud(v){
+    if(Array.isArray(v)) return v.map(fromCloud);
+    if(isObj(v)){
+      const ks = Object.keys(v);
+      if(ks.length === 1 && ks[0] === "__arr" && Array.isArray(v.__arr)) return fromCloud(v.__arr);
+      if(typeof v.toMillis === "function") return v.toMillis();
+      const o = {}; ks.forEach(k => { o[k] = fromCloud(v[k]); }); return o;
+    }
+    return v;
+  }
+  return { canon, eq, list, user, toCloud, fromCloud, multiset };
+})();
+
+const Sync = (()=>{
+  const COL = ESSAI ? "essai_" : "";
+  const LISTS = COL + "lists", USERS = COL + "users";
+  const STATE_KEY = Store.ns + "sync";        // { uid, email, bases:{ "list:<cloudId>"|"user": texte } }
+  const STATUS_KEY = Store.ns + "syncstatus"; // { state, email } — partagé entre onglets
+  const BACKUP_KEY = Store.ns + "avant-synchro";
+  const { canon } = SyncMerge;
+  let fb = null, fbLoading = null;
+  let app = null, auth = null, db = null;
+  let user = null;
+  let leader = false, leaderAsked = false;
+  let unsubs = [];
+  let state = null;            // { uid, email, bases } (seul l'onglet « chef » l'écrit)
+  let linked = false;
+  let pushTimer = 0, pushing = false, pushAgain = false, retryTimer = 0;
+  let onStatusChange = null;
+
+  const readJSON = (k, fb) => { try{ const v = JSON.parse(localStorage.getItem(k)); return v == null ? fb : v; }catch(e){ return fb; } };
+  const writeJSON = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ console.error("[Sync]", e); } };
+  function saveState(){ writeJSON(STATE_KEY, state); }
+  function status(st){
+    // l'état affiché est écrit par l'onglet « chef » (ou par tous à la déconnexion)
+    if(user && !leader){ if(onStatusChange) onStatusChange(); return; }
+    const cur = readJSON(STATUS_KEY, {});
+    const next = { state: st, email: user ? (user.email || "") : "" };
+    if(cur.state !== next.state || cur.email !== next.email) writeJSON(STATUS_KEY, next);
+    if(onStatusChange) onStatusChange();
+  }
+  function getStatus(){
+    const s = readJSON(STATUS_KEY, {});
+    if(!user && s.state !== "off") return { state: auth ? "off" : (readJSON(STATE_KEY, {}).uid ? "connecting" : "off"), email: "" };
+    return s.state ? s : { state: "off", email: "" };
+  }
+
+  async function loadFirebase(){
+    if(fb) return fb;
+    if(!fbLoading){
+      const url = n => `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-${n}.js`;
+      fbLoading = Promise.all([import(url("app")), import(url("auth")), import(url("firestore"))]).then(([a, au, fs])=>{
+        fb = Object.assign({}, a, au, fs);
+        app = fb.initializeApp(FIREBASE_CONFIG);
+        auth = fb.getAuth(app);
+        auth.languageCode = "fr";
+        db = fb.getFirestore(app);
+        fb.onAuthStateChanged(auth, onAuth);
+        return fb;
+      }).catch(err=>{ fbLoading = null; throw err; });
+    }
+    return fbLoading;
+  }
+
+  // ---------- connexion / déconnexion ----------
+  async function onAuth(u){
+    user = u || null;
+    if(!user){ stopListening(); linked = false; status("off"); return; }
+    status("connecting");
+    if(!leaderAsked){
+      leaderAsked = true;
+      if(navigator.locks && navigator.locks.request){
+        navigator.locks.request((ESSAI ? "essai-" : "") + "sltapis-sync", ()=> new Promise(()=>{ leader = true; if(user) link(); }));
+        return;
+      }
+      leader = true;
+    }
+    if(leader) link();
+  }
+  function stopListening(){ unsubs.forEach(f => { try{ f(); }catch(e){} }); unsubs = []; }
+
+  async function link(){
+    if(!user || !leader || Store.mode !== "doc") return;
+    const uid = user.uid;
+    state = readJSON(STATE_KEY, null);
+    try{
+      if(!state || state.uid !== uid || !state.bases){
+        // premier branchement de ce compte sur cet appareil
+        const [uSnap, lSnap] = await Promise.all([
+          fb.getDoc(fb.doc(db, USERS, uid)),
+          fb.getDocs(fb.query(fb.collection(db, LISTS), fb.where("members", "array-contains", uid))),
+        ]);
+        if(!user || user.uid !== uid) return;
+        const local = Store.readDocs();
+        const localHas = Object.keys(local.lists).length > 0;
+        if(!uSnap.exists() && lSnap.empty){
+          if(localHas && !confirm("Premier branchement de ce compte : envoyer les listes de cet appareil dans ton compte en ligne ?")){
+            await fb.signOut(auth); return;
+          }
+          state = { uid, email: user.email || "", bases: {} };
+        }else{
+          if(localHas && !confirm("Ce compte a déjà des listes en ligne : elles vont remplacer celles de cet appareil (une copie de celles-ci est gardée sur cet appareil). On y va ?")){
+            await fb.signOut(auth); return;
+          }
+          if(localHas) writeJSON(BACKUP_KEY, Object.assign({ app:"sous-le-tapis", version:2, format:10, savedAt:new Date().toISOString() }, Store.exportModel()));
+          const docs = { lists: {}, user: uSnap.exists() ? cleanUser(SyncMerge.fromCloud(uSnap.data())) : {} };
+          const bases = {};
+          lSnap.forEach(d=>{
+            const L = cleanList(d.id, SyncMerge.fromCloud(d.data()));
+            docs.lists[localIdOf(L, uid)] = L;
+            bases["list:" + d.id] = canon(L);
+          });
+          if(uSnap.exists()) bases.user = canon(docs.user);
+          Store.writeDocs(docs, true);
+          forgetUndo(); // ⌘Z ne doit pas ramener les anciennes listes de cet appareil
+          state = { uid, email: user.email || "", bases };
+          saveState();
+          storeChangedElsewhere(Store.ns + "remote");
+          if(localHas) celebrate("Tes listes en ligne sont arrivées. Celles de cet appareil sont gardées de côté.");
+        }
+        saveState();
+      }
+      linked = true;
+      listen(uid);
+      schedulePush(0);
+    }catch(err){
+      console.error("[Sync] branchement", err);
+      status("error");
+      retryLater(link);
+    }
+  }
+  const cleanList = (cloudId, d)=>{ const L = Object.assign({}, d); delete L.updatedAt; L.cloudId = cloudId; if(!Array.isArray(L.items)) L.items = []; return L; };
+  const cleanUser = d => { const u = Object.assign({}, d); delete u.updatedAt; return u; };
+  // id local d'une liste : le sien pour mes listes, l'id en ligne pour celles des autres
+  const localIdOf = (L, uid) => (L.owner === uid && typeof L.id === "string" && L.id) ? L.id : L.cloudId;
+
+  function listen(uid){
+    stopListening();
+    unsubs.push(fb.onSnapshot(fb.doc(db, USERS, uid), snap=>{
+      if(snap.metadata.hasPendingWrites) return;
+      incoming("user", null, snap.exists() ? cleanUser(SyncMerge.fromCloud(snap.data())) : null);
+    }, onListenError));
+    unsubs.push(fb.onSnapshot(fb.query(fb.collection(db, LISTS), fb.where("members", "array-contains", uid)), qs=>{
+      if(qs.metadata.hasPendingWrites) return;
+      qs.docChanges().forEach(ch=>{
+        incoming("list:" + ch.doc.id, ch.doc.id, ch.type === "removed" ? null : cleanList(ch.doc.id, SyncMerge.fromCloud(ch.doc.data())));
+      });
+      if(!pushing) status(dirty() ? "pending" : "ok");
+    }, onListenError));
+  }
+  function onListenError(err){
+    console.error("[Sync] écoute", err);
+    status("error");
+    retryLater(()=>{ if(user) listen(user.uid); });
+  }
+
+  // ---------- ce qui arrive d'en ligne ----------
+  function localDocFor(key, docs){
+    if(key === "user") return { id:null, doc: docs.user };
+    const cloudId = key.slice(5);
+    for(const id of Object.keys(docs.lists)){
+      const L = docs.lists[id];
+      if(cloudIdOf(L) === cloudId) return { id, doc: L };
+    }
+    return { id:null, doc:null };
+  }
+  function cloudIdOf(L){ return L.cloudId || (user.uid + "_" + L.id); }
+  function incoming(key, cloudId, remote){
+    if(!state) return;
+    const docs = Store.readDocs();
+    const { id, doc: rawLocal } = localDocFor(key, docs);
+    const local = (rawLocal && key !== "user") ? normalizeOne(rawLocal) : rawLocal;
+    const base = state.bases[key];
+    const remoteC = remote ? canon(remote) : undefined;
+    if(remoteC === base) return;                       // déjà connu (notre propre écriture)
+    const localC = local ? canon(local) : undefined;
+    let next;
+    if(localC === base || (base === undefined && !local)) next = remote;
+    else if(!remote) next = local;                      // supprimée en ligne mais changée ici : on la garde
+    else next = merge(key, base, local, remote);
+    if(remote) state.bases[key] = remoteC; else delete state.bases[key];
+    saveState();
+    if(canon(next) !== (rawLocal ? canon(rawLocal) : undefined)){
+      if(key === "user") Store.writeDocs({ lists:{}, user: next || {} });
+      else if(next || id) Store.writeDocs({ lists: { [id || localIdOf(next, user.uid)]: next } });
+      storeChangedElsewhere(Store.ns + "remote");
+    }
+    if(next && canon(next) !== (state.bases[key])) schedulePush();
+  }
+  function merge(key, base, local, remote){
+    const b = base === undefined ? undefined : JSON.parse(base);
+    return key === "user" ? SyncMerge.user(b, local, remote) : SyncMerge.list(b, local, remote);
+  }
+
+  // ---------- ce qui part en ligne ----------
+  // mes listes portent mon compte (et plus « moi »), leur créateur et leur id en ligne
+  function normalizeOne(L){
+    const n = Object.assign({}, L);
+    const mem = Array.isArray(L.members) ? L.members.filter(m => m !== "moi") : [];
+    if(!L.owner) n.owner = user.uid;
+    if(!mem.includes(user.uid) && n.owner === user.uid) mem.unshift(user.uid);
+    n.members = mem;
+    n.cloudId = cloudIdOf(L);
+    return n;
+  }
+  function normalized(docs){
+    return Object.keys(docs.lists).map(id=>{
+      const L = docs.lists[id], n = normalizeOne(L);
+      return { key: "list:" + n.cloudId, id, doc: n, raw: L };
+    });
+  }
+  function dirty(){
+    if(!state || !user) return false;
+    const docs = Store.readDocs();
+    const norm = normalized(docs);
+    if(norm.some(x => canon(x.doc) !== state.bases[x.key] || canon(x.raw) !== canon(x.doc))) return true;
+    if(Object.keys(state.bases).some(k => k.startsWith("list:") && !norm.some(x => x.key === k))) return true;
+    if(Object.keys(docs.user).length && canon(docs.user) !== state.bases.user) return true;
+    return false;
+  }
+  function schedulePush(delay){
+    if(!leader || !linked) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(pushAll, delay == null ? 400 : delay);
+  }
+  async function pushAll(){
+    if(!user || !leader || !linked || !state) return;
+    if(pushing){ pushAgain = true; return; }
+    pushing = true; pushAgain = false;
+    let ok = true;
+    try{
+      const docs = Store.readDocs();
+      const norm = normalized(docs);
+      for(const x of norm){
+        if(canon(x.doc) === state.bases[x.key] && canon(x.raw) === canon(x.doc)) continue;
+        status("pending");
+        await pushOne(x.key, LISTS, x.key.slice(5), x.id, x.doc, x.raw);
+      }
+      for(const k of Object.keys(state.bases)){
+        if(!k.startsWith("list:") || norm.some(x => x.key === k)) continue;
+        status("pending");
+        await pushDelete(k);
+      }
+      if(Object.keys(docs.user).length && canon(docs.user) !== state.bases.user){
+        status("pending");
+        await pushOne("user", USERS, user.uid, null, docs.user, docs.user);
+      }
+    }catch(err){
+      ok = false;
+      console.error("[Sync] envoi", err);
+      status(err && err.code === "permission-denied" ? "error" : "pending");
+      retryLater(()=> schedulePush(0));
+    }finally{
+      pushing = false;
+    }
+    if(pushAgain) schedulePush(0);
+    else if(ok) status(dirty() ? "pending" : "ok");
+  }
+  async function pushOne(key, coll, docId, localId, doc, raw){
+    const ref = fb.doc(db, coll, docId);
+    const base = state.bases[key];
+    const out = await fb.runTransaction(db, async tx=>{
+      const snap = await tx.get(ref);
+      const remote = snap.exists() ? (key === "user" ? cleanUser(SyncMerge.fromCloud(snap.data())) : cleanList(docId, SyncMerge.fromCloud(snap.data()))) : null;
+      const merged = (!remote || canon(remote) === base) ? doc : merge(key, base, doc, remote);
+      if(!remote || canon(merged) !== canon(remote)){
+        tx.set(ref, Object.assign(SyncMerge.toCloud(merged), { updatedAt: fb.serverTimestamp() }));
+      }
+      return merged;
+    });
+    state.bases[key] = canon(out);
+    saveState();
+    // ici, la fiche a peut-être encore bougé pendant l'envoi
+    const now = Store.readDocs();
+    const cur = key === "user" ? now.user : (localId != null ? now.lists[localId] : null);
+    let next = out;
+    if(cur && canon(cur) !== canon(raw)) next = merge(key, canon(raw), cur, out);
+    if(!cur && key !== "user") return;                       // supprimée entre-temps
+    if(canon(next) !== canon(cur)){
+      if(key === "user") Store.writeDocs({ lists:{}, user: next });
+      else Store.writeDocs({ lists: { [localId]: next } });
+      storeChangedElsewhere(Store.ns + "remote");
+    }
+  }
+  async function pushDelete(key){
+    const cloudId = key.slice(5);
+    const base = state.bases[key];
+    const b = JSON.parse(base);
+    if(b.owner !== user.uid){ delete state.bases[key]; saveState(); return; }   // pas à moi : on la quitte seulement
+    const ref = fb.doc(db, LISTS, cloudId);
+    const restored = await fb.runTransaction(db, async tx=>{
+      const snap = await tx.get(ref);
+      if(!snap.exists()) return null;
+      const remote = cleanList(cloudId, SyncMerge.fromCloud(snap.data()));
+      if(canon(remote) === base){ tx.delete(ref); return null; }
+      return remote;                                          // changée en ligne entre-temps : on la garde
+    });
+    delete state.bases[key];
+    if(restored){
+      state.bases[key] = canon(restored);
+      Store.writeDocs({ lists: { [localIdOf(restored, user.uid)]: restored } });
+      storeChangedElsewhere(Store.ns + "remote");
+    }
+    saveState();
+  }
+  function forgetUndo(){
+    try{ undoStack.length = 0; saveUndoStack(); undoCurrent = null; }catch(e){}
+  }
+  function retryLater(fn){
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(()=>{ if(user) fn(); }, 15000);
+  }
+  window.addEventListener("online", ()=>{ if(user && leader && linked) schedulePush(0); });
+
+  // ---------- pour l'appli ----------
+  return {
+    start(){
+      if(Store.mode !== "doc") return;
+      Store.onLocalChange = ()=> schedulePush();
+      // déjà connecté sur cet appareil : Firebase est chargé tout de suite
+      if(readJSON(STATE_KEY, {}).uid) loadFirebase().catch(err => { console.error("[Sync] chargement", err); status("off"); });
+    },
+    storageEvent(key){
+      if(key === STATUS_KEY){ if(onStatusChange) onStatusChange(); return; }
+      if(leader && linked && key && key.indexOf(Store.ns) === 0 && key !== STATE_KEY) schedulePush();
+    },
+    get status(){ return getStatus(); },
+    set onStatus(fn){ onStatusChange = fn; },
+    get user(){ return user; },
+    async signInGoogle(){ await loadFirebase(); return fb.signInWithPopup(auth, new fb.GoogleAuthProvider()); },
+    async signInEmail(email, pw){ await loadFirebase(); return fb.signInWithEmailAndPassword(auth, email, pw); },
+    async createEmail(email, pw){ await loadFirebase(); return fb.createUserWithEmailAndPassword(auth, email, pw); },
+    async resetPassword(email){ await loadFirebase(); return fb.sendPasswordResetEmail(auth, email); },
+    async signOut(){ await loadFirebase(); stopListening(); linked = false; return fb.signOut(auth); },
+    get available(){ return Store.mode === "doc"; },
+  };
+})();
+
+// ---- 10.1 : la plume (indicateur de connexion) et sa petite fenêtre ----
+// À droite du titre. Bleu (--accent) : connecté ; #B08478 : déconnecté ; bleu
+// pâle : connecté, des changements attendent le réseau.
+(()=>{
+  const plume = document.getElementById("plume");
+  if(!plume) return;
+  if(!Sync.available){ plume.hidden = true; return; }
+  plume.hidden = false;
+  const LABEL = {
+    off: "Déconnecté — se connecter pour retrouver ses listes partout",
+    connecting: "Connexion en cours…",
+    ok: "Connecté — tout est à jour",
+    pending: "Connecté — des changements attendent le réseau",
+    error: "La synchro a un souci — clic pour voir",
+  };
+  function paint(){
+    const st = Sync.status.state || "off";
+    plume.dataset.state = st;
+    plume.classList.toggle("on", st === "ok" || st === "pending");
+    plume.classList.toggle("waiting", st === "pending" || st === "connecting");
+    const who = Sync.status.email ? " (" + Sync.status.email + ")" : "";
+    plume.setAttribute("aria-label", LABEL[st] || LABEL.off);
+    plume.title = (LABEL[st] || LABEL.off) + (st === "ok" || st === "pending" ? who : "");
+  }
+  Sync.onStatus = paint;
+  paint();
+
+  const ERR = {
+    "auth/invalid-credential": "E-mail ou mot de passe incorrect.",
+    "auth/wrong-password": "E-mail ou mot de passe incorrect.",
+    "auth/user-not-found": "Pas de compte avec cette adresse : « Créer un compte » ?",
+    "auth/email-already-in-use": "Un compte existe déjà avec cette adresse : « Se connecter ».",
+    "auth/weak-password": "Mot de passe trop court (6 caractères minimum).",
+    "auth/invalid-email": "Cette adresse e-mail ne ressemble pas à une adresse.",
+    "auth/missing-password": "Il manque le mot de passe.",
+    "auth/popup-blocked": "Le navigateur a bloqué la fenêtre Google : autorise les fenêtres pour ce site.",
+    "auth/network-request-failed": "Pas de réseau pour l'instant.",
+    "auth/too-many-requests": "Trop d'essais : le faisan monte la garde, réessaie dans un moment.",
+  };
+  const errText = e => ERR[e && e.code] || "Ça n'a pas marché (" + ((e && (e.code || e.message)) || "erreur inconnue") + ").";
+
+  function open(){
+    closeRelancePop();
+    const st = Sync.status.state || "off";
+    const pop = document.createElement("div");
+    pop.className = "relance-pop sync-pop";
+    pop.setAttribute("role", "dialog");
+    if(Sync.user && st !== "off"){
+      const stateText = { ok:"Tout est à jour.", pending:"Des changements attendent le réseau ; ils partiront tout seuls.", connecting:"Connexion en cours…", error:"La synchro a un souci : elle réessaie toute seule." }[st] || "";
+      pop.innerHTML = `
+        <div class="rp-title">Connecté</div>
+        <div class="sp-who">${escapeAttr(Sync.user.email || "")}</div>
+        <div class="sp-state">${escapeAttr(stateText)}</div>
+        <div class="rp-opts"><button type="button" class="sp-logout rp-none">Se déconnecter</button></div>`;
+      pop.querySelector(".sp-logout").addEventListener("click", async e=>{
+        e.stopPropagation();
+        closeRelancePop();
+        try{ await Sync.signOut(); }catch(err){ console.error(err); }
+      });
+    }else{
+      pop.innerHTML = `
+        <div class="rp-title">Retrouver ses listes partout</div>
+        <button type="button" class="sp-google">Continuer avec Google</button>
+        <div class="sp-or">ou</div>
+        <input type="email" class="sp-email" placeholder="Adresse e-mail" autocomplete="username">
+        <input type="password" class="sp-pw" placeholder="Mot de passe" autocomplete="current-password">
+        <div class="rp-opts"><button type="button" class="sp-login">Se connecter</button><button type="button" class="sp-create rp-none">Créer un compte</button></div>
+        <button type="button" class="sp-forgot">Mot de passe oublié ?</button>
+        <div class="sp-msg" role="status"></div>`;
+      const msg = pop.querySelector(".sp-msg");
+      const email = pop.querySelector(".sp-email"), pw = pop.querySelector(".sp-pw");
+      const busy = on => pop.querySelectorAll("button, input").forEach(b => { b.disabled = on; });
+      const run = async (fn, okText)=>{
+        msg.textContent = ""; busy(true);
+        try{ await fn(); if(okText) msg.textContent = okText; else closeRelancePop(); }
+        catch(err){ if(!(err && (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request"))) msg.textContent = errText(err); }
+        finally{ busy(false); }
+      };
+      pop.querySelector(".sp-google").addEventListener("click", e=>{ e.stopPropagation(); run(()=> Sync.signInGoogle()); });
+      pop.querySelector(".sp-login").addEventListener("click", e=>{ e.stopPropagation(); run(()=> Sync.signInEmail(email.value.trim(), pw.value)); });
+      pop.querySelector(".sp-create").addEventListener("click", e=>{ e.stopPropagation(); run(()=> Sync.createEmail(email.value.trim(), pw.value)); });
+      pop.querySelector(".sp-forgot").addEventListener("click", e=>{
+        e.stopPropagation();
+        if(!email.value.trim()){ msg.textContent = "Écris d'abord ton adresse e-mail juste au-dessus."; email.focus(); return; }
+        run(()=> Sync.resetPassword(email.value.trim()), "Un e-mail est parti pour choisir un nouveau mot de passe.");
+      });
+      pw.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); pop.querySelector(".sp-login").click(); } });
+    }
+    openPopAt(pop, plume);
+  }
+  plume.addEventListener("click", e=>{ e.stopPropagation(); if(relancePop && relancePop.classList.contains("sync-pop")) closeRelancePop(); else open(); });
+  // à la connexion réussie, la fenêtre se referme d'elle-même (open() la recrée au besoin)
+})();
+Sync.start();
 </script>
