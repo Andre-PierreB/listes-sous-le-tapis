@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.6 -->
+<!-- Sous le tapis — version AUTONOME 10.7 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -665,6 +665,12 @@
     partagées sont remises) ; une sauvegarde d'avant le format 10 ne se
     restaure pas connecté. Partage : survol jaune citron clair
     (--share-hover). « rejoint ton carnet de contacts ».
+  - 10.7 : volet sur chaque liste : petite flèche en bas à droite
+    (.cat-fold) qui replie la liste sur son bandeau (titre, ajout express,
+    poignée), avec le nombre de tâches restantes ; on peut toujours la
+    déplacer. Elle se rouvre quand on y ajoute une tâche (express ou « + »)
+    ou quand on glisse une tâche dessus. Mémorisé par appareil
+    (localStorage « sltapis-volets », hors sauvegarde et hors synchro).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1279,6 +1285,22 @@ header{
   gap:0.65rem;
 }
 .category.done{ opacity:0.62; }
+/* 10.7 : volet — la flèche en bas à droite replie la liste sur son bandeau */
+.category{ position:relative; }
+.cat-fold{
+  position:absolute; right:0.55rem; bottom:0.3rem; width:24px; height:18px;
+  display:grid; place-items:center; appearance:none; border:0; background:none; padding:0;
+  border-radius:6px; cursor:pointer; color:var(--ink-faint); opacity:0.55;
+  transition:opacity .15s ease, color .15s ease, background .15s ease;
+}
+.cat-fold:hover, .cat-fold:focus-visible{ opacity:1; color:var(--cat-color, var(--accent)); background:color-mix(in srgb, var(--cat-color, var(--accent)) 10%, transparent); }
+.cat-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+.cat-fold svg{ display:block; transition:transform .25s ease; }
+.category.collapsed{ align-self:start; padding-bottom:1.5rem; }
+.category.collapsed > ul.items{ display:none; }
+.category.collapsed .cat-fold svg{ transform:rotate(180deg); }
+.cat-count{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:700; color:var(--ink-faint); flex:none; }
+@media (prefers-reduced-motion: reduce){ .cat-fold svg{ transition:none; } }
 .cat-head{
   display:flex;
   justify-content:space-between;
@@ -2657,7 +2679,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.6</span>
+    <span class="version-tag">v10.7</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4288,6 +4310,42 @@ function isQuickTyping(){
   return !!(a && a.classList && a.classList.contains("cat-quick") && a.value);
 }
 let refocusQuickCat = null;
+// ---- 10.7 : volets (listes repliées), par appareil ----
+const FOLD_KEY = "sltapis-volets";
+function loadFolded(){ try{ const a = JSON.parse(localStorage.getItem(FOLD_KEY) || "[]"); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
+function isFolded(catId){ return loadFolded().includes(catId); }
+function setFolded(catId, on){
+  try{
+    const a = loadFolded().filter(id => id !== catId);
+    if(on) a.push(catId);
+    localStorage.setItem(FOLD_KEY, JSON.stringify(a));
+  }catch(e){}
+}
+function toggleFold(catId){
+  const card = document.getElementById("cat-" + catId);
+  const ul = card && card.querySelector(":scope > ul.items");
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const closing = !isFolded(catId);
+  const ease = { duration:220, easing:"cubic-bezier(.4,0,.2,1)" };
+  if(closing){
+    if(reduce || !ul || !ul.animate){ setFolded(catId, true); renderAll(); return; }
+    const h = ul.offsetHeight;
+    ul.style.overflow = "hidden";
+    const a = ul.animate([{ height:h + "px", opacity:1, marginTop:"0px" }, { height:"0px", opacity:0, marginTop:"-0.65rem" }], ease);
+    a.onfinish = ()=>{ setFolded(catId, true); renderAll(); };
+    return;
+  }
+  setFolded(catId, false);
+  renderAll();
+  if(reduce) return;
+  const card2 = document.getElementById("cat-" + catId);
+  const ul2 = card2 && card2.querySelector(":scope > ul.items");
+  if(!ul2 || !ul2.animate) return;
+  const h2 = ul2.offsetHeight;
+  ul2.style.overflow = "hidden";
+  const a2 = ul2.animate([{ height:"0px", opacity:0, marginTop:"-0.65rem" }, { height:h2 + "px", opacity:1, marginTop:"0px" }], ease);
+  a2.onfinish = ()=>{ ul2.style.overflow = ""; };
+}
 
 // ---- Sauvegarde / restauration du contenu (export / import) ----
 // La synchro multi-appareils (capacité "db" de Claude) a été retirée :
@@ -5556,6 +5614,11 @@ function handleRowDragMove(x, y){
   if(!target) return;
   const card = target.closest(".category");
   if(!card) return;
+  if(card.classList.contains("collapsed")){ // 10.7 : le volet s'ouvre sous la tâche
+    card.classList.remove("collapsed");
+    const fid = card.id.replace(/^cat-/, "");
+    if(fid) setFolded(fid, false);
+  }
   const ul = card.querySelector("ul.items");
   if(!ul) return;
   const rows = Array.from(ul.children).filter(n => n.dataset && n.dataset.dragMode === "category" && n !== d.el);
@@ -6622,6 +6685,9 @@ function render(){
       if(state[k]) doneInCat++;
     });
     if(visibleCount && doneInCat === visibleCount) card.classList.add("done");
+    const folded = isFolded(cat.id);
+    if(folded) card.classList.add("collapsed");
+    const leftCount = visibleCount - doneInCat;
     // Une case vide (aucune tâche vivante dedans, cochée ou non) peut être
     // supprimée d'un petit clic ; sinon, pas de bouton du tout — la
     // meilleure façon d'éviter d'effacer une liste pleine par mégarde.
@@ -6649,7 +6715,7 @@ function render(){
       <span class="cat-title-group">
         ${renamingThisCat
           ? `<input type="text" class="cat-title-input" value="${escapeAttr(cat.title)}">`
-          : `<span class="cat-title">${escapeAttr(cat.title)}</span>${shareChips}`}
+          : `<span class="cat-title">${escapeAttr(cat.title)}</span>${shareChips}${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} à faire">${leftCount}</span>` : ""}`}
         <button type="button" class="add-btn" aria-label="Ajouter une tâche">+</button>
         ${renamingThisCat ? "" : `<label class="cat-quick-wrap" title="Ajouter une tâche"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" aria-label="Ajouter une tâche à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
       </span>
@@ -6672,6 +6738,7 @@ function render(){
         if(e.key === "Enter"){
           e.preventDefault();
           if(!quickInp.value.trim()) return;
+          if(isFolded(cat.id)) setFolded(cat.id, false); // 10.7 : la liste se rouvre
           try{ if(addQuickTask(cat, quickInp.value)) actionToast("add"); }
           catch(err){ console.error("[ajout express] échec", err); }
           quickInp.value = "";
@@ -6685,6 +6752,7 @@ function render(){
     head.querySelector(".add-btn").addEventListener("click", (e)=>{
       e.stopPropagation();
       addingCat = addingCat === cat.id ? null : cat.id;
+      if(addingCat && isFolded(cat.id)) setFolded(cat.id, false); // 10.7
       renderAll();
     });
     if(canDeleteCat){
@@ -6820,6 +6888,16 @@ function render(){
     }
 
     card.appendChild(ul);
+    // 10.7 : la flèche du volet, en bas à droite
+    const fold = document.createElement("button");
+    fold.type = "button";
+    fold.className = "cat-fold";
+    fold.setAttribute("aria-expanded", folded ? "false" : "true");
+    fold.setAttribute("aria-label", folded ? "Déplier la liste" : "Replier la liste");
+    fold.title = folded ? "Déplier" : "Replier";
+    fold.innerHTML = `<svg viewBox="0 0 12 8" width="12" height="8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 6.2 6 1.8l4.5 4.4"/></svg>`;
+    fold.addEventListener("click", e=>{ e.stopPropagation(); toggleFold(cat.id); });
+    card.appendChild(fold);
     categoriesEl.appendChild(card);
   });
   refocusQuickCat = null;
