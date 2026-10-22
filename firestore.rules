@@ -1,0 +1,50 @@
+rules_version = '2';
+// Règles d'accès de Sous le tapis (Firestore). À coller dans la console
+// Firebase : Firestore → onglet « Règles » → Publier.
+//   lists/<id>  : une liste, lisible et modifiable par ses membres (members) ;
+//                 seul son créateur (owner) peut changer les membres ou la supprimer.
+//   users/<uid> : la fiche « moi » de chaque compte, privée.
+//   essai_…     : les mêmes, pour la page d'essai (essai.html).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function canReadList() {
+      // resource == null : la liste n'existe pas encore (lecture avant création)
+      return signedIn() && (resource == null || request.auth.uid in resource.data.members);
+    }
+    function canCreateList() {
+      return signedIn()
+        && request.resource.data.owner == request.auth.uid
+        && request.auth.uid in request.resource.data.members;
+    }
+    function canUpdateList() {
+      return signedIn()
+        && request.auth.uid in resource.data.members
+        && request.resource.data.owner == resource.data.owner
+        && (request.auth.uid == resource.data.owner
+            || request.resource.data.members == resource.data.members);
+    }
+    function canDeleteList() { return signedIn() && request.auth.uid == resource.data.owner; }
+
+    match /lists/{listId} {
+      allow read: if canReadList();
+      allow create: if canCreateList();
+      allow update: if canUpdateList();
+      allow delete: if canDeleteList();
+    }
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /essai_lists/{listId} {
+      allow read: if canReadList();
+      allow create: if canCreateList();
+      allow update: if canUpdateList();
+      allow delete: if canDeleteList();
+    }
+    match /essai_users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+  }
+}
