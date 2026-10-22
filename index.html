@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.9 -->
+<!-- Sous le tapis — version AUTONOME 10.10 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -685,6 +685,9 @@
     attente, listes en ligne dont celles des autres, dernière erreur) et
     « Réparer cet appareil » (oublie l'état de synchro de l'appareil : au
     rechargement, ses listes sont remplacées par celles du compte).
+  - 10.10 : « Continuer avec Google » propose toujours le choix du compte
+    (prompt select_account) au lieu de reprendre d'office celui déjà ouvert
+    dans le navigateur.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2696,7 +2699,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.9</span>
+    <span class="version-tag">v10.10</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -8887,7 +8890,14 @@ const Sync = (()=>{
     get status(){ return getStatus(); },
     set onStatus(fn){ onStatusChange = fn; },
     get user(){ return user; },
-    async signInGoogle(){ await loadFirebase(); return fb.signInWithPopup(auth, new fb.GoogleAuthProvider()); },
+    async signInGoogle(){
+      await loadFirebase();
+      // 10.10 : Google demande toujours quel compte utiliser (sinon il reprend
+      // d'office celui déjà ouvert dans le navigateur)
+      const provider = new fb.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      return fb.signInWithPopup(auth, provider);
+    },
     async signInEmail(email, pw){ await loadFirebase(); return fb.signInWithEmailAndPassword(auth, email, pw); },
     async createEmail(email, pw){ await loadFirebase(); return fb.createUserWithEmailAndPassword(auth, email, pw); },
     async resetPassword(email){ await loadFirebase(); return fb.sendPasswordResetEmail(auth, email); },
