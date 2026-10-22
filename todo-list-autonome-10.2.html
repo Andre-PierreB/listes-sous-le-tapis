@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.1 -->
+<!-- Sous le tapis — version AUTONOME 10.2 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -75,7 +75,8 @@
   FICHES (depuis la 10.0) — préparation de la synchro et du partage
   - sltapis:list:<id> : une fiche par liste (id = l'ancien identifiant de la
     liste) : title, color, reversed (sens), rank (place de création), order
-    (ordre des tâches, par identifiant), members (["moi"] pour l'instant),
+    (ordre des tâches, par identifiant), members (["moi"] au départ ;
+    comptes en ligne depuis la 10.1), owner / names (10.2, partage),
     deleted, et items : chaque tâche { id stable, base (champs à la
     création), edits (modifications), done (coche), checkedAt (date) }.
     « ghosts » : places de tâches disparues (⌘Z d'un ajout…), gardées pour
@@ -108,7 +109,8 @@
   - Plan Spark (gratuit), Firestore europe-west1 en mode production,
     connexion Google ou e-mail + mot de passe ; domaine autorisé :
     andre-pierreb.github.io. Règles d'accès : firestore.rules (dans le dépôt,
-    à recoller dans la console Firestore → Règles à chaque changement).
+    à recoller dans la console Firestore → Règles à chaque changement ;
+    changées en 10.2 pour le partage).
   - En ligne : lists/<cloudId> (champs de la fiche + owner, members,
     updatedAt ; cloudId = <uid du créateur>_<id de la liste>) et
     users/<uid> (fiche « moi », privée). Un tableau dans un tableau est
@@ -133,6 +135,40 @@
   - Tests (hors fichier) : faux Firebase (serveur + modules) — deux
     appareils, hors ligne, modifications simultanées, ⌘Z, deux onglets,
     déconnexion, purge du lundi, compte séparé et règles.
+
+  PARTAGE DES LISTES (depuis la 10.2)
+  - Personnes : bouton « Partage » en bas (#shareLink, panneau #sharePanel,
+    Échap le ferme). Carnet = champ « contacts » de la fiche « moi »
+    ({ compte: { name, since } }), prénom = champ « myName » (par défaut le
+    prénom Google ou le début de l'adresse). Invitation : invites/<code>
+    en ligne ({ from, fromName, createdAt }) ; lien ?invitation=<code>
+    (gardé dans sltapis:invitation jusqu'à la connexion) ; la personne
+    invitée y écrit usedBy / usedByName, chacun entre dans le carnet de
+    l'autre, puis l'invitation est effacée par qui a invité.
+  - Listes : dans le renommage d'une liste (double-clic sur le titre), ligne
+    « Partagée avec » : on coche les noms du carnet (Store.setListSharing →
+    members + names { compte: prénom } dans la fiche de la liste). Pastilles
+    d'initiales à côté du titre d'une liste partagée.
+  - Tâches : base.by = qui l'a créée, override doneBy = qui l'a cochée (sans
+    ces champs : le créateur de la liste ; sans compte : rien n'est ajouté,
+    tout est à moi). Un invité coche tout, mais n'efface / ne met à la
+    corbeille / n'emporte ailleurs que ses propres tâches (canRemoveTask) ;
+    il ne supprime pas la liste. Compteur, graphique et purge du lundi ne
+    prennent que MES coches (checkedByMe) : chacun purge les siennes dans sa
+    propre corbeille. Initiale de qui a coché sur une tâche cochée.
+  - Règles en ligne (firestore.rules) : seul le créateur change les membres,
+    les noms, la suppression ; un invité ne peut jamais faire baisser le
+    nombre de tâches d'une liste (une tâche effacée reste, marquée effacée).
+    Si la base refuse une liste qui n'est pas à moi, Sync reprend la version
+    en ligne (ou la retire si on ne me la partage plus) au lieu de réessayer.
+  - ⌘Z : quand un changement d'une liste partagée arrive d'en ligne, la pile
+    est vidée (elle remettrait des clés entières, et déferait le geste de
+    l'autre). Fusion : les modifications d'une tâche se fusionnent champ par
+    champ (l'un coche, l'autre renomme : chacun garde le sien).
+  - Tests (hors fichier) : faux Firebase avec les mêmes règles en JS — deux
+    comptes (invitation, partage, coches, effacement, purge, règles, retrait
+    du partage, hors ligne, 2e appareil, prénom), et comparaison 10.1 / 10.2
+    sans compte (écran et clés identiques, sauf la ligne « Partagée avec »).
 
   HISTORIQUE RÉCENT
   - 5.2 : case trèfle « Une petite sur le pouce ? » sous les urgences —
@@ -601,6 +637,11 @@
     recopiées en ligne et fusionnées entre appareils ; sans connexion, rien
     ne change. Sur une autre page (restauration, synchro), une liste
     disparue disparaît aussi de l'écran. Testée d'abord sur essai.html.
+  - 10.2 : partage des listes (voir PARTAGE DES LISTES) : bouton « Partage »
+    en bas avec le carnet et les liens d'invitation (copier / WhatsApp) ;
+    « Partagée avec » dans le renommage d'une liste ; pastilles d'initiales ;
+    un invité n'efface que ses propres tâches ; chacun son compteur et sa
+    purge ; nouvelles règles firestore.rules (à recoller dans la console).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1278,6 +1319,40 @@ header{
 }
 .cat-swatch:hover{ transform:scale(1.12); }
 .cat-swatch.selected{ outline:2px solid var(--sw); outline-offset:2px; }
+/* 10.2 : pastilles des personnes avec qui la liste est partagée (à côté du titre) */
+.share-chips{ display:inline-flex; flex:none; }
+.share-chip{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:1.15rem; height:1.15rem;
+  border-radius:50%;
+  background:color-mix(in srgb, var(--cat-color, var(--accent)) 20%, var(--surface));
+  color:color-mix(in srgb, var(--cat-color, var(--accent)) 75%, var(--ink));
+  box-shadow:0 0 0 2px var(--surface);
+  font-size:0.62rem; font-weight:700; line-height:1;
+}
+.share-chip + .share-chip{ margin-left:-0.3rem; }
+.share-more{ font-size:0.55rem; }
+/* 10.2 : « Partagée avec » sous les couleurs, dans le renommage d'une liste */
+.cat-share{ display:flex; flex-wrap:wrap; align-items:center; gap:0.35rem 0.5rem; margin-top:0.55rem; font-size:0.8rem; color:var(--ink-soft); }
+.cat-share-label{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.66rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); margin-right:0.15rem; }
+.cat-share-person{
+  appearance:none; display:inline-flex; align-items:center; gap:0.35rem;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft);
+  border-radius:999px; padding:0.2rem 0.6rem 0.2rem 0.35rem;
+  font:inherit; font-size:0.8rem; cursor:pointer;
+  transition:border-color .15s ease, background .15s ease, color .15s ease;
+}
+.cat-share-person .box{
+  width:0.9rem; height:0.9rem; border-radius:4px; border:1.5px solid var(--ink-faint);
+  display:inline-flex; align-items:center; justify-content:center; flex:none;
+}
+.cat-share-person .box svg{ width:0.65rem; height:0.65rem; display:none; }
+.cat-share-person[aria-checked="true"]{ border-color:var(--cat-color, var(--accent)); color:var(--ink); background:color-mix(in srgb, var(--cat-color, var(--accent)) 10%, var(--surface)); }
+.cat-share-person[aria-checked="true"] .box{ background:var(--cat-color, var(--accent)); border-color:var(--cat-color, var(--accent)); color:var(--surface); }
+.cat-share-person[aria-checked="true"] .box svg{ display:block; }
+.cat-share-person:hover{ border-color:var(--cat-color, var(--accent)); }
+.cat-share-person:disabled{ opacity:.5; cursor:default; }
+.cat-share-link{ appearance:none; border:0; background:none; padding:0; font:inherit; font-size:0.8rem; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
 .add-btn{
   appearance:none;
   border:1px solid var(--line);
@@ -1586,6 +1661,8 @@ ul.items{
   border-radius:4px;
 }
 .delete-btn{ font-size:0.95rem; }
+/* 10.2 : à la place de l'effacement, dans une liste partagée (tâche d'un autre) */
+.delete-spacer{ display:block; flex:none; width:26px; height:1px; }
 .urgent-btn svg, .delete-btn svg{ display:block; }
 .urgent-btn:hover{
   background:var(--surface-2);
@@ -1653,6 +1730,16 @@ ul.items{
 .hatch-btn:hover .chick{ fill:#F4D35E; stroke:#B8901F; }
 .hatch-btn:hover .beak{ stroke:#D9822B; }
 .hatch-btn:hover .shell{ fill:var(--eggshell); }
+/* 10.2 : initiale de qui a coché, dans une liste partagée */
+.checker-tag{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:1.2rem; height:1.2rem; margin-right:0.45rem; vertical-align:middle;
+  border-radius:50%;
+  background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface));
+  color:color-mix(in srgb, var(--cat-color, var(--accent)) 70%, var(--ink));
+  font-size:0.66rem; font-weight:700; line-height:1;
+  text-decoration:none;
+}
 /* badges : interlocuteur, personne (anciennes données), échéance */
 .who-tag{
   display:inline-block;
@@ -1893,7 +1980,7 @@ body.has-editing .add-category-row.active{
 body.has-editing .category:has(.item.editing) ul.items > li.item:not(.editing),
 body.has-editing .category:has(.add-form-row) ul.items > li.item:not(.add-form-row),
 body.has-editing .section-block:has(.item.editing) ul.items > li.item:not(.editing),
-body.has-editing .category:has(.cat-title-input) > *:not(.cat-head):not(.cat-swatches),
+body.has-editing .category:has(.cat-title-input) > *:not(.cat-head):not(.cat-swatches):not(.cat-share),
 body.has-editing .category:has(.cat-title-input) .cat-head .add-btn,
 body.has-editing .category:has(.cat-title-input) .cat-head-right{
   opacity:0.32;
@@ -2050,6 +2137,9 @@ footer{
    marge en plus de chaque côté */
 #importBtn{ padding-inline:calc(0.95rem + 1ch + 0.08em); }
 .trash-link{ margin-right:auto; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--btn) 28%, transparent); }
+/* 10.2 : Partage juste à droite de Corbeille, c'est lui qui pousse le reste à droite */
+footer:has(#shareLink:not([hidden])) #trashLink{ margin-right:0; }
+.share-link svg{ width:16px; height:16px; display:block; flex:none; }
 .trash-link svg{ width:15px; height:15px; display:block; flex:none; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 .trash-link svg .lid{ transform-box:fill-box; transform-origin:right bottom; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 .trash-link:hover svg .lid, .trash-link.open svg .lid{ transform:rotate(-18deg) translateY(-1px); }
@@ -2076,6 +2166,42 @@ footer{
   position:relative;
   z-index:41;
 }
+
+/* ---------- 10.2 : panneau « Partage » (carnet, invitations) ---------- */
+.share-block{ background:var(--surface); color:var(--ink-soft); margin-top:1.25rem; }
+.share-head{ display:flex; justify-content:space-between; align-items:baseline; gap:1rem; }
+.share-title{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.78rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--accent); }
+.share-help{ font-size:0.86rem; color:var(--ink-soft); margin:0.45rem 0 0.8rem; max-width:60ch; }
+.sh-me{ display:flex; flex-wrap:wrap; align-items:center; gap:0.4rem 0.7rem; font-size:0.8rem; color:var(--ink-faint); margin-bottom:0.9rem; }
+.sh-name{ font:inherit; font-size:0.9rem; color:var(--ink); background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:0.35rem 0.6rem; width:12rem; max-width:100%; }
+.sh-name:focus{ outline:none; border-color:var(--accent); }
+.sh-sub{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.66rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:0.35rem; }
+.sh-people{ list-style:none; margin:0 0 0.8rem; padding:0; border-top:1px solid var(--line); }
+.sh-person{ display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.1rem; border-bottom:1px solid var(--line); font-size:0.9rem; }
+.sh-person .share-chip{ --cat-color:var(--accent); box-shadow:none; width:1.5rem; height:1.5rem; font-size:0.75rem; }
+.sh-pending .share-chip{ background:var(--surface-2); color:var(--ink-faint); }
+.sh-pname{ color:var(--ink); font-weight:600; }
+.sh-pending .sh-pname{ font-weight:400; color:var(--ink-soft); }
+.sh-state{ font-size:0.78rem; color:var(--ink-faint); margin-right:auto; }
+.sh-x{ appearance:none; border:none; background:transparent; color:var(--ink-faint); font-size:1rem; line-height:1; padding:4px 7px; border-radius:4px; cursor:pointer; }
+.sh-x:hover{ background:var(--urgent-soft); color:var(--urgent-ink); }
+.sh-copy-old{ appearance:none; border:none; background:none; padding:0; font:inherit; font-size:0.78rem; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.sh-empty{ font-style:italic; }
+.sh-actions{ display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; }
+.sh-btn{
+  appearance:none; display:inline-flex; align-items:center; gap:0.4rem;
+  border:1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); background:var(--surface); color:var(--accent);
+  border-radius:999px; padding:0.45rem 0.95rem;
+  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
+  text-decoration:none; cursor:pointer; transition:background .15s ease, color .15s ease;
+}
+.sh-btn-primary{ background:color-mix(in srgb, var(--accent) 15%, var(--surface)); }
+.sh-btn:hover{ background:var(--accent); color:var(--surface); }
+.sh-btn:disabled{ opacity:.55; cursor:default; }
+.sh-newlink{ margin-top:0.8rem; padding:0.75rem; border:1px dashed color-mix(in srgb, var(--accent) 40%, var(--line)); border-radius:12px; }
+.sh-url{ width:100%; box-sizing:border-box; font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.78rem; color:var(--ink); background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:0.4rem 0.55rem; margin-bottom:0.55rem; }
+.sh-msg{ font-size:0.8rem; color:var(--ink-soft); margin-top:0.6rem; }
+.sh-msg:empty{ display:none; }
 
 /* ---------- corbeille : archive neutre, machine à écrire (7.5) ---------- */
 .trash-block{
@@ -2203,7 +2329,7 @@ footer{
 .trash-date{ flex:none; font-size:0.7rem; color:var(--ink-faint); padding-left:0.4rem; align-self:baseline; }
 
 /* ---------- accueil sans liste (7.8 → 7.16) ---------- */
-body.no-list #trashLink, body.no-list .backup-bar, body.no-list #trashPanel{ display:none !important; }
+body.no-list #trashLink, body.no-list #shareLink, body.no-list .backup-bar, body.no-list #trashPanel, body.no-list #sharePanel{ display:none !important; }
 body.no-list footer{ border-top-color:transparent; }
 body.no-list .version-tag{ display:none; }
 body.no-list .add-category-row{
@@ -2479,16 +2605,18 @@ body.arrive footer{ animation-delay:.52s; }
 
   <footer>
     <button type="button" id="trashLink" class="trash-link"></button>
+    <button type="button" id="shareLink" class="trash-link share-link" hidden></button>
     <div class="backup-bar">
       <span class="backup-nudge" id="backupNudge" hidden></span>
       <button type="button" id="exportBtn" class="backup-btn backup-btn-primary" data-tip="Créer un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Sauvegarder</span></button>
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.1</span>
+    <span class="version-tag">v10.2</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
+  <section class="section-block share-block" id="sharePanel" hidden></section>
 </div>
 
 <div id="toast"></div>
@@ -3090,6 +3218,17 @@ const Store = (()=>{
   }
   init();
 
+  // 10.2 : empreinte de ce qui touche au partage (membres, noms, carnet,
+  // prénom) — pour redessiner quand ça change ailleurs (autre onglet, en ligne)
+  const SHARING_KEY = NS + "partage";
+  function sharingPrint(){
+    const o = { u:[user.contacts, user.myName] };
+    lists.forEach((L, id) => { o[id] = [L.owner, L.members, L.names]; });
+    return canon(o);
+  }
+  let sharingSeen = mode === "doc" ? sharingPrint() : "";
+  const meCache = {};
+
   const api = {
     get mode(){ return mode; },
     get(k){
@@ -3137,8 +3276,64 @@ const Store = (()=>{
       const now = allViews();
       const changed = ASPECTS.filter(a => now[a] !== extBase[a]).map(a => K[a]);
       extBase = now;
+      // 10.2 : membres, noms et carnet ne sont dans aucune ancienne clé
+      const sh = sharingPrint();
+      if(sh !== sharingSeen){ sharingSeen = sh; changed.push(SHARING_KEY); }
       return changed;
     },
+    // ---- 10.2 : partage des listes (lu / écrit directement dans les fiches) ----
+    // Une liste : owner (créateur, compte en ligne), members (comptes qui la
+    // voient), names ({ compte: prénom } posé par son créateur).
+    listInfo(id){
+      if(mode !== "doc") return null;
+      syncRev();
+      const L = lists.get(id);
+      if(!L) return null;
+      return {
+        owner: typeof L.owner === "string" ? L.owner : null,
+        members: Array.isArray(L.members) ? L.members.filter(m => typeof m === "string") : [],
+        names: isObj(L.names) ? Object.assign({}, L.names) : {},
+      };
+    },
+    setListSharing(id, members, names){
+      if(mode !== "doc") return false;
+      syncRev();
+      const L = lists.get(id);
+      if(!L) return false;
+      L.members = members.slice();
+      if(names && Object.keys(names).length) L.names = Object.assign({}, names); else delete L.names;
+      ver++;
+      commit();
+      sharingSeen = sharingPrint();
+      notifyLocal();
+      return true;
+    },
+    // champs de la fiche « moi » que les anciennes clés ignorent (carnet, prénom)
+    userField(name){
+      if(mode !== "doc") return undefined;
+      syncRev();
+      return user[name] === undefined ? undefined : JSON.parse(JSON.stringify(user[name]));
+    },
+    setUserField(name, v){
+      if(mode !== "doc") return;
+      syncRev();
+      if(v === undefined) delete user[name]; else user[name] = JSON.parse(JSON.stringify(v));
+      ver++;
+      commit();
+      sharingSeen = sharingPrint();
+      notifyLocal();
+    },
+    // compte en ligne de cet appareil (gardé après déconnexion), sans attendre Firebase
+    myUid(){
+      const raw = LS.getItem(NS + "me");
+      if(raw) return raw;
+      if(meCache.raw === undefined){
+        const s = parseOr(LS.getItem(NS + "sync"), null);
+        meCache.raw = (s && typeof s.uid === "string") ? s.uid : null;
+      }
+      return meCache.raw;
+    },
+    get sharingKey(){ return SHARING_KEY; },
     // Sauvegarde au nouveau format : les fiches telles quelles.
     exportModel(){
       syncRev();
@@ -3379,6 +3574,9 @@ function deleteCategory(catId){
   customItems = loadCustom();
   const cat = DATA.find(c => c.id === catId);
   if(!cat || !isCategoryEmpty(cat)) return false;
+  // 10.2 : une liste partagée que je supprime n'est plus partagée (elle
+  // disparaît aussi de chez les autres)
+  if(iOwnList(catId) && isSharedList(catId) && myUid()) Store.setListSharing(catId, [myUid()], null);
   deletedCategoryIds = loadDeletedCategoryIds();
   if(!deletedCategoryIds.includes(catId)) deletedCategoryIds.push(catId);
   saveDeletedCategoryIds(deletedCategoryIds);
@@ -3728,6 +3926,7 @@ function purgeCheckedBefore(thisMonday, onlyWaiting){
     getEffectiveItems(cat).forEach((base, i)=>{
       const key = itemKey(cat.id, i);
       if(isDeleted(key) || !state[key]) return;
+      if(!checkedByMe(cat.id, key)) return; // 10.2 : cochée par quelqu'un d'autre : sa purge à lui
       const eff = getEffective(key, base);
       if(onlyWaiting && !eff.waiting) return;
       const doneOn = checkedAt[key] || "";
@@ -3829,6 +4028,8 @@ function insertItem(cat, item){
   customItems = loadCustom();
   order = loadOrder();
   const newIdx = getEffectiveItems(cat).length;
+  // 10.2 : qui a créé la tâche (avec un compte seulement)
+  if(!item.by && myUid()) item = Object.assign({}, item, { by: myUid() });
   customItems[cat.id] = customItems[cat.id] || [];
   customItems[cat.id].push(item);
   saveCustom(customItems);
@@ -3865,6 +4066,9 @@ function moveItemToCategory(cat, idx, destCat){
   if(eff.egg) moved.egg = true;
   if(eff.person) moved.person = eff.person;
   if(eff.tier) moved.tier = eff.tier;
+  if(!canRemoveTask(cat, base)) return null;   // 10.2 : pas la mienne, dans la liste de quelqu'un d'autre
+  const by = taskCreator(cat, base);
+  if(by && myUid()) moved.by = by;
   const newIdx = getEffectiveItems(destCat).length;
   customItems[destCat.id] = customItems[destCat.id] || [];
   customItems[destCat.id].push(moved);
@@ -3879,6 +4083,10 @@ function moveItemToCategory(cat, idx, destCat){
     saveJSONKey(CHECKED_AT_KEY, checkedAt);
   }
   overrides = loadOverrides();
+  if(state[key] && overrides[key] && overrides[key].doneBy){   // 10.2 : qui a coché suit la tâche
+    const nk = itemKey(destCat.id, newIdx);
+    overrides[nk] = Object.assign({}, overrides[nk] || {}, { doneBy: overrides[key].doneBy });
+  }
   overrides[key] = overrides[key] || {};
   overrides[key].deleted = true;
   saveOverrides(overrides);
@@ -4668,6 +4876,143 @@ function isDeleted(key){
   return !!(overrides[key] && overrides[key].deleted);
 }
 
+// ---- 10.2 : listes partagées ----
+// Une tâche garde qui l'a créée (base.by) et qui l'a cochée (override
+// doneBy) ; sans ces champs (tâches d'avant), c'est le créateur de la liste.
+// Sans compte (ou appareil jamais connecté) : tout est à moi, comme avant.
+function myUid(){ try{ return Store.myUid(); }catch(e){ return null; } }
+function listInfo(catId){ try{ return Store.listInfo(catId); }catch(e){ return null; } }
+function isSharedList(catId){
+  const i = listInfo(catId);
+  if(!i) return false;
+  const me = myUid();
+  if(i.owner && me && i.owner !== me) return true;
+  return i.members.some(m => m !== "moi" && m !== i.owner && m !== me);
+}
+function iOwnList(catId){
+  const i = listInfo(catId), me = myUid();
+  return !i || !i.owner || !me || i.owner === me;
+}
+function listOwnerUid(catId){ const i = listInfo(catId); return (i && i.owner) || myUid() || null; }
+// qui a créé la tâche (pour la recopier telle quelle d'une liste à l'autre)
+function taskCreator(cat, base){ return (base && typeof base.by === "string" && base.by) || listOwnerUid(cat.id); }
+// effacer, mettre à la corbeille, emporter dans une autre liste : le créateur
+// de la liste peut tout ; un invité, seulement les tâches qu'il a créées
+function canRemoveTask(cat, base){
+  if(iOwnList(cat.id)) return true;
+  const me = myUid();
+  return !!me && !!base && base.by === me;
+}
+function checkerOf(catId, key){
+  const o = overrides[key];
+  return (o && typeof o.doneBy === "string" && o.doneBy) || listOwnerUid(catId);
+}
+// la coche compte pour moi (compteur, purge du lundi, graphique) ?
+function checkedByMe(catId, key){
+  const me = myUid();
+  if(!me) return true;
+  const c = checkerOf(catId, key);
+  return !c || c === me;
+}
+function myName(){
+  const n = (()=>{ try{ return Store.userField("myName"); }catch(e){ return undefined; } })();
+  return (typeof n === "string" && n.trim()) ? n.trim() : "Moi";
+}
+function contactsMap(){
+  const c = (()=>{ try{ return Store.userField("contacts"); }catch(e){ return undefined; } })();
+  return (c && typeof c === "object" && !Array.isArray(c)) ? c : {};
+}
+function personName(uid, catId){
+  if(!uid) return "?";
+  if(uid === myUid()) return myName();
+  const i = catId ? listInfo(catId) : null;
+  if(i && i.owner === uid && i.names[uid]) return i.names[uid];   // le prénom que le créateur s'est choisi
+  const c = contactsMap()[uid];
+  if(c && c.name) return c.name;
+  if(i && i.names[uid]) return i.names[uid];
+  return "?";
+}
+// « de André » → « d'André »
+function deName(name){ const n = String(name || "?"); return /^[aeiouyhàâäéèêëîïôöùûü]/i.test(n) ? "d'" + n : "de " + n; }
+function initialOf(name){
+  const s = String(name || "?").trim();
+  return s ? s.charAt(0).toLocaleUpperCase("fr") : "?";
+}
+// Sync est déclaré en fin de script : on y accède sans risque d'ici
+function syncApi(){ try{ return Sync; }catch(e){ return null; } }
+function signedIn(){ const S = syncApi(); return !!(S && S.user); }
+const CHECK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+// cocher / décocher une personne du carnet pour une de mes listes
+function setListSharedWith(catId, uid, on){
+  const i = listInfo(catId), me = myUid();
+  if(!i || !me) return false;
+  let mem = i.members.filter(m => m !== "moi");
+  if(!mem.includes(me)) mem.unshift(me);
+  if(on){ if(!mem.includes(uid)) mem.push(uid); }
+  else mem = mem.filter(m => m !== uid);
+  const cm = contactsMap(), names = {};
+  mem.forEach(u => { names[u] = u === me ? myName() : ((cm[u] && cm[u].name) || i.names[u] || "?"); });
+  return Store.setListSharing(catId, mem, mem.length > 1 ? names : null);
+}
+// la ligne « Partagée avec » du renommage d'une liste
+function buildCatShareRow(cat){
+  if(Store.mode !== "doc") return null;
+  const row = document.createElement("div");
+  row.className = "cat-share";
+  row.addEventListener("mousedown", e => { if(e.target.closest("button")) e.preventDefault(); }); // le curseur reste dans le titre
+  row.addEventListener("click", e => e.stopPropagation());
+  if(!iOwnList(cat.id)){
+    const i = listInfo(cat.id) || {};
+    row.innerHTML = `<span>Liste ${escapeAttr(deName(personName(i.owner, cat.id)))}, partagée avec toi. Tu peux tout cocher, et effacer les tâches que tu as ajoutées.</span>`;
+    return row;
+  }
+  const label = `<span class="cat-share-label">Partagée avec</span>`;
+  if(!signedIn()){
+    row.innerHTML = `${label}<button type="button" class="cat-share-link">se connecter pour partager</button>`;
+    row.querySelector("button").addEventListener("click", ()=>{
+      editingCategoryTitle = null;
+      renderAll();
+      const plume = document.getElementById("plume");
+      if(plume) requestAnimationFrame(()=> plume.click());
+    });
+    return row;
+  }
+  const cm = contactsMap();
+  const uids = Object.keys(cm).sort((a, b) => String(cm[a].name || "").localeCompare(String(cm[b].name || ""), "fr"));
+  if(!uids.length){
+    row.innerHTML = `${label}<span>personne pour l'instant —</span><button type="button" class="cat-share-link">inviter quelqu'un</button>`;
+    row.querySelector("button").addEventListener("click", ()=>{
+      editingCategoryTitle = null;
+      openSharePanel();
+    });
+    return row;
+  }
+  const mem = (listInfo(cat.id) || { members:[] }).members;
+  row.innerHTML = label + uids.map(u =>
+    `<button type="button" class="cat-share-person" role="checkbox" aria-checked="${mem.includes(u)}" data-uid="${escapeAttr(u)}"><span class="box">${CHECK_SVG}</span>${escapeAttr(cm[u].name || "?")}</button>`).join("");
+  row.querySelectorAll(".cat-share-person").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const on = b.getAttribute("aria-checked") !== "true";
+      if(!setListSharedWith(cat.id, b.dataset.uid, on)) return;
+      const fresh = buildCatShareRow(cat);
+      if(fresh) row.replaceWith(fresh);
+      const who = cm[b.dataset.uid].name || "?";
+      celebrate(on ? "Liste partagée : elle apparaît chez " + who + "." : "Liste retirée de chez " + who + ".", true);
+    });
+  });
+  return row;
+}
+
+// les autres personnes qui voient cette liste (créateur compris, moi exclu)
+function listPeople(catId){
+  const i = listInfo(catId), me = myUid();
+  if(!i) return [];
+  const all = [];
+  if(i.owner) all.push(i.owner);
+  i.members.forEach(m => { if(m !== "moi" && !all.includes(m)) all.push(m); });
+  return all.filter(u => u !== me);
+}
+
 // Le glisser-déposer manuel est prioritaire : on ne repartitionne que
 // coché/non-coché, sans jamais retrier par échéance — l'ordre manuel
 // (déjà appliqué en amont via getCatOrder/getWaitingOrder) est respecté tel quel.
@@ -4702,6 +5047,7 @@ function getWeekDoneCount(){
     getEffectiveItems(cat).forEach((base,i)=>{
       const key = itemKey(cat.id,i);
       if(isDeleted(key) || !state[key]) return;
+      if(!checkedByMe(cat.id, key)) return; // 10.2 : seul le compteur de qui a coché bouge
       if((checkedAt[key] || "") >= monday) n++;
     });
   });
@@ -5233,6 +5579,8 @@ function commitDragOrder(){
       if(newIdx !== null){
         applyCatDisplayOrder(destCat, domRows.map(node => node === el ? newIdx : parseInt(node.dataset.dragId, 10)));
         actionToast("moveCat");
+      }else if(!canRemoveTask(cat, getEffectiveItems(cat)[parseInt(value, 10)])){
+        celebrate("Cette tâche reste dans sa liste : seule la personne qui l'a créée peut l'emporter ailleurs.", true);
       }
     }
   }else{
@@ -5826,7 +6174,9 @@ function buildItemLi(cat, idx, base, key, opts){
 
   if(editingKey === key){
     const dueParts = splitDue(eff.waiting ? eff.relance : eff.due);
-    const catOptions = DATA.filter(c => !isCategoryDeleted(c.id) || c.id === cat.id)
+    // 10.2 : une tâche qu'on ne peut pas effacer ne peut pas non plus quitter sa liste
+    const canMove = canRemoveTask(cat, base);
+    const catOptions = DATA.filter(c => (!isCategoryDeleted(c.id) || c.id === cat.id) && (canMove || c.id === cat.id))
       .map(c => `<option value="${escapeAttr(c.id)}" ${c.id === cat.id ? "selected" : ""}>${escapeAttr(c.title)}</option>`).join("");
     li.className = "item editing";
     li.innerHTML = `
@@ -5895,6 +6245,8 @@ function buildItemLi(cat, idx, base, key, opts){
             if(urgentToggle.value()) movedItem.urgent = true;
             if(urgentToggle.egg()) movedItem.egg = true;
             if(eff.waiting) movedItem.waiting = true;
+            const movedBy = taskCreator(cat, base);
+            if(movedBy && myUid()) movedItem.by = movedBy;
             const freshItems = getEffectiveItems(targetCat);
             const newIdx = freshItems.length;
             customItems[targetCat.id] = customItems[targetCat.id] || [];
@@ -5915,6 +6267,10 @@ function buildItemLi(cat, idx, base, key, opts){
               saveJSONKey(CHECKED_AT_KEY, checkedAt);
             }
             overrides = loadOverrides();
+            if(state[key] && overrides[key] && overrides[key].doneBy){   // 10.2 : qui a coché suit la tâche
+              const nk = itemKey(targetCat.id, newIdx);
+              overrides[nk] = Object.assign({}, overrides[nk] || {}, { doneBy: overrides[key].doneBy });
+            }
             overrides[key] = overrides[key] || {};
             overrides[key].deleted = true;
             saveOverrides(overrides);
@@ -5992,14 +6348,22 @@ function buildItemLi(cat, idx, base, key, opts){
       ? (eff.relance ? `<span class="due-badge status-${isRelance(eff) ? "relance" : "future"}">Relance ${shortDateFR(splitDue(eff.relance).date)}</span>` : "")
       : (eff.due ? `<span class="due-badge status-${isRdv ? "rdv" : dueStatusNow}">${formatDueLabel(eff.due, isRdv)}</span>` : "");
   const isEgg = eff.egg && !checked; // en couvaison : pas de case, pas d'urgence, juste l'éclosion
+  // 10.2 : liste partagée — initiale de qui a coché ; pas d'effacement des
+  // tâches des autres quand la liste n'est pas à moi
+  const canRemove = canRemoveTask(cat, base);
+  let checkerTag = "";
+  if(checked && isSharedList(cat.id)){
+    const who = personName(checkerOf(cat.id, key), cat.id);
+    checkerTag = `<span class="checker-tag" data-tip="Cochée par ${escapeAttr(who)}" aria-label="Cochée par ${escapeAttr(who)}">${escapeAttr(initialOf(who))}</span>`;
+  }
   li.innerHTML = `
     ${dragHandleHtml}
     ${isEgg ? `<span class="egg-dot" title="En couvaison">${eggSvg(20)}</span>` : `<input type="checkbox" ${checked ? "checked" : ""} aria-label="${escapeAttr(eff.t)}">`}
-    <span class="item-text">${whoTag}${personTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
+    <span class="item-text">${checkerTag}${whoTag}${personTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
     <span class="item-controls">
       <button type="button" class="waiting-btn${eff.waiting ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${waitingBtnTitle}" data-tip="${waitingBtnTitle}">${waitingBtnIcon}</button>
       ${isEgg ? `<button type="button" class="hatch-btn" aria-label="Faire éclore" data-tip="Faire éclore"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="chick" cx="12" cy="8.2" r="3.6"/><path class="beak" d="M15.5 8.1l2 .7-2 .7"/><circle cx="13.1" cy="7.3" r=".55" fill="currentColor" stroke="none"/><path class="shell" d="M5.2 13.6c0 4.3 3 7.6 6.8 7.6s6.8-3.3 6.8-7.6l-2.3 1.5-2.2-1.7-2.3 1.7-2.3-1.7-2.2 1.7z"/></svg></button>` : `<button type="button" class="urgent-btn${eff.urgent ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}" data-tip="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}">${triangleSvg(15)}</button>`}
-      ${checked
+      ${!canRemove ? `<span class="delete-spacer" aria-hidden="true"></span>` : checked
         ? `<button type="button" class="delete-btn" aria-label="Mettre à la corbeille des tâches accomplies" data-tip="Mettre à la corbeille"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>`
         : `<button type="button" class="delete-btn" aria-label="Effacer la tâche" data-tip="Effacer la tâche">&times;</button>`}
     </span>
@@ -6053,7 +6417,8 @@ function buildItemLi(cat, idx, base, key, opts){
     actionToast(nowUrgent ? "urgentOn" : "urgentOff");
     renderAll();
   });
-  li.querySelector(".delete-btn").addEventListener("click",(e)=>{
+  const deleteBtnEl = li.querySelector(".delete-btn");
+  if(deleteBtnEl) deleteBtnEl.addEventListener("click",(e)=>{
     e.stopPropagation();
     // Tâche cochée (poubelle) : elle part dans la corbeille des tâches
     // accomplies. Tâche pas encore faite (croix) : elle est simplement effacée.
@@ -6061,7 +6426,10 @@ function buildItemLi(cat, idx, base, key, opts){
     checkedAt = loadJSONKey(CHECKED_AT_KEY, {});
     trash = loadJSONKey(TRASH_KEY, []);
     if(!Array.isArray(trash)) trash = [];
-    const wasDone = !!state[key];
+    overrides = loadOverrides();
+    // 10.2 : cochée par quelqu'un d'autre : elle ne va pas dans MA corbeille
+    // (elle ne compterait pas pour moi), elle est seulement retirée
+    const wasDone = !!state[key] && checkedByMe(cat.id, key);
     if(wasDone) trash.push({
       t: eff.t, note: eff.note || "", who: eff.who || "", due: eff.due || "",
       catId: cat.id, catTitle: cat.title,
@@ -6125,7 +6493,7 @@ function renderWaitingSection(){
 }
 
 // Tout ce qui se redessine, dans l'ordre.
-const RENDERERS = [render, renderWaitingSection, renderAddCategoryRow, updateProgress, renderTrash, renderBackupNudge];
+const RENDERERS = [render, renderWaitingSection, renderAddCategoryRow, updateProgress, renderTrash, renderShare, renderBackupNudge];
 function renderAll(){
   try{ maybeRollover(); }catch(err){ console.error("[semaine]", err); }
   try{
@@ -6175,7 +6543,21 @@ function render(){
     // Une case vide (aucune tâche vivante dedans, cochée ou non) peut être
     // supprimée d'un petit clic ; sinon, pas de bouton du tout — la
     // meilleure façon d'éviter d'effacer une liste pleine par mégarde.
-    const canDeleteCat = isCategoryEmpty(cat);
+    // 10.2 : une liste partagée par quelqu'un d'autre ne se supprime pas d'ici
+    const canDeleteCat = isCategoryEmpty(cat) && iOwnList(cat.id);
+    // 10.2 : pastilles des personnes qui voient aussi cette liste
+    const people = listPeople(cat.id);
+    let shareChips = "";
+    if(people.length){
+      const ownerUid = (listInfo(cat.id) || {}).owner;
+      const names = people.map(u => personName(u, cat.id));
+      const tip = iOwnList(cat.id)
+        ? "Partagée avec " + names.join(", ")
+        : "Liste " + deName(personName(ownerUid, cat.id)) + ", partagée avec toi";
+      shareChips = `<span class="share-chips" data-tip="${escapeAttr(tip)}" aria-label="${escapeAttr(tip)}">` +
+        names.slice(0, 3).map(n => `<span class="share-chip">${escapeAttr(initialOf(n))}</span>`).join("") +
+        (names.length > 3 ? `<span class="share-chip share-more">+${names.length - 3}</span>` : "") + `</span>`;
+    }
 
     const renamingThisCat = editingCategoryTitle === cat.id;
     const reversed = isCatReversed(cat.id);
@@ -6185,7 +6567,7 @@ function render(){
       <span class="cat-title-group">
         ${renamingThisCat
           ? `<input type="text" class="cat-title-input" value="${escapeAttr(cat.title)}">`
-          : `<span class="cat-title">${escapeAttr(cat.title)}</span>`}
+          : `<span class="cat-title">${escapeAttr(cat.title)}</span>${shareChips}`}
         <button type="button" class="add-btn" aria-label="Ajouter une tâche">+</button>
         ${renamingThisCat ? "" : `<label class="cat-quick-wrap" title="Ajouter une tâche"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" aria-label="Ajouter une tâche à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
       </span>
@@ -6275,6 +6657,8 @@ function render(){
         });
       });
       card.appendChild(sw);
+      const shareRow = buildCatShareRow(cat);
+      if(shareRow) card.appendChild(shareRow);
     }
 
     const ul = document.createElement("ul");
@@ -6429,6 +6813,7 @@ function collectDoneDates(){
     getEffectiveItems(cat).forEach((base, i)=>{
       const key = itemKey(cat.id, i);
       if(isDeleted(key) || !st[key]) return;
+      if(!checkedByMe(cat.id, key)) return;
       if(ca[key]) dates.push(ca[key]); else undated++;
     });
   });
@@ -6615,6 +7000,202 @@ function renderTrash(){
   });
 }
 
+// ---------- 10.2 : panneau « Partage » (carnet et invitations) ----------
+// S'ouvre sous le bas de page comme la corbeille (Échap le ferme). On y
+// invite une personne une seule fois, par un lien (copier / WhatsApp) ;
+// elle l'ouvre, se connecte, et entre dans le carnet (et moi dans le sien).
+// Ensuite, dans le renommage d'une liste, on coche son nom (buildCatShareRow).
+let shareOpen = false;
+let shareNewLink = null;   // { code, url } : le dernier lien créé, affiché sous le bouton
+let shareMsg = "";
+function inviteUrl(code){ return location.origin + location.pathname + "?invitation=" + encodeURIComponent(code); }
+function openSharePanel(){
+  shareOpen = true;
+  trashOpen = false;
+  renderAll();
+  const p = document.getElementById("sharePanel");
+  if(p) p.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+function closeSharePanel(){
+  if(!shareOpen) return;
+  shareOpen = false; shareNewLink = null; shareMsg = "";
+  renderAll();
+}
+async function copyText(text, input){
+  try{ await navigator.clipboard.writeText(text); return true; }
+  catch(e){
+    if(input){ input.focus(); input.select(); try{ return document.execCommand("copy"); }catch(_){ } }
+    return false;
+  }
+}
+function myListsSharedWith(uid){
+  return DATA.filter(c => !isCategoryDeleted(c.id) && iOwnList(c.id) && (listInfo(c.id) || { members:[] }).members.includes(uid)).length;
+}
+function removeContact(uid){
+  const cm = contactsMap();
+  const name = (cm[uid] && cm[uid].name) || "?";
+  const n = myListsSharedWith(uid);
+  if(!confirm("Retirer " + name + " du carnet ?" + (n ? " Tes listes partagées avec " + name + " disparaîtront de chez elle ou lui." : ""))) return;
+  DATA.forEach(c => { if(iOwnList(c.id) && (listInfo(c.id) || { members:[] }).members.includes(uid)) setListSharedWith(c.id, uid, false); });
+  delete cm[uid];
+  Store.setUserField("contacts", cm);
+  renderAll();
+}
+function renderShare(){
+  const link = document.getElementById("shareLink");
+  const panel = document.getElementById("sharePanel");
+  if(!link || !panel) return;
+  if(Store.mode !== "doc"){ link.hidden = true; panel.hidden = true; return; }
+  link.hidden = false;
+  const cm = contactsMap();
+  const n = Object.keys(cm).length;
+  link.classList.toggle("open", shareOpen);
+  link.setAttribute("aria-label", "Partage : " + n + (n > 1 ? " personnes dans le carnet" : " personne dans le carnet"));
+  link.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><circle cx="17" cy="9" r="2.4"/><path d="M15.6 14.4c2.3.1 4.2 1.6 4.8 4.1"/></svg><span>Partage</span>${n ? `<span class="trash-link-badge">${n}</span>` : ""}`;
+  panel.hidden = !shareOpen;
+  if(!shareOpen){ panel.innerHTML = ""; return; }
+  const S = syncApi();
+  const head = `<div class="share-head"><div class="share-title">Partage</div><button type="button" class="trash-close">Fermer</button></div>`;
+  if(!S || !S.user){
+    panel.innerHTML = head + `
+      <p class="share-help">Pour partager des listes, il faut d'abord te connecter (la plume, à droite du titre).</p>
+      <div class="sh-actions"><button type="button" class="sh-btn sh-btn-primary sh-login">Se connecter</button></div>`;
+    panel.querySelector(".sh-login").addEventListener("click", e=>{ e.stopPropagation(); const p = document.getElementById("plume"); if(p) p.click(); });
+  }else{
+    const invites = S.invites || [];
+    const uids = Object.keys(cm).sort((a, b) => String(cm[a].name || "").localeCompare(String(cm[b].name || ""), "fr"));
+    const peopleHtml = uids.map(u=>{
+      const k = myListsSharedWith(u);
+      return `<li class="sh-person"><span class="share-chip">${escapeAttr(initialOf(cm[u].name))}</span><span class="sh-pname">${escapeAttr(cm[u].name || "?")}</span><span class="sh-state">${k ? k + (k > 1 ? " listes partagées" : " liste partagée") : "aucune liste partagée"}</span><button type="button" class="sh-x" data-uid="${escapeAttr(u)}" aria-label="Retirer ${escapeAttr(cm[u].name || "")} du carnet" data-tip="Retirer du carnet">&times;</button></li>`;
+    }).join("") + invites.map(inv=>{
+      const d = inv.createdAt ? new Date(inv.createdAt) : null;
+      const when = d ? shortDateFR(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0")) : "";
+      return `<li class="sh-person sh-pending"><span class="share-chip">?</span><span class="sh-pname">Invitation${when ? " du " + when : ""}</span><span class="sh-state">pas encore ouverte</span><button type="button" class="sh-copy-old" data-code="${escapeAttr(inv.code)}">Copier le lien</button><button type="button" class="sh-x" data-code="${escapeAttr(inv.code)}" aria-label="Annuler cette invitation" data-tip="Annuler l'invitation">&times;</button></li>`;
+    }).join("");
+    panel.innerHTML = head + `
+      <p class="share-help">Une invitation par personne. Elle ouvre le lien, se connecte, et entre dans ton carnet. Ensuite, double-clic sur le titre d'une liste : tu coches son nom, et la liste apparaît chez elle.</p>
+      <label class="sh-me"><span>Ton prénom pour les autres</span><input type="text" class="sh-name" maxlength="30" value="${escapeAttr(myName())}" autocomplete="off"></label>
+      <div class="sh-sub">Ton carnet</div>
+      ${peopleHtml ? `<ul class="sh-people">${peopleHtml}</ul>` : `<p class="share-help sh-empty">Personne pour l'instant.</p>`}
+      <div class="sh-actions"><button type="button" class="sh-btn sh-btn-primary sh-invite">Créer un lien d'invitation</button></div>
+      ${shareNewLink ? `<div class="sh-newlink">
+        <input type="text" class="sh-url" readonly value="${escapeAttr(shareNewLink.url)}" aria-label="Lien d'invitation">
+        <div class="sh-actions"><button type="button" class="sh-btn sh-copy">Copier le lien</button><a class="sh-btn sh-wa" href="https://wa.me/?text=${encodeURIComponent(myName() + " t'invite à partager des listes sur Sous le tapis : " + shareNewLink.url)}" target="_blank" rel="noopener">Envoyer par WhatsApp</a></div>
+      </div>` : ""}
+      <div class="sh-msg" role="status">${escapeAttr(shareMsg)}</div>`;
+    const nameInp = panel.querySelector(".sh-name");
+    const saveName = ()=>{
+      const v = nameInp.value.trim().slice(0, 30);
+      if(!v || v === myName()) { nameInp.value = myName(); return; }
+      Store.setUserField("myName", v);
+      // mes listes partagées montrent ce prénom aux autres
+      DATA.forEach(c=>{
+        const i = listInfo(c.id);
+        if(i && iOwnList(c.id) && i.names[myUid()] !== undefined){ i.names[myUid()] = v; Store.setListSharing(c.id, i.members, i.names); }
+      });
+      shareMsg = "Prénom enregistré.";
+      renderAll();
+    };
+    nameInp.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); nameInp.blur(); } if(e.key === "Escape"){ e.stopPropagation(); nameInp.value = myName(); nameInp.blur(); } });
+    nameInp.addEventListener("change", saveName);
+    panel.querySelectorAll(".sh-x[data-uid]").forEach(b => b.addEventListener("click", e=>{ e.stopPropagation(); removeContact(b.dataset.uid); }));
+    panel.querySelectorAll(".sh-x[data-code]").forEach(b => b.addEventListener("click", async e=>{
+      e.stopPropagation();
+      try{ await S.deleteInvite(b.dataset.code); if(shareNewLink && shareNewLink.code === b.dataset.code) shareNewLink = null; shareMsg = "Invitation annulée : le lien ne marche plus."; }
+      catch(err){ console.error(err); shareMsg = "Pas réussi à annuler (réseau ?)."; }
+      renderAll();
+    }));
+    panel.querySelectorAll(".sh-copy-old").forEach(b => b.addEventListener("click", async e=>{
+      e.stopPropagation();
+      shareMsg = (await copyText(inviteUrl(b.dataset.code))) ? "Lien copié : colle-le dans un message." : inviteUrl(b.dataset.code);
+      renderAll();
+    }));
+    const inv = panel.querySelector(".sh-invite");
+    inv.addEventListener("click", async e=>{
+      e.stopPropagation();
+      inv.disabled = true;
+      try{
+        const code = await S.createInvite(myName());
+        shareNewLink = { code, url: inviteUrl(code) };
+        shareMsg = "";
+      }catch(err){
+        console.error("[partage] invitation", err);
+        shareMsg = err && err.code === "permission-denied"
+          ? "Refusé par la base en ligne : ses règles ne sont sans doute pas à jour (firestore.rules)."
+          : "Pas réussi à créer le lien (réseau ?). Réessaie dans un moment.";
+      }
+      renderAll();
+    });
+    const copyBtn = panel.querySelector(".sh-copy");
+    if(copyBtn) copyBtn.addEventListener("click", async e=>{
+      e.stopPropagation();
+      shareMsg = (await copyText(shareNewLink.url, panel.querySelector(".sh-url"))) ? "Lien copié : colle-le dans un message." : "Copie impossible ici : sélectionne le lien à la main.";
+      renderAll();
+    });
+    const url = panel.querySelector(".sh-url");
+    if(url) url.addEventListener("focus", ()=> url.select());
+  }
+  panel.querySelector(".trash-close").addEventListener("click", e=>{ e.stopPropagation(); closeSharePanel(); });
+}
+// une invitation acceptée chez l'autre : la personne entre dans mon carnet
+function noteInviteUsed(inv){
+  if(!inv || !inv.usedBy) return false;
+  const cm = contactsMap();
+  if(!cm[inv.usedBy]){
+    cm[inv.usedBy] = { name: String(inv.usedByName || "?").slice(0, 30), since: todayISO() };
+    Store.setUserField("contacts", cm);
+    celebrate((inv.usedByName || "Quelqu'un") + " a accepté ton invitation : la voilà dans ton carnet.", true);
+    return true;
+  }
+  return false;
+}
+// ?invitation=… dans l'adresse : gardé de côté jusqu'à la connexion
+const PENDING_INVITE_KEY = Store.ns + "invitation";
+(function catchInviteParam(){
+  try{
+    const u = new URL(location.href);
+    const code = u.searchParams.get("invitation");
+    if(!code) return;
+    if(/^[A-Za-z0-9_-]{6,40}$/.test(code)) localStorage.setItem(PENDING_INVITE_KEY, code);
+    u.searchParams.delete("invitation");
+    history.replaceState(null, "", u.pathname + (u.search ? u.search : "") + u.hash);
+  }catch(e){ console.error("[partage] lien d'invitation", e); }
+})();
+function pendingInvite(){ try{ return localStorage.getItem(PENDING_INVITE_KEY); }catch(e){ return null; } }
+async function acceptPendingInvite(){
+  const code = pendingInvite();
+  const S = syncApi();
+  if(!code || !S || !S.user) return;
+  try{
+    const r = await S.acceptInvite(code, myName());
+    localStorage.removeItem(PENDING_INVITE_KEY);
+    if(r.status === "ok"){
+      const cm = contactsMap();
+      cm[r.from] = { name: String(r.fromName || "?").slice(0, 30), since: todayISO() };
+      Store.setUserField("contacts", cm);
+      renderAll();
+      celebrate("Te voilà dans le carnet de " + (r.fromName || "?") + ". Les listes qu'on partagera avec toi apparaîtront ici.", true);
+    }else if(r.status === "self"){
+      celebrate("C'est ton propre lien d'invitation : envoie-le à quelqu'un d'autre.", true);
+    }else{
+      celebrate("Ce lien d'invitation a déjà servi ou a été annulé : demande-en un nouveau.", true);
+    }
+  }catch(err){
+    console.error("[partage] acceptation", err);
+    if(err && err.code === "permission-denied"){
+      localStorage.removeItem(PENDING_INVITE_KEY);
+      celebrate("Cette invitation n'a pas pu être acceptée : demande un nouveau lien.", true);
+    }
+    // sinon (réseau) : on réessaiera à la prochaine connexion
+  }
+}
+document.addEventListener("keydown", e=>{
+  if(e.key !== "Escape" || !shareOpen || relancePop) return;
+  const a = document.activeElement;
+  if(a && a.classList && a.classList.contains("sh-name")) return;
+  closeSharePanel();
+});
+
 function pctFromState(){
   const total = getTotalItems();
   const done = getDoneCount();
@@ -6632,6 +7213,19 @@ function setDone(key, checked){
   state[key] = checked;
   saveState(state);
   markChecked(key, checked);
+  // 10.2 : qui a coché (seulement avec un compte : sans compte, tout est à moi)
+  const me = myUid();
+  overrides = loadOverrides();
+  const o = overrides[key];
+  if(checked && me && !(o && o.doneBy === me)){
+    overrides[key] = Object.assign({}, o || {}, { doneBy: me });
+    saveOverrides(overrides);
+  }else if(!checked && o && o.doneBy !== undefined){
+    const rest = Object.assign({}, o);
+    delete rest.doneBy;
+    if(Object.keys(rest).length) overrides[key] = rest; else delete overrides[key];
+    saveOverrides(overrides);
+  }
   currentProgressMsg = null;
   if(checked){
     haptic.strong();
@@ -6816,6 +7410,7 @@ document.addEventListener("click", (e)=>{
     const titleInputEl = document.querySelector(".cat-title-input");
     if(titleInputEl && titleInputEl.contains(e.target)) return;
     if(e.target.closest(".cat-swatches")) return; // choisir une couleur garde le renommage ouvert
+    if(e.target.closest(".cat-share")) return;    // 10.2 : cocher un nom aussi
     editingCategoryTitle = null;
     renderAll();
   }
@@ -6853,10 +7448,14 @@ function applyExternalChange(key){
 // dit quelles anciennes clés ont changé de contenu.
 // 10.1 : même chemin pour ce qui arrive d'en ligne (Sync, en fin de script).
 function storeChangedElsewhere(storageKey){
+  // 10.2 : quelqu'un d'autre a changé une liste partagée : ⌘Z remettrait des
+  // clés entières (et défairait son geste à lui) — on repart d'une pile vide
+  if(storageKey === Store.ns + "remote-shared"){ undoStack.length = 0; saveUndoStack(); }
   const changed = Store.receive(storageKey);
   if(changed.includes(LAST_BACKUP_KEY)) applyExternalChange(LAST_BACKUP_KEY);
   const k = changed.find(x => BACKUP_KEYS.includes(x));
   if(k) applyExternalChange(k);
+  else if(changed.includes(Store.sharingKey) && !hasActiveEdit()) renderAll(); // 10.2 : membres, noms, carnet
 }
 window.addEventListener("storage", (e)=>{
   storeChangedElsewhere(e.key);
@@ -6943,9 +7542,14 @@ document.addEventListener("visibilitychange", ()=>{
   try{ runWeeklyPurge(); }catch(err){ console.error("[corbeille]", err); }
   renderAll(); // rafraîchit aussi le trèfle si on a changé de jour
 });
+document.getElementById("shareLink").addEventListener("click", (e)=>{
+  e.stopPropagation();
+  if(shareOpen) closeSharePanel(); else openSharePanel();
+});
 document.getElementById("trashLink").addEventListener("click", (e)=>{
   e.stopPropagation();
   trashOpen = !trashOpen;
+  if(trashOpen){ shareOpen = false; shareNewLink = null; shareMsg = ""; }
   trashMsg = null;
   renderAll();
   if(trashOpen){
@@ -7519,7 +8123,16 @@ const SyncMerge = (()=>{
     const out = [];
     const one = id=>{
       const bs = B.get(id), ls = L.get(id), rs = R.get(id);
-      if(ls && rs) return fields(bs, ls, rs);
+      if(ls && rs){
+        // 10.2 : les modifications d'une tâche aussi, champ par champ (deux
+        // personnes : l'une coche, l'autre renomme — chacun garde le sien)
+        const m = fields(bs, ls, rs, ["edits"]);
+        if(ls.edits !== undefined || rs.edits !== undefined){
+          const e = (isObj(ls.edits) && isObj(rs.edits)) ? fields(bs && bs.edits, ls.edits, rs.edits) : pick(bs && bs.edits, ls.edits, rs.edits);
+          if(e !== undefined) m.edits = e;
+        }
+        return m;
+      }
       if(ls && !rs){ if(bs && eq(ls, bs)) return null; return clone(ls); }      // retirée en ligne
       if(rs && !ls){ if(bs && eq(rs, bs)) return null; return clone(rs); }      // retirée ici
       return null;
@@ -7608,6 +8221,7 @@ const SyncMerge = (()=>{
 const Sync = (()=>{
   const COL = ESSAI ? "essai_" : "";
   const LISTS = COL + "lists", USERS = COL + "users";
+  const INVITES = COL + "invites";            // 10.2 : invitations (une par lien)
   const STATE_KEY = Store.ns + "sync";        // { uid, email, bases:{ "list:<cloudId>"|"user": texte } }
   const STATUS_KEY = Store.ns + "syncstatus"; // { state, email } — partagé entre onglets
   const BACKUP_KEY = Store.ns + "avant-synchro";
@@ -7621,10 +8235,16 @@ const Sync = (()=>{
   let linked = false;
   let pushTimer = 0, pushing = false, pushAgain = false, retryTimer = 0;
   let onStatusChange = null;
+  let invites = [];            // 10.2 : mes invitations pas encore ouvertes { code, createdAt }
+  let onInvitesFn = null, onInviteUsedFn = null, onLinkedFn = null, onAuthFn = null;
 
   const readJSON = (k, fb) => { try{ const v = JSON.parse(localStorage.getItem(k)); return v == null ? fb : v; }catch(e){ return fb; } };
   const writeJSON = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ console.error("[Sync]", e); } };
-  function saveState(){ writeJSON(STATE_KEY, state); }
+  function saveState(){
+    writeJSON(STATE_KEY, state);
+    // 10.2 : le compte de cet appareil, lisible tout de suite au chargement (Store.myUid)
+    try{ if(state && state.uid && localStorage.getItem(Store.ns + "me") !== state.uid) localStorage.setItem(Store.ns + "me", state.uid); }catch(e){}
+  }
   function status(st){
     // l'état affiché est écrit par l'onglet « chef » (ou par tous à la déconnexion)
     if(user && !leader){ if(onStatusChange) onStatusChange(); return; }
@@ -7659,7 +8279,8 @@ const Sync = (()=>{
   // ---------- connexion / déconnexion ----------
   async function onAuth(u){
     user = u || null;
-    if(!user){ stopListening(); linked = false; status("off"); return; }
+    if(onAuthFn){ try{ onAuthFn(user); }catch(e){ console.error("[Sync]", e); } }
+    if(!user){ stopListening(); linked = false; invites = []; status("off"); return; }
     status("connecting");
     if(!leaderAsked){
       leaderAsked = true;
@@ -7716,7 +8337,10 @@ const Sync = (()=>{
       }
       linked = true;
       listen(uid);
+      listenInvites(uid);
+      ensureMyName();
       schedulePush(0);
+      if(onLinkedFn){ try{ onLinkedFn(); }catch(e){ console.error("[Sync]", e); } }
     }catch(err){
       console.error("[Sync] branchement", err);
       status("error");
@@ -7741,6 +8365,45 @@ const Sync = (()=>{
       });
       if(!pushing) status(dirty() ? "pending" : "ok");
     }, onListenError));
+  }
+  // ---------- 10.2 : invitations ----------
+  // invites/<code> : { from, fromName, createdAt } ; la personne invitée y
+  // ajoute usedBy / usedByName / usedAt. Ici, on écoute mes invitations :
+  // une invitation ouverte fait entrer la personne dans mon carnet, puis
+  // l'invitation est effacée (elle a servi).
+  function listenInvites(uid){
+    unsubs.push(fb.onSnapshot(fb.query(fb.collection(db, INVITES), fb.where("from", "==", uid)), qs=>{
+      const list = [];
+      qs.forEach(d=>{
+        const v = d.data() || {};
+        if(v.usedBy){
+          if(onInviteUsedFn){ try{ onInviteUsedFn({ code:d.id, usedBy:v.usedBy, usedByName:v.usedByName || "" }); }catch(e){ console.error("[Sync]", e); } }
+          fb.deleteDoc(fb.doc(db, INVITES, d.id)).catch(err => console.error("[Sync] invitation servie", err));
+        }else{
+          const c = v.createdAt;
+          list.push({ code:d.id, createdAt: c && typeof c.toMillis === "function" ? c.toMillis() : (typeof c === "number" ? c : Date.now()) });
+        }
+      });
+      list.sort((a, b) => a.createdAt - b.createdAt);
+      invites = list;
+      if(onInvitesFn) onInvitesFn();
+    }, err => console.error("[Sync] invitations", err)));   // règles pas à jour : rien de plus
+  }
+  // prénom par défaut, la première fois : celui du compte Google, sinon le début de l'adresse
+  function ensureMyName(){
+    try{
+      if(Store.userField("myName")) return;
+      const g = String(user.displayName || "").trim().split(/\s+/)[0];
+      const e = String(user.email || "").split("@")[0].split(/[._+-]/)[0];
+      const n = (g || e || "").slice(0, 30);
+      if(n) Store.setUserField("myName", n.charAt(0).toLocaleUpperCase("fr") + n.slice(1));
+    }catch(err){ console.error("[Sync] prénom", err); }
+  }
+  function inviteCode(){
+    const A = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const a = new Uint8Array(20);
+    crypto.getRandomValues(a);
+    return Array.from(a, b => A[b % A.length]).join("");
   }
   function onListenError(err){
     console.error("[Sync] écoute", err);
@@ -7770,17 +8433,20 @@ const Sync = (()=>{
     const localC = local ? canon(local) : undefined;
     let next;
     if(localC === base || (base === undefined && !local)) next = remote;
-    else if(!remote) next = local;                      // supprimée en ligne mais changée ici : on la garde
+    else if(!remote) next = (local && local.owner && local.owner !== user.uid) ? null  // 10.2 : liste d'un autre qu'on ne voit plus
+                          : local;                      // supprimée en ligne mais changée ici : on la garde
     else next = merge(key, base, local, remote);
     if(remote) state.bases[key] = remoteC; else delete state.bases[key];
     saveState();
     if(canon(next) !== (rawLocal ? canon(rawLocal) : undefined)){
       if(key === "user") Store.writeDocs({ lists:{}, user: next || {} });
       else if(next || id) Store.writeDocs({ lists: { [id || localIdOf(next, user.uid)]: next } });
-      storeChangedElsewhere(Store.ns + "remote");
+      storeChangedElsewhere(Store.ns + (isSharedDoc(next) || isSharedDoc(rawLocal) ? "remote-shared" : "remote"));
     }
     if(next && canon(next) !== (state.bases[key])) schedulePush();
   }
+  // 10.2 : une liste vue par plusieurs comptes
+  function isSharedDoc(L){ return !!(L && Array.isArray(L.members) && L.members.filter(m => m !== "moi").length > 1); }
   function merge(key, base, local, remote){
     const b = base === undefined ? undefined : JSON.parse(base);
     return key === "user" ? SyncMerge.user(b, local, remote) : SyncMerge.list(b, local, remote);
@@ -7828,7 +8494,8 @@ const Sync = (()=>{
       for(const x of norm){
         if(canon(x.doc) === state.bases[x.key] && canon(x.raw) === canon(x.doc)) continue;
         status("pending");
-        await pushOne(x.key, LISTS, x.key.slice(5), x.id, x.doc, x.raw);
+        try{ await pushOne(x.key, LISTS, x.key.slice(5), x.id, x.doc, x.raw); }
+        catch(err){ if(err && err.code === "permission-denied" && await refused(x)) continue; throw err; }
       }
       for(const k of Object.keys(state.bases)){
         if(!k.startsWith("list:") || norm.some(x => x.key === k)) continue;
@@ -7876,6 +8543,28 @@ const Sync = (()=>{
       storeChangedElsewhere(Store.ns + "remote");
     }
   }
+  // 10.2 : la base en ligne refuse d'enregistrer une liste qui n'est pas à moi
+  // (on m'en a retiré, ou le geste dépasse ce qu'un invité peut faire) : on
+  // reprend la version en ligne telle quelle, ou on la retire si je ne la
+  // vois plus. Plutôt que de réessayer indéfiniment.
+  async function refused(x){
+    if(!x.doc.owner || x.doc.owner === user.uid) return false;
+    const cloudId = x.key.slice(5);
+    let remote = null;
+    try{
+      const snap = await fb.getDoc(fb.doc(db, LISTS, cloudId));
+      remote = snap.exists() ? cleanList(cloudId, SyncMerge.fromCloud(snap.data())) : null;
+    }catch(e){
+      if(!(e && e.code === "permission-denied")) return false;   // réseau : on réessaiera
+    }
+    if(remote) state.bases[x.key] = canon(remote); else delete state.bases[x.key];
+    saveState();
+    Store.writeDocs({ lists: { [x.id]: remote } });
+    storeChangedElsewhere(Store.ns + "remote-shared");
+    celebrate(remote ? "Ce geste n'est pas permis dans la liste de quelqu'un d'autre : elle revient comme en ligne."
+                     : "Une liste partagée avec toi ne l'est plus : elle disparaît d'ici.", true);
+    return true;
+  }
   async function pushDelete(key){
     const cloudId = key.slice(5);
     const base = state.bases[key];
@@ -7911,9 +8600,48 @@ const Sync = (()=>{
     start(){
       if(Store.mode !== "doc") return;
       Store.onLocalChange = ()=> schedulePush();
-      // déjà connecté sur cet appareil : Firebase est chargé tout de suite
-      if(readJSON(STATE_KEY, {}).uid) loadFirebase().catch(err => { console.error("[Sync] chargement", err); status("off"); });
+      // déjà connecté sur cet appareil (ou une invitation attend) : Firebase est chargé tout de suite
+      let waiting = null;
+      try{ waiting = localStorage.getItem(Store.ns + "invitation"); }catch(e){}
+      if(readJSON(STATE_KEY, {}).uid || waiting) loadFirebase().catch(err => { console.error("[Sync] chargement", err); status("off"); });
     },
+    // ---- 10.2 : partage ----
+    get invites(){ return invites.slice(); },
+    set onInvites(fn){ onInvitesFn = fn; },
+    set onInviteUsed(fn){ onInviteUsedFn = fn; },
+    set onLinked(fn){ onLinkedFn = fn; },
+    set onAuthChange(fn){ onAuthFn = fn; },
+    get linked(){ return linked; },
+    async createInvite(fromName){
+      await loadFirebase();
+      if(!user) throw new Error("pas connecté");
+      const code = inviteCode();
+      await fb.setDoc(fb.doc(db, INVITES, code), { from: user.uid, fromName: String(fromName || "").slice(0, 30), createdAt: fb.serverTimestamp() });
+      if(!invites.some(i => i.code === code)) invites = invites.concat([{ code, createdAt: Date.now() }]);
+      return code;
+    },
+    async deleteInvite(code){
+      await loadFirebase();
+      await fb.deleteDoc(fb.doc(db, INVITES, code));
+      invites = invites.filter(i => i.code !== code);
+      if(onInvitesFn) onInvitesFn();
+    },
+    async acceptInvite(code, name){
+      await loadFirebase();
+      if(!user) throw new Error("pas connecté");
+      const uid = user.uid;
+      const ref = fb.doc(db, INVITES, code);
+      return fb.runTransaction(db, async tx=>{
+        const snap = await tx.get(ref);
+        if(!snap.exists()) return { status:"gone" };
+        const v = snap.data() || {};
+        if(v.from === uid) return { status:"self" };
+        if(v.usedBy && v.usedBy !== uid) return { status:"used" };
+        if(!v.usedBy) tx.update(ref, { usedBy: uid, usedByName: String(name || "").slice(0, 30), usedAt: fb.serverTimestamp() });
+        return { status:"ok", from: v.from, fromName: v.fromName || "" };
+      });
+    },
+    async loadNow(){ return loadFirebase(); },
     storageEvent(key){
       if(key === STATUS_KEY){ if(onStatusChange) onStatusChange(); return; }
       if(leader && linked && key && key.indexOf(Store.ns) === 0 && key !== STATE_KEY) schedulePush();
@@ -7954,7 +8682,7 @@ const Sync = (()=>{
     plume.setAttribute("aria-label", LABEL[st] || LABEL.off);
     plume.title = (LABEL[st] || LABEL.off) + (st === "ok" || st === "pending" ? who : "");
   }
-  Sync.onStatus = paint;
+  Sync.onStatus = ()=>{ paint(); if(shareOpen) renderShare(); };   // 10.2 : le panneau Partage suit la connexion
   paint();
 
   const ERR = {
@@ -7991,7 +8719,8 @@ const Sync = (()=>{
       });
     }else{
       pop.innerHTML = `
-        <div class="rp-title">Retrouver ses listes partout</div>
+        <div class="rp-title">${pendingInvite() ? "Une invitation t'attend" : "Retrouver ses listes partout"}</div>
+        ${pendingInvite() ? `<div class="sp-state">Connecte-toi (ou crée un compte) pour l'accepter : les listes qu'on partagera avec toi apparaîtront ici.</div>` : ""}
         <button type="button" class="sp-google">Continuer avec Google</button>
         <div class="sp-or">ou</div>
         <input type="email" class="sp-email" placeholder="Adresse e-mail" autocomplete="username">
@@ -8021,7 +8750,21 @@ const Sync = (()=>{
     openPopAt(pop, plume);
   }
   plume.addEventListener("click", e=>{ e.stopPropagation(); if(relancePop && relancePop.classList.contains("sync-pop")) closeRelancePop(); else open(); });
+  // 10.2 : arrivé par un lien d'invitation sans être connecté : la fenêtre s'ouvre d'elle-même
+  let invitePrompted = false;
+  Sync.onAuthChange = u=>{
+    if(u || invitePrompted || !pendingInvite()) return;
+    invitePrompted = true;
+    setTimeout(()=>{ if(!Sync.user && !(relancePop && relancePop.classList.contains("sync-pop"))) open(); }, 300);
+  };
   // à la connexion réussie, la fenêtre se referme d'elle-même (open() la recrée au besoin)
 })();
+// ---- 10.2 : partage — branchements avec la synchro ----
+Sync.onInvites = ()=>{ if(shareOpen) renderShare(); };
+Sync.onInviteUsed = inv=>{
+  if(shareNewLink && shareNewLink.code === inv.code) shareNewLink = null;   // le lien affiché a servi
+  if(noteInviteUsed(inv)) renderAll();
+};
+Sync.onLinked = ()=>{ acceptPendingInvite(); renderAll(); };
 Sync.start();
 </script>
