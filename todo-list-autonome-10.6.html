@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.5 -->
+<!-- Sous le tapis — version AUTONOME 10.6 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -655,6 +655,16 @@
     « Se connecter » et « Créer un compte » de même largeur ; bouton Partage :
     survol (et panneau ouvert) en jaune --lucky-gold, texte foncé ; Restaurer
     reprend le survol bleu de Sauvegarder.
+  - 10.6 : quand la connexion est possible (Sync.available, body.cloud),
+    Sauvegarder / Restaurer quittent le bas de page pour deux petits liens
+    « Copie de secours » / « Restaurer » dans la fenêtre de la plume ; le
+    rappel de sauvegarde devient « Connecte-toi pour ne jamais perdre tes
+    listes » (clic = la plume), et disparaît une fois connecté. Sans
+    Firebase, rien ne change. Restaurer en étant connecté : les listes
+    partagées et le carnet gardent leur état actuel (seules mes listes non
+    partagées sont remises) ; une sauvegarde d'avant le format 10 ne se
+    restaure pas connecté. Partage : survol jaune citron clair
+    (--share-hover). « rejoint ton carnet de contacts ».
 -->
 <title>Sous le tapis</title>
 <style>
@@ -694,6 +704,7 @@
   --wait-soft:#EEFBF4;
   --eggshell:#FAF3E3;
   --lucky-gold:#E3B53C;
+  --share-hover:#F2EA8C;
   --line:#EDE7DC;
   --shadow: 0 1px 2px rgba(30,40,45,0.04), 0 8px 24px -12px rgba(30,40,45,0.12);
   --rose:#D98DA1; /* couleur fixe : un color-mix s'interpole mal dans l'animation */
@@ -724,6 +735,7 @@
     --wait-soft:#142C29;
     --eggshell:#28292E;
     --lucky-gold:#D8B145;
+    --share-hover:#E9E07A;
     --line:#2E363C;
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
     --phrase:#9CC0DC;
@@ -753,6 +765,7 @@
   --wait-soft:#142C29;
   --eggshell:#28292E;
   --lucky-gold:#D8B145;
+  --share-hover:#E9E07A;
   --line:#2E363C;
   --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
   --phrase:#9CC0DC;
@@ -2072,6 +2085,12 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 .sync-pop .rp-opts:has(.sp-login){ display:grid; grid-template-columns:1fr 1fr; }
 .sync-pop .rp-opts:has(.sp-login) button{ text-align:center; white-space:nowrap; padding-inline:0.3rem; font-size:0.82rem; }
 .sync-pop .sp-forgot{ display:block; margin-inline:auto; }
+body.cloud #exportBtn, body.cloud #importBtn{ display:none; }
+.backup-nudge.as-link{ cursor:pointer; color:var(--accent); text-decoration:underline; text-decoration-color:color-mix(in srgb, var(--accent) 40%, transparent); text-underline-offset:3px; }
+.backup-nudge.as-link:hover{ text-decoration-color:currentColor; }
+.sp-backup{ display:flex; justify-content:center; align-items:center; gap:0.4rem; margin-top:0.7rem; padding-top:0.55rem; border-top:1px solid var(--line); font-size:0.74rem; color:var(--ink-faint); }
+.sp-backup button{ appearance:none; border:0; background:none; padding:0; font:inherit; color:var(--ink-soft); cursor:pointer; text-decoration:underline; text-underline-offset:3px; text-decoration-color:color-mix(in srgb, currentColor 35%, transparent); }
+.sp-backup button:hover{ color:var(--accent); text-decoration-color:currentColor; }
 .sp-msg{ font-size:0.8rem; color:var(--urgent-ink); margin-top:0.45rem; }
 .sp-msg:empty{ display:none; }
 .sp-who{ font-size:0.9rem; font-weight:600; color:var(--ink); margin:-0.2rem 0 0.25rem; word-break:break-all; }
@@ -2161,9 +2180,9 @@ footer{
 .trash-link{ margin-right:auto; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--btn) 28%, transparent); }
 /* 10.2 : Partage juste à droite de Corbeille, c'est lui qui pousse le reste à droite */
 footer:has(#shareLink:not([hidden])) #trashLink{ margin-right:0; }
-/* 10.5 : Partage en jaune au survol (texte foncé dans les deux thèmes) ;
+/* 10.5-10.6 : Partage en jaune citron clair au survol (texte foncé dans les deux thèmes) ;
    Restaurer reprend le survol bleu de Sauvegarder */
-.share-link:hover, .share-link.open{ background:var(--lucky-gold); color:#2A2725; box-shadow:inset 0 0 0 1px var(--lucky-gold); }
+.share-link:hover, .share-link.open{ background:var(--share-hover); color:#2A2725; box-shadow:inset 0 0 0 1px var(--share-hover); }
 #importBtn:hover{ background:var(--accent); color:var(--surface); }
 .share-link svg{ width:16px; height:16px; display:block; flex:none; }
 .trash-link svg{ width:15px; height:15px; display:block; flex:none; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
@@ -2638,7 +2657,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.5</span>
+    <span class="version-tag">v10.6</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4311,9 +4330,26 @@ function backupNudgeText(){
 function renderBackupNudge(){
   const el = document.getElementById("backupNudge");
   if(!el) return;
-  const text = hasAnyList() ? backupNudgeText() : "";
+  // 10.6 : quand on peut se connecter, le rappel invite à se connecter (et se
+  // tait une fois connecté) ; la copie de secours est dans la plume
+  // (Sync est déclaré plus bas : au tout premier rendu il n'existe pas encore)
+  let cloud = false, logged = false;
+  try{ cloud = !!Sync.available; logged = !!(Sync.user && ((Sync.status && Sync.status.state) || "off") !== "off"); }catch(e){}
+  let text;
+  if(cloud){
+    text = (hasAnyList() && !logged) ? "Connecte-toi pour ne jamais perdre tes listes" : "";
+  }else text = hasAnyList() ? backupNudgeText() : "";
   el.textContent = text;
   el.hidden = !text;
+  el.classList.toggle("as-link", cloud && !!text);
+  if(cloud && !el.dataset.wired){
+    el.dataset.wired = "1";
+    el.setAttribute("role", "button");
+    el.tabIndex = 0;
+    const go = e=>{ e.stopPropagation(); const p = document.getElementById("plume"); if(p && !p.hidden) p.click(); };
+    el.addEventListener("click", go);
+    el.addEventListener("keydown", e=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); go(e); } });
+  }
 }
 
 // Toutes les clés du navigateur où vivent tes tâches et leur agencement.
@@ -4529,6 +4565,19 @@ function importSnapshot(snap){
   renderAll();
 }
 
+// 10.6 : restauration en étant connecté — les listes partagées actuelles
+// (les miennes partagées et celles qu'on me partage) et le carnet / prénom
+// restent tels qu'ils sont ; seules mes listes non partagées viennent du
+// fichier. Une liste partagée qui n'existe plus ici n'est pas ressuscitée.
+function keepSharedOnImport(dump){
+  const cur = Store.exportModel();
+  const keep = new Set(cur.lists.filter(L => L && isSharedList(L.id)).map(L => L.id));
+  const out = JSON.parse(JSON.stringify(dump));
+  out.lists = out.lists.filter(L => L && !keep.has(L.id) && !(L.owner && L.owner !== myUid()) && !(Array.isArray(L.members) && L.members.some(m => m !== "moi" && m !== L.owner && m !== myUid())))
+    .concat(cur.lists.filter(L => L && keep.has(L.id)));
+  ["contacts", "myName"].forEach(k=>{ if(cur.user && k in cur.user) out.user[k] = cur.user[k]; else if(out.user) delete out.user[k]; });
+  return out;
+}
 function importData(file){
   const reader = new FileReader();
   reader.onload = ()=>{
@@ -4536,8 +4585,14 @@ function importData(file){
     try{ dump = JSON.parse(reader.result); }
     catch(err){ alert("Ce fichier n'est pas une sauvegarde lisible."); return; }
     // 10.0 : sauvegarde au nouveau format (fiches) : remise telle quelle.
+    const online = typeof myUid === "function" && !!myUid();
     if(Store.mode === "doc" && Store.isModelDump(dump)){
-      if(!confirm("Importer cette sauvegarde ? Elle remplacera la liste actuelle de ce fichier.")) return;
+      if(online){
+        // 10.6 : connecté, on ne touche ni aux listes partagées (dans un sens
+        // ou dans l'autre) ni au carnet : ils gardent leur état actuel
+        if(!confirm("Importer cette sauvegarde ? Elle remplacera tes listes non partagées. Les listes partagées et ton carnet restent tels qu'ils sont.")) return;
+        dump = keepSharedOnImport(dump);
+      }else if(!confirm("Importer cette sauvegarde ? Elle remplacera la liste actuelle de ce fichier.")) return;
       Store.importModel(dump);
       DATA.length = 0; // la liste est entièrement remplacée
       reloadAllFromStorage();
@@ -4545,6 +4600,7 @@ function importData(file){
       celebrate("Sauvegarde importée");
       return;
     }
+    if(online){ alert("Cette sauvegarde vient d'une version plus ancienne : elle ne peut pas être restaurée pendant que tu es connecté."); return; }
     // Sauvegarde autonome (photo) : reconstruit toute la liste, quelle que soit
     // la version d'origine. C'est le chemin normal ici.
     if(dump && dump.snapshot && Array.isArray(dump.snapshot.categories)){
@@ -7099,7 +7155,7 @@ function renderShare(){
       return `<li class="sh-person sh-pending"><span class="share-chip">?</span><span class="sh-pname">Invitation${when ? " du " + when : ""}</span><span class="sh-state">pas encore ouverte</span><button type="button" class="sh-copy-old" data-code="${escapeAttr(inv.code)}">Copier le lien</button><button type="button" class="sh-x" data-code="${escapeAttr(inv.code)}" aria-label="Annuler cette invitation" data-tip="Annuler l'invitation">&times;</button></li>`;
     }).join("");
     panel.innerHTML = head + `
-      <p class="share-help">Une invitation par personne. Elle ouvre le lien, se connecte, et entre dans ton carnet. Ensuite, double-clic sur le titre d'une liste : tu coches son nom, et la liste apparaît chez elle.</p>
+      <p class="share-help">Une invitation par personne. Elle ouvre le lien, se connecte, et rejoint ton carnet de contacts. Ensuite, double-clic sur le titre d'une liste : tu coches son nom, et la liste apparaît chez elle.</p>
       <label class="sh-me"><span>Ton prénom pour les autres</span><input type="text" class="sh-name" maxlength="30" value="${escapeAttr(myName())}" autocomplete="off"></label>
       <div class="sh-sub">Ton carnet</div>
       ${peopleHtml ? `<ul class="sh-people">${peopleHtml}</ul>` : `<p class="share-help sh-empty">Personne pour l'instant.</p>`}
@@ -8692,6 +8748,7 @@ const Sync = (()=>{
   if(!plume) return;
   if(!Sync.available){ plume.hidden = true; return; }
   plume.hidden = false;
+  document.body.classList.add("cloud"); // 10.6 : Sauvegarder / Restaurer passent dans la plume
   const LABEL = {
     off: "Déconnecté — se connecter pour retrouver ses listes partout",
     connecting: "Connexion en cours…",
@@ -8708,7 +8765,7 @@ const Sync = (()=>{
     plume.setAttribute("aria-label", LABEL[st] || LABEL.off);
     plume.title = (LABEL[st] || LABEL.off) + (st === "ok" || st === "pending" ? who : "");
   }
-  Sync.onStatus = ()=>{ paint(); if(shareOpen) renderShare(); };   // 10.2 : le panneau Partage suit la connexion
+  Sync.onStatus = ()=>{ paint(); if(shareOpen) renderShare(); renderBackupNudge(); };   // 10.2 : le panneau Partage suit la connexion
   paint();
 
   const ERR = {
@@ -8773,6 +8830,13 @@ const Sync = (()=>{
       });
       pw.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); pop.querySelector(".sp-login").click(); } });
     }
+    // 10.6 : copie de secours (fichier), discrète, dans les deux états
+    const bk = document.createElement("div");
+    bk.className = "sp-backup";
+    bk.innerHTML = `<button type="button" class="sp-export">Copie de secours</button><span aria-hidden="true">·</span><button type="button" class="sp-import">Restaurer</button>`;
+    bk.querySelector(".sp-export").addEventListener("click", e=>{ e.stopPropagation(); closeRelancePop(); document.getElementById("exportBtn").click(); });
+    bk.querySelector(".sp-import").addEventListener("click", e=>{ e.stopPropagation(); closeRelancePop(); document.getElementById("importFile").click(); });
+    pop.appendChild(bk);
     openPopAt(pop, plume);
   }
   plume.addEventListener("click", e=>{ e.stopPropagation(); if(relancePop && relancePop.classList.contains("sync-pop")) closeRelancePop(); else open(); });
