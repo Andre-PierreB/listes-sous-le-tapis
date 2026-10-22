@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.3 -->
+<!-- Sous le tapis — version AUTONOME 10.4 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -648,6 +648,9 @@
     un halo très léger ; pointe calée sur le bord droit des cartes, titre
     reculé d'autant (padding-right 45px) ; au survol, s'incline de 9° vers
     la droite (pivot au centre).
+  - 10.4 : plume et titre décalés de 24 px vers la gauche : la pointe de la
+    plume s'aligne sur le bout droit de la barre de comptage ; même écart
+    entre le titre et la plume.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -785,7 +788,7 @@ header{
 .eyebrow{
   display:block;
   text-align:right;
-  padding-right:45px; /* 10.3 : reculé pour laisser la plume, dont la pointe s'aligne sur le bord droit des cartes */
+  padding-right:69px; /* 10.4 : reculé pour laisser la plume, dont la pointe s'aligne sur le bout droit de la barre de comptage */
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.8rem;
   font-weight:600;
@@ -809,10 +812,10 @@ header{
   height:1px;
   background:currentColor;
 }
-/* 10.3 : plume de connexion, à droite du titre ; pointe calée sur le bord droit
-   des cartes ; tomate claire (--plume-off) = déconnecté, bleu = connecté */
+/* 10.3-10.4 : plume de connexion, à droite du titre ; pointe calée sur le bout
+   droit de la barre de comptage ; tomate claire (--plume-off) = déconnecté, bleu = connecté */
 .plume{
-  position:absolute; right:-9.2px; top:-6px; width:28px; height:28px;
+  position:absolute; right:14.8px; top:-6px; width:28px; height:28px;
   appearance:none; border:0; background:none; padding:0; cursor:pointer;
   color:var(--plume-off); transform-origin:50% 50%;
   filter:drop-shadow(0 0 1.5px color-mix(in srgb, currentColor 35%, transparent));
@@ -2623,7 +2626,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.3</span>
+    <span class="version-tag">v10.4</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
