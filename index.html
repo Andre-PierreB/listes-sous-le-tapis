@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.11 -->
+<!-- Sous le tapis — version AUTONOME 10.12 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -690,6 +690,8 @@
     dans le navigateur.
   - 10.11 : « Réparer cet appareil » retiré (inutile en usage normal) ; la
     ligne de diagnostic sous la plume reste.
+  - 10.12 : le petit chiffre à droite du compteur montre les tâches qui
+    restent à faire (avant : le total des tâches dans les listes).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2700,7 +2702,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.11</span>
+    <span class="version-tag">v10.12</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -7481,11 +7483,13 @@ function updateProgress(){
   document.getElementById("doneCount").textContent = weekDone;
   document.getElementById("doneWord").textContent = weekDone > 1 ? "accomplies" : "accomplie";
   fitCountBlock();
-  // 8.10 : à droite, le total des tâches dans les listes (en cours compris,
-  // œufs exclus) ; 8.32 : le chiffre seul
+  // 8.10 : à droite, un chiffre seul (8.32) ; 10.12 : les tâches qui restent
+  // à faire (ni cochées, ni envoyées « en cours » sauf relance du jour,
+  // œufs exclus) — le même calcul que la barre : total - faites
+  const left = Math.max(0, total - done);
   const totalEl = document.getElementById("totalCount");
-  totalEl.textContent = total;
-  totalEl.title = total > 1 ? total + " tâches dans les listes" : total + " tâche dans les listes";
+  totalEl.textContent = left;
+  totalEl.title = left > 1 ? left + " tâches encore à faire" : left + " tâche encore à faire";
   const pct = total ? Math.round((done/total)*100) : 0;
   document.getElementById("barFill").style.width = pct + "%";
 
