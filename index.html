@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.10 -->
+<!-- Sous le tapis — version AUTONOME 10.11 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -688,6 +688,8 @@
   - 10.10 : « Continuer avec Google » propose toujours le choix du compte
     (prompt select_account) au lieu de reprendre d'office celui déjà ouvert
     dans le navigateur.
+  - 10.11 : « Réparer cet appareil » retiré (inutile en usage normal) ; la
+    ligne de diagnostic sous la plume reste.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2136,7 +2138,6 @@ body.cloud #exportBtn, body.cloud #importBtn{ display:none; }
 .sp-state{ font-size:0.8rem; color:var(--ink-soft); margin:0 0 0.6rem; }
 /* 10.9 : diagnostic de synchro, discret, sous « Se déconnecter » */
 .sp-diag{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.66rem; line-height:1.35; color:var(--ink-faint); margin-top:0.6rem; word-break:break-word; }
-.sp-repair{ appearance:none; border:0; background:none; padding:0; margin-top:0.35rem; font-family:inherit; font-size:0.74rem; color:var(--ink-soft); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
 
 /* ---------- petit message flottant ---------- */
 #toast{
@@ -2699,7 +2700,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.10</span>
+    <span class="version-tag">v10.11</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -8848,11 +8849,6 @@ const Sync = (()=>{
         err: lastErr,
       };
     },
-    // 10.9 : « Réparer cet appareil » : oublie l'état de synchro de cet appareil ;
-    // au rechargement, ses listes sont remplacées par celles du compte (copie gardée)
-    resetDevice(){
-      try{ localStorage.removeItem(STATE_KEY); localStorage.removeItem(STATUS_KEY); localStorage.removeItem(Store.ns + "me"); }catch(e){}
-    },
     async createInvite(fromName){
       await loadFirebase();
       if(!user) throw new Error("pas connecté");
@@ -8961,13 +8957,7 @@ const Sync = (()=>{
         <div class="sp-who">${escapeAttr(Sync.user.email || "")}</div>
         <div class="sp-state">${escapeAttr(stateText)}</div>
         <div class="rp-opts"><button type="button" class="sp-logout rp-none">Se déconnecter</button></div>
-        ${(()=>{ const d = Sync.diag; return `<div class="sp-diag">compte ·${escapeAttr(d.acct)} · appareil ·${escapeAttr(d.device)} · ${d.linked ? "branché" : (d.leader ? "chef, pas branché" : "en attente")}${d.locks ? "" : " · sans verrou"} · ${d.online} liste${d.online > 1 ? "s" : ""} en ligne dont ${d.others} d'autres${d.err ? " · " + escapeAttr(d.err) : ""}</div><button type="button" class="sp-repair">Réparer cet appareil</button>`; })()}`;
-      pop.querySelector(".sp-repair").addEventListener("click", e=>{
-        e.stopPropagation();
-        if(!confirm("Réparer cet appareil : ses listes vont être remplacées par celles de ton compte en ligne (une copie de celles-ci est gardée). On y va ?")) return;
-        Sync.resetDevice();
-        location.reload();
-      });
+        ${(()=>{ const d = Sync.diag; return `<div class="sp-diag">compte ·${escapeAttr(d.acct)} · appareil ·${escapeAttr(d.device)} · ${d.linked ? "branché" : (d.leader ? "chef, pas branché" : "en attente")}${d.locks ? "" : " · sans verrou"} · ${d.online} liste${d.online > 1 ? "s" : ""} en ligne dont ${d.others} d'autres${d.err ? " · " + escapeAttr(d.err) : ""}</div>`; })()}`;
       pop.querySelector(".sp-logout").addEventListener("click", async e=>{
         e.stopPropagation();
         closeRelancePop();
