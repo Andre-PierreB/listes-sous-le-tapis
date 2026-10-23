@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.13 -->
+<!-- Sous le tapis — version AUTONOME 10.14 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -697,6 +697,10 @@
     « Un instant… » le temps du chargement) et la fenêtre Google s'ouvre
     dans le geste (avant, chargée après coup, elle était bloquée sans
     message). Petit chiffre du compteur dans la teinte de la barre vide.
+  - 10.14 : seul le texte du titre déroule le tapis (avant : toute la ligne,
+    y compris l'espace autour de la plume — sur un petit téléphone, un doigt
+    qui ratait la plume déroulait le tapis) ; zone de toucher de la plume
+    agrandie (::before invisible). Rien ne bouge à l'écran.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -837,7 +841,13 @@ header{
 .eyebrow{
   display:block;
   text-align:right;
-  padding-right:69px; /* 10.4 : reculé pour laisser la plume, dont la pointe s'aligne sur le bout droit de la barre de comptage */
+  /* 10.4 : reculé pour laisser la plume, dont la pointe s'aligne sur le bout
+     droit de la barre de comptage ; 10.14 : en marge (et plus en padding) et
+     à la largeur du texte : seul le texte déroule le tapis, plus l'espace
+     autour de la plume (un doigt qui ratait la plume déroulait le tapis) */
+  width:fit-content;
+  margin-left:auto;
+  margin-right:69px;
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.8rem;
   font-weight:600;
@@ -871,6 +881,8 @@ header{
   transition:color .25s ease, opacity .25s ease, transform .18s ease, filter .25s ease;
 }
 .plume svg{ display:block; width:100%; height:100%; }
+/* 10.14 : zone de toucher agrandie (invisible), sans déborder sur le titre */
+.plume::before{ content:""; position:absolute; inset:-11px -11px -11px -10px; }
 .plume.on{ color:var(--accent); }
 .plume.waiting{ opacity:.55; }
 .plume:hover{ transform:rotate(9deg); }
@@ -2709,7 +2721,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.13</span>
+    <span class="version-tag">v10.14</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
