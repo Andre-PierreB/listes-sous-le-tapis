@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.12 -->
+<!-- Sous le tapis — version AUTONOME 10.13 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -692,6 +692,11 @@
     ligne de diagnostic sous la plume reste.
   - 10.12 : le petit chiffre à droite du compteur montre les tâches qui
     restent à faire (avant : le total des tâches dans les listes).
+  - 10.13 : « Continuer avec Google » marche du premier coup sur iPhone :
+    Firebase est préchargé à l'ouverture de la fenêtre de la plume (bouton
+    « Un instant… » le temps du chargement) et la fenêtre Google s'ouvre
+    dans le geste (avant, chargée après coup, elle était bloquée sans
+    message). Petit chiffre du compteur dans la teinte de la barre vide.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -931,7 +936,9 @@ header{
   white-space:nowrap;
   line-height:1;
   font-size:0.68rem;
-  color:var(--ink-soft);
+  /* 10.13 : ce qui reste à faire = la partie vide de la barre : sa couleur
+     (--accent-soft), foncée juste assez pour se lire sur le blanc */
+  color:color-mix(in srgb, var(--accent-soft) 40%, var(--accent-strong));
 }
 .progress-msg{
   grid-column:2;
@@ -2702,7 +2709,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.12</span>
+    <span class="version-tag">v10.13</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -8890,8 +8897,15 @@ const Sync = (()=>{
     get status(){ return getStatus(); },
     set onStatus(fn){ onStatusChange = fn; },
     get user(){ return user; },
-    async signInGoogle(){
-      await loadFirebase();
+    // 10.13 : la fenêtre Google doit s'ouvrir DANS le geste (le toucher) ;
+    // si on attend d'abord le chargement de Firebase, l'iPhone la bloque sans
+    // rien dire (d'où « rien ne se passe » au premier essai). Firebase est donc
+    // préchargé dès l'ouverture de la fenêtre de la plume (preload / ready), et
+    // ici on ouvre la fenêtre Google tout de suite, sans rien attendre avant.
+    get ready(){ return !!fb; },
+    preload(){ return loadFirebase(); },
+    signInGoogle(){
+      if(!fb) return loadFirebase().then(()=> this.signInGoogle());
       // 10.10 : Google demande toujours quel compte utiliser (sinon il reprend
       // d'office celui déjà ouvert dans le navigateur)
       const provider = new fb.GoogleAuthProvider();
@@ -8988,6 +9002,22 @@ const Sync = (()=>{
         finally{ busy(false); }
       };
       pop.querySelector(".sp-google").addEventListener("click", e=>{ e.stopPropagation(); run(()=> Sync.signInGoogle()); });
+      // 10.13 : Firebase chargé pendant qu'on lit la fenêtre ; le bouton Google
+      // attend ce chargement (quelques dixièmes de seconde) pour s'ouvrir du premier coup
+      const gBtn = pop.querySelector(".sp-google");
+      if(!Sync.ready){
+        gBtn.disabled = true;
+        gBtn.textContent = "Un instant…";
+        Sync.preload().then(()=>{
+          gBtn.textContent = "Continuer avec Google";
+          if(!pop.querySelector(".sp-login").disabled) gBtn.disabled = false;
+        }).catch(err=>{
+          console.error("[Sync] chargement", err);
+          gBtn.textContent = "Continuer avec Google";
+          gBtn.disabled = false;
+          msg.textContent = "Pas de réseau pour l'instant.";
+        });
+      }
       pop.querySelector(".sp-login").addEventListener("click", e=>{ e.stopPropagation(); run(()=> Sync.signInEmail(email.value.trim(), pw.value)); });
       pop.querySelector(".sp-create").addEventListener("click", e=>{ e.stopPropagation(); run(()=> Sync.createEmail(email.value.trim(), pw.value)); });
       pop.querySelector(".sp-forgot").addEventListener("click", e=>{
