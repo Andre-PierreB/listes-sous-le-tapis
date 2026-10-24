@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.16 -->
+<!-- Sous le tapis — version AUTONOME 10.18 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -188,8 +188,12 @@
     getWeekDoneCount), graphique (collectDoneDates), purge du lundi
     (purgeCheckedBefore), case urgente, trèfle. Retirer un article (× ou
     « Vider les rayés ») = effacé comme une tâche, jamais à la corbeille.
-  - Affichage : rond creux .strike-dot à la place de la case (14 px depuis la 10.16,
-    centré dans la place de la case : le texte reste aligné),
+  - Affichage : rond creux .strike-dot à la place de la case (11 px depuis la 10.17,
+    centré dans la place de la case : le texte reste aligné) ; carte en
+    feuille de cahier (10.17) : papier --paper, une ligne --paper-rule sous
+    chaque article, marge à la couleur de la liste (--margin-ink, 10.18) à
+    --margin-x du bord, pile entre la poignée et le rond, sans
+    le liseré coloré des autres listes ; quantité à l'encre --qty-ink ;
     clic sur la ligne ou le rond = rayer / dé-rayer, l'article reste à sa
     place ; pas de +, d'ajout express ni de sens ▲▼ dans le bandeau (le sens
     enregistré est ignoré, gardé pour un retour en liste normale) ; panier
@@ -769,6 +773,22 @@
     Testée d'abord sur essai.html (banc local).
   - 10.16 : rond creux des listes de courses plus petit (14 px au lieu de
     18), même place, texte aligné comme avant.
+  - 10.17 : liste de courses en feuille de cahier (papier crème, lignes
+    bleu pâle, marge rouge juste à gauche des ronds, plus de liseré
+    coloré à gauche) ; quantités à l'encre rose bien visible (le rouge
+    reste aux urgences) ; rond
+    11 px. Clair, sombre et téléphone vérifiés sur le banc.
+  - 10.18 : marge à la couleur de la liste, pile entre la poignée et le
+    rond ; 4 px d'air de plus à gauche des ronds ; papier perle très claire, liseré
+    très fin à la couleur de la liste et ombre plus nette pour se détacher
+    du fond ; repliée, un clic n'importe où sur la carte la déplie ;
+    texte des articles posé sur sa ligne ; un peu d'air avant Trier / Vider ;
+    barre de défilement toujours visible quand la liste dépasse (iPhone
+    compris) ; papier perle avec une pointe de jaune ; bandeau « Une petite
+    en passant ? » en citron givré (--lucky-bg, choisi au nuancier) ; tous
+    ses accents (surbrillance, liserés des propositions, textes) en jaune
+    citron --lucky-lemon au lieu de l'or --lucky-gold, qui ne sert plus
+    qu'au bouton « Nouvelle liste » du premier lancement.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -807,6 +827,9 @@
   --wait:#6A9FB9;
   --wait-soft:#EEFBF4;
   --eggshell:#FAF3E3;
+  --lucky-bg:#FBFADF;   /* 10.18 : « Une petite en passant ? » en citron givré (avant : --eggshell) */
+  --lucky-lemon:#E6D63C;  /* 10.18 : accents du bandeau trèfle (surbrillance, liserés, textes) ;
+                            --lucky-gold reste au bouton « Nouvelle liste » du premier lancement */
   --lucky-gold:#E3B53C;
   --share-hover:#F2EA8C;
   --line:#EDE7DC;
@@ -814,6 +837,11 @@
   --rose:#D98DA1; /* couleur fixe : un color-mix s'interpole mal dans l'animation */
   --phrase:#3F6A8C; /* bleu acier : phrase du compteur (8.4) */
   --count-ink:#1E3552; /* « tâches accomplies… » : presque noir, une pointe de bleu (8.7) */
+  /* 10.17 : liste de courses en feuille de cahier — papier, lignes, marge, quantités */
+  --paper:#FDFDFA;   /* 10.18 : perle très claire, un soupçon de jaune (avant #FFFDF7, crème) */
+  --paper-rule:#DCE7F1;
+  --paper-shadow: 0 1px 3px rgba(30,40,45,0.07), 0 10px 26px -12px rgba(30,40,45,0.2);
+  --qty-ink:#CE4F8A;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -838,12 +866,18 @@
     --wait:#94C4DA;
     --wait-soft:#142C29;
     --eggshell:#28292E;
+    --lucky-bg:#28292E;
+    --lucky-lemon:#DCCB52;
     --lucky-gold:#D8B145;
     --share-hover:#E9E07A;
     --line:#2E363C;
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
     --phrase:#9CC0DC;
     --count-ink:#D5E3F3;
+    --paper:#1E2226;
+    --paper-rule:#2C3742;
+    --paper-shadow: 0 1px 3px rgba(0,0,0,0.35), 0 10px 26px -12px rgba(0,0,0,0.6);
+    --qty-ink:#F3A2C6;
   }
 }
 :root[data-theme="dark"]{
@@ -868,12 +902,18 @@
   --wait:#94C4DA;
   --wait-soft:#142C29;
   --eggshell:#28292E;
+  --lucky-bg:#28292E;
+  --lucky-lemon:#DCCB52;
   --lucky-gold:#D8B145;
   --share-hover:#E9E07A;
   --line:#2E363C;
   --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
   --phrase:#9CC0DC;
   --count-ink:#D5E3F3;
+  --paper:#1E2226;
+  --paper-rule:#2C3742;
+  --paper-shadow: 0 1px 3px rgba(0,0,0,0.35), 0 10px 26px -12px rgba(0,0,0,0.6);
+  --qty-ink:#F3A2C6;
 }
 
 /* ---------- page ---------- */
@@ -1222,7 +1262,7 @@ header{
 .lucky-line{
   margin-top:0.8rem;
   border-radius:12px;
-  background:var(--eggshell);
+  background:var(--lucky-bg);
   box-shadow:var(--shadow);
   padding:0.7rem 0.9rem 0.85rem;
   transition:opacity .4s ease, filter .4s ease;
@@ -1241,14 +1281,14 @@ header{
 .lucky-line.closed .lucky-head{ margin-bottom:0; }
 .lucky-line.closed:not(.rest):hover, .lucky-line.closed:focus-visible{
   outline:none;
-  box-shadow:var(--shadow), 0 0 0 3px color-mix(in srgb, var(--lucky-gold) 30%, transparent), 0 6px 20px -4px color-mix(in srgb, var(--lucky-gold) 60%, transparent);
+  box-shadow:var(--shadow), 0 0 0 3px color-mix(in srgb, var(--lucky-lemon) 40%, transparent), 0 6px 20px -4px color-mix(in srgb, var(--lucky-lemon) 70%, transparent);
   transform:translateY(-1px);
 }
 .lucky-line.closed:not(.rest):hover .lucky-clover, .lucky-line.closed:focus-visible .lucky-clover{ transform:rotate(-30deg); }
 .lucky-line.closed:active{ transform:translateY(0); }
 .lucky-crank{
   margin-left:auto; flex:none; line-height:0; padding:4px;
-  color:color-mix(in srgb, var(--lucky-gold) 55%, var(--ink)); opacity:.75;
+  color:color-mix(in srgb, var(--lucky-lemon) 55%, var(--ink)); opacity:.75;
   transition:transform .3s ease, opacity .2s ease;
 }
 .lucky-line.closed:not(.rest):hover .lucky-crank{ opacity:1; transform:translateY(2px); }
@@ -1257,9 +1297,9 @@ header{
   border-radius:50%; line-height:0; cursor:pointer; color:inherit; flex:none;
   transition:background .15s ease;
 }
-.lucky-clover-btn:hover{ background:color-mix(in srgb, var(--lucky-gold) 22%, var(--surface)); }
+.lucky-clover-btn:hover{ background:color-mix(in srgb, var(--lucky-lemon) 22%, var(--surface)); }
 .lucky-clover-btn:hover .lucky-clover{ transform:rotate(30deg); }
-.lucky-clover-btn:focus-visible{ outline:2px solid var(--lucky-gold); outline-offset:1px; }
+.lucky-clover-btn:focus-visible{ outline:2px solid var(--lucky-lemon); outline-offset:1px; }
 .lucky-line.closing{ pointer-events:none; }
 .lucky-pick.spinning{ position:relative; }
 .lucky-pick.spinning .lucky-pick-text{ visibility:hidden; }
@@ -1282,14 +1322,14 @@ header{
   font-weight:600;
   letter-spacing:0.07em;
   text-transform:uppercase;
-  color:color-mix(in srgb, var(--lucky-gold) 55%, var(--ink));
+  color:color-mix(in srgb, var(--lucky-lemon) 55%, var(--ink));
   margin-right:auto; /* pousse ⟳ à droite, même enveloppé (8.33) */
 }
 .lucky-reroll{
   appearance:none;
   border:none;
   background:transparent;
-  color:color-mix(in srgb, var(--lucky-gold) 55%, var(--ink));
+  color:color-mix(in srgb, var(--lucky-lemon) 55%, var(--ink));
   opacity:0.8;
   padding:4px;
   border-radius:50%;
@@ -1297,7 +1337,7 @@ header{
   line-height:0;
   transition:opacity .15s ease, background .15s ease, transform .35s ease;
 }
-.lucky-reroll:hover{ opacity:1; background:color-mix(in srgb, var(--lucky-gold) 25%, var(--surface)); transform:rotate(180deg); }
+.lucky-reroll:hover{ opacity:1; background:color-mix(in srgb, var(--lucky-lemon) 25%, var(--surface)); transform:rotate(180deg); }
 .lucky-opts{display:flex; align-items:center; gap:0.9rem;}
 .lucky-or{
   flex:none;
@@ -1307,7 +1347,7 @@ header{
   font-size:0.75rem;
   letter-spacing:0.08em;
   text-transform:uppercase;
-  color:color-mix(in srgb, var(--lucky-gold) 55%, var(--ink));
+  color:color-mix(in srgb, var(--lucky-lemon) 55%, var(--ink));
   opacity:.7;
 }
 .lucky-pick{
@@ -1336,15 +1376,15 @@ header{
   justify-content:center;
   gap:0.5rem;
   cursor:default;
-  border-color:var(--lucky-gold);
-  box-shadow:0 0 0 1px var(--lucky-gold);
+  border-color:var(--lucky-lemon);
+  box-shadow:0 0 0 1px var(--lucky-lemon);
 }
 /* survol : la petite case reste blanche, elle s'illumine par l'arrière.
-   (!important : le liseré doré de la proposition retenue s'efface aussi.) */
+   (!important : le liseré citron de la proposition retenue s'efface aussi.) */
 .lucky-pick:hover{
   background:var(--surface);
   border-color:transparent !important;
-  box-shadow:0 0 0 3px color-mix(in srgb, var(--lucky-gold) 35%, transparent), 0 4px 16px -2px color-mix(in srgb, var(--lucky-gold) 70%, transparent);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--lucky-lemon) 35%, transparent), 0 4px 16px -2px color-mix(in srgb, var(--lucky-lemon) 70%, transparent);
   transform:translateY(-1px);
 }
 .lucky-pick-text{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -1359,7 +1399,7 @@ header{
 .lucky-line.done .lucky-pick.dim{opacity:0.4;}
 .lucky-line.done .lucky-pick.dim:hover{opacity:0.4; cursor:default;}
 .lucky-line.done .lucky-pick.chosen{
-  border-color:color-mix(in srgb, var(--lucky-gold) 50%, var(--line));
+  border-color:color-mix(in srgb, var(--lucky-lemon) 50%, var(--line));
   box-shadow:none;
 }
 .lucky-line.done .lucky-check{accent-color:var(--ink-faint);}
@@ -1395,16 +1435,46 @@ header{
 .category.done{ opacity:0.62; }
 /* 10.15 : liste de courses — hauteur bornée (--courses-max, posé par
    fitCoursesCards) ; au-delà, seule la zone des articles défile, le titre,
-   la saisie et les boutons restent visibles */
-.category.courses{ max-height:var(--courses-max, 28rem); }
+   la saisie et les boutons restent visibles.
+   10.17 : feuille de cahier — papier, sans le liseré coloré de gauche (son
+   épaisseur rendue au padding, rien ne bouge), marge verticale juste
+   à gauche des ronds (--margin-x : bord gauche de la carte → marge), qui
+   part du premier article (--rule-top, posé par fitCoursesCards).
+   10.18 : marge à la couleur de la liste, pile entre la poignée et le rond ;
+   liseré très fin à la couleur de la liste (ombre intérieure d'un
+   demi-pixel : rien ne bouge) et ombre un peu plus nette, pour se détacher
+   du fond ; repliée, un clic n'importe où sur la carte la déplie */
+.category.courses{
+  max-height:var(--courses-max, 28rem);
+  --margin-x:3.19rem;
+  --margin-ink:color-mix(in srgb, var(--cat-color, var(--accent)) 70%, var(--paper));
+  border-left:0;
+  padding-left:calc(1.25rem + 3px);
+  box-shadow:inset 0 0 0 0.5px color-mix(in srgb, var(--cat-color, var(--accent)) 60%, transparent), var(--paper-shadow);
+  background:
+    linear-gradient(90deg, transparent var(--margin-x), var(--margin-ink) var(--margin-x),
+      var(--margin-ink) calc(var(--margin-x) + 1.5px), transparent calc(var(--margin-x) + 1.5px))
+      0 var(--rule-top, 0) / 100% 100% no-repeat,
+    var(--paper);
+}
 .category.courses > ul.items{
   flex:0 1 auto; min-height:0;
   overflow-y:auto; overscroll-behavior:contain;
-  scrollbar-width:thin; scrollbar-color:var(--line) transparent;
+  scrollbar-width:none;   /* 10.18 : barre maison .courses-scroll, toujours visible (iPhone compris) */
 }
-.category.courses > ul.items::-webkit-scrollbar{ width:6px; }
-.category.courses > ul.items::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
-.category.courses > ul.items::-webkit-scrollbar-track{ background:transparent; }
+.category.courses > ul.items::-webkit-scrollbar{ display:none; }
+/* 10.18 : barre de défilement toujours visible quand la liste dépasse (les
+   barres du système disparaissent au repos, surtout sur iPhone) ; placée par
+   placeCoursesScroll, dans la marge droite de la carte, sans capter le doigt */
+.courses-scroll{
+  position:absolute; right:0.5rem; width:3px; border-radius:2px;
+  background:var(--paper-rule); pointer-events:none;
+}
+.courses-scroll[hidden]{ display:none; }
+.courses-scroll > span{
+  position:absolute; left:0; right:0; border-radius:2px;
+  background:color-mix(in srgb, var(--cat-color, var(--accent)) 70%, var(--paper));
+}
 /* 10.7 : volet — la flèche en bas à droite replie la liste sur son bandeau */
 .category{ position:relative; }
 .cat-fold{
@@ -1419,6 +1489,7 @@ header{
 .category.collapsed{ align-self:start; padding-bottom:1.5rem; }
 .category.collapsed > ul.items, .category.collapsed > .courses-foot{ display:none; }
 .category.collapsed .cat-fold svg{ transform:rotate(180deg); }
+.category.courses.collapsed{ cursor:pointer; } /* 10.18 : toute la carte repliée se déplie d'un clic */
 .cat-count{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:700; color:var(--ink-faint); flex:none; }
 @media (prefers-reduced-motion: reduce){ .cat-fold svg{ transition:none; } }
 .cat-head{
@@ -1896,15 +1967,16 @@ ul.items{
 }
 .egg-dot svg{ display:block; flex:none; }
 /* 10.15 : article d'une liste de courses — rond creux à la place de la case ;
-   toute la ligne raye / dé-raye. 10.16 : 14 px au lieu de 18, centré dans la
-   même place (marges +2 px) pour que le texte reste aligné */
+   toute la ligne raye / dé-raye. 10.16 : 14 px au lieu de 18 ; 10.17 : 11 px,
+   toujours centré dans la place de la case (18 px) pour que le texte reste
+   aligné */
 .strike-dot{
   appearance:none;
   -webkit-appearance:none;
-  width:14px;
-  height:14px;
+  width:11px;
+  height:11px;
   flex:none;
-  margin:calc(0.15rem + 2px) 5px 2px 6px;
+  margin:calc(0.15rem + 3.5px) 6.5px 3.5px 11.5px; /* 10.18 : +4 px à gauche, de l'air après la marge */
   padding:0;
   border:1.5px solid var(--ink-faint);
   border-radius:50%;
@@ -1915,13 +1987,15 @@ ul.items{
 .strike-dot:hover{ border-color:var(--cat-color, var(--accent)); }
 .strike-dot:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 .item.is-checked .strike-dot{ border-color:var(--line); }
+/* 10.17 : chaque article posé sur une ligne de cahier */
+.courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:0.76rem 0.3rem 0; } /* 10.18 : texte posé sur sa ligne (plus d'air au-dessus, moins en dessous) */
+.courses-item:hover{ background:color-mix(in srgb, var(--paper-rule) 30%, transparent); } /* voile léger : la marge rouge reste visible */
 .courses-item .item-text{ cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
-/* quantité : petit badge après le nom (en ligne, pour être barré avec lui) */
+/* quantité : après le nom (en ligne, pour être barrée avec lui) ; 10.17 : à
+   l'encre rose (le rouge reste aux urgences), bien visible, plus de badge gris */
 .courses-qty{
-  margin-left:0.4rem; padding:0.05rem 0.35rem;
-  border-radius:4px; background:var(--surface-2);
-  font-family:'Courier Prime', 'Courier New', Courier, monospace;
-  font-size:0.74rem; font-weight:700; color:var(--ink-soft);
+  margin-left:0.45rem;
+  font-size:0.86rem; font-weight:700; color:var(--qty-ink);
   white-space:nowrap;
 }
 .item.is-checked .courses-qty{ color:var(--ink-faint); }
@@ -1957,7 +2031,7 @@ ul.items{
 .courses-add .drag-handle{ visibility:hidden; }
 .courses-plus{
   width:18px; height:18px; flex:none;
-  margin:0.15rem 3px 0 4px;
+  margin:0.15rem 3px 0 8px; /* 10.18 : +4 px, comme le rond */
   display:flex; align-items:center; justify-content:center;
   color:var(--ink-faint); font-size:1.05rem; line-height:1;
 }
@@ -1991,7 +2065,7 @@ ul.items{
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.62rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-faint);
 }
-.courses-actions{ display:flex; flex-wrap:wrap; gap:0.4rem; padding:0 2rem 0 0.3rem; } /* à droite : la flèche du volet */
+.courses-actions{ display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.55rem; padding:0 2rem 0 4.37rem; } /* à droite : la flèche du volet ; à gauche (10.17) : sous le texte des articles */
 .courses-btn{
   appearance:none;
   border:1px solid var(--line);
@@ -2955,7 +3029,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.16</span>
+    <span class="version-tag">v10.18</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -7496,6 +7570,19 @@ function fitCoursesCards(saved){
     c.style.setProperty("--courses-max", max + "px");
     const ul = c.querySelector(":scope > ul.items");
     if(!ul) return;
+    // 10.17 : la marge part du premier article, sous le titre (repliée : pas de marge)
+    c.style.setProperty("--rule-top", (ul.offsetParent ? ul.offsetTop : c.offsetHeight) + "px");
+    // 10.18 : barre de défilement maison, toujours visible
+    let bar = c.querySelector(":scope > .courses-scroll");
+    if(!bar){
+      bar = document.createElement("div");
+      bar.className = "courses-scroll";
+      bar.setAttribute("aria-hidden", "true");
+      bar.innerHTML = "<span></span>";
+      c.appendChild(bar);
+      ul.addEventListener("scroll", ()=> placeCoursesScroll(c), { passive:true });
+    }
+    placeCoursesScroll(c);
     if(saved && saved[c.id] != null) ul.scrollTop = saved[c.id];
     const go = coursesScrollTo && "cat-" + coursesScrollTo.catId === c.id ? coursesScrollTo : null;
     if(!go) return;
@@ -7509,6 +7596,23 @@ function fitCoursesCards(saved){
   coursesScrollTo = null;
 }
 window.addEventListener("resize", ()=> fitCoursesCards());
+// 10.18 : barre de défilement d'une liste de courses — cachée si tout tient,
+// sinon à la hauteur de la zone des articles, curseur proportionnel
+function placeCoursesScroll(card){
+  const ul = card.querySelector(":scope > ul.items");
+  const bar = card.querySelector(":scope > .courses-scroll");
+  if(!ul || !bar) return;
+  const view = ul.clientHeight, full = ul.scrollHeight;
+  bar.hidden = !ul.offsetParent || full <= view + 1;
+  if(bar.hidden) return;
+  const thumbH = Math.max(24, Math.round(view * view / full));
+  const top = Math.round(ul.scrollTop / (full - view) * (view - thumbH));
+  bar.style.top = ul.offsetTop + "px";
+  bar.style.height = view + "px";
+  const thumb = bar.firstElementChild;
+  thumb.style.height = thumbH + "px";
+  thumb.style.top = top + "px";
+}
 
 function render(){
   // 10.15 : la zone des articles d'une liste de courses défile ; on garde sa
@@ -7540,6 +7644,12 @@ function render(){
     if(!courses && visibleCount && doneInCat === visibleCount) card.classList.add("done");
     const folded = isFolded(cat.id);
     if(folded) card.classList.add("collapsed");
+    // 10.18 : une liste de courses repliée se déplie d'un clic n'importe où
+    // (sauf sur un bouton, la poignée ou un champ)
+    if(folded && courses) card.addEventListener("click", e=>{
+      if(e.target.closest("button, a, input, textarea, .cat-grip")) return;
+      toggleFold(cat.id);
+    });
     const leftCount = visibleCount - doneInCat;
     // Une case vide (aucune tâche vivante dedans, cochée ou non) peut être
     // supprimée d'un petit clic ; sinon, pas de bouton du tout — la
