@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.19 -->
+<!-- Sous le tapis — version AUTONOME 10.20 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -806,6 +806,11 @@
     Titre et plume connectée au vert du logo (--logo-green). Liste de
     courses repliée : la saisie reste, on ajoute sans la déplier.
     Chiffre du compteur en améthyste.
+  - 10.20 : cartes à nouveau alignées : les deux colonnes de listes sont
+    strictement égales (minmax(0, 1fr) + min-width:0 sur .category) — avant,
+    un contenu large (liste de courses, adresse sans espace…) élargissait
+    sa colonne et les bords droits ne tombaient plus juste. Phrase de
+    l'essuie : « nonante degrés » (numérotation belge).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1441,11 +1446,11 @@ header{
 .categories{
   margin-top:2.25rem;
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);   /* 10.20 : colonnes égales quel que soit le contenu */
   gap:1.1rem;
 }
 @media (max-width:720px){
-  .categories{grid-template-columns:1fr;}
+  .categories{grid-template-columns:minmax(0, 1fr);}
 }
 /* liste : fond blanc, seul le liseré coloré à gauche */
 .category{
@@ -1458,6 +1463,7 @@ header{
   display:flex;
   flex-direction:column;
   gap:0.65rem;
+  min-width:0;   /* 10.20 : un contenu large ne pousse plus la carte */
 }
 .category.done{ opacity:0.62; }
 /* 10.15 : liste de courses — hauteur bornée (--courses-max, posé par
@@ -3061,7 +3067,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.19</span>
+    <span class="version-tag">v10.20</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4102,7 +4108,7 @@ const AMBIENT_MESSAGES = [
   "Aussi fidèle au poste que la camionnette du boucher le jeudi matin.",
   "Solide comme une brouette en tôle galvanisée héritée du grand-père.",
   "Robuste comme un poêle Nestor Martin qui a chauffé trois générations de cuisines.",
-  "Plus résistante qu'un essuie de vaisselle de grand-mère, lavé à quatre-vingt-dix degrés depuis 1983.",
+  "Plus résistante qu'un essuie de vaisselle de grand-mère, lavé à nonante degrés depuis 1983.",
   "Aussi inusable qu'une toile cirée de cuisine de ferme.",
   "Aussi infatigable que le moulin à café de la cuisine, manivelle et tiroir compris.",
   "Increvable comme le vélo à sacoches du facteur, pneus regonflés à la pompe de la forge.",
