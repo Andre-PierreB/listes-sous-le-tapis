@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.18 -->
+<!-- Sous le tapis — version AUTONOME 10.19 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -128,8 +128,8 @@
   - Premier branchement d'un compte : compte vide → on envoie les listes de
     l'appareil (après confirmation) ; compte déjà rempli → ses listes
     remplacent celles de l'appareil (copie gardée : sltapis:avant-synchro).
-  - Plume (#plume, à droite du titre) : --plume-off déconnecté, bleu --accent
-    connecté, bleu pâle si des changements attendent le réseau ; clic →
+  - Plume (#plume, à droite du titre) : --plume-off déconnecté, vert du logo
+    --logo-green connecté (10.19 ; bleu --accent avant), pâle si des changements attendent le réseau ; clic →
     fenêtre de connexion (Échap la ferme).
   - Page d'essai essai.html (même fichier) : données à part (préfixe
     « essai: » dans le navigateur, collections essai_lists / essai_users).
@@ -200,7 +200,9 @@
     devant le titre. Bas de carte (buildCoursesFoot) : saisie (textarea, un
     article par ligne, collage de plusieurs lignes = un article chacune,
     puces retirées), puis « Trier » (non rayés en haut, ordre gardé) et
-    « Vider les rayés ». Nouveaux articles en bas (insertItem).
+    « Vider les rayés ». Nouveaux articles en bas (insertItem). Repliée
+    (10.19), la carte garde sa saisie (sans Trier / Vider) : on ajoute sans
+    la déplier, son compteur grandit ; un clic ailleurs sur la carte la déplie.
   - Quantité : champ q de la tâche (« 2 », « 500 g », « 3 pots »), à part du
     nom pour que « 2 lait » et « lait » restent le même article.
     parseCoursesLine reconnaît « 2 lait », « 2x lait », « lait x2 », « 500 g
@@ -208,8 +210,10 @@
     Badge après le nom (×2 pour un nombre seul). Article déjà là : une
     nouvelle quantité le met à jour ; dé-rayé sans quantité = badge effacé.
   - Modifier un article : crayon à côté de la croix (editingCoursesKey,
-    commitCoursesEdit) — nom, quantité, − / + pour un nombre seul ; Entrée
-    ou clic ailleurs enregistre, Échap annule. Sur écran tactile, crayon et
+    commitCoursesEdit) — nom, quantité, − / + pour un nombre seul, détail
+    (10.19, champ note comme les autres tâches : sigle à côté de l'article,
+    seul le sigle déplie le détail) ; Entrée ou clic ailleurs enregistre,
+    Échap annule. Sur écran tactile, crayon et
     croix restent visibles (toucher la ligne raye, pas de « dévoilement »).
   - Suggestions dès 2 lettres : champ history de la fiche (300 au plus,
     partagé avec la liste ; fusion en ligne = union, SyncMerge.list) + les
@@ -789,6 +793,19 @@
     ses accents (surbrillance, liserés des propositions, textes) en jaune
     citron --lucky-lemon au lieu de l'or --lucky-gold, qui ne sert plus
     qu'au bouton « Nouvelle liste » du premier lancement.
+  - 10.19 : urgences en améthyste (--urgent, --urgent-soft, --urgent-ink :
+    case urgente, tâches urgentes, échéances dépassées, survol des croix,
+    messages d'erreur), cousine du mauve du logo, choisie au nuancier ; picto
+    de la case urgente = le triangle des boutons urgents (triangleSvg) ;
+    « 1 seul point urgent » / « x points urgents ».
+    Listes de courses : détail (note) sur chaque article, comme dans
+    les autres listes — champ « Détail » dans le crayon, sigle à côté de
+    l'article qui déplie / replie le détail (toucher la ligne raye toujours) ;
+    ouverte, un clic sur le bandeau à côté du titre replie la liste (le
+    titre garde son double-clic pour renommer). Plume : halo adouci.
+    Titre et plume connectée au vert du logo (--logo-green). Liste de
+    courses repliée : la saisie reste, on ajoute sans la déplier.
+    Chiffre du compteur en améthyste.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -819,9 +836,15 @@
   --btn-ink:#4A5E6E;  /* boutons du bas : ardoise, famille de l'icône (8.41) */
   --accent-soft:#E4ECF3;
   --plume-off:#E5675A;
-  --urgent:#DD5236;
-  --urgent-soft:#FBE3DA;
-  --urgent-ink:#93301C;
+  /* 10.19 : vert du logo (le faisan) pour le titre et la plume connectée ;
+     --logo-green-strong au survol du titre */
+  --logo-green:#7DB536;   /* un cran sous le vert du logo #8DC63F, trop pâle pour un petit titre */
+  --logo-green-strong:#64992A;
+  /* 10.19 : urgences en améthyste, cousine du mauve du logo (avant : tomate
+     #DD5236 / #FBE3DA / #93301C) */
+  --urgent:#9558D0;
+  --urgent-soft:#ECDFF8;
+  --urgent-ink:#4A2580;
   --relance:#C24F6E;
   --relance-soft:#F6E3E8;
   --wait:#6A9FB9;
@@ -858,9 +881,11 @@
     --btn-ink:#AFC0CC;
     --accent-soft:#1C2B30;
     --plume-off:#F2847A;
-    --urgent:#F07B8E;
-    --urgent-soft:#2C1D24;
-    --urgent-ink:#FFB8C4;
+    --logo-green:#A9D65A;
+    --logo-green-strong:#C7E58A;
+    --urgent:#B88AEB;
+    --urgent-soft:#261D33;
+    --urgent-ink:#DDC6FA;
     --relance:#E38DA4;
     --relance-soft:#372229;
     --wait:#94C4DA;
@@ -894,9 +919,11 @@
   --btn-ink:#AFC0CC;
   --accent-soft:#1C2B30;
   --plume-off:#F2847A;
-  --urgent:#F07B8E;
-  --urgent-soft:#2C1D24;
-  --urgent-ink:#FFB8C4;
+  --logo-green:#A9D65A;
+  --logo-green-strong:#C7E58A;
+  --urgent:#B88AEB;
+  --urgent-soft:#261D33;
+  --urgent-ink:#DDC6FA;
   --relance:#E38DA4;
   --relance-soft:#372229;
   --wait:#94C4DA;
@@ -961,13 +988,13 @@ header{
   font-weight:600;
   letter-spacing:0.11em;
   text-transform:uppercase;
-  color:var(--accent);
+  color:var(--logo-green);
   cursor:pointer;
   transition:color .15s ease;
   -webkit-user-select:none;
   user-select:none;
 }
-.eyebrow:hover{ color:var(--accent-strong); }
+.eyebrow:hover{ color:var(--logo-green-strong); }
 .eyebrow:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
 .ap-nod{ position:relative; }
 .ap-nod::after{
@@ -980,18 +1007,18 @@ header{
   background:currentColor;
 }
 /* 10.3-10.4 : plume de connexion, à droite du titre ; pointe calée sur le bout
-   droit de la barre de comptage ; tomate claire (--plume-off) = déconnecté, bleu = connecté */
+   droit de la barre de comptage ; tomate claire (--plume-off) = déconnecté, vert du logo = connecté (10.19) */
 .plume{
   position:absolute; right:14.8px; top:-6px; width:28px; height:28px;
   appearance:none; border:0; background:none; padding:0; cursor:pointer;
   color:var(--plume-off); transform-origin:50% 50%;
-  filter:drop-shadow(0 0 1.5px color-mix(in srgb, currentColor 35%, transparent));
+  filter:drop-shadow(0 0 1px color-mix(in srgb, currentColor 20%, transparent));   /* 10.19 : halo adouci (avant 1.5px, 35 %) */
   transition:color .25s ease, opacity .25s ease, transform .18s ease, filter .25s ease;
 }
 .plume svg{ display:block; width:100%; height:100%; }
 /* 10.14 : zone de toucher agrandie (invisible), sans déborder sur le titre */
 .plume::before{ content:""; position:absolute; inset:-11px -11px -11px -10px; }
-.plume.on{ color:var(--accent); }
+.plume.on{ color:var(--logo-green); }
 .plume.waiting{ opacity:.55; }
 .plume:hover{ transform:rotate(9deg); }
 .plume:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:8px; }
@@ -1047,7 +1074,7 @@ header{
 }
 .count-week{ margin-top:-0.1rem; line-height:1.1; }
 .progress-count{ grid-column:1; grid-row:1; padding-right:1.6rem; margin-bottom:-0.28rem; /* plus près de la barre (8.38, un chouïa remonté en 9.1) */ }
-.progress-count b{ color:var(--relance); }
+.progress-count b{ color:var(--urgent); } /* 10.19 : améthyste, la teinte des urgences (avant : framboise --relance) */
 .progress-total{
   grid-column:3; grid-row:1;  /* tout au bout, juste au-dessus de la barre (8.13) */
   align-self:end;
@@ -1110,7 +1137,7 @@ header{
   gap:0.9rem;
   align-items:flex-start;
 }
-.urgent-banner svg{flex:none; margin-top:-0.15rem; color:var(--urgent);} /* centre du rond = centre du titre (8.13) */
+.urgent-banner svg{flex:none; margin-top:-0.15rem; color:var(--urgent);} /* centre du picto = centre du titre (8.13) ; 10.19 : triangle, comme les boutons urgents */
 .urgent-banner-title{
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.74rem;
@@ -1124,7 +1151,7 @@ header{
 /* rien d'urgent : la case reste, au calme */
 .urgent-banner.calm{ align-items:center; }
 .urgent-banner.calm svg{ margin-top:0; color:color-mix(in srgb, var(--urgent) 55%, var(--urgent-soft)); stroke-width:2.2; }
-.urgent-banner.calm .urgent-banner-title{ margin:0; color:color-mix(in srgb, var(--urgent) 55%, var(--urgent-soft)); font-weight:700; } /* le rouge de l'urgent, éteint (8.15) */
+.urgent-banner.calm .urgent-banner-title{ margin:0; color:color-mix(in srgb, var(--urgent) 55%, var(--urgent-soft)); font-weight:700; } /* la couleur de l'urgent, éteinte (8.15) */
 .urgent-list{
   list-style:none;
   margin:0;
@@ -1487,9 +1514,13 @@ header{
 .cat-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 .cat-fold svg{ display:block; transition:transform .25s ease; }
 .category.collapsed{ align-self:start; padding-bottom:1.5rem; }
-.category.collapsed > ul.items, .category.collapsed > .courses-foot{ display:none; }
+.category.collapsed > ul.items, .category.courses.collapsed .courses-actions{ display:none; }
+/* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
+.category.courses.collapsed .courses-foot{ cursor:auto; }
 .category.collapsed .cat-fold svg{ transform:rotate(180deg); }
 .category.courses.collapsed{ cursor:pointer; } /* 10.18 : toute la carte repliée se déplie d'un clic */
+.category.courses .cat-head{ cursor:pointer; } /* 10.19 : ouverte, un clic sur le bandeau (hors titre) la replie */
+.category.courses .cat-title{ cursor:auto; }
 .cat-count{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:700; color:var(--ink-faint); flex:none; }
 @media (prefers-reduced-motion: reduce){ .cat-fold svg{ transition:none; } }
 .cat-head{
@@ -2008,7 +2039,7 @@ ul.items{
 /* modifier un article : nom, puis quantité avec − / + */
 .courses-item.editing{ align-items:center; }
 .courses-item.editing .drag-handle, .courses-item.editing .strike-dot{ visibility:hidden; }
-.courses-edit{ flex:1; min-width:0; display:flex; align-items:center; gap:0.4rem; }
+.courses-edit{ flex:1; min-width:0; display:flex; flex-wrap:wrap; align-items:center; gap:0.4rem; } /* 10.19 : le détail passe dessous */
 .courses-edit input{
   font-family:inherit; font-size:0.95rem; line-height:1.4; color:var(--ink);
   background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
@@ -2018,6 +2049,7 @@ ul.items{
 .courses-edit-name{ flex:1 1 0; width:0; } /* largeur prise sur la ligne, jamais au-delà (téléphone) */
 .courses-qty-edit{ flex:none; display:flex; align-items:center; gap:2px; }
 .courses-edit .courses-edit-qty{ width:3.4rem; text-align:center; padding-left:0.25rem; padding-right:0.25rem; }
+.courses-edit .courses-edit-note{ flex:1 0 100%; font-size:0.86rem; } /* 10.19 : détail, comme dans les autres listes */
 .qty-step{
   appearance:none; flex:none; width:26px; height:26px;
   border:1px solid var(--line); background:var(--surface); color:var(--ink-soft);
@@ -3029,7 +3061,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.18</span>
+    <span class="version-tag">v10.19</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6416,9 +6448,9 @@ function renderUrgentBanner(){
   }
   el.hidden = false;
   el.innerHTML = `
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    ${triangleSvg(18)}
     <div class="urgent-banner-body">
-      <div class="urgent-banner-title">${list.length === 1 ? "1 point urgent" : list.length + " points urgents"}</div>
+      <div class="urgent-banner-title">${list.length === 1 ? "1 seul point urgent" : list.length + " points urgents"}</div>
       <ul class="urgent-list"></ul>
     </div>
   `;
@@ -7139,9 +7171,11 @@ function buildItemLi(cat, idx, base, key, opts){
           <input type="text" class="courses-edit-qty" value="${escapeAttr(eff.q)}" placeholder="Qté" aria-label="Quantité" autocomplete="off" enterkeyhint="done">
           <button type="button" class="qty-step" data-d="1" aria-label="Un de plus">+</button>
         </span>
+        <input type="text" class="courses-edit-note" value="${escapeAttr(eff.note || "")}" placeholder="Détail (optionnel)" aria-label="Détail" autocomplete="off" enterkeyhint="done">
       </span>
     `;
     const nameInp = li.querySelector(".courses-edit-name"), qtyInp = li.querySelector(".courses-edit-qty");
+    const noteInp = li.querySelector(".courses-edit-note");
     li.querySelectorAll(".qty-step").forEach(b=>{
       b.addEventListener("mousedown", e => e.preventDefault());   // le curseur reste où il est
       b.addEventListener("click", e=>{
@@ -7153,7 +7187,7 @@ function buildItemLi(cat, idx, base, key, opts){
         haptic.tick();
       });
     });
-    [nameInp, qtyInp].forEach(inp => inp.addEventListener("keydown", e=>{
+    [nameInp, qtyInp, noteInp].forEach(inp => inp.addEventListener("keydown", e=>{
       if(e.isComposing) return;
       if(e.key === "Enter"){ e.preventDefault(); commitCoursesEdit(); }
       if(e.key === "Escape"){ e.preventDefault(); editingCoursesKey = null; renderAll(); }
@@ -7174,7 +7208,7 @@ function buildItemLi(cat, idx, base, key, opts){
     li.innerHTML = `
       <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
       <button type="button" class="strike-dot" role="checkbox" aria-checked="${struck}" aria-label="${escapeAttr((struck ? "Dé-rayer " : "Rayer ") + eff.t)}"></button>
-      <span class="item-text">${strikerTag}<span class="item-title">${escapeAttr(eff.t)}</span>${qtyTag}</span>
+      <span class="item-text">${strikerTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${qtyTag}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
       <span class="item-controls">
         <button type="button" class="courses-edit-btn" aria-label="Modifier l'article" data-tip="Modifier"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg></button>
         <button type="button" class="delete-btn" aria-label="Retirer l'article" data-tip="Retirer l'article">&times;</button>
@@ -7186,9 +7220,15 @@ function buildItemLi(cat, idx, base, key, opts){
     // pas de « dévoilement » au toucher ici : toucher la ligne raye l'article,
     // crayon et croix restent donc visibles sur écran tactile (voir le CSS)
     li.addEventListener("click", e=>{
-      if(e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap")) return;
+      if(e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap, .note-toggle")) return;
       setStruck(key, !struck);
     });
+    // 10.19 : détail (comme dans les autres listes) — ici toucher la ligne
+    // raye l'article, seul le sigle déplie / replie le détail
+    if(eff.note){
+      markNoteHolder(li, key);
+      li.querySelector(".note-toggle").addEventListener("click", e=>{ e.stopPropagation(); toggleNoteOpen(key); });
+    }
     li.querySelector(".courses-edit-btn").addEventListener("click", e=>{
       e.stopPropagation();
       editingCoursesKey = key;
@@ -7432,10 +7472,11 @@ function commitCoursesEdit(){
         const eff = getEffective(key, base);
         const raw = coursesCleanLine(li.querySelector(".courses-edit-name").value);
         let t = raw, q = normCoursesQty(li.querySelector(".courses-edit-qty").value);
+        const note = li.querySelector(".courses-edit-note").value.trim();
         if(!q){ const p = parseCoursesLine(raw); if(p.q){ t = p.t; q = p.q; } }
         if(!t) t = eff.t;
-        if(t !== eff.t || q !== eff.q){
-          overrides[key] = Object.assign({}, overrides[key] || {}, { t, q });
+        if(t !== eff.t || q !== eff.q || note !== (eff.note || "")){
+          overrides[key] = Object.assign({}, overrides[key] || {}, { t, q, note });
           saveOverrides(overrides);
           if(coursesNorm(t) !== coursesNorm(eff.t)) coursesHistoryAdd(cat.id, [capFirst(t)]);
         }
@@ -7463,7 +7504,7 @@ function buildCoursesFoot(cat){
       <button type="button" class="courses-btn courses-sort"${coursesSorted(cat) ? " disabled" : ""}>Trier</button>
       <button type="button" class="courses-btn courses-clear"${struckN ? "" : " disabled"}>Vider les rayés${struckN ? ` (${struckN})` : ""}</button>
     </div>`;
-  foot.addEventListener("click", e => e.stopPropagation());
+  foot.addEventListener("click", e => e.stopPropagation());   // ni repli ni dépli (10.19 : repliée, la saisie reste)
   const ta = foot.querySelector(".courses-input");
   const box = foot.querySelector(".courses-suggest");
   let sugg = [], active = -1, typedQty = "";
@@ -7488,7 +7529,8 @@ function buildCoursesFoot(cat){
     catch(err){ console.error("[courses] ajout", err); return; }
     ta.value = "";
     close();
-    if(isFolded(cat.id)) setFolded(cat.id, false);   // 10.7 : la liste se rouvre
+    // 10.19 : ajouté depuis la carte repliée, la liste reste repliée (son
+    // compteur grandit)
     if(res.already && !res.added && !res.revived && !res.qty) actionToast("coursesAlready");
     else if(res.qty && !res.added && !res.revived) actionToast("coursesQty");
     refocusCoursesCat = cat.id;
@@ -7570,8 +7612,10 @@ function fitCoursesCards(saved){
     c.style.setProperty("--courses-max", max + "px");
     const ul = c.querySelector(":scope > ul.items");
     if(!ul) return;
-    // 10.17 : la marge part du premier article, sous le titre (repliée : pas de marge)
-    c.style.setProperty("--rule-top", (ul.offsetParent ? ul.offsetTop : c.offsetHeight) + "px");
+    // 10.17 : la marge part du premier article, sous le titre (10.19 : repliée,
+    // de la saisie)
+    const first = ul.offsetParent ? ul : c.querySelector(":scope > .courses-foot");
+    c.style.setProperty("--rule-top", (first ? first.offsetTop : c.offsetHeight) + "px");
     // 10.18 : barre de défilement maison, toujours visible
     let bar = c.querySelector(":scope > .courses-scroll");
     if(!bar){
@@ -7689,6 +7733,12 @@ function render(){
       </span>
     `;
     wireDragCard(card, head.querySelector(".cat-grip"), catIdx);
+    // 10.19 : liste de courses ouverte : un clic sur le bandeau, à côté du
+    // titre, la replie (le titre garde son double-clic qui le renomme)
+    if(courses && !folded && !renamingThisCat) head.addEventListener("click", e=>{
+      if(e.target.closest("button, a, input, textarea, .cat-grip, .cat-title, .share-chips")) return;
+      toggleFold(cat.id);
+    });
     if(!courses) head.querySelector(".cat-order").addEventListener("click", (e)=>{
       e.stopPropagation();
       toggleCatReversed(cat.id);
