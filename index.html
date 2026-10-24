@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.14 -->
+<!-- Sous le tapis — version AUTONOME 10.16 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -170,6 +170,65 @@
     comptes (invitation, partage, coches, effacement, purge, règles, retrait
     du partage, hors ligne, 2e appareil, prénom), et comparaison 10.1 / 10.2
     sans compte (écran et clés identiques, sauf la ligne « Partagée avec »).
+
+  LISTES DE COURSES (depuis la 10.15)
+  - Une liste dont la fiche porte type: "courses" (en ligne aussi : champ
+    type de lists/<cloudId>) ; sans ce champ, liste normale — toutes les
+    listes d'avant le restent. Création : interrupteur « Liste de courses »
+    dans la fenêtre « + Nouvelle liste ». Conversion dans les deux sens :
+    renommage de la liste (double-clic sur le titre), lien « Convertir en
+    liste de courses / normale », pour le créateur seulement. Convertir ne
+    change que type : aucune tâche n'est touchée, l'aller-retour rend la
+    liste à l'identique. Store.listField / setListField (type, history),
+    hors des anciennes clés (donc hors ⌘Z, mais dans les sauvegardes).
+  - Un article = une tâche ordinaire de la fiche ; rayé = coché (même champ
+    done, doneBy pour l'initiale dans une liste partagée), mais SANS date de
+    coche (writeStruck). Les listes de courses sont exclues partout via
+    isCoursesList() : compteur (getTotalItems, getDoneCount,
+    getWeekDoneCount), graphique (collectDoneDates), purge du lundi
+    (purgeCheckedBefore), case urgente, trèfle. Retirer un article (× ou
+    « Vider les rayés ») = effacé comme une tâche, jamais à la corbeille.
+  - Affichage : rond creux .strike-dot à la place de la case (14 px depuis la 10.16,
+    centré dans la place de la case : le texte reste aligné),
+    clic sur la ligne ou le rond = rayer / dé-rayer, l'article reste à sa
+    place ; pas de +, d'ajout express ni de sens ▲▼ dans le bandeau (le sens
+    enregistré est ignoré, gardé pour un retour en liste normale) ; panier
+    devant le titre. Bas de carte (buildCoursesFoot) : saisie (textarea, un
+    article par ligne, collage de plusieurs lignes = un article chacune,
+    puces retirées), puis « Trier » (non rayés en haut, ordre gardé) et
+    « Vider les rayés ». Nouveaux articles en bas (insertItem).
+  - Quantité : champ q de la tâche (« 2 », « 500 g », « 3 pots »), à part du
+    nom pour que « 2 lait » et « lait » restent le même article.
+    parseCoursesLine reconnaît « 2 lait », « 2x lait », « lait x2 », « 500 g
+    de farine », « 1,5 kg pommes »… (limite connue : « 7 up » = 7 × up).
+    Badge après le nom (×2 pour un nombre seul). Article déjà là : une
+    nouvelle quantité le met à jour ; dé-rayé sans quantité = badge effacé.
+  - Modifier un article : crayon à côté de la croix (editingCoursesKey,
+    commitCoursesEdit) — nom, quantité, − / + pour un nombre seul ; Entrée
+    ou clic ailleurs enregistre, Échap annule. Sur écran tactile, crayon et
+    croix restent visibles (toucher la ligne raye, pas de « dévoilement »).
+  - Suggestions dès 2 lettres : champ history de la fiche (300 au plus,
+    partagé avec la liste ; fusion en ligne = union, SyncMerge.list) + les
+    articles rayés. Article déjà là : rayé → dé-rayé, pas rayé → rien.
+  - Hauteur : fitCoursesCards borne la carte à la plus haute des autres
+    listes (24rem au moins, 3/4 de l'écran au plus) ; au-delà, seule la
+    zone des articles défile ; défilement gardé d'un rendu à l'autre, et
+    l'article ajouté est montré. Glisser-déposer : défilement automatique
+    près des bords de la zone (dragInnerScroll), layoutRect tient compte du
+    défilement ; un article ne quitte pas sa liste, une tâche n'entre pas
+    dans une liste de courses.
+  - Partage : mêmes règles, sauf que tout membre raye, retire et vide tous
+    les articles (canRemoveTask). Un invité ne convertit pas et ne supprime
+    pas la liste ; firestore.rules : un invité ne change pas type (règles à
+    recoller dans la console). Comme pour les tâches, le nombre de places
+    ne baisse jamais : une liste de courses très utilisée garde ses articles
+    effacés dans sa fiche (limite Firestore 1 Mo, soit plusieurs milliers
+    d'articles) — à compacter un jour si besoin.
+  - Tests (hors fichier, banc d'essai local essai.html) : 10.14 / 10.15 sur
+    les mêmes données (vues et écran identiques pour les listes normales),
+    création, rayer / dé-rayer, compteur et purge inchangés, Trier, Vider,
+    suggestions, doublons, collage, hauteur, défilement, glisser-déposer
+    avec défilement, conversion aller-retour, invité simulé, fusion, ⌘Z.
 
   HISTORIQUE RÉCENT
   - 5.2 : case trèfle « Une petite sur le pouce ? » sous les urgences —
@@ -701,6 +760,15 @@
     y compris l'espace autour de la plume — sur un petit téléphone, un doigt
     qui ratait la plume déroulait le tapis) ; zone de toucher de la plume
     agrandie (::before invisible). Rien ne bouge à l'écran.
+  - 10.15 : listes de courses (voir LISTES DE COURSES) : interrupteur à la
+    création, conversion dans le renommage, rond creux qui raye sans faire
+    tourner le compteur, quantités, crayon pour modifier un article,
+    saisie en bas avec suggestions, Trier, Vider les
+    rayés, hauteur bornée avec défilement interne ; hors purge et
+    corbeille ; règles firestore.rules (type) à recoller dans la console.
+    Testée d'abord sur essai.html (banc local).
+  - 10.16 : rond creux des listes de courses plus petit (14 px au lieu de
+    18), même place, texte aligné comme avant.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1325,6 +1393,18 @@ header{
   gap:0.65rem;
 }
 .category.done{ opacity:0.62; }
+/* 10.15 : liste de courses — hauteur bornée (--courses-max, posé par
+   fitCoursesCards) ; au-delà, seule la zone des articles défile, le titre,
+   la saisie et les boutons restent visibles */
+.category.courses{ max-height:var(--courses-max, 28rem); }
+.category.courses > ul.items{
+  flex:0 1 auto; min-height:0;
+  overflow-y:auto; overscroll-behavior:contain;
+  scrollbar-width:thin; scrollbar-color:var(--line) transparent;
+}
+.category.courses > ul.items::-webkit-scrollbar{ width:6px; }
+.category.courses > ul.items::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+.category.courses > ul.items::-webkit-scrollbar-track{ background:transparent; }
 /* 10.7 : volet — la flèche en bas à droite replie la liste sur son bandeau */
 .category{ position:relative; }
 .cat-fold{
@@ -1337,7 +1417,7 @@ header{
 .cat-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 .cat-fold svg{ display:block; transition:transform .25s ease; }
 .category.collapsed{ align-self:start; padding-bottom:1.5rem; }
-.category.collapsed > ul.items{ display:none; }
+.category.collapsed > ul.items, .category.collapsed > .courses-foot{ display:none; }
 .category.collapsed .cat-fold svg{ transform:rotate(180deg); }
 .cat-count{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:700; color:var(--ink-faint); flex:none; }
 @media (prefers-reduced-motion: reduce){ .cat-fold svg{ transition:none; } }
@@ -1373,6 +1453,12 @@ header{
 .cat-title:hover{
   color:var(--cat-color, var(--accent));
   background:var(--surface-2);
+}
+/* 10.15 : petit panier devant le titre d'une liste de courses */
+.cat-basket{
+  display:block; flex:none; margin-right:-0.2rem;
+  color:color-mix(in srgb, var(--cat-color, var(--accent)) 78%, var(--ink));
+  opacity:0.75;
 }
 .cat-title-input{
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
@@ -1446,6 +1532,8 @@ header{
 .cat-share-person:hover{ border-color:var(--cat-color, var(--accent)); }
 .cat-share-person:disabled{ opacity:.5; cursor:default; }
 .cat-share-link{ appearance:none; border:0; background:none; padding:0; font:inherit; font-size:0.8rem; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+/* 10.15 : « Convertir en liste de courses / normale », sous « Partagée avec » */
+.cat-convert{ margin-top:0.4rem; font-size:0.8rem; }
 .add-btn{
   appearance:none;
   border:1px solid var(--line);
@@ -1807,6 +1895,122 @@ ul.items{
   opacity:0.8;
 }
 .egg-dot svg{ display:block; flex:none; }
+/* 10.15 : article d'une liste de courses — rond creux à la place de la case ;
+   toute la ligne raye / dé-raye. 10.16 : 14 px au lieu de 18, centré dans la
+   même place (marges +2 px) pour que le texte reste aligné */
+.strike-dot{
+  appearance:none;
+  -webkit-appearance:none;
+  width:14px;
+  height:14px;
+  flex:none;
+  margin:calc(0.15rem + 2px) 5px 2px 6px;
+  padding:0;
+  border:1.5px solid var(--ink-faint);
+  border-radius:50%;
+  background:var(--surface);
+  cursor:pointer;
+  transition:border-color .15s ease;
+}
+.strike-dot:hover{ border-color:var(--cat-color, var(--accent)); }
+.strike-dot:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.item.is-checked .strike-dot{ border-color:var(--line); }
+.courses-item .item-text{ cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+/* quantité : petit badge après le nom (en ligne, pour être barré avec lui) */
+.courses-qty{
+  margin-left:0.4rem; padding:0.05rem 0.35rem;
+  border-radius:4px; background:var(--surface-2);
+  font-family:'Courier Prime', 'Courier New', Courier, monospace;
+  font-size:0.74rem; font-weight:700; color:var(--ink-soft);
+  white-space:nowrap;
+}
+.item.is-checked .courses-qty{ color:var(--ink-faint); }
+.courses-edit-btn{
+  appearance:none; border:none; background:transparent; color:var(--ink-faint);
+  line-height:1; padding:4px 6px; cursor:pointer; border-radius:4px;
+}
+.courses-edit-btn svg{ display:block; }
+.courses-edit-btn:hover{ background:var(--surface-2); color:var(--ink-soft); }
+/* modifier un article : nom, puis quantité avec − / + */
+.courses-item.editing{ align-items:center; }
+.courses-item.editing .drag-handle, .courses-item.editing .strike-dot{ visibility:hidden; }
+.courses-edit{ flex:1; min-width:0; display:flex; align-items:center; gap:0.4rem; }
+.courses-edit input{
+  font-family:inherit; font-size:0.95rem; line-height:1.4; color:var(--ink);
+  background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
+  padding:0.3rem 0.5rem; min-width:0;
+}
+.courses-edit input:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+.courses-edit-name{ flex:1 1 0; width:0; } /* largeur prise sur la ligne, jamais au-delà (téléphone) */
+.courses-qty-edit{ flex:none; display:flex; align-items:center; gap:2px; }
+.courses-edit .courses-edit-qty{ width:3.4rem; text-align:center; padding-left:0.25rem; padding-right:0.25rem; }
+.qty-step{
+  appearance:none; flex:none; width:26px; height:26px;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft);
+  border-radius:6px; font-size:0.95rem; line-height:1; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.qty-step:hover{ background:var(--accent-soft); color:var(--accent-strong); border-color:var(--accent); }
+/* bas de la carte : saisie (alignée sur les articles), puis Trier / Vider les rayés */
+.courses-foot{ flex:none; display:flex; flex-direction:column; gap:0.55rem; }
+.courses-add{ display:flex; align-items:flex-start; gap:0.65rem; padding:0 0.3rem; }
+.courses-add .drag-handle{ visibility:hidden; }
+.courses-plus{
+  width:18px; height:18px; flex:none;
+  margin:0.15rem 3px 0 4px;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--ink-faint); font-size:1.05rem; line-height:1;
+}
+.courses-field{ position:relative; flex:1; min-width:0; display:flex; }
+.courses-input{
+  flex:1; width:100%; margin:0;
+  resize:none; overflow:hidden;
+  font-family:inherit; font-size:0.95rem; line-height:1.4; color:var(--ink);
+  background:transparent;
+  border:none; border-bottom:1px dashed var(--line); border-radius:0;
+  padding:0 0.1rem 0.15rem;
+  transition:border-color .15s ease;
+}
+.courses-input::placeholder{ color:var(--ink-faint); opacity:.8; }
+.courses-input:focus{ outline:none; border-bottom:1px solid var(--cat-color, var(--accent)); }
+.courses-suggest{
+  position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:30;
+  display:flex; flex-direction:column;
+  padding:4px;
+  background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
+}
+.courses-suggest[hidden]{ display:none; }
+.courses-sugg{
+  appearance:none; border:0; background:transparent;
+  display:flex; align-items:baseline; justify-content:space-between; gap:0.5rem;
+  text-align:left; font:inherit; font-size:0.92rem; color:var(--ink);
+  padding:0.4rem 0.55rem; border-radius:7px; cursor:pointer;
+}
+.courses-sugg:hover, .courses-sugg.active{ background:var(--surface-2); }
+.courses-sugg-note{
+  font-family:'Courier Prime', 'Courier New', Courier, monospace;
+  font-size:0.62rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-faint);
+}
+.courses-actions{ display:flex; flex-wrap:wrap; gap:0.4rem; padding:0 2rem 0 0.3rem; } /* à droite : la flèche du volet */
+.courses-btn{
+  appearance:none;
+  border:1px solid var(--line);
+  background:var(--surface-2);
+  color:var(--ink-soft);
+  font-family:'Courier Prime', 'Courier New', Courier, monospace;
+  font-size:0.68rem;
+  font-weight:700;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  min-height:26px;
+  padding:0.25rem 0.75rem;
+  border-radius:999px;
+  cursor:pointer;
+  transition:background .12s ease, border-color .12s ease, color .12s ease, opacity .12s ease;
+}
+.courses-btn:not(:disabled):hover{ color:var(--accent-strong); border-color:var(--accent); background:var(--accent-soft); }
+.courses-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+.courses-btn:disabled{ opacity:.45; cursor:default; }
 .hatch-btn{
   appearance:none;
   border:none;
@@ -1906,9 +2110,11 @@ ul.items{
   width:100%;
   padding:0.3rem 0.2rem;
 }
-.edit-form input[type="text"]{
+.edit-form input[type="text"], .edit-form textarea{
   font-family:inherit;
   font-size:0.95rem;
+  line-height:1.4;
+  resize:none;
   padding:0.45rem 0.6rem;
   border:1px solid var(--line);
   border-radius:8px;
@@ -1926,9 +2132,9 @@ ul.items{
   width:100%;
 }
 /* champs : bleu au survol, bleu qui reste une fois cliqué (7.26) */
-.edit-form input, .edit-form select{ transition:border-color .15s ease, opacity .15s ease; }
-.edit-form input:not(:disabled):hover, .edit-form select:hover{ border-color:var(--accent); }
-.edit-form input:focus, .edit-form input[type="text"]:focus, .edit-form select:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+.edit-form input, .edit-form select, .edit-form textarea{ transition:border-color .15s ease, opacity .15s ease; }
+.edit-form input:not(:disabled):hover, .edit-form select:hover, .edit-form textarea:hover{ border-color:var(--accent); }
+.edit-form input:focus, .edit-form input[type="text"]:focus, .edit-form select:focus, .edit-form textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
 .edit-form input:disabled{ opacity:.4; cursor:not-allowed; }
 .edit-label{
   display:flex;
@@ -2521,6 +2727,30 @@ body.no-list .add-category-row{
 }
 .new-list-card .edit-form{ padding:0; gap:0.5rem; }
 .new-list-card .nl-step{ font-weight:600; }
+.new-list-card .nl-items{ overflow:hidden; }
+/* 10.15 : interrupteur « Liste de courses » ; allumé, il ne reste que le nom
+   et les premiers articles */
+.nl-courses{
+  position:relative; align-self:flex-start;
+  display:inline-flex; align-items:center; gap:0.5rem;
+  padding:0.15rem 0; font-size:0.86rem; color:var(--ink-soft);
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+}
+.nl-courses input{ position:absolute; opacity:0; width:1px; height:1px; margin:0; pointer-events:none; }
+.nl-switch{ position:relative; flex:none; width:30px; height:18px; border-radius:999px; background:var(--line); transition:background .15s ease; }
+.nl-switch::after{
+  content:""; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%;
+  background:var(--surface); box-shadow:0 1px 2px rgba(0,0,0,.18);
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+.nl-courses input:checked + .nl-switch{ background:var(--accent); }
+.nl-courses input:checked + .nl-switch::after{ transform:translateX(12px); }
+.nl-courses input:focus-visible + .nl-switch{ outline:2px solid var(--accent); outline-offset:2px; }
+.nl-courses:has(input:checked){ color:var(--ink); }
+.new-list-card.is-courses .nl-note,
+.new-list-card.is-courses .edit-label-row,
+.new-list-card.is-courses .edit-egg,
+.new-list-card.is-courses .edit-urgent{ display:none; }
 /* sur l'accueil : pointillés roses, champs jaunes */
 body.no-list .new-list-card{
   border:1.5px dashed var(--rose); border-radius:14px;
@@ -2632,6 +2862,10 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
      ils ne réagissent pas */
   .item.revealed .item-controls{ opacity:1; }
   .item:not(.revealed) .item-controls{ pointer-events:none; }
+  /* 10.15 : article de courses — toucher la ligne le raye, crayon et croix
+     restent donc visibles (discrets) et actifs */
+  .courses-item .item-controls{ opacity:0.7; pointer-events:auto; }
+  .item.courses-item:not(.revealed) .item-controls{ pointer-events:auto; }
   /* 8.38 : case urgente — case et boutons apparaissent au toucher de la
      ligne ; cachés, ils ne réagissent pas */
   .urgent-list li.revealed .urgent-check{ opacity:1; }
@@ -2721,7 +2955,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.14</span>
+    <span class="version-tag">v10.16</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -3332,11 +3566,12 @@ const Store = (()=>{
   const SHARING_KEY = NS + "partage";
   function sharingPrint(){
     const o = { u:[user.contacts, user.myName] };
-    lists.forEach((L, id) => { o[id] = [L.owner, L.members, L.names]; });
+    lists.forEach((L, id) => { o[id] = [L.owner, L.members, L.names, L.type]; });   // 10.15 : + le type (courses)
     return canon(o);
   }
   let sharingSeen = mode === "doc" ? sharingPrint() : "";
   const meCache = {};
+  const LIST_FIELDS = ["type", "history"];   // 10.15
 
   const api = {
     get mode(){ return mode; },
@@ -3411,6 +3646,28 @@ const Store = (()=>{
       if(!L) return false;
       L.members = members.slice();
       if(names && Object.keys(names).length) L.names = Object.assign({}, names); else delete L.names;
+      ver++;
+      commit();
+      sharingSeen = sharingPrint();
+      notifyLocal();
+      return true;
+    },
+    // ---- 10.15 : listes de courses (lu / écrit directement dans la fiche) ----
+    // type : "courses" (absent = liste normale, comme toutes les listes d'avant) ;
+    // history : les articles déjà saisis dans cette liste (suggestions), partagés
+    // avec la liste. Aucune ancienne clé ne les porte.
+    listField(id, name){
+      if(mode !== "doc" || !LIST_FIELDS.includes(name)) return undefined;
+      syncRev();
+      const L = lists.get(id);
+      return (L && L[name] !== undefined) ? JSON.parse(JSON.stringify(L[name])) : undefined;
+    },
+    setListField(id, name, v){
+      if(mode !== "doc" || !LIST_FIELDS.includes(name)) return false;
+      syncRev();
+      const L = lists.get(id);
+      if(!L) return false;
+      if(v === undefined) delete L[name]; else L[name] = JSON.parse(JSON.stringify(v));
       ver++;
       commit();
       sharingSeen = sharingPrint();
@@ -4032,6 +4289,7 @@ function purgeCheckedBefore(thisMonday, onlyWaiting){
   const today = todayISO();
   const purgedKeys = [];
   DATA.forEach(cat=>{
+    if(isCoursesList(cat.id)) return;   // 10.15 : les articles rayés restent dans leur liste de courses
     getEffectiveItems(cat).forEach((base, i)=>{
       const key = itemKey(cat.id, i);
       if(isDeleted(key) || !state[key]) return;
@@ -4099,7 +4357,10 @@ function runWeeklyPurge(){
 // l'affiche à l'envers et on retraduit au moment d'un glisser-déposer.
 // Les œufs restent en queue dans les deux sens.
 const CAT_REVERSE_KEY = "fauconnerie-v2-catreverse";
-function isCatReversed(catId){ return !!loadJSONKey(CAT_REVERSE_KEY, {})[catId]; }
+// 10.15 : une liste de courses s'affiche toujours dans l'ordre enregistré
+// (nouveaux articles en bas) ; le réglage du sens est gardé pour le retour
+// en liste normale
+function isCatReversed(catId){ return !!loadJSONKey(CAT_REVERSE_KEY, {})[catId] && !isCoursesList(catId); }
 function toggleCatReversed(catId){
   const o = loadJSONKey(CAT_REVERSE_KEY, {});
   if(o[catId]) delete o[catId]; else o[catId] = true;
@@ -4145,7 +4406,7 @@ function insertItem(cat, item){
   const ord = getCatOrder(cat);
   const pos = ord.indexOf(newIdx);
   if(pos > -1) ord.splice(pos, 1);
-  if(item.egg) ord.push(newIdx); else ord.unshift(newIdx);
+  if(item.egg || isCoursesList(cat.id)) ord.push(newIdx); else ord.unshift(newIdx);   // 10.15 : un article arrive en bas
   saveOrder(order);
   return newIdx;
 }
@@ -4352,7 +4613,7 @@ function maybeRollover(){
 
 function isQuickTyping(){
   const a = document.activeElement;
-  return !!(a && a.classList && a.classList.contains("cat-quick") && a.value);
+  return !!(a && a.classList && (a.classList.contains("cat-quick") || a.classList.contains("courses-input")) && a.value);
 }
 let refocusQuickCat = null;
 // ---- 10.7 : volets (listes repliées), par appareil ----
@@ -4403,7 +4664,7 @@ function toggleFold(catId){
 // Vrai tant qu'un formulaire (édition, ajout, glisser-déposer...) est ouvert :
 // on ne rafraîchit jamais l'affichage par-dessus une saisie en cours.
 function hasActiveEdit(){
-  return !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle || !!dragState || isQuickTyping() || !!relancePop;
+  return !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle || !!dragState || isQuickTyping() || !!relancePop || !!editingCoursesKey;
 }
 
 // ---- 7.43 : rappel de sauvegarde, au rythme de la purge du lundi ----
@@ -4843,7 +5104,9 @@ function renderAddCategoryRow(){
     <div class="new-list-card">
       <div class="edit-form">
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
+        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de courses</label>` : ""}
         <input type="text" class="nl-task" placeholder="Une première tâche ?" autocomplete="off">
+        <textarea class="nl-items" rows="1" placeholder="Premiers articles ? (un par ligne)" autocomplete="off" hidden></textarea>
         <input type="text" class="nl-note" placeholder="Détail (optionnel)" autocomplete="off">
         <div class="edit-label-row">
           <label class="edit-label">Échéance
@@ -4868,18 +5131,49 @@ function renderAddCategoryRow(){
   const dueInput = card.querySelector(".nl-due");
   const timeInput = card.querySelector(".nl-time");
   linkTimeToDate(dueInput, timeInput);
+  // 10.15 : interrupteur « Liste de courses » : les premiers articles (un par
+  // ligne) remplacent la première tâche, son détail, sa date et ses boutons
+  const coursesSwitch = card.querySelector(".nl-courses-switch");
+  const itemsInput = card.querySelector(".nl-items");
+  const isCourses = ()=> !!(coursesSwitch && coursesSwitch.checked);
+  const growItems = ()=>{ itemsInput.style.height = "auto"; itemsInput.style.height = itemsInput.scrollHeight + "px"; };
+  itemsInput.addEventListener("input", growItems);
   // le champ à remplir est en gras : le nom, puis la première tâche
   const step = ()=>{
     const named = !!nameInput.value.trim();
     nameInput.classList.toggle("nl-step", !named);
     taskInput.classList.toggle("nl-step", named);
+    itemsInput.classList.toggle("nl-step", named);
   };
   nameInput.addEventListener("input", step);
   step();
+  if(coursesSwitch) coursesSwitch.addEventListener("change", ()=>{
+    const on = isCourses();
+    card.classList.toggle("is-courses", on);
+    taskInput.hidden = on;
+    itemsInput.hidden = !on;
+    if(on && taskInput.value.trim() && !itemsInput.value.trim()){ itemsInput.value = taskInput.value.trim(); growItems(); }
+    if(nameInput.value.trim()) (on ? itemsInput : taskInput).focus(); else nameInput.focus();
+  });
   const toggles = wireEditUrgent(card);
   const cancel = ()=>{ addingCategory = false; renderAll(); };
   const save = ()=>{
     if(!nameInput.value.trim()){ nameInput.focus(); return; }
+    if(isCourses()){
+      try{
+        const cat = addCategory(nameInput.value);
+        if(cat){
+          setCoursesList(cat.id, true);
+          if(itemsInput.value.trim()) addCoursesLines(cat, itemsInput.value);
+          actionToast("newCourses");
+        }
+      }catch(err){
+        console.error("[nouvelle liste de courses] échec de l'enregistrement", err);
+      }
+      addingCategory = false;
+      renderAll();
+      return;
+    }
     try{
       // La liste d'abord, puis sa première tâche (si on en a écrit une) :
       // même chemin que l'ajout d'une tâche dans une liste existante.
@@ -4904,11 +5198,13 @@ function renderAddCategoryRow(){
   };
   card.querySelector(".nl-save").addEventListener("click", save);
   card.querySelector(".nl-cancel").addEventListener("click", cancel);
-  [nameInput, taskInput, noteInput, dueInput, timeInput].forEach(inp=>{
+  [nameInput, taskInput, itemsInput, noteInput, dueInput, timeInput].forEach(inp=>{
     inp.addEventListener("keydown", e=>{
       if(e.key === "Enter"){
+        if(inp === itemsInput && (e.shiftKey || e.isComposing)) return;   // Maj+Entrée : une ligne de plus
         e.preventDefault();
-        if(inp === nameInput && nameInput.value.trim() && !taskInput.value.trim()) taskInput.focus();
+        const next = isCourses() ? itemsInput : taskInput;
+        if(inp === nameInput && nameInput.value.trim() && !next.value.trim()) next.focus();
         else save();
       }
       if(e.key === "Escape") cancel();
@@ -4969,6 +5265,7 @@ function getEffective(key, base){
     egg: o.egg !== undefined ? !!o.egg : !!base.egg,
     person: base.person,
     tier: base.tier,
+    q: o.q !== undefined ? o.q : (base.q || ""),   // 10.15 : quantité d'un article de courses
   };
 }
 
@@ -5085,6 +5382,7 @@ function taskCreator(cat, base){ return (base && typeof base.by === "string" && 
 // de la liste peut tout ; un invité, seulement les tâches qu'il a créées
 function canRemoveTask(cat, base){
   if(iOwnList(cat.id)) return true;
+  if(isCoursesList(cat.id)) return true;   // 10.15 : dans une liste de courses, chacun efface tout article
   const me = myUid();
   return !!me && !!base && base.by === me;
 }
@@ -5148,7 +5446,7 @@ function buildCatShareRow(cat){
   row.addEventListener("click", e => e.stopPropagation());
   if(!iOwnList(cat.id)){
     const i = listInfo(cat.id) || {};
-    row.innerHTML = `<span>Liste ${escapeAttr(deName(personName(i.owner, cat.id)))}, partagée avec toi. Tu peux tout cocher, et effacer les tâches que tu as ajoutées.</span>`;
+    row.innerHTML = `<span>Liste ${escapeAttr(deName(personName(i.owner, cat.id)))}, partagée avec toi. ${isCoursesList(cat.id) ? "Tu peux rayer et retirer tous les articles." : "Tu peux tout cocher, et effacer les tâches que tu as ajoutées."}</span>`;
     return row;
   }
   const label = `<span class="cat-share-label">Partagée avec</span>`;
@@ -5188,6 +5486,207 @@ function buildCatShareRow(cat){
   return row;
 }
 
+// ---- 10.15 : listes de courses ----
+// Une liste dont la fiche porte type: "courses" (sans ce champ : liste
+// normale, comme toutes celles d'avant). Un article rayé est une tâche
+// « cochée » (même champ), mais une liste de courses reste hors du compteur,
+// du graphique, de la purge du lundi, de la corbeille, de la case urgente et
+// du trèfle : rayer le lait ne fait jamais tourner le compteur.
+function isCoursesList(catId){ try{ return Store.listField(catId, "type") === "courses"; }catch(e){ return false; } }
+// passer une liste en liste de courses (on) ou la rendre normale (off) : seul
+// le champ type change, aucune tâche n'est touchée (retour possible à l'identique)
+function setCoursesList(catId, on){
+  try{ return Store.setListField(catId, "type", on ? "courses" : undefined); }catch(e){ return false; }
+}
+// « Pâtes  fraîches » ≈ « pates fraiches » : pour repérer un article déjà là
+function coursesNorm(t){
+  return String(t == null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLocaleLowerCase("fr").replace(/\s+/g, " ").trim();
+}
+// une ligne collée depuis une note : puce, case ou numéro en tête retirés
+function coursesCleanLine(s){
+  return String(s || "").replace(/^\s*(?:[-–—•*·▪◦●○☐☑✓✔]\s*|\[[ xX]?\]\s*|\d+[.)]\s+)/, "").replace(/\s+/g, " ").trim();
+}
+// Quantité d'un article : « 2 lait », « 2x lait », « lait x2 », « 500 g de
+// farine », « 1,5 kg pommes », « 3 pots de yaourt »… → { t:"lait", q:"2" }.
+// Rangée à part (champ q de la tâche), pour que « 2 lait » et « lait »
+// restent le même article (doublons, suggestions).
+const COURSES_UNITS = "kg|kilos?|g|gr|grammes?|mg|l|litres?|cl|dl|ml|pcs?|pi[eè]ces?|paquets?|bo[iî]tes?|bouteilles?|sachets?|tranches?|pots?|briques?|bottes?|barquettes?|filets?|douzaines?|boules?|t[eê]tes?";
+const COURSES_UNIT_CANON = { kilo:"kg", kilos:"kg", gr:"g", gramme:"g", grammes:"g", litre:"l", litres:"l" };
+const COURSES_LEAD_RE = new RegExp(`^(?:[x×]\\s*)?(\\d+(?:[.,]\\d+)?)(?:\\s*(${COURSES_UNITS})\\.?(?=\\s)|\\s*[x×](?=\\s)|(?=\\s))\\s+(?:de\\s+|d['’]\\s*)?(\\S.*)$`, "i");
+const COURSES_TAIL_RE = new RegExp(`^(.*\\S)\\s+(?:[x×]\\s*(\\d+)|(\\d+(?:[.,]\\d+)?)\\s*(kg|g|gr|l|cl|ml)\\.?)$`, "i");
+const COURSES_QTY_RE = new RegExp(`^(?:[x×]\\s*)?(\\d+(?:[.,]\\d+)?)\\s*(?:(${COURSES_UNITS})\\.?|[x×])?$`, "i");
+function coursesQty(num, unit){
+  const u = unit ? unit.toLocaleLowerCase("fr") : "";
+  return num.replace(".", ",") + (u ? " " + (COURSES_UNIT_CANON[u] || u) : "");
+}
+function parseCoursesLine(line){
+  const s = coursesCleanLine(line);
+  let m = s.match(COURSES_LEAD_RE);
+  if(m) return { t: m[3].trim(), q: coursesQty(m[1], m[2]) };
+  m = s.match(COURSES_TAIL_RE);
+  if(m) return { t: m[1].trim(), q: m[2] ? m[2] : coursesQty(m[3], m[4]) };
+  return { t: s, q: "" };
+}
+// ce qu'on tape dans le champ « quantité » : « 2 », « x2 », « 500g » remis en
+// forme ; autre chose (« un peu ») gardé tel quel
+function normCoursesQty(v){
+  const s = String(v || "").replace(/\s+/g, " ").trim();
+  const m = s.match(COURSES_QTY_RE);
+  return m ? coursesQty(m[1], m[2]) : s;
+}
+// affichage : un nombre seul se lit « ×2 », sinon tel quel (« 500 g »)
+function coursesQtyLabel(q){ return /^\d+(?:,\d+)?$/.test(q) ? "×" + q : q; }
+// les articles affichés d'une liste de courses, dans l'ordre enregistré
+function coursesRows(cat){
+  const items = getEffectiveItems(cat);
+  return getCatOrder(cat)
+    .map(idx => ({ idx, key: itemKey(cat.id, idx), base: items[idx] }))
+    .filter(r => r.base && !isDeleted(r.key) && !getEffective(r.key, r.base).waiting);
+}
+// Rayer / dé-rayer : la coche de la tâche (et qui l'a posée, pour l'initiale
+// d'une liste partagée), sans date de coche — rien ne compte au compteur.
+function writeStruck(key, on){
+  state = loadState();
+  state[key] = on;
+  saveState(state);
+  checkedAt = loadJSONKey(CHECKED_AT_KEY, {});
+  if(checkedAt[key]){ delete checkedAt[key]; saveJSONKey(CHECKED_AT_KEY, checkedAt); }
+  const me = myUid();
+  overrides = loadOverrides();
+  const o = overrides[key];
+  if(on && me && !(o && o.doneBy === me)){
+    overrides[key] = Object.assign({}, o || {}, { doneBy: me });
+    saveOverrides(overrides);
+  }else if(!on && o && o.doneBy !== undefined){
+    const rest = Object.assign({}, o);
+    delete rest.doneBy;
+    if(Object.keys(rest).length) overrides[key] = rest; else delete overrides[key];
+    saveOverrides(overrides);
+  }
+}
+function setStruck(key, on){
+  writeStruck(key, on);
+  if(on){ haptic.tap(); justCheckedKey = key; }
+  renderAll();
+  justCheckedKey = null;
+}
+// retirer un article : effacé comme une tâche (il reste dans la fiche, marqué
+// effacé), jamais envoyé à la corbeille
+function removeCoursesItem(key){
+  overrides = loadOverrides();
+  overrides[key] = overrides[key] || {};
+  overrides[key].deleted = true;
+  saveOverrides(overrides);
+  checkedAt = loadJSONKey(CHECKED_AT_KEY, {});
+  if(checkedAt[key]){ delete checkedAt[key]; saveJSONKey(CHECKED_AT_KEY, checkedAt); }
+}
+// historique des articles (suggestions) : le plus récent en dernier, sans doublon
+const COURSES_HISTORY_MAX = 300;
+function coursesHistory(catId){
+  const h = (()=>{ try{ return Store.listField(catId, "history"); }catch(e){ return undefined; } })();
+  return Array.isArray(h) ? h.filter(x => typeof x === "string") : [];
+}
+function coursesHistoryAdd(catId, titles){
+  let h = coursesHistory(catId);
+  titles.forEach(t=>{
+    const n = coursesNorm(t);
+    h = h.filter(x => coursesNorm(x) !== n);
+    h.push(t);
+  });
+  try{ Store.setListField(catId, "history", h.slice(-COURSES_HISTORY_MAX)); }catch(e){ console.error("[courses] historique", e); }
+}
+// quantité d'un article déjà là (dans ses modifications, comme un titre)
+function writeCoursesQty(key, q){
+  overrides = loadOverrides();
+  overrides[key] = Object.assign({}, overrides[key] || {}, { q });
+  saveOverrides(overrides);
+}
+// Une ou plusieurs lignes (collées ou tapées) : un article par ligne, en bas
+// de la liste, avec sa quantité s'il y en a une. Un article déjà là et rayé
+// est dé-rayé au lieu d'être doublé (avec la nouvelle quantité, ou sans) ;
+// déjà là et pas rayé : seule la quantité change, si on en a donné une.
+function addCoursesLines(cat, text){
+  const res = { added:0, revived:0, already:0, qty:0, lastKey:null };
+  const lines = String(text || "").split(/\r?\n/).map(parseCoursesLine).filter(p => p.t);
+  const seen = new Set(), hist = [];
+  lines.forEach(({ t, q })=>{
+    const n = coursesNorm(t);
+    if(!n || seen.has(n)) return;
+    seen.add(n);
+    hist.push(capFirst(t));
+    // copie fraîche à chaque ligne : la précédente vient peut-être d'arriver
+    state = loadState(); overrides = loadOverrides(); customItems = loadCustom(); order = loadOrder();
+    const hit = coursesRows(cat).find(r => coursesNorm(getEffective(r.key, r.base).t) === n);
+    if(hit){
+      const oldQ = getEffective(hit.key, hit.base).q;
+      if(state[hit.key]){
+        writeStruck(hit.key, false);
+        if(q !== oldQ) writeCoursesQty(hit.key, q);   // nouvelles courses, nouvelle quantité
+        res.revived++;
+      }else if(q && q !== oldQ){ writeCoursesQty(hit.key, q); res.qty++; }
+      else res.already++;
+      res.lastKey = hit.key;
+      return;
+    }
+    const item = { t };
+    if(q) item.q = q;
+    const idx = insertItem(cat, item);
+    res.added++;
+    res.lastKey = itemKey(cat.id, idx);
+  });
+  if(hist.length) coursesHistoryAdd(cat.id, hist);
+  return res;
+}
+// « Trier » : les articles pas rayés remontent, chacun gardant son ordre
+function sortCourses(cat){
+  state = loadState(); overrides = loadOverrides(); customItems = loadCustom(); order = loadOrder();
+  const rows = coursesRows(cat);
+  const idxs = rows.filter(r => !state[r.key]).concat(rows.filter(r => state[r.key])).map(r => r.idx);
+  applyCatDisplayOrder(cat, idxs);
+  saveOrder(order);
+}
+function coursesSorted(cat){
+  let seenStruck = false;
+  return coursesRows(cat).every(r => { if(state[r.key]){ seenStruck = true; return true; } return !seenStruck; });
+}
+// « Vider les rayés » : tous les articles rayés sont retirés, qui que soit leur auteur
+function clearStruckCourses(cat){
+  state = loadState(); overrides = loadOverrides(); customItems = loadCustom(); order = loadOrder();
+  const keys = coursesRows(cat).filter(r => state[r.key]).map(r => r.key);
+  if(!keys.length) return 0;
+  checkedAt = loadJSONKey(CHECKED_AT_KEY, {});
+  keys.forEach(k=>{
+    overrides[k] = overrides[k] || {};
+    overrides[k].deleted = true;
+    delete checkedAt[k];
+  });
+  saveOverrides(overrides);
+  saveJSONKey(CHECKED_AT_KEY, checkedAt);
+  return keys.length;
+}
+// suggestions dès 2 lettres : l'historique de la liste (plus récents d'abord)
+// et ses articles rayés ; pas ceux déjà dans la liste et pas rayés
+function coursesSuggestions(cat, q){
+  const n = coursesNorm(q);
+  if(n.length < 2) return [];
+  const live = new Map();
+  coursesRows(cat).forEach(r => live.set(coursesNorm(getEffective(r.key, r.base).t), !!state[r.key]));
+  const cands = coursesHistory(cat.id).slice().reverse();
+  coursesRows(cat).forEach(r => { if(state[r.key]) cands.push(getEffective(r.key, r.base).t); });
+  const out = [], seen = new Set();
+  cands.forEach(t=>{
+    const k = coursesNorm(t);
+    if(seen.has(k) || live.get(k) === false) return;
+    seen.add(k);
+    const pos = k.indexOf(n);
+    if(pos < 0) return;
+    out.push({ t: capFirst(t), struck: live.get(k) === true, rank: pos === 0 ? 0 : (k[pos - 1] === " " ? 1 : 2) });
+  });
+  return out.sort((a, b) => a.rank - b.rank).slice(0, 6);
+}
+const BASKET_SVG = `<svg class="cat-basket" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 9.5h17l-1.6 9.1a1.8 1.8 0 0 1-1.8 1.4H6.9a1.8 1.8 0 0 1-1.8-1.4z"/><path d="M8.5 9.5 11 4M15.5 9.5 13 4"/><path d="M9.5 13.5v3M14.5 13.5v3"/></svg>`;
+
 // les autres personnes qui voient cette liste (créateur compris, moi exclu)
 function listPeople(catId){
   const i = listInfo(catId), me = myUid();
@@ -5212,6 +5711,7 @@ function getTotalItems(){
   // et comptent comme faites (voir getDoneCount). Envoyer une tâche "dans leur
   // camp", c'est avoir fait sa part — elle ne disparaît donc plus du compteur.
   return DATA.reduce((n,c)=>{
+    if(isCoursesList(c.id)) return n;   // 10.15 : hors compteur
     const items = getEffectiveItems(c);
     let count = 0;
     items.forEach((base,i)=>{
@@ -5229,6 +5729,7 @@ function getWeekDoneCount(){
   checkedAt = loadJSONKey(CHECKED_AT_KEY, {});
   let n = 0;
   DATA.forEach(cat=>{
+    if(isCoursesList(cat.id)) return;   // 10.15
     getEffectiveItems(cat).forEach((base,i)=>{
       const key = itemKey(cat.id,i);
       if(isDeleted(key) || !state[key]) return;
@@ -5251,6 +5752,7 @@ function getDoneCount(){
   // décompte — c'est automatiquement réversible.
   let count = 0;
   DATA.forEach(cat=>{
+    if(isCoursesList(cat.id)) return;   // 10.15
     const items = getEffectiveItems(cat);
     items.forEach((base,i)=>{
       const key = itemKey(cat.id,i);
@@ -5391,6 +5893,7 @@ function getWaitingOrder(rows){
 function collectUrgentItems(){
   const out = [];
   DATA.forEach(cat=>{
+    if(isCoursesList(cat.id)) return;   // 10.15 : un article n'est jamais urgent
     const items = getEffectiveItems(cat);
     items.forEach((base,i)=>{
       const key = itemKey(cat.id, i);
@@ -5531,7 +6034,7 @@ function wireDragRow(li, value, dragMode, cat){
 
   grip.addEventListener("pointerdown", (e)=>{
     if(e.pointerType === "mouse" && e.button !== 0) return;
-    if(dragState || editingKey || addingCat || addingCategory || editingCategoryTitle) return;
+    if(dragState || editingKey || addingCat || addingCategory || editingCategoryTitle || editingCoursesKey) return;
     e.preventDefault();
     try{ document.documentElement.setPointerCapture(e.pointerId); }catch(err){}
     if(dragMode === "category"){
@@ -5623,8 +6126,11 @@ function wireDragCard(card, grip, catIdx){
 function layoutRect(c){
   const op = c.offsetParent;
   const pr = op ? op.getBoundingClientRect() : { left:0, top:0 };
-  const left = pr.left + (op ? op.clientLeft : 0) + c.offsetLeft;
-  const top = pr.top + (op ? op.clientTop : 0) + c.offsetTop;
+  // 10.15 : une ligne dans une zone qui défile (liste de courses) : on retire le défilement
+  let sx = 0, sy = 0;
+  for(let p = c.parentElement; p && p !== op; p = p.parentElement){ sx += p.scrollLeft; sy += p.scrollTop; }
+  const left = pr.left + (op ? op.clientLeft : 0) + c.offsetLeft - sx;
+  const top = pr.top + (op ? op.clientTop : 0) + c.offsetTop - sy;
   return { left, top, width:c.offsetWidth, height:c.offsetHeight };
 }
 function handleListDragMove(x, y){
@@ -5655,10 +6161,14 @@ function handleRowDragMove(x, y){
   const d = dragState;
   d.ghost.style.transform = `translate(${x - d.startX}px, ${y - d.startY}px) rotate(-0.6deg)`;
   if(y < 50) window.scrollBy(0, -14); else if(y > window.innerHeight - 50) window.scrollBy(0, 14);
+  dragInnerScroll(x, y);
   const target = document.elementFromPoint(x, y);
   if(!target) return;
   const card = target.closest(".category");
   if(!card) return;
+  // 10.15 : un article reste dans sa liste de courses, et une tâche n'entre
+  // pas dans une liste de courses
+  if((card.classList.contains("courses") || isCoursesList(d.cat.id)) && card.id !== "cat-" + d.cat.id) return;
   if(card.classList.contains("collapsed")){ // 10.7 : le volet s'ouvre sous la tâche
     card.classList.remove("collapsed");
     const fid = card.id.replace(/^cat-/, "");
@@ -5675,6 +6185,34 @@ function handleRowDragMove(x, y){
   const ref = before || (rows.length ? rows[rows.length - 1].nextSibling : null);
   if(d.el.parentElement === ul && (d.el === ref || d.el.nextSibling === ref)) return;
   moveDragSlot([d.el.parentElement, ul], ()=>{ ul.insertBefore(d.el, ref); });
+}
+
+// 10.15 : glisser un article près du haut ou du bas de la zone qui défile
+// (liste de courses) la fait défiler, et continue tant que le doigt y reste
+let dragScrollRaf = 0;
+function dragInnerScroll(x, y){
+  const d = dragState;
+  if(!d) return;
+  const ul = d.el.closest("ul.items");
+  d.innerScroll = 0;
+  if(!ul || ul.scrollHeight <= ul.clientHeight + 1) return;
+  const r = ul.getBoundingClientRect(), EDGE = 36;
+  if(x < r.left - 40 || x > r.right + 40) return;
+  if(y < r.top + EDGE) d.innerScroll = -Math.min(16, Math.ceil((r.top + EDGE - y) / 3));
+  else if(y > r.bottom - EDGE) d.innerScroll = Math.min(16, Math.ceil((y - (r.bottom - EDGE)) / 3));
+  d.lastX = x; d.lastY = y;
+  if(d.innerScroll && !dragScrollRaf) dragScrollRaf = requestAnimationFrame(dragInnerScrollStep);
+}
+function dragInnerScrollStep(){
+  dragScrollRaf = 0;
+  const d = dragState;
+  if(!d || d.dropping || !d.innerScroll) return;
+  const ul = d.el.closest("ul.items");
+  if(!ul) return;
+  const before = ul.scrollTop;
+  ul.scrollTop += d.innerScroll;
+  if(ul.scrollTop === before) return;   // au bout
+  handleRowDragMove(d.lastX, d.lastY);    // l'emplacement suit, et relance le défilement
 }
 
 function endDragGesture(){
@@ -5890,7 +6428,7 @@ function drawLuckyKeys(reroll, exclude){
   const pool = [];
   getCategoryOrder().forEach(catIdx=>{
     const cat = DATA[catIdx];
-    if(!cat || isCategoryDeleted(cat.id)) return;
+    if(!cat || isCategoryDeleted(cat.id) || isCoursesList(cat.id)) return;   // 10.15 : pas d'article au trèfle
     const items = getEffectiveItems(cat);
     const n = items.length;
     items.forEach((base, i)=>{
@@ -5926,7 +6464,7 @@ function luckyEntry(key){
   const sep = key.lastIndexOf(":");
   const cat = DATA.find(c => c.id === key.slice(0, sep));
   const idx = parseInt(key.slice(sep + 1), 10);
-  if(!cat || isCategoryDeleted(cat.id) || isDeleted(key)) return null;
+  if(!cat || isCategoryDeleted(cat.id) || isDeleted(key) || isCoursesList(cat.id)) return null;
   const base = getEffectiveItems(cat)[idx];
   if(!base) return null;
   const eff = getEffective(key, base);
@@ -6510,6 +7048,88 @@ function buildItemLi(cat, idx, base, key, opts){
     return { el: li, focus: ()=>{ titleInput.focus(); titleInput.select(); } };
   }
 
+  // 10.15 : article d'une liste de courses — un rond creux à la place de la
+  // case ; un clic sur l'article ou le rond le raye (il reste à sa place),
+  // un nouveau clic le dé-raye. Poignée et croix comme une tâche.
+  if(opts.courses && editingCoursesKey === key){
+    // modifier un article : nom, quantité (− / + pour un simple nombre)
+    li.className = "item courses-item editing";
+    li.dataset.key = key;
+    li.innerHTML = `
+      <span class="drag-handle" aria-hidden="true">&#8942;&#8942;</span>
+      <span class="strike-dot" aria-hidden="true"></span>
+      <span class="courses-edit">
+        <input type="text" class="courses-edit-name" value="${escapeAttr(eff.t)}" aria-label="Article" autocomplete="off" enterkeyhint="done">
+        <span class="courses-qty-edit">
+          <button type="button" class="qty-step" data-d="-1" aria-label="Un de moins">&minus;</button>
+          <input type="text" class="courses-edit-qty" value="${escapeAttr(eff.q)}" placeholder="Qté" aria-label="Quantité" autocomplete="off" enterkeyhint="done">
+          <button type="button" class="qty-step" data-d="1" aria-label="Un de plus">+</button>
+        </span>
+      </span>
+    `;
+    const nameInp = li.querySelector(".courses-edit-name"), qtyInp = li.querySelector(".courses-edit-qty");
+    li.querySelectorAll(".qty-step").forEach(b=>{
+      b.addEventListener("mousedown", e => e.preventDefault());   // le curseur reste où il est
+      b.addEventListener("click", e=>{
+        e.stopPropagation();
+        const cur = qtyInp.value.trim();
+        if(cur && !/^\d+$/.test(cur)) return;   // « 500 g » : à corriger à la main
+        const n = Math.max(1, (cur ? parseInt(cur, 10) : 1) + parseInt(b.dataset.d, 10));
+        qtyInp.value = n > 1 ? String(n) : "";
+        haptic.tick();
+      });
+    });
+    [nameInp, qtyInp].forEach(inp => inp.addEventListener("keydown", e=>{
+      if(e.isComposing) return;
+      if(e.key === "Enter"){ e.preventDefault(); commitCoursesEdit(); }
+      if(e.key === "Escape"){ e.preventDefault(); editingCoursesKey = null; renderAll(); }
+    }));
+    li.addEventListener("click", e => e.stopPropagation());
+    return { el: li, focus: ()=>{ nameInp.focus(); nameInp.select(); } };
+  }
+  if(opts.courses){
+    const struck = !!state[key];
+    li.className = "item courses-item" + (struck ? " is-checked" : "") + (struck && key === justCheckedKey ? " just-checked" : "");
+    li.dataset.key = key;
+    const qtyTag = eff.q ? ` <span class="courses-qty">${escapeAttr(coursesQtyLabel(eff.q))}</span>` : "";
+    let strikerTag = "";
+    if(struck && isSharedList(cat.id)){
+      const who = personName(checkerOf(cat.id, key), cat.id);
+      strikerTag = `<span class="checker-tag" data-tip="Rayé par ${escapeAttr(who)}" aria-label="Rayé par ${escapeAttr(who)}">${escapeAttr(initialOf(who))}</span>`;
+    }
+    li.innerHTML = `
+      <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
+      <button type="button" class="strike-dot" role="checkbox" aria-checked="${struck}" aria-label="${escapeAttr((struck ? "Dé-rayer " : "Rayer ") + eff.t)}"></button>
+      <span class="item-text">${strikerTag}<span class="item-title">${escapeAttr(eff.t)}</span>${qtyTag}</span>
+      <span class="item-controls">
+        <button type="button" class="courses-edit-btn" aria-label="Modifier l'article" data-tip="Modifier"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg></button>
+        <button type="button" class="delete-btn" aria-label="Retirer l'article" data-tip="Retirer l'article">&times;</button>
+      </span>
+    `;
+    const dot = li.querySelector(".strike-dot");
+    dot.addEventListener("click", e=>{ e.stopPropagation(); setStruck(key, !struck); });
+    haptic.attach(dot);
+    // pas de « dévoilement » au toucher ici : toucher la ligne raye l'article,
+    // crayon et croix restent donc visibles sur écran tactile (voir le CSS)
+    li.addEventListener("click", e=>{
+      if(e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap")) return;
+      setStruck(key, !struck);
+    });
+    li.querySelector(".courses-edit-btn").addEventListener("click", e=>{
+      e.stopPropagation();
+      editingCoursesKey = key;
+      renderAll();
+    });
+    li.querySelector(".delete-btn").addEventListener("click", e=>{
+      e.stopPropagation();
+      removeCoursesItem(key);
+      actionToast("coursesErase");
+      renderAll();
+    });
+    wireDragRow(li, String(idx), "category", cat);
+    return { el: li, focus: null };
+  }
+
   const checked = !!state[key];
   // Une échéance proche (en retard, aujourd'hui, demain) rend la tâche
   // urgente au même titre qu'un marquage manuel — c'est déjà ce qui la fait
@@ -6697,7 +7317,7 @@ function renderAll(){
   }
   try{ maybeRollover(); }catch(err){ console.error("[semaine]", err); }
   try{
-    document.body.classList.toggle("has-editing", !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle);
+    document.body.classList.toggle("has-editing", !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle || !!editingCoursesKey);
     RENDERERS.forEach(fn => fn());
   }catch(err){
     // Filet de sécurité : une erreur de rendu (ex : donnée mal formée dans
@@ -6708,6 +7328,7 @@ function renderAll(){
     addingCat = null;
     addingCategory = false;
     editingCategoryTitle = null;
+    editingCoursesKey = null;
     try{
       document.body.classList.remove("has-editing");
       RENDERERS.forEach(fn => fn());
@@ -6718,19 +7339,196 @@ function renderAll(){
   try{ noteUndoPoint(); }catch(err){ console.error("[annuler]", err); }
 }
 
+// ---- 10.15 : bas d'une liste de courses (saisie, Trier, Vider les rayés) ----
+let editingCoursesKey = null;   // l'article en cours de modification (crayon)
+// Enregistre la modification d'un article (Entrée, ou clic ailleurs) : nom et
+// quantité, dans ses modifications comme pour une tâche. Un nom vide garde
+// l'ancien ; une quantité tapée dans le nom (« 2 lait ») est reconnue.
+function commitCoursesEdit(){
+  const li = document.querySelector(".courses-item.editing");
+  const key = editingCoursesKey;
+  editingCoursesKey = null;
+  if(li && key){
+    try{
+      const sep = key.lastIndexOf(":");
+      const cat = DATA.find(c => c.id === key.slice(0, sep));
+      overrides = loadOverrides();
+      const base = cat && getEffectiveItems(cat)[parseInt(key.slice(sep + 1), 10)];
+      if(cat && base){
+        const eff = getEffective(key, base);
+        const raw = coursesCleanLine(li.querySelector(".courses-edit-name").value);
+        let t = raw, q = normCoursesQty(li.querySelector(".courses-edit-qty").value);
+        if(!q){ const p = parseCoursesLine(raw); if(p.q){ t = p.t; q = p.q; } }
+        if(!t) t = eff.t;
+        if(t !== eff.t || q !== eff.q){
+          overrides[key] = Object.assign({}, overrides[key] || {}, { t, q });
+          saveOverrides(overrides);
+          if(coursesNorm(t) !== coursesNorm(eff.t)) coursesHistoryAdd(cat.id, [capFirst(t)]);
+        }
+      }
+    }catch(err){ console.error("[courses] modification", err); }
+  }
+  renderAll();
+}
+let refocusCoursesCat = null;   // la saisie garde le curseur après un ajout
+let coursesScrollTo = null;     // { catId, key } ou { catId, top } : à montrer au rendu suivant
+function buildCoursesFoot(cat){
+  const foot = document.createElement("div");
+  foot.className = "courses-foot";
+  const struckN = coursesRows(cat).filter(r => state[r.key]).length;
+  foot.innerHTML = `
+    <div class="courses-add">
+      <span class="drag-handle" aria-hidden="true">&#8942;&#8942;</span>
+      <span class="courses-plus" aria-hidden="true">+</span>
+      <span class="courses-field">
+        <textarea class="courses-input" rows="1" placeholder="Ajouter un article" aria-label="Ajouter un article à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></textarea>
+        <span class="courses-suggest" role="listbox" hidden></span>
+      </span>
+    </div>
+    <div class="courses-actions">
+      <button type="button" class="courses-btn courses-sort"${coursesSorted(cat) ? " disabled" : ""}>Trier</button>
+      <button type="button" class="courses-btn courses-clear"${struckN ? "" : " disabled"}>Vider les rayés${struckN ? ` (${struckN})` : ""}</button>
+    </div>`;
+  foot.addEventListener("click", e => e.stopPropagation());
+  const ta = foot.querySelector(".courses-input");
+  const box = foot.querySelector(".courses-suggest");
+  let sugg = [], active = -1, typedQty = "";
+  const grow = ()=>{ ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; };
+  const close = ()=>{ sugg = []; active = -1; box.hidden = true; box.innerHTML = ""; };
+  // « 2 to » : suggestions pour « to », la quantité tapée suit l'article choisi
+  const pickText = s => typedQty ? typedQty + " " + s.t : s.t;
+  const paint = ()=>{
+    const p = parseCoursesLine(ta.value);
+    typedQty = p.q;
+    sugg = /\n/.test(ta.value) ? [] : coursesSuggestions(cat, p.t);
+    if(!sugg.length){ close(); return; }
+    if(active >= sugg.length) active = sugg.length - 1;
+    box.innerHTML = sugg.map((s, i) =>
+      `<button type="button" class="courses-sugg${i === active ? " active" : ""}" role="option" aria-selected="${i === active}" data-i="${i}" tabindex="-1">${escapeAttr(s.t)}${s.struck ? `<span class="courses-sugg-note">rayé</span>` : ""}</button>`).join("");
+    box.hidden = false;
+  };
+  const submit = text=>{
+    if(!String(text || "").trim()) return;
+    let res;
+    try{ res = addCoursesLines(cat, text); }
+    catch(err){ console.error("[courses] ajout", err); return; }
+    ta.value = "";
+    close();
+    if(isFolded(cat.id)) setFolded(cat.id, false);   // 10.7 : la liste se rouvre
+    if(res.already && !res.added && !res.revived && !res.qty) actionToast("coursesAlready");
+    else if(res.qty && !res.added && !res.revived) actionToast("coursesQty");
+    refocusCoursesCat = cat.id;
+    if(res.lastKey) coursesScrollTo = { catId: cat.id, key: res.lastKey };
+    renderAll();
+  };
+  ta.addEventListener("input", ()=>{ grow(); active = -1; paint(); });
+  ta.addEventListener("keydown", e=>{
+    if(e.isComposing) return;
+    if(e.key === "ArrowDown" && sugg.length){ e.preventDefault(); active = (active + 1) % sugg.length; paint(); return; }
+    if(e.key === "ArrowUp" && sugg.length){ e.preventDefault(); active = active <= 0 ? sugg.length - 1 : active - 1; paint(); return; }
+    if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); submit(active > -1 && sugg[active] ? pickText(sugg[active]) : ta.value); return; }
+    if(e.key === "Escape"){ e.preventDefault(); if(sugg.length) close(); else { ta.value = ""; grow(); ta.blur(); } }
+  });
+  // plusieurs lignes collées : un article par ligne, tout de suite
+  ta.addEventListener("paste", e=>{
+    const txt = e.clipboardData ? e.clipboardData.getData("text") : "";
+    if(!txt || !/\n/.test(txt.trim())) return;
+    e.preventDefault();
+    submit(ta.value.slice(0, ta.selectionStart) + txt + ta.value.slice(ta.selectionEnd));
+  });
+  ta.addEventListener("blur", ()=> setTimeout(()=>{ if(document.activeElement !== ta) close(); }, 150));
+  box.addEventListener("mousedown", e => e.preventDefault());   // le curseur reste dans la saisie
+  box.addEventListener("click", e=>{
+    const b = e.target.closest(".courses-sugg");
+    if(b && sugg[+b.dataset.i]) submit(pickText(sugg[+b.dataset.i]));
+  });
+  foot.querySelector(".courses-sort").addEventListener("click", ()=>{
+    try{ sortCourses(cat); }catch(err){ console.error("[courses] tri", err); }
+    coursesScrollTo = { catId: cat.id, top: true };
+    renderAll();
+  });
+  foot.querySelector(".courses-clear").addEventListener("click", ()=>{
+    let n = 0;
+    try{ n = clearStruckCourses(cat); }catch(err){ console.error("[courses] vider", err); }
+    if(n) actionToast("coursesClear");
+    renderAll();
+  });
+  if(refocusCoursesCat === cat.id) requestAnimationFrame(()=> ta.focus());
+  return foot;
+}
+// dans le renommage d'une liste (double-clic sur le titre) : la convertir
+// (seul son créateur ; une liste sans compte est à moi)
+function buildCatConvertRow(cat, head){
+  if(Store.mode !== "doc" || !iOwnList(cat.id)) return null;
+  const courses = isCoursesList(cat.id);
+  const row = document.createElement("div");
+  row.className = "cat-convert";
+  row.innerHTML = `<button type="button" class="cat-share-link">${courses ? "Convertir en liste normale" : "Convertir en liste de courses"}</button>`;
+  row.addEventListener("mousedown", e => { if(e.target.closest("button")) e.preventDefault(); }); // le curseur reste dans le titre
+  row.addEventListener("click", e => e.stopPropagation());
+  row.querySelector("button").addEventListener("click", ()=>{
+    const ti = head.querySelector(".cat-title-input");
+    if(ti && ti.value.trim() && ti.value.trim() !== cat.title) renameCategory(cat.id, ti.value);   // le titre en cours de frappe est gardé
+    if(!setCoursesList(cat.id, !courses)) return;
+    editingCategoryTitle = null;
+    actionToast(courses ? "coursesOff" : "coursesOn");
+    renderAll();
+  });
+  return row;
+}
+// Hauteur d'une liste de courses : au plus celle de la plus haute des autres
+// listes affichées (au moins ~24 lignes de texte, au plus 3/4 de l'écran) ;
+// au-delà, seule la zone des articles défile. Position de défilement gardée,
+// et l'article qu'on vient d'ajouter est montré.
+function fitCoursesCards(saved){
+  const cards = Array.from(categoriesEl.querySelectorAll(".category.courses"));
+  if(!cards.length){ coursesScrollTo = null; return; }
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  let tallest = 0;
+  categoriesEl.querySelectorAll(".category:not(.courses):not(.collapsed)").forEach(c=>{
+    const ul = c.querySelector(":scope > ul.items");
+    if(!ul) return;
+    const h = ul.getBoundingClientRect().bottom - c.getBoundingClientRect().top + (parseFloat(getComputedStyle(c).paddingBottom) || 0);
+    if(h > tallest) tallest = h;
+  });
+  const max = Math.round(Math.min(Math.max(tallest, 24 * rem), window.innerHeight * 0.75));
+  cards.forEach(c=>{
+    c.style.setProperty("--courses-max", max + "px");
+    const ul = c.querySelector(":scope > ul.items");
+    if(!ul) return;
+    if(saved && saved[c.id] != null) ul.scrollTop = saved[c.id];
+    const go = coursesScrollTo && "cat-" + coursesScrollTo.catId === c.id ? coursesScrollTo : null;
+    if(!go) return;
+    if(go.top){ ul.scrollTop = 0; return; }
+    const li = ul.querySelector(`[data-key="${CSS.escape(go.key)}"]`);
+    if(!li) return;
+    const ur = ul.getBoundingClientRect(), lr = li.getBoundingClientRect();
+    if(lr.bottom > ur.bottom) ul.scrollTop += lr.bottom - ur.bottom + 4;
+    else if(lr.top < ur.top) ul.scrollTop -= ur.top - lr.top + 4;
+  });
+  coursesScrollTo = null;
+}
+window.addEventListener("resize", ()=> fitCoursesCards());
+
 function render(){
+  // 10.15 : la zone des articles d'une liste de courses défile ; on garde sa
+  // position d'un rendu à l'autre (rayer un article ne la ramène pas en haut)
+  const coursesScroll = {};
+  categoriesEl.querySelectorAll(".category.courses > ul.items").forEach(u => { coursesScroll[u.parentElement.id] = u.scrollTop; });
   categoriesEl.innerHTML = "";
   const catDisplayOrder = getCategoryOrder().filter(catIdx => !isCategoryDeleted(DATA[catIdx].id));
   catDisplayOrder.forEach(catIdx=>{
     const cat = DATA[catIdx];
     const items = getEffectiveItems(cat);
+    const courses = isCoursesList(cat.id);
     const card = document.createElement("div");
-    card.className = "category";
+    card.className = "category" + (courses ? " courses" : "");
     card.id = "cat-" + cat.id;
     card.style.setProperty("--cat-color", displayCatColor(cat.color));
 
     let visibleCount = 0, doneInCat = 0;
-    items.forEach((base,i)=>{
+    if(courses) coursesRows(cat).forEach(r => { visibleCount++; if(state[r.key]) doneInCat++; });
+    else items.forEach((base,i)=>{
       const k = itemKey(cat.id, i);
       if(isDeleted(k)) return;
       const eff = getEffective(k, base);
@@ -6739,7 +7537,7 @@ function render(){
       visibleCount++;
       if(state[k]) doneInCat++;
     });
-    if(visibleCount && doneInCat === visibleCount) card.classList.add("done");
+    if(!courses && visibleCount && doneInCat === visibleCount) card.classList.add("done");
     const folded = isFolded(cat.id);
     if(folded) card.classList.add("collapsed");
     const leftCount = visibleCount - doneInCat;
@@ -6770,18 +7568,18 @@ function render(){
       <span class="cat-title-group">
         ${renamingThisCat
           ? `<input type="text" class="cat-title-input" value="${escapeAttr(cat.title)}">`
-          : `<span class="cat-title">${escapeAttr(cat.title)}</span>${shareChips}${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} à faire">${leftCount}</span>` : ""}`}
-        <button type="button" class="add-btn" aria-label="Ajouter une tâche">+</button>
-        ${renamingThisCat ? "" : `<label class="cat-quick-wrap" title="Ajouter une tâche"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" aria-label="Ajouter une tâche à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
+          : `${courses ? BASKET_SVG : ""}<span class="cat-title">${escapeAttr(cat.title)}</span>${shareChips}${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} ${courses ? "à prendre" : "à faire"}">${leftCount}</span>` : ""}`}
+        ${courses ? "" : `<button type="button" class="add-btn" aria-label="Ajouter une tâche">+</button>`}
+        ${renamingThisCat || courses ? "" : `<label class="cat-quick-wrap" title="Ajouter une tâche"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" aria-label="Ajouter une tâche à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
       </span>
       <span class="cat-head-right">
-        <button type="button" class="cat-order${reversed ? " reversed" : ""}" aria-label="${reversed ? "Mettre les récentes en haut" : "Mettre les récentes en bas"}" data-tip="${reversed ? "Récentes en haut ?" : "Récentes en bas ?"}"><svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true"><path d="M5 1.8 9 8.2H1z" fill="currentColor"/></svg></button>
+        ${courses ? "" : `<button type="button" class="cat-order${reversed ? " reversed" : ""}" aria-label="${reversed ? "Mettre les récentes en haut" : "Mettre les récentes en bas"}" data-tip="${reversed ? "Récentes en haut ?" : "Récentes en bas ?"}"><svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true"><path d="M5 1.8 9 8.2H1z" fill="currentColor"/></svg></button>`}
         <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
         ${canDeleteCat ? `<button type="button" class="cat-delete-btn" aria-label="Supprimer cette case vide" title="Supprimer cette case vide">&times;</button>` : ""}
       </span>
     `;
     wireDragCard(card, head.querySelector(".cat-grip"), catIdx);
-    head.querySelector(".cat-order").addEventListener("click", (e)=>{
+    if(!courses) head.querySelector(".cat-order").addEventListener("click", (e)=>{
       e.stopPropagation();
       toggleCatReversed(cat.id);
       renderAll();
@@ -6804,7 +7602,7 @@ function render(){
       });
       if(refocusQuickCat === cat.id) requestAnimationFrame(()=> quickInp.focus());
     }
-    head.querySelector(".add-btn").addEventListener("click", (e)=>{
+    if(!courses) head.querySelector(".add-btn").addEventListener("click", (e)=>{
       e.stopPropagation();
       addingCat = addingCat === cat.id ? null : cat.id;
       if(addingCat && isFolded(cat.id)) setFolded(cat.id, false); // 10.7
@@ -6864,6 +7662,8 @@ function render(){
       card.appendChild(sw);
       const shareRow = buildCatShareRow(cat);
       if(shareRow) card.appendChild(shareRow);
+      const convRow = buildCatConvertRow(cat, head);
+      if(convRow) card.appendChild(convRow);
     }
 
     const ul = document.createElement("ul");
@@ -6873,8 +7673,9 @@ function render(){
       .map(idx => ({cat, idx, base: items[idx], key: itemKey(cat.id, idx)}))
       .filter(r => !isDeleted(r.key))
       .filter(r => !getEffective(r.key, r.base).waiting);
-    sortByUrgencyThenChecked(catDisplayRows(cat, rows)).forEach(r=>{
-      const built = buildItemLi(r.cat, r.idx, r.base, r.key);
+    // 10.15 : un article rayé reste à sa place (pas de tri coché / pas coché)
+    (courses ? rows : sortByUrgencyThenChecked(catDisplayRows(cat, rows))).forEach(r=>{
+      const built = buildItemLi(r.cat, r.idx, r.base, r.key, courses ? { courses:true } : undefined);
       ul.appendChild(built.el);
       // Le focus() est reporté à la frame suivante : à cet instant, `ul` n'est
       // pas encore rattaché au document (card.appendChild(ul) n'a pas encore
@@ -6883,7 +7684,7 @@ function render(){
       if(built.focus) requestAnimationFrame(built.focus);
     });
 
-    if(addingCat === cat.id){
+    if(addingCat === cat.id && !courses){
       const li = document.createElement("li");
       li.className = "item add-form-row";
       li.innerHTML = `
@@ -6943,6 +7744,7 @@ function render(){
     }
 
     card.appendChild(ul);
+    if(courses) card.appendChild(buildCoursesFoot(cat));   // 10.15 : saisie, Trier, Vider les rayés
     // 10.7 : la flèche du volet, en bas à droite
     const fold = document.createElement("button");
     fold.type = "button";
@@ -6956,6 +7758,8 @@ function render(){
     categoriesEl.appendChild(card);
   });
   refocusQuickCat = null;
+  refocusCoursesCat = null;
+  fitCoursesCards(coursesScroll);
   renderUrgentBanner();
   renderLuckyLine();
   const waitingSection = document.getElementById("waitingSection");
@@ -7025,6 +7829,7 @@ function collectDoneDates(){
   });
   const st = loadState(), ca = loadJSONKey(CHECKED_AT_KEY, {});
   DATA.forEach(cat=>{
+    if(isCoursesList(cat.id)) return;   // 10.15
     getEffectiveItems(cat).forEach((base, i)=>{
       const key = itemKey(cat.id, i);
       if(isDeleted(key) || !st[key]) return;
@@ -7541,6 +8346,14 @@ const ACTION_MESSAGES = {
   trashDelete: ["Effacée des archives. Le clerc a passé le buvard.", "Rayée pour de bon."],
   moveCat: ["Déménagée dans une autre liste, cartons compris.", "Changement de case, acté par le notaire.", "Mutation acceptée, sans passer par l'échevin."],
   newCat: ["Nouvelle case ouverte, comme un échevinat de plus.", "Catégorie créée. Le conseil communal a voté à main levée."],
+  // 10.15 : listes de courses
+  newCourses: ["Panier prêt. Direction le marché du dimanche.", "Liste de courses ouverte, comme l'épicerie du coin."],
+  coursesErase: ["Retiré du panier.", "Reposé sur l'étal.", "Le crémier s'en remettra."],
+  coursesQty: ["Quantité mise à jour.", "Le crémier a corrigé l'ardoise."],
+  coursesAlready: ["Déjà dans le panier.", "Celui-là y est déjà, pas besoin de le prendre deux fois."],
+  coursesClear: ["Rayés débarrassés. Le cabas respire.", "Panier vidé des articles pris. Au suivant !"],
+  coursesOn: ["Liste de courses. Le faisan a sorti son cabas.", "Changée en liste de courses, panier compris."],
+  coursesOff: ["Redevenue une liste normale.", "Le cabas est rangé : liste normale."],
 };
 function actionToast(kind){
   const pool = ACTION_MESSAGES[kind];
@@ -7594,6 +8407,13 @@ document.addEventListener("lostpointercapture", (e)=>{
 });
 
 document.addEventListener("click", (e)=>{
+  // 10.15 : un clic hors de l'article en cours de modification l'enregistre
+  if(editingCoursesKey){
+    const el = document.querySelector(".courses-item.editing");
+    if(el && el.contains(e.target)) return;
+    commitCoursesEdit();
+    return;
+  }
   if(editingKey){
     const editingEl = document.querySelector(".item.editing");
     if(editingEl){
@@ -8393,9 +9213,26 @@ const SyncMerge = (()=>{
     });
     return out;
   }
+  // 10.15 : historique des articles d'une liste de courses — ce que chacun a
+  // saisi est gardé (ordre d'en ligne, puis les nouveaux d'ici), sans doublon
+  const HISTORY_MAX = 300;
+  function history(b, l, r){
+    if(!Array.isArray(l) && !Array.isArray(r)) return pick(b, l, r);
+    const out = [];
+    const seen = new Set();
+    [r, l].forEach(a => (Array.isArray(a) ? a : []).forEach(x=>{
+      if(typeof x !== "string") return;
+      const k = x.normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase("fr").replace(/\s+/g, " ").trim();   // comme coursesNorm
+      if(seen.has(k)) return;
+      seen.add(k); out.push(x);
+    }));
+    return out.slice(-HISTORY_MAX);
+  }
   function list(b, l, r){
     b = isObj(b) ? b : {};
-    const out = fields(b, l, r, ["items", "ghosts", "order"]);
+    const out = fields(b, l, r, ["items", "ghosts", "order", "history"]);
+    const hist = history(b.history, l.history, r.history);
+    if(hist !== undefined) out.history = hist;
     out.items = slots(b.items, l.items, r.items);
     const ghosts = slots(b.ghosts, l.ghosts, r.ghosts).filter(g => !out.items.some(s => s.id === g.id));
     if(ghosts.length) out.ghosts = ghosts;
@@ -8432,7 +9269,7 @@ const SyncMerge = (()=>{
     }
     return v;
   }
-  return { canon, eq, list, user, toCloud, fromCloud, multiset };
+  return { canon, eq, list, user, toCloud, fromCloud, multiset, HISTORY_MAX };
 })();
 
 const Sync = (()=>{

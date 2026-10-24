@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.15 -->
+<!-- Sous le tapis — version AUTONOME 10.16 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -188,7 +188,8 @@
     getWeekDoneCount), graphique (collectDoneDates), purge du lundi
     (purgeCheckedBefore), case urgente, trèfle. Retirer un article (× ou
     « Vider les rayés ») = effacé comme une tâche, jamais à la corbeille.
-  - Affichage : rond creux .strike-dot à la place de la case (mêmes marges),
+  - Affichage : rond creux .strike-dot à la place de la case (14 px depuis la 10.16,
+    centré dans la place de la case : le texte reste aligné),
     clic sur la ligne ou le rond = rayer / dé-rayer, l'article reste à sa
     place ; pas de +, d'ajout express ni de sens ▲▼ dans le bandeau (le sens
     enregistré est ignoré, gardé pour un retour en liste normale) ; panier
@@ -196,6 +197,16 @@
     article par ligne, collage de plusieurs lignes = un article chacune,
     puces retirées), puis « Trier » (non rayés en haut, ordre gardé) et
     « Vider les rayés ». Nouveaux articles en bas (insertItem).
+  - Quantité : champ q de la tâche (« 2 », « 500 g », « 3 pots »), à part du
+    nom pour que « 2 lait » et « lait » restent le même article.
+    parseCoursesLine reconnaît « 2 lait », « 2x lait », « lait x2 », « 500 g
+    de farine », « 1,5 kg pommes »… (limite connue : « 7 up » = 7 × up).
+    Badge après le nom (×2 pour un nombre seul). Article déjà là : une
+    nouvelle quantité le met à jour ; dé-rayé sans quantité = badge effacé.
+  - Modifier un article : crayon à côté de la croix (editingCoursesKey,
+    commitCoursesEdit) — nom, quantité, − / + pour un nombre seul ; Entrée
+    ou clic ailleurs enregistre, Échap annule. Sur écran tactile, crayon et
+    croix restent visibles (toucher la ligne raye, pas de « dévoilement »).
   - Suggestions dès 2 lettres : champ history de la fiche (300 au plus,
     partagé avec la liste ; fusion en ligne = union, SyncMerge.list) + les
     articles rayés. Article déjà là : rayé → dé-rayé, pas rayé → rien.
@@ -751,10 +762,13 @@
     agrandie (::before invisible). Rien ne bouge à l'écran.
   - 10.15 : listes de courses (voir LISTES DE COURSES) : interrupteur à la
     création, conversion dans le renommage, rond creux qui raye sans faire
-    tourner le compteur, saisie en bas avec suggestions, Trier, Vider les
+    tourner le compteur, quantités, crayon pour modifier un article,
+    saisie en bas avec suggestions, Trier, Vider les
     rayés, hauteur bornée avec défilement interne ; hors purge et
     corbeille ; règles firestore.rules (type) à recoller dans la console.
     Testée d'abord sur essai.html (banc local).
+  - 10.16 : rond creux des listes de courses plus petit (14 px au lieu de
+    18), même place, texte aligné comme avant.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1881,15 +1895,16 @@ ul.items{
   opacity:0.8;
 }
 .egg-dot svg{ display:block; flex:none; }
-/* 10.15 : article d'une liste de courses — rond creux à la place de la case
-   (même taille, mêmes marges) ; toute la ligne raye / dé-raye */
+/* 10.15 : article d'une liste de courses — rond creux à la place de la case ;
+   toute la ligne raye / dé-raye. 10.16 : 14 px au lieu de 18, centré dans la
+   même place (marges +2 px) pour que le texte reste aligné */
 .strike-dot{
   appearance:none;
   -webkit-appearance:none;
-  width:18px;
-  height:18px;
+  width:14px;
+  height:14px;
   flex:none;
-  margin:0.15rem 3px 0 4px;
+  margin:calc(0.15rem + 2px) 5px 2px 6px;
   padding:0;
   border:1.5px solid var(--ink-faint);
   border-radius:50%;
@@ -1901,6 +1916,41 @@ ul.items{
 .strike-dot:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 .item.is-checked .strike-dot{ border-color:var(--line); }
 .courses-item .item-text{ cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+/* quantité : petit badge après le nom (en ligne, pour être barré avec lui) */
+.courses-qty{
+  margin-left:0.4rem; padding:0.05rem 0.35rem;
+  border-radius:4px; background:var(--surface-2);
+  font-family:'Courier Prime', 'Courier New', Courier, monospace;
+  font-size:0.74rem; font-weight:700; color:var(--ink-soft);
+  white-space:nowrap;
+}
+.item.is-checked .courses-qty{ color:var(--ink-faint); }
+.courses-edit-btn{
+  appearance:none; border:none; background:transparent; color:var(--ink-faint);
+  line-height:1; padding:4px 6px; cursor:pointer; border-radius:4px;
+}
+.courses-edit-btn svg{ display:block; }
+.courses-edit-btn:hover{ background:var(--surface-2); color:var(--ink-soft); }
+/* modifier un article : nom, puis quantité avec − / + */
+.courses-item.editing{ align-items:center; }
+.courses-item.editing .drag-handle, .courses-item.editing .strike-dot{ visibility:hidden; }
+.courses-edit{ flex:1; min-width:0; display:flex; align-items:center; gap:0.4rem; }
+.courses-edit input{
+  font-family:inherit; font-size:0.95rem; line-height:1.4; color:var(--ink);
+  background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
+  padding:0.3rem 0.5rem; min-width:0;
+}
+.courses-edit input:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+.courses-edit-name{ flex:1 1 0; width:0; } /* largeur prise sur la ligne, jamais au-delà (téléphone) */
+.courses-qty-edit{ flex:none; display:flex; align-items:center; gap:2px; }
+.courses-edit .courses-edit-qty{ width:3.4rem; text-align:center; padding-left:0.25rem; padding-right:0.25rem; }
+.qty-step{
+  appearance:none; flex:none; width:26px; height:26px;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft);
+  border-radius:6px; font-size:0.95rem; line-height:1; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.qty-step:hover{ background:var(--accent-soft); color:var(--accent-strong); border-color:var(--accent); }
 /* bas de la carte : saisie (alignée sur les articles), puis Trier / Vider les rayés */
 .courses-foot{ flex:none; display:flex; flex-direction:column; gap:0.55rem; }
 .courses-add{ display:flex; align-items:flex-start; gap:0.65rem; padding:0 0.3rem; }
@@ -2812,6 +2862,10 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
      ils ne réagissent pas */
   .item.revealed .item-controls{ opacity:1; }
   .item:not(.revealed) .item-controls{ pointer-events:none; }
+  /* 10.15 : article de courses — toucher la ligne le raye, crayon et croix
+     restent donc visibles (discrets) et actifs */
+  .courses-item .item-controls{ opacity:0.7; pointer-events:auto; }
+  .item.courses-item:not(.revealed) .item-controls{ pointer-events:auto; }
   /* 8.38 : case urgente — case et boutons apparaissent au toucher de la
      ligne ; cachés, ils ne réagissent pas */
   .urgent-list li.revealed .urgent-check{ opacity:1; }
@@ -2901,7 +2955,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.15</span>
+    <span class="version-tag">v10.16</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4610,7 +4664,7 @@ function toggleFold(catId){
 // Vrai tant qu'un formulaire (édition, ajout, glisser-déposer...) est ouvert :
 // on ne rafraîchit jamais l'affichage par-dessus une saisie en cours.
 function hasActiveEdit(){
-  return !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle || !!dragState || isQuickTyping() || !!relancePop;
+  return !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle || !!dragState || isQuickTyping() || !!relancePop || !!editingCoursesKey;
 }
 
 // ---- 7.43 : rappel de sauvegarde, au rythme de la purge du lundi ----
@@ -5211,6 +5265,7 @@ function getEffective(key, base){
     egg: o.egg !== undefined ? !!o.egg : !!base.egg,
     person: base.person,
     tier: base.tier,
+    q: o.q !== undefined ? o.q : (base.q || ""),   // 10.15 : quantité d'un article de courses
   };
 }
 
@@ -5452,6 +5507,36 @@ function coursesNorm(t){
 function coursesCleanLine(s){
   return String(s || "").replace(/^\s*(?:[-–—•*·▪◦●○☐☑✓✔]\s*|\[[ xX]?\]\s*|\d+[.)]\s+)/, "").replace(/\s+/g, " ").trim();
 }
+// Quantité d'un article : « 2 lait », « 2x lait », « lait x2 », « 500 g de
+// farine », « 1,5 kg pommes », « 3 pots de yaourt »… → { t:"lait", q:"2" }.
+// Rangée à part (champ q de la tâche), pour que « 2 lait » et « lait »
+// restent le même article (doublons, suggestions).
+const COURSES_UNITS = "kg|kilos?|g|gr|grammes?|mg|l|litres?|cl|dl|ml|pcs?|pi[eè]ces?|paquets?|bo[iî]tes?|bouteilles?|sachets?|tranches?|pots?|briques?|bottes?|barquettes?|filets?|douzaines?|boules?|t[eê]tes?";
+const COURSES_UNIT_CANON = { kilo:"kg", kilos:"kg", gr:"g", gramme:"g", grammes:"g", litre:"l", litres:"l" };
+const COURSES_LEAD_RE = new RegExp(`^(?:[x×]\\s*)?(\\d+(?:[.,]\\d+)?)(?:\\s*(${COURSES_UNITS})\\.?(?=\\s)|\\s*[x×](?=\\s)|(?=\\s))\\s+(?:de\\s+|d['’]\\s*)?(\\S.*)$`, "i");
+const COURSES_TAIL_RE = new RegExp(`^(.*\\S)\\s+(?:[x×]\\s*(\\d+)|(\\d+(?:[.,]\\d+)?)\\s*(kg|g|gr|l|cl|ml)\\.?)$`, "i");
+const COURSES_QTY_RE = new RegExp(`^(?:[x×]\\s*)?(\\d+(?:[.,]\\d+)?)\\s*(?:(${COURSES_UNITS})\\.?|[x×])?$`, "i");
+function coursesQty(num, unit){
+  const u = unit ? unit.toLocaleLowerCase("fr") : "";
+  return num.replace(".", ",") + (u ? " " + (COURSES_UNIT_CANON[u] || u) : "");
+}
+function parseCoursesLine(line){
+  const s = coursesCleanLine(line);
+  let m = s.match(COURSES_LEAD_RE);
+  if(m) return { t: m[3].trim(), q: coursesQty(m[1], m[2]) };
+  m = s.match(COURSES_TAIL_RE);
+  if(m) return { t: m[1].trim(), q: m[2] ? m[2] : coursesQty(m[3], m[4]) };
+  return { t: s, q: "" };
+}
+// ce qu'on tape dans le champ « quantité » : « 2 », « x2 », « 500g » remis en
+// forme ; autre chose (« un peu ») gardé tel quel
+function normCoursesQty(v){
+  const s = String(v || "").replace(/\s+/g, " ").trim();
+  const m = s.match(COURSES_QTY_RE);
+  return m ? coursesQty(m[1], m[2]) : s;
+}
+// affichage : un nombre seul se lit « ×2 », sinon tel quel (« 500 g »)
+function coursesQtyLabel(q){ return /^\d+(?:,\d+)?$/.test(q) ? "×" + q : q; }
 // les articles affichés d'une liste de courses, dans l'ordre enregistré
 function coursesRows(cat){
   const items = getEffectiveItems(cat);
@@ -5511,27 +5596,42 @@ function coursesHistoryAdd(catId, titles){
   });
   try{ Store.setListField(catId, "history", h.slice(-COURSES_HISTORY_MAX)); }catch(e){ console.error("[courses] historique", e); }
 }
+// quantité d'un article déjà là (dans ses modifications, comme un titre)
+function writeCoursesQty(key, q){
+  overrides = loadOverrides();
+  overrides[key] = Object.assign({}, overrides[key] || {}, { q });
+  saveOverrides(overrides);
+}
 // Une ou plusieurs lignes (collées ou tapées) : un article par ligne, en bas
-// de la liste. Un article déjà là et rayé est dé-rayé au lieu d'être doublé ;
-// déjà là et pas rayé : rien ne change.
+// de la liste, avec sa quantité s'il y en a une. Un article déjà là et rayé
+// est dé-rayé au lieu d'être doublé (avec la nouvelle quantité, ou sans) ;
+// déjà là et pas rayé : seule la quantité change, si on en a donné une.
 function addCoursesLines(cat, text){
-  const res = { added:0, revived:0, already:0, lastKey:null };
-  const lines = String(text || "").split(/\r?\n/).map(coursesCleanLine).filter(Boolean);
+  const res = { added:0, revived:0, already:0, qty:0, lastKey:null };
+  const lines = String(text || "").split(/\r?\n/).map(parseCoursesLine).filter(p => p.t);
   const seen = new Set(), hist = [];
-  lines.forEach(line=>{
-    const n = coursesNorm(line);
+  lines.forEach(({ t, q })=>{
+    const n = coursesNorm(t);
     if(!n || seen.has(n)) return;
     seen.add(n);
-    hist.push(capFirst(line));
+    hist.push(capFirst(t));
     // copie fraîche à chaque ligne : la précédente vient peut-être d'arriver
     state = loadState(); overrides = loadOverrides(); customItems = loadCustom(); order = loadOrder();
     const hit = coursesRows(cat).find(r => coursesNorm(getEffective(r.key, r.base).t) === n);
     if(hit){
-      if(state[hit.key]){ writeStruck(hit.key, false); res.revived++; } else res.already++;
+      const oldQ = getEffective(hit.key, hit.base).q;
+      if(state[hit.key]){
+        writeStruck(hit.key, false);
+        if(q !== oldQ) writeCoursesQty(hit.key, q);   // nouvelles courses, nouvelle quantité
+        res.revived++;
+      }else if(q && q !== oldQ){ writeCoursesQty(hit.key, q); res.qty++; }
+      else res.already++;
       res.lastKey = hit.key;
       return;
     }
-    const idx = insertItem(cat, { t: line });
+    const item = { t };
+    if(q) item.q = q;
+    const idx = insertItem(cat, item);
     res.added++;
     res.lastKey = itemKey(cat.id, idx);
   });
@@ -5934,7 +6034,7 @@ function wireDragRow(li, value, dragMode, cat){
 
   grip.addEventListener("pointerdown", (e)=>{
     if(e.pointerType === "mouse" && e.button !== 0) return;
-    if(dragState || editingKey || addingCat || addingCategory || editingCategoryTitle) return;
+    if(dragState || editingKey || addingCat || addingCategory || editingCategoryTitle || editingCoursesKey) return;
     e.preventDefault();
     try{ document.documentElement.setPointerCapture(e.pointerId); }catch(err){}
     if(dragMode === "category"){
@@ -6951,10 +7051,47 @@ function buildItemLi(cat, idx, base, key, opts){
   // 10.15 : article d'une liste de courses — un rond creux à la place de la
   // case ; un clic sur l'article ou le rond le raye (il reste à sa place),
   // un nouveau clic le dé-raye. Poignée et croix comme une tâche.
+  if(opts.courses && editingCoursesKey === key){
+    // modifier un article : nom, quantité (− / + pour un simple nombre)
+    li.className = "item courses-item editing";
+    li.dataset.key = key;
+    li.innerHTML = `
+      <span class="drag-handle" aria-hidden="true">&#8942;&#8942;</span>
+      <span class="strike-dot" aria-hidden="true"></span>
+      <span class="courses-edit">
+        <input type="text" class="courses-edit-name" value="${escapeAttr(eff.t)}" aria-label="Article" autocomplete="off" enterkeyhint="done">
+        <span class="courses-qty-edit">
+          <button type="button" class="qty-step" data-d="-1" aria-label="Un de moins">&minus;</button>
+          <input type="text" class="courses-edit-qty" value="${escapeAttr(eff.q)}" placeholder="Qté" aria-label="Quantité" autocomplete="off" enterkeyhint="done">
+          <button type="button" class="qty-step" data-d="1" aria-label="Un de plus">+</button>
+        </span>
+      </span>
+    `;
+    const nameInp = li.querySelector(".courses-edit-name"), qtyInp = li.querySelector(".courses-edit-qty");
+    li.querySelectorAll(".qty-step").forEach(b=>{
+      b.addEventListener("mousedown", e => e.preventDefault());   // le curseur reste où il est
+      b.addEventListener("click", e=>{
+        e.stopPropagation();
+        const cur = qtyInp.value.trim();
+        if(cur && !/^\d+$/.test(cur)) return;   // « 500 g » : à corriger à la main
+        const n = Math.max(1, (cur ? parseInt(cur, 10) : 1) + parseInt(b.dataset.d, 10));
+        qtyInp.value = n > 1 ? String(n) : "";
+        haptic.tick();
+      });
+    });
+    [nameInp, qtyInp].forEach(inp => inp.addEventListener("keydown", e=>{
+      if(e.isComposing) return;
+      if(e.key === "Enter"){ e.preventDefault(); commitCoursesEdit(); }
+      if(e.key === "Escape"){ e.preventDefault(); editingCoursesKey = null; renderAll(); }
+    }));
+    li.addEventListener("click", e => e.stopPropagation());
+    return { el: li, focus: ()=>{ nameInp.focus(); nameInp.select(); } };
+  }
   if(opts.courses){
     const struck = !!state[key];
     li.className = "item courses-item" + (struck ? " is-checked" : "") + (struck && key === justCheckedKey ? " just-checked" : "");
     li.dataset.key = key;
+    const qtyTag = eff.q ? ` <span class="courses-qty">${escapeAttr(coursesQtyLabel(eff.q))}</span>` : "";
     let strikerTag = "";
     if(struck && isSharedList(cat.id)){
       const who = personName(checkerOf(cat.id, key), cat.id);
@@ -6963,19 +7100,25 @@ function buildItemLi(cat, idx, base, key, opts){
     li.innerHTML = `
       <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
       <button type="button" class="strike-dot" role="checkbox" aria-checked="${struck}" aria-label="${escapeAttr((struck ? "Dé-rayer " : "Rayer ") + eff.t)}"></button>
-      <span class="item-text">${strikerTag}<span class="item-title">${escapeAttr(eff.t)}</span></span>
+      <span class="item-text">${strikerTag}<span class="item-title">${escapeAttr(eff.t)}</span>${qtyTag}</span>
       <span class="item-controls">
+        <button type="button" class="courses-edit-btn" aria-label="Modifier l'article" data-tip="Modifier"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg></button>
         <button type="button" class="delete-btn" aria-label="Retirer l'article" data-tip="Retirer l'article">&times;</button>
       </span>
     `;
     const dot = li.querySelector(".strike-dot");
     dot.addEventListener("click", e=>{ e.stopPropagation(); setStruck(key, !struck); });
     haptic.attach(dot);
+    // pas de « dévoilement » au toucher ici : toucher la ligne raye l'article,
+    // crayon et croix restent donc visibles sur écran tactile (voir le CSS)
     li.addEventListener("click", e=>{
-      document.querySelectorAll(".item.revealed").forEach(o=>{ if(o !== li) o.classList.remove("revealed"); });
-      li.classList.add("revealed");
       if(e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap")) return;
       setStruck(key, !struck);
+    });
+    li.querySelector(".courses-edit-btn").addEventListener("click", e=>{
+      e.stopPropagation();
+      editingCoursesKey = key;
+      renderAll();
     });
     li.querySelector(".delete-btn").addEventListener("click", e=>{
       e.stopPropagation();
@@ -7174,7 +7317,7 @@ function renderAll(){
   }
   try{ maybeRollover(); }catch(err){ console.error("[semaine]", err); }
   try{
-    document.body.classList.toggle("has-editing", !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle);
+    document.body.classList.toggle("has-editing", !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle || !!editingCoursesKey);
     RENDERERS.forEach(fn => fn());
   }catch(err){
     // Filet de sécurité : une erreur de rendu (ex : donnée mal formée dans
@@ -7185,6 +7328,7 @@ function renderAll(){
     addingCat = null;
     addingCategory = false;
     editingCategoryTitle = null;
+    editingCoursesKey = null;
     try{
       document.body.classList.remove("has-editing");
       RENDERERS.forEach(fn => fn());
@@ -7196,6 +7340,36 @@ function renderAll(){
 }
 
 // ---- 10.15 : bas d'une liste de courses (saisie, Trier, Vider les rayés) ----
+let editingCoursesKey = null;   // l'article en cours de modification (crayon)
+// Enregistre la modification d'un article (Entrée, ou clic ailleurs) : nom et
+// quantité, dans ses modifications comme pour une tâche. Un nom vide garde
+// l'ancien ; une quantité tapée dans le nom (« 2 lait ») est reconnue.
+function commitCoursesEdit(){
+  const li = document.querySelector(".courses-item.editing");
+  const key = editingCoursesKey;
+  editingCoursesKey = null;
+  if(li && key){
+    try{
+      const sep = key.lastIndexOf(":");
+      const cat = DATA.find(c => c.id === key.slice(0, sep));
+      overrides = loadOverrides();
+      const base = cat && getEffectiveItems(cat)[parseInt(key.slice(sep + 1), 10)];
+      if(cat && base){
+        const eff = getEffective(key, base);
+        const raw = coursesCleanLine(li.querySelector(".courses-edit-name").value);
+        let t = raw, q = normCoursesQty(li.querySelector(".courses-edit-qty").value);
+        if(!q){ const p = parseCoursesLine(raw); if(p.q){ t = p.t; q = p.q; } }
+        if(!t) t = eff.t;
+        if(t !== eff.t || q !== eff.q){
+          overrides[key] = Object.assign({}, overrides[key] || {}, { t, q });
+          saveOverrides(overrides);
+          if(coursesNorm(t) !== coursesNorm(eff.t)) coursesHistoryAdd(cat.id, [capFirst(t)]);
+        }
+      }
+    }catch(err){ console.error("[courses] modification", err); }
+  }
+  renderAll();
+}
 let refocusCoursesCat = null;   // la saisie garde le curseur après un ajout
 let coursesScrollTo = null;     // { catId, key } ou { catId, top } : à montrer au rendu suivant
 function buildCoursesFoot(cat){
@@ -7218,11 +7392,15 @@ function buildCoursesFoot(cat){
   foot.addEventListener("click", e => e.stopPropagation());
   const ta = foot.querySelector(".courses-input");
   const box = foot.querySelector(".courses-suggest");
-  let sugg = [], active = -1;
+  let sugg = [], active = -1, typedQty = "";
   const grow = ()=>{ ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; };
   const close = ()=>{ sugg = []; active = -1; box.hidden = true; box.innerHTML = ""; };
+  // « 2 to » : suggestions pour « to », la quantité tapée suit l'article choisi
+  const pickText = s => typedQty ? typedQty + " " + s.t : s.t;
   const paint = ()=>{
-    sugg = /\n/.test(ta.value) ? [] : coursesSuggestions(cat, ta.value);
+    const p = parseCoursesLine(ta.value);
+    typedQty = p.q;
+    sugg = /\n/.test(ta.value) ? [] : coursesSuggestions(cat, p.t);
     if(!sugg.length){ close(); return; }
     if(active >= sugg.length) active = sugg.length - 1;
     box.innerHTML = sugg.map((s, i) =>
@@ -7237,7 +7415,8 @@ function buildCoursesFoot(cat){
     ta.value = "";
     close();
     if(isFolded(cat.id)) setFolded(cat.id, false);   // 10.7 : la liste se rouvre
-    if(res.already && !res.added && !res.revived) actionToast("coursesAlready");
+    if(res.already && !res.added && !res.revived && !res.qty) actionToast("coursesAlready");
+    else if(res.qty && !res.added && !res.revived) actionToast("coursesQty");
     refocusCoursesCat = cat.id;
     if(res.lastKey) coursesScrollTo = { catId: cat.id, key: res.lastKey };
     renderAll();
@@ -7247,7 +7426,7 @@ function buildCoursesFoot(cat){
     if(e.isComposing) return;
     if(e.key === "ArrowDown" && sugg.length){ e.preventDefault(); active = (active + 1) % sugg.length; paint(); return; }
     if(e.key === "ArrowUp" && sugg.length){ e.preventDefault(); active = active <= 0 ? sugg.length - 1 : active - 1; paint(); return; }
-    if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); submit(active > -1 && sugg[active] ? sugg[active].t : ta.value); return; }
+    if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); submit(active > -1 && sugg[active] ? pickText(sugg[active]) : ta.value); return; }
     if(e.key === "Escape"){ e.preventDefault(); if(sugg.length) close(); else { ta.value = ""; grow(); ta.blur(); } }
   });
   // plusieurs lignes collées : un article par ligne, tout de suite
@@ -7261,7 +7440,7 @@ function buildCoursesFoot(cat){
   box.addEventListener("mousedown", e => e.preventDefault());   // le curseur reste dans la saisie
   box.addEventListener("click", e=>{
     const b = e.target.closest(".courses-sugg");
-    if(b && sugg[+b.dataset.i]) submit(sugg[+b.dataset.i].t);
+    if(b && sugg[+b.dataset.i]) submit(pickText(sugg[+b.dataset.i]));
   });
   foot.querySelector(".courses-sort").addEventListener("click", ()=>{
     try{ sortCourses(cat); }catch(err){ console.error("[courses] tri", err); }
@@ -8170,6 +8349,7 @@ const ACTION_MESSAGES = {
   // 10.15 : listes de courses
   newCourses: ["Panier prêt. Direction le marché du dimanche.", "Liste de courses ouverte, comme l'épicerie du coin."],
   coursesErase: ["Retiré du panier.", "Reposé sur l'étal.", "Le crémier s'en remettra."],
+  coursesQty: ["Quantité mise à jour.", "Le crémier a corrigé l'ardoise."],
   coursesAlready: ["Déjà dans le panier.", "Celui-là y est déjà, pas besoin de le prendre deux fois."],
   coursesClear: ["Rayés débarrassés. Le cabas respire.", "Panier vidé des articles pris. Au suivant !"],
   coursesOn: ["Liste de courses. Le faisan a sorti son cabas.", "Changée en liste de courses, panier compris."],
@@ -8227,6 +8407,13 @@ document.addEventListener("lostpointercapture", (e)=>{
 });
 
 document.addEventListener("click", (e)=>{
+  // 10.15 : un clic hors de l'article en cours de modification l'enregistre
+  if(editingCoursesKey){
+    const el = document.querySelector(".courses-item.editing");
+    if(el && el.contains(e.target)) return;
+    commitCoursesEdit();
+    return;
+  }
   if(editingKey){
     const editingEl = document.querySelector(".item.editing");
     if(editingEl){
