@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.20 -->
+<!-- Sous le tapis — version AUTONOME 10.21 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -811,6 +811,11 @@
     un contenu large (liste de courses, adresse sans espace…) élargissait
     sa colonne et les bords droits ne tombaient plus juste. Phrase de
     l'essuie : « nonante degrés » (numérotation belge).
+  - 10.21 : le lien « Convertir en liste de courses / normale » (renommage
+    d'une liste) ne réagissait pas : pendant le renommage, la règle qui
+    estompe le reste de la carte (body.has-editing … > *:not(...)) ne
+    l'exceptait pas — grisé et pointer-events:none depuis la 10.15.
+    Ajouté aux exceptions (:not(.cat-convert)).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2391,7 +2396,7 @@ body.has-editing .add-category-row.active{
 body.has-editing .category:has(.item.editing) ul.items > li.item:not(.editing),
 body.has-editing .category:has(.add-form-row) ul.items > li.item:not(.add-form-row),
 body.has-editing .section-block:has(.item.editing) ul.items > li.item:not(.editing),
-body.has-editing .category:has(.cat-title-input) > *:not(.cat-head):not(.cat-swatches):not(.cat-share),
+body.has-editing .category:has(.cat-title-input) > *:not(.cat-head):not(.cat-swatches):not(.cat-share):not(.cat-convert),   /* 10.21 : « Convertir » reste cliquable */
 body.has-editing .category:has(.cat-title-input) .cat-head .add-btn,
 body.has-editing .category:has(.cat-title-input) .cat-head-right{
   opacity:0.32;
@@ -3067,7 +3072,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.20</span>
+    <span class="version-tag">v10.21</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
