@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.24 -->
+<!-- Sous le tapis — version AUTONOME 10.25 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -849,6 +849,29 @@
     Cartes de listes : plus de va-et-vient de l'emplacement — juste après
     un échange avec une carte, on ne revient pas vers elle tant que le
     fantôme n'a pas bougé de 48 px depuis l'échange.
+  - 10.25 : couleurs. Encre urgente (--urgent-ink) #4A2580 → #5C2C92 :
+    tout ce qui l'utilise suit (badges « En retard », tâches urgentes,
+    relance…). Case urgente : titres, puces et tâches dans cette même encre
+    (avant : titres noirs, puces améthyste) ; fond pâli (--urgent-soft mêlé
+    au blanc de la carte, et moitié --accent-soft pour moins de rouge) et titre « N points urgents » pâli (encre mêlée
+    au fond) — aucune nouvelle couleur, tout est dérivé des variables.
+    Mémo / shopping : papier nacré léger (blanc → bleu glacé → lilas, tokens
+    --memo-a/b/c) au lieu du bas grisé (--gloss-shade supprimé), liseré
+    neutre bleuté, ombre légèrement bleutée.
+    Case urgente, deuxième couleur : le nom de la liste d'origine prend la
+    couleur de sa liste (--cat-color posé sur la ligne) ; badge « En
+    retard » en terre cuite partout (--late / --late-soft, la seule couleur
+    ajoutée). Trèfle du bandeau « Une petite en passant ? » dans le bleu de
+    la phrase (--phrase). « Hors ligne » calé sur le bord droit du chiffre
+    des tâches restantes, puis un rien plus haut et plus à droite, en
+    accord avec l'arrondi du coin (right:12px, top:33px). Titre « Une
+    petite en passant ? » en --phrase aussi (l'olive disparaît) ; fond
+    citron un cran plus pâle (--lucky-bg #FBFADF → #FCFBE9) ; encre urgente
+    finalement #562F96, un rien moins rouge.
+    Trèfle du jour fait : le trèfle redevient un bouton, la case se replie
+    (grisée, « Trèfle du jour fait ! », clé luckydoneclosed du jour) ; un
+    clic dessus fait tourner le trèfle et lance une nouvelle tournée (deux
+    nouvelles propositions, les tâches cochées exclues).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -879,8 +902,9 @@
   --btn-ink:#4A5E6E;  /* boutons du bas : ardoise, famille de l'icône (8.41) */
   --accent-soft:#E4ECF3;
   --plume-off:var(--ink-faint);   /* 10.23 : gris (avant : tomate #E5675A) */
-  --gloss:rgba(255,255,255,.8);   /* 10.23 : reflet « papier glacé » des mémos */
-  --gloss-shade:rgba(40,70,100,.065);
+  --gloss:rgba(255,255,255,1);   /* 10.23 : reflet « papier glacé » des mémos ; 10.25 : plein blanc */
+  --memo-a:#FFFFFF; --memo-b:#F4F7FC; --memo-c:#F9F5FC;   /* 10.25 : papier nacré léger (version « plus discret ») */
+  --memo-line:rgba(150,160,200,.28);
   /* 10.19 : vert du logo (le faisan) pour le titre et la plume connectée ;
      --logo-green-strong au survol du titre */
   --logo-green:#7DB536;   /* un cran sous le vert du logo #8DC63F, trop pâle pour un petit titre */
@@ -889,13 +913,14 @@
      #DD5236 / #FBE3DA / #93301C) */
   --urgent:#9558D0;
   --urgent-soft:#ECDFF8;
-  --urgent-ink:#4A2580;
+  --urgent-ink:#562F96;   /* 10.25 : un rien moins rouge et plus clair (avant #4A2580) */
+  --late:#A9472A; --late-soft:#FBE7DE;   /* 10.25 : « En retard » en terre cuite */
   --relance:#C24F6E;
   --relance-soft:#F6E3E8;
   --wait:#6A9FB9;
   --wait-soft:#EEFBF4;
   --eggshell:#FAF3E3;
-  --lucky-bg:#FBFADF;   /* 10.18 : « Une petite en passant ? » en citron givré (avant : --eggshell) */
+  --lucky-bg:#FCFBE9;   /* 10.18 : « Une petite en passant ? » en citron givré (avant : --eggshell) */
   --lucky-lemon:#E6D63C;  /* 10.18 : accents du bandeau trèfle (surbrillance, liserés, textes) ;
                             --lucky-gold reste au bouton « Nouvelle liste » du premier lancement */
   --lucky-gold:#E3B53C;
@@ -927,12 +952,14 @@
     --accent-soft:#1C2B30;
     --plume-off:var(--ink-faint);
     --gloss:rgba(255,255,255,.045);
-    --gloss-shade:rgba(0,0,0,.18);
+    --memo-a:#1F2328; --memo-b:#1F2530; --memo-c:#252231;
+    --memo-line:rgba(160,170,210,.18);
     --logo-green:#A9D65A;
     --logo-green-strong:#C7E58A;
     --urgent:#B88AEB;
     --urgent-soft:#261D33;
     --urgent-ink:#DDC6FA;
+    --late:#F0A385; --late-soft:#3A2620;
     --relance:#E38DA4;
     --relance-soft:#372229;
     --wait:#94C4DA;
@@ -967,12 +994,14 @@
   --accent-soft:#1C2B30;
   --plume-off:var(--ink-faint);
   --gloss:rgba(255,255,255,.045);
-  --gloss-shade:rgba(0,0,0,.18);
+  --memo-a:#1F2328; --memo-b:#1F2530; --memo-c:#252231;
+  --memo-line:rgba(160,170,210,.18);
   --logo-green:#A9D65A;
   --logo-green-strong:#C7E58A;
   --urgent:#B88AEB;
   --urgent-soft:#261D33;
   --urgent-ink:#DDC6FA;
+  --late:#F0A385; --late-soft:#3A2620;
   --relance:#E38DA4;
   --relance-soft:#372229;
   --wait:#94C4DA;
@@ -1067,7 +1096,7 @@ header{
 .plume svg{ display:block; width:100%; height:100%; }
 /* 10.23 : « Hors ligne » sous la plume */
 .plume-tag{
-  position:absolute; right:6px; top:35px; pointer-events:none; white-space:nowrap;
+  position:absolute; right:12px; top:33px; pointer-events:none; white-space:nowrap;
   font-family:'Courier Prime', 'Courier New', monospace; font-size:0.6rem; font-weight:700;
   letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint);
 }
@@ -1185,7 +1214,7 @@ header{
 /* ---------- case urgente ---------- */
 .urgent-banner{
   margin-top:1.5rem;
-  background:var(--urgent-soft);
+  background:color-mix(in srgb, color-mix(in srgb, var(--urgent-soft) 50%, var(--accent-soft)) 70%, var(--surface));   /* 10.25 : fond pâli, tiré vers le bleu (--accent-soft) pour moins de rouge */
   border-radius:14px;
   padding:1rem 1.25rem;
   box-shadow:0 6px 18px -10px color-mix(in srgb, var(--urgent) 55%, transparent);
@@ -1193,14 +1222,14 @@ header{
   gap:0.9rem;
   align-items:flex-start;
 }
-.urgent-banner svg{flex:none; margin-top:-0.15rem; color:var(--urgent);} /* centre du picto = centre du titre (8.13) ; 10.19 : triangle, comme les boutons urgents */
+.urgent-banner svg{flex:none; margin-top:-0.15rem; color:color-mix(in srgb, var(--urgent-ink) 50%, var(--urgent-soft));}   /* 10.25 : pâli comme le titre */ /* centre du picto = centre du titre (8.13) ; 10.19 : triangle, comme les boutons urgents */
 .urgent-banner-title{
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.74rem;
   font-weight:700;
   letter-spacing:0.1em;
   text-transform:uppercase;
-  color:var(--urgent);
+  color:color-mix(in srgb, var(--urgent-ink) 50%, var(--urgent-soft));   /* 10.25 : titre pâli */
   margin-bottom:0.2rem;
 }
 .urgent-banner-body{flex:1; min-width:0;}
@@ -1294,7 +1323,8 @@ header{
   font-family:inherit;
   font-size:0.95rem;
   line-height:1.3;
-  color:var(--ink);
+  color:var(--urgent-ink);   /* 10.25 : les tâches urgentes dans l'encre de l'urgence (avant : noir) */
+  font-weight:500;
   padding:0.3rem 0.4rem 0.3rem 1.65rem; /* place de la puce ; texte à la même place qu'avant (8.30) */
   border-radius:8px;
   cursor:default;
@@ -1311,7 +1341,7 @@ header{
   width:7px;
   height:7px;
   border-radius:50%;
-  background:color-mix(in srgb, var(--urgent) 80%, transparent); /* un rien moins vive (8.30) */
+  background:var(--urgent-ink); /* 10.25 : même encre que le texte (avant : améthyste à 80 %) */
   font-size:0;
 }
 .urgent-jump-cat{
@@ -1321,7 +1351,7 @@ header{
   font-weight:600;
   letter-spacing:0.04em;
   text-transform:uppercase;
-  color:var(--ink-faint); /* le nom de la liste, en gris (8.14) */
+  color:var(--cat-color, var(--ink-faint)); /* le nom de la liste, en gris (8.14) ; 10.25 : dans la couleur de sa liste */
   margin:0 0.5rem;
 }
 /* détail de la tâche sous son titre, aligné sur le titre (8.28, plus clair en 8.29) ;
@@ -1357,7 +1387,7 @@ header{
   gap:0.9rem;               /* même écart icône/titre que la case urgente */
   margin:0 0 0.6rem 0.35rem; /* 0.9 + 0.35 = 1.25rem : trèfle à l'aplomb du « ! » */
 }
-.lucky-clover{flex:none; width:18px; height:18px; color:color-mix(in srgb, var(--wait) 70%, var(--surface)); overflow:visible; transform-origin:50% 48%; transition:transform .45s cubic-bezier(.34,1.4,.64,1);}
+.lucky-clover{flex:none; width:18px; height:18px; color:var(--phrase);   /* 10.25 : bleu de la phrase (avant : --wait pâli) */ overflow:visible; transform-origin:50% 48%; transition:transform .45s cubic-bezier(.34,1.4,.64,1);}
 /* 8.25 : case fermée chaque matin — un gros bouton ; le trèfle sert de
    manivelle, la case se déploie et les deux tâches tournent comme une
    machine à sous avant de s'arrêter sur celles du jour. */
@@ -1406,7 +1436,7 @@ header{
   font-weight:600;
   letter-spacing:0.07em;
   text-transform:uppercase;
-  color:color-mix(in srgb, var(--lucky-lemon) 55%, var(--ink));
+  color:var(--phrase);   /* 10.25 : bleu de la phrase, comme le trèfle (avant : olive citron + encre) */
   margin-right:auto; /* pousse ⟳ à droite, même enveloppé (8.33) */
 }
 .lucky-reroll{
@@ -1535,15 +1565,15 @@ header{
   --margin-ink:color-mix(in srgb, var(--cat-color, var(--accent)) 70%, var(--paper));
   border-left:0;
   padding-left:calc(1.25rem + 3px);
-  box-shadow:inset 0 0 0 0.5px color-mix(in srgb, var(--cat-color, var(--accent)) 60%, transparent),
-    inset 0 1px 0 var(--gloss), var(--paper-shadow);   /* 10.23 : liseré de lumière en haut */
+  box-shadow:inset 0 0 0 0.5px var(--memo-line),
+    inset 0 1px 0 var(--gloss), var(--paper-shadow);   /* 10.23 : liseré de lumière en haut ; 10.25 : liseré neutre bleuté */
   background:
-    linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 8%), transparent calc(var(--gloss-p, 18%) + 22%)),   /* 10.23 : papier glacé — bande de lumière en biais */
-    linear-gradient(180deg, transparent 30%, var(--gloss-shade) 100%),   /* … et bas légèrement ombré pour qu'elle se détache */
+    linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 9%), transparent calc(var(--gloss-p, 18%) + 26%)),
+    linear-gradient(var(--gloss-a, 115deg), transparent calc(var(--gloss-p, 18%) + 34%), color-mix(in srgb, var(--gloss) 60%, transparent) calc(var(--gloss-p, 18%) + 38%), transparent calc(var(--gloss-p, 18%) + 44%)),   /* 10.25 : second reflet, fin */   /* 10.23 : papier glacé — bande de lumière en biais */
     linear-gradient(90deg, transparent var(--margin-x), var(--margin-ink) var(--margin-x),
       var(--margin-ink) calc(var(--margin-x) + 1.5px), transparent calc(var(--margin-x) + 1.5px))
       0 var(--rule-top, 0) / 100% 100% no-repeat,
-    var(--paper);
+    linear-gradient(160deg, var(--memo-a) 10%, var(--memo-b) 60%, var(--memo-c) 100%);   /* 10.25 : nacre légère */
 }
 .category.courses > ul.items{
   flex:0 1 auto; min-height:0;
@@ -2253,6 +2283,7 @@ ul.items{
   background:var(--urgent-soft);
   color:var(--urgent-ink);
 }
+.due-badge.status-overdue{ background:var(--late-soft); color:var(--late); }   /* 10.25 : le retard en terre cuite */
 /* deux familles seulement (8.14) : rouge pour ce qui presse (ci-dessus, et
    la relance), simple contour gris pour le reste */
 .due-badge.status-tomorrow,
@@ -3122,7 +3153,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.24</span>
+    <span class="version-tag">v10.25</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6574,6 +6605,7 @@ function renderUrgentBanner(){
       ? `<span class="due-badge status-relance">Relance ${(()=>{ const [y,m,d] = splitDue(entry.due).date.split("-"); return parseInt(d,10) + "/" + parseInt(m,10); })()}</span>`
       : entry.status ? `<span class="due-badge status-${entry.isRdv ? "rdv" : entry.status}">${formatDueLabel(entry.due, entry.isRdv)}</span>` : "";
     if(entry.relance) li.classList.add("is-relance");
+    { const c = DATA.find(x => x.id === entry.catId); if(c) li.style.setProperty("--cat-color", displayCatColor(c.color)); }   // 10.25
     li.innerHTML = `
       <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
       <button type="button" class="urgent-check" aria-label="Marquer cette tâche comme faite"></button>
@@ -6743,6 +6775,26 @@ let luckySpinNext = null; // "open" ou "reroll" : anime le prochain rendu
 function luckyOpenedToday(){
   try{ return Store.get(LUCKY_OPEN_KEY) === todayISO(); }catch(e){ return true; }
 }
+// 10.25 : trèfle du jour fait → on peut aussi replier la case (grisée) ; un
+// clic dessus fait tourner le trèfle et propose une nouvelle tournée
+const LUCKY_DONE_CLOSED_KEY = "fauconnerie-v2-luckydoneclosed";
+function luckyDoneClosedToday(){
+  try{ return Store.get(LUCKY_DONE_CLOSED_KEY) === todayISO(); }catch(e){ return false; }
+}
+function newLuckyRound(){
+  haptic.tap();
+  const saved = loadJSONKey(LUCKY_KEY, null);
+  const today = todayISO();
+  const prev = (saved && saved.date === today && Array.isArray(saved.keys)) ? saved.keys : [];
+  const reroll = ((saved && saved.date === today && saved.reroll) || 0) + 1;
+  const keys = drawLuckyKeys(reroll, prev);   // les tâches cochées sont déjà exclues
+  if(!keys.length){ celebrate("Plus rien à tirer au trèfle pour aujourd'hui. Le faisan est repu.", true); return; }
+  saveJSONKey(LUCKY_KEY, { date: today, keys, reroll, chosen: null });
+  try{ Store.remove(LUCKY_DONE_CLOSED_KEY); Store.set(LUCKY_OPEN_KEY, today); }catch(e){}
+  luckySpinNext = "open";
+  renderLuckyLine();
+  noteUndoPoint();
+}
 function openLucky(){
   haptic.tap();
   try{ Store.set(LUCKY_OPEN_KEY, todayISO()); }catch(e){}
@@ -6755,8 +6807,9 @@ function openLucky(){
 function closeLucky(){
   haptic.tap();
   const el = document.getElementById("luckyLine");
+  const wasDone = !!(el && el.classList.contains("done"));
   const finish = ()=>{
-    try{ Store.remove(LUCKY_OPEN_KEY); }catch(e){}
+    try{ if(wasDone) Store.set(LUCKY_DONE_CLOSED_KEY, todayISO()); else Store.remove(LUCKY_OPEN_KEY); }catch(e){}   // 10.25
     el.classList.remove("closing");
     el.style.overflow = ""; el.style.height = "";
     renderLuckyLine();
@@ -6910,11 +6963,11 @@ function renderLuckyLine(){
   el.hidden = false;
   const done = picks.some(p => p.done);
   el.classList.toggle("done", done);
-  const closed = !done && !luckyOpenedToday();
+  const closed = done ? luckyDoneClosedToday() : !luckyOpenedToday();   // 10.25 : fait, la case se replie aussi
   el.classList.toggle("closed", closed);
   if(closed){
     el.setAttribute("role", "button"); el.tabIndex = 0;
-    el.setAttribute("aria-label", LUCKY_LEAD + " — ouvrir");
+    el.setAttribute("aria-label", done ? "Trèfle du jour fait — en tirer un autre" : LUCKY_LEAD + " — ouvrir");
   } else {
     el.removeAttribute("role"); el.removeAttribute("tabindex"); el.removeAttribute("aria-label");
   }
@@ -6938,7 +6991,7 @@ function renderLuckyLine(){
   const chosenKey = getLuckyChosen();
   const winner = donePick ? donePick.key : (picks.some(p => p.key === chosenKey) ? chosenKey : null);
   el.innerHTML =
-    `<div class="lucky-head">${(closed || done) ? clover : `<button type="button" class="lucky-clover-btn" aria-label="Refermer la case" title="Refermer">${clover}</button>`}<span class="lucky-lead">${done ? "Trèfle du jour fait !" : LUCKY_LEAD}</span>` +
+    `<div class="lucky-head">${closed ? clover : `<button type="button" class="lucky-clover-btn" aria-label="Refermer la case" title="Refermer">${clover}</button>`}<span class="lucky-lead">${done ? "Trèfle du jour fait !" : LUCKY_LEAD}</span>` +
     (closed ? `<span class="lucky-crank" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>` : "") +
     ((closed || done) ? "" : `<button type="button" class="lucky-reroll" aria-label="Deux autres propositions"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg></button>`) +
     `</div>` +
@@ -6958,8 +7011,9 @@ function renderLuckyLine(){
   if(closed){
     el.querySelector(".lucky-opts").remove();
     el.classList.remove("can-reset");
-    el.onclick = ()=> openLucky();
-    el.onkeydown = (e)=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openLucky(); } };
+    const go = done ? newLuckyRound : openLucky;   // 10.25 : faite, elle relance une tournée
+    el.onclick = ()=> go();
+    el.onkeydown = (e)=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); go(); } };
     haptic.attach(el);
     return;
   }
