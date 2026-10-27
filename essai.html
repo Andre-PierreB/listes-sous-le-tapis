@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.23 -->
+<!-- Sous le tapis — version AUTONOME 10.24 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -840,6 +840,15 @@
     a son reflet un peu ailleurs ; en plus, 5 réglages d'angle et de place
     (--gloss-a, --gloss-p) pris dans l'ordre d'affichage des mémos : deux
     mémos voisins n'ont jamais le même reflet.
+  - 10.24 : glisser-déposer. Défilement automatique de la page : zone
+    élargie (max(120 px, 18 % de la fenêtre), avant 50 px), il continue
+    tant que le pointeur reste dans la zone (boucle requestAnimationFrame,
+    avant : seulement quand la souris bougeait), vitesse progressive
+    (2 → 34 px par image, au carré de la profondeur ; au-delà du bord :
+    vitesse max). Après chaque pas, l'emplacement est recalculé.
+    Cartes de listes : plus de va-et-vient de l'emplacement — juste après
+    un échange avec une carte, on ne revient pas vers elle tant que le
+    fantôme n'a pas bougé de 48 px depuis l'échange.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -3113,7 +3122,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.23</span>
+    <span class="version-tag">v10.24</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6314,7 +6323,7 @@ function handleListDragMove(x, y){
   d.ghost.style.transform = `translate(${dx}px, ${dy}px) rotate(-1deg) scale(1.02)`;
   const gx = d.ghostLeft + dx + d.w / 2, gy = d.ghostTop + dy + d.h / 2;
   // petit défilement automatique près des bords de la fenêtre
-  if(y < 50) window.scrollBy(0, -14); else if(y > window.innerHeight - 50) window.scrollBy(0, 14);
+  dragPageScroll(x, y);   // 10.24
   const parent = d.el.parentElement;
   const cards = Array.from(parent.children).filter(n => n.dataset && n.dataset.dragMode === "lists");
   let best = null, bestDist = Infinity;
@@ -6326,7 +6335,12 @@ function handleListDragMove(x, y){
   if(!best || best === d.el) return;
   const r = layoutRect(best);
   if(bestDist > Math.max(r.width, r.height) * 0.7) return; // trop loin : pas encore aimanté
+  // 10.24 : pas de retour immédiat vers la carte qu'on vient d'échanger
+  // (c'était le va-et-vient qui faisait vibrer l'emplacement)
+  const ls = d.lastSwap;
+  if(ls && ls.card === best && Math.hypot(gx - ls.gx, gy - ls.gy) < 48) return;
   const idxBest = cards.indexOf(best), idxEl = cards.indexOf(d.el);
+  d.lastSwap = { card: best, gx, gy };
   moveDragSlot([parent], ()=>{
     parent.insertBefore(d.el, idxEl < idxBest ? best.nextSibling : best);
   });
@@ -6335,7 +6349,7 @@ function handleListDragMove(x, y){
 function handleRowDragMove(x, y){
   const d = dragState;
   d.ghost.style.transform = `translate(${x - d.startX}px, ${y - d.startY}px) rotate(-0.6deg)`;
-  if(y < 50) window.scrollBy(0, -14); else if(y > window.innerHeight - 50) window.scrollBy(0, 14);
+  dragPageScroll(x, y);   // 10.24
   dragInnerScroll(x, y);
   const target = document.elementFromPoint(x, y);
   if(!target) return;
@@ -6360,6 +6374,36 @@ function handleRowDragMove(x, y){
   const ref = before || (rows.length ? rows[rows.length - 1].nextSibling : null);
   if(d.el.parentElement === ul && (d.el === ref || d.el.nextSibling === ref)) return;
   moveDragSlot([d.el.parentElement, ul], ()=>{ ul.insertBefore(d.el, ref); });
+}
+
+// 10.24 : défilement de la page pendant un glisser : zone large, vitesse
+// progressive, et il continue tant que le pointeur reste dans la zone
+let dragPageRaf = 0;
+function dragPageSpeed(y){
+  const H = window.innerHeight, zone = Math.max(120, H * 0.18), MIN = 2, MAX = 34;
+  const f = v => Math.round(MIN + (MAX - MIN) * Math.min(1, v) * Math.min(1, v));
+  if(y < zone) return -f((zone - y) / zone);
+  if(y > H - zone) return f((y - (H - zone)) / zone);
+  return 0;
+}
+function dragPageScroll(x, y){
+  const d = dragState;
+  if(!d) return;
+  d.pageX = x; d.pageY = y;
+  if(dragPageSpeed(y) && !dragPageRaf) dragPageRaf = requestAnimationFrame(dragPageStep);
+}
+function dragPageStep(){
+  dragPageRaf = 0;
+  const d = dragState;
+  if(!d || d.dropping) return;
+  const v = dragPageSpeed(d.pageY);
+  if(!v) return;
+  const before = window.scrollY;
+  window.scrollBy(0, v);
+  if(window.scrollY === before) return;   // en haut ou en bas de la page
+  // l'emplacement suit le contenu qui a défilé (et relance la boucle)
+  if(d.ghost){ if(d.dragMode === "lists") handleListDragMove(d.pageX, d.pageY); else handleRowDragMove(d.pageX, d.pageY); }
+  else dragPageRaf = requestAnimationFrame(dragPageStep);
 }
 
 // 10.15 : glisser un article près du haut ou du bas de la zone qui défile
