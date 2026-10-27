@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.21 -->
+<!-- Sous le tapis — version AUTONOME 10.22 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -816,6 +816,11 @@
     estompe le reste de la carte (body.has-editing … > *:not(...)) ne
     l'exceptait pas — grisé et pointer-events:none depuis la 10.15.
     Ajouté aux exceptions (:not(.cat-convert)).
+  - 10.22 : coller plusieurs lignes dans une liste normale (champ express à
+    côté du titre, ou champ « Nouvelle tâche » du +) crée une tâche par
+    ligne, dans l'ordre collé ; puces (-, *, •, [ ], 1.) retirées, lignes
+    vides ignorées, 100 lignes max. Une seule ligne : collage normal.
+    Sert à importer une to-do préparée ailleurs (par ex. par Claude).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -3072,7 +3077,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.21</span>
+    <span class="version-tag">v10.22</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4533,6 +4538,23 @@ function addQuickTask(cat, title){
   if(!t) return false;
   insertItem(cat, { t });
   return true;
+}
+// 10.22 : collage de plusieurs lignes dans une liste normale : une tâche par
+// ligne, dans l'ordre du texte collé (lu de haut en bas dans la carte).
+function splitPastedTasks(txt){
+  return String(txt || "").split(/\r?\n/)
+    .map(l => l.replace(/^\s*(?:[-*•–]\s+|\[[ xX]?\]\s*|\d+[.)]\s+)/, "").trim())
+    .filter(Boolean)
+    .slice(0, 100);
+}
+function addPastedTasks(cat, lines){
+  if(!lines.length) return 0;
+  // insertItem met chaque tâche en tête : on insère à rebours pour garder
+  // l'ordre collé (liste « récentes en bas » : affichage inversé, donc à l'endroit)
+  const seq = isCatReversed(cat.id) ? lines : lines.slice().reverse();
+  let n = 0;
+  seq.forEach(t => { try{ insertItem(cat, { t }); n++; }catch(err){ console.error("[collage] échec", err); } });
+  return n;
 }
 // Glisser une tâche dans une autre liste : même principe que le changement
 // de catégorie du formulaire — la tâche est recopiée en entier (avec sa
@@ -7758,6 +7780,17 @@ function render(){
     const quickInp = head.querySelector(".cat-quick");
     if(quickInp){
       quickInp.addEventListener("click", e=> e.stopPropagation());
+      quickInp.addEventListener("paste", e=>{   // 10.22
+        const txt = e.clipboardData ? e.clipboardData.getData("text") : "";
+        if(!txt || !/\n/.test(txt.trim())) return;
+        e.preventDefault();
+        const lines = splitPastedTasks(quickInp.value.slice(0, quickInp.selectionStart) + txt + quickInp.value.slice(quickInp.selectionEnd));
+        if(isFolded(cat.id)) setFolded(cat.id, false);
+        if(addPastedTasks(cat, lines)) actionToast("add");
+        quickInp.value = "";
+        refocusQuickCat = cat.id;
+        renderAll();
+      });
       quickInp.addEventListener("keydown", e=>{
         if(e.key === "Enter"){
           e.preventDefault();
@@ -7903,6 +7936,15 @@ function render(){
         renderAll();
       };
       li.querySelector(".add-save").addEventListener("click", save);
+      titleInput.addEventListener("paste", e=>{   // 10.22 : plusieurs lignes = plusieurs tâches
+        const txt = e.clipboardData ? e.clipboardData.getData("text") : "";
+        if(!txt || !/\n/.test(txt.trim())) return;
+        e.preventDefault();
+        const lines = splitPastedTasks(titleInput.value.slice(0, titleInput.selectionStart) + txt + titleInput.value.slice(titleInput.selectionEnd));
+        if(addPastedTasks(cat, lines)) actionToast("add");
+        addingCat = null;
+        renderAll();
+      });
       li.querySelector(".add-cancel").addEventListener("click", ()=>{ addingCat = null; renderAll(); });
       [titleInput, noteInput, dueInput, dueTimeInput].forEach(inp=>{
         inp.addEventListener("keydown", e=>{
