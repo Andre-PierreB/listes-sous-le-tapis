@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.22 -->
+<!-- Sous le tapis — version AUTONOME 10.23 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -821,6 +821,25 @@
     ligne, dans l'ordre collé ; puces (-, *, •, [ ], 1.) retirées, lignes
     vides ignorées, 100 lignes max. Une seule ligne : collage normal.
     Sert à importer une to-do préparée ailleurs (par ex. par Claude).
+  - 10.23 : relance arrivée (tâche « en cours » dont la date est passée,
+    revenue dans la case urgente) en améthyste comme les autres urgences :
+    la 10.19 avait recoloré l'urgent mais oublié ces 4 règles, restées en
+    framboise (--relance). Le badge « Relance JJ/MM » garde son libellé.
+    --relance ne sert plus qu'au rappel de sauvegarde. Plume déconnectée
+    en gris (--plume-off = --ink-faint) au lieu de tomate.
+    Petite mention sous la plume (#plumeTag) : « Hors ligne » quand on n'est
+    pas connecté ou que le réseau manque (navigator.onLine, événements
+    online/offline), « Souci de synchro » en cas d'erreur ; rien pendant la
+    connexion ni pendant un envoi (« pending » passe à chaque modif). Sans
+    réseau, la plume repasse en gris même connectée.
+    Listes de courses rebaptisées « Mémo / shopping » à l'écran
+    (interrupteur de création, « Convertir en… », bulle) — le code garde
+    type:"courses". Effet papier glacé sur ces cartes : bande de lumière en
+    biais (--gloss), bas légèrement ombré (--gloss-shade), fin liseré de
+    lumière en haut. En % de la carte : chaque mémo, de hauteur différente,
+    a son reflet un peu ailleurs ; en plus, 5 réglages d'angle et de place
+    (--gloss-a, --gloss-p) pris dans l'ordre d'affichage des mémos : deux
+    mémos voisins n'ont jamais le même reflet.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -850,7 +869,9 @@
   --accent-strong:#6B728E;
   --btn-ink:#4A5E6E;  /* boutons du bas : ardoise, famille de l'icône (8.41) */
   --accent-soft:#E4ECF3;
-  --plume-off:#E5675A;
+  --plume-off:var(--ink-faint);   /* 10.23 : gris (avant : tomate #E5675A) */
+  --gloss:rgba(255,255,255,.8);   /* 10.23 : reflet « papier glacé » des mémos */
+  --gloss-shade:rgba(40,70,100,.065);
   /* 10.19 : vert du logo (le faisan) pour le titre et la plume connectée ;
      --logo-green-strong au survol du titre */
   --logo-green:#7DB536;   /* un cran sous le vert du logo #8DC63F, trop pâle pour un petit titre */
@@ -895,7 +916,9 @@
     --accent-strong:#A8AFCB;
     --btn-ink:#AFC0CC;
     --accent-soft:#1C2B30;
-    --plume-off:#F2847A;
+    --plume-off:var(--ink-faint);
+    --gloss:rgba(255,255,255,.045);
+    --gloss-shade:rgba(0,0,0,.18);
     --logo-green:#A9D65A;
     --logo-green-strong:#C7E58A;
     --urgent:#B88AEB;
@@ -933,7 +956,9 @@
   --accent-strong:#A8AFCB;
   --btn-ink:#AFC0CC;
   --accent-soft:#1C2B30;
-  --plume-off:#F2847A;
+  --plume-off:var(--ink-faint);
+  --gloss:rgba(255,255,255,.045);
+  --gloss-shade:rgba(0,0,0,.18);
   --logo-green:#A9D65A;
   --logo-green-strong:#C7E58A;
   --urgent:#B88AEB;
@@ -1031,6 +1056,13 @@ header{
   transition:color .25s ease, opacity .25s ease, transform .18s ease, filter .25s ease;
 }
 .plume svg{ display:block; width:100%; height:100%; }
+/* 10.23 : « Hors ligne » sous la plume */
+.plume-tag{
+  position:absolute; right:6px; top:35px; pointer-events:none; white-space:nowrap;
+  font-family:'Courier Prime', 'Courier New', monospace; font-size:0.6rem; font-weight:700;
+  letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint);
+}
+.plume-tag[hidden]{ display:none; }
 /* 10.14 : zone de toucher agrandie (invisible), sans déborder sur le titre */
 .plume::before{ content:""; position:absolute; inset:-11px -11px -11px -10px; }
 .plume.on{ color:var(--logo-green); }
@@ -1295,10 +1327,11 @@ header{
 .urgent-list .note-toggle{ color:color-mix(in srgb, var(--urgent-ink) 45%, transparent); }
 .urgent-list .note-toggle:hover{ color:var(--urgent-ink); }
 .urgent-list li.note-open .note-toggle{ color:var(--urgent-ink); background:var(--urgent-soft); }
-/* relance arrivée (tâche en cours dont la date est là) */
-.urgent-list li.is-relance .urgent-jump{ color:var(--relance); }
-.urgent-list li.is-relance .urgent-bullet{ background:var(--relance); }
-.item.item-relance .item-title{ color:var(--relance); font-weight:600; }
+/* relance arrivée (tâche en cours dont la date est là) — 10.23 : dans la
+   case urgente, plus de couleur à part (avant : framboise --relance) : elle
+   prend le style commun des urgences ; seul son badge « Relance » la signale.
+   Dans « En cours », son titre est en améthyste, comme une tâche urgente. */
+.item.item-relance .item-title{ color:var(--urgent-ink); font-weight:600; }
 
 /* ---------- trèfle : deux petites tâches piochées chaque jour ---------- */
 .lucky-line{
@@ -1493,8 +1526,11 @@ header{
   --margin-ink:color-mix(in srgb, var(--cat-color, var(--accent)) 70%, var(--paper));
   border-left:0;
   padding-left:calc(1.25rem + 3px);
-  box-shadow:inset 0 0 0 0.5px color-mix(in srgb, var(--cat-color, var(--accent)) 60%, transparent), var(--paper-shadow);
+  box-shadow:inset 0 0 0 0.5px color-mix(in srgb, var(--cat-color, var(--accent)) 60%, transparent),
+    inset 0 1px 0 var(--gloss), var(--paper-shadow);   /* 10.23 : liseré de lumière en haut */
   background:
+    linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 8%), transparent calc(var(--gloss-p, 18%) + 22%)),   /* 10.23 : papier glacé — bande de lumière en biais */
+    linear-gradient(180deg, transparent 30%, var(--gloss-shade) 100%),   /* … et bas légèrement ombré pour qu'elle se détache */
     linear-gradient(90deg, transparent var(--margin-x), var(--margin-ink) var(--margin-x),
       var(--margin-ink) calc(var(--margin-x) + 1.5px), transparent calc(var(--margin-x) + 1.5px))
       0 var(--rule-top, 0) / 100% 100% no-repeat,
@@ -2217,7 +2253,7 @@ ul.items{
   color:var(--ink-soft);
   border:1px solid var(--line);
 }
-.due-badge.status-relance{ background:var(--relance-soft); color:var(--relance); }
+.due-badge.status-relance{ background:var(--urgent-soft); color:var(--urgent-ink); }   /* 10.23 : comme « En retard » */
 .empty-note{
   font-size:0.86rem;
   color:var(--ink-faint);
@@ -3043,7 +3079,7 @@ body.arrive footer{ animation-delay:.52s; }
 <div class="wrap">
   <header>
     <span class="eyebrow">Sous le t<span class="ap-nod">ap</span>is</span>
-    <button type="button" class="plume" id="plume" hidden><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(4 24 24)"><path d="M23.7 35.8 C20.2 33.6 17.9 30.3 17.4 27.2 L21.9 29.3 L17.3 25.0 C17.3 21.2 18.2 17.6 19.6 14.6 L23.0 17.6 L20.4 13.0 C21.9 8.9 23.7 5.2 26 1.8 C28.2 5.6 30.2 9.6 30.9 13.6 L27.6 16.9 L31.1 15.9 C31.2 20.6 30.6 24.6 29.3 27.6 L26.0 30.6 L28.7 28.9 C27.6 31.6 26.3 33.8 24.7 35.8"/><path d="M24.15 44.6 C24 36.2 24.6 19.6 26 1.8"/><path stroke-width=".95" d="M24.4 32.6 L21.2 31.4 M25.2 12.6 L23.4 10.6 M24.8 22.4 L28.6 20.6"/><path stroke-width="1.05" d="M23.9 36.2 c-1.9 .3 -3.4 1.4 -4.2 3.1 M24.5 36.2 c1.8 .4 3.1 1.5 3.8 3.1 M24.1 38.3 c-1.2 .8 -1.9 1.9 -2.1 3.2"/></g></svg></button>
+    <button type="button" class="plume" id="plume" hidden><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(4 24 24)"><path d="M23.7 35.8 C20.2 33.6 17.9 30.3 17.4 27.2 L21.9 29.3 L17.3 25.0 C17.3 21.2 18.2 17.6 19.6 14.6 L23.0 17.6 L20.4 13.0 C21.9 8.9 23.7 5.2 26 1.8 C28.2 5.6 30.2 9.6 30.9 13.6 L27.6 16.9 L31.1 15.9 C31.2 20.6 30.6 24.6 29.3 27.6 L26.0 30.6 L28.7 28.9 C27.6 31.6 26.3 33.8 24.7 35.8"/><path d="M24.15 44.6 C24 36.2 24.6 19.6 26 1.8"/><path stroke-width=".95" d="M24.4 32.6 L21.2 31.4 M25.2 12.6 L23.4 10.6 M24.8 22.4 L28.6 20.6"/><path stroke-width="1.05" d="M23.9 36.2 c-1.9 .3 -3.4 1.4 -4.2 3.1 M24.5 36.2 c1.8 .4 3.1 1.5 3.8 3.1 M24.1 38.3 c-1.2 .8 -1.9 1.9 -2.1 3.2"/></g></svg></button><span class="plume-tag" id="plumeTag" hidden></span>
   </header>
 
   <div class="progress-card">
@@ -3077,7 +3113,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.22</span>
+    <span class="version-tag">v10.23</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5243,7 +5279,7 @@ function renderAddCategoryRow(){
     <div class="new-list-card">
       <div class="edit-form">
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
-        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de courses</label>` : ""}
+        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Mémo / shopping</label>` : ""}
         <input type="text" class="nl-task" placeholder="Une première tâche ?" autocomplete="off">
         <textarea class="nl-items" rows="1" placeholder="Premiers articles ? (un par ligne)" autocomplete="off" hidden></textarea>
         <input type="text" class="nl-note" placeholder="Détail (optionnel)" autocomplete="off">
@@ -7612,7 +7648,7 @@ function buildCatConvertRow(cat, head){
   const courses = isCoursesList(cat.id);
   const row = document.createElement("div");
   row.className = "cat-convert";
-  row.innerHTML = `<button type="button" class="cat-share-link">${courses ? "Convertir en liste normale" : "Convertir en liste de courses"}</button>`;
+  row.innerHTML = `<button type="button" class="cat-share-link">${courses ? "Convertir en liste normale" : "Convertir en mémo / shopping"}</button>`;
   row.addEventListener("mousedown", e => { if(e.target.closest("button")) e.preventDefault(); }); // le curseur reste dans le titre
   row.addEventListener("click", e => e.stopPropagation());
   row.querySelector("button").addEventListener("click", ()=>{
@@ -7698,6 +7734,7 @@ function render(){
   categoriesEl.querySelectorAll(".category.courses > ul.items").forEach(u => { coursesScroll[u.parentElement.id] = u.scrollTop; });
   categoriesEl.innerHTML = "";
   const catDisplayOrder = getCategoryOrder().filter(catIdx => !isCategoryDeleted(DATA[catIdx].id));
+  let memoRank = 0;   // 10.23 : rang des mémos, pour varier leur reflet
   catDisplayOrder.forEach(catIdx=>{
     const cat = DATA[catIdx];
     const items = getEffectiveItems(cat);
@@ -7706,6 +7743,13 @@ function render(){
     card.className = "category" + (courses ? " courses" : "");
     card.id = "cat-" + cat.id;
     card.style.setProperty("--cat-color", displayCatColor(cat.color));
+    if(courses){   // 10.23 : reflet propre à chaque mémo : 5 réglages bien distincts,
+      // pris dans l'ordre d'affichage des mémos → deux voisins n'ont jamais le même
+      const GLOSS = [[108, 14], [124, 28], [114, 21], [130, 11], [104, 32]];
+      const g = GLOSS[memoRank++ % GLOSS.length];
+      card.style.setProperty("--gloss-a", g[0] + "deg");
+      card.style.setProperty("--gloss-p", g[1] + "%");
+    }
 
     let visibleCount = 0, doneInCat = 0;
     if(courses) coursesRows(cat).forEach(r => { visibleCount++; if(state[r.key]) doneInCat++; });
@@ -8560,12 +8604,12 @@ const ACTION_MESSAGES = {
   moveCat: ["Déménagée dans une autre liste, cartons compris.", "Changement de case, acté par le notaire.", "Mutation acceptée, sans passer par l'échevin."],
   newCat: ["Nouvelle case ouverte, comme un échevinat de plus.", "Catégorie créée. Le conseil communal a voté à main levée."],
   // 10.15 : listes de courses
-  newCourses: ["Panier prêt. Direction le marché du dimanche.", "Liste de courses ouverte, comme l'épicerie du coin."],
+  newCourses: ["Panier prêt. Direction le marché du dimanche.", "Mémo ouvert, comme l'épicerie du coin."],
   coursesErase: ["Retiré du panier.", "Reposé sur l'étal.", "Le crémier s'en remettra."],
   coursesQty: ["Quantité mise à jour.", "Le crémier a corrigé l'ardoise."],
   coursesAlready: ["Déjà dans le panier.", "Celui-là y est déjà, pas besoin de le prendre deux fois."],
   coursesClear: ["Rayés débarrassés. Le cabas respire.", "Panier vidé des articles pris. Au suivant !"],
-  coursesOn: ["Liste de courses. Le faisan a sorti son cabas.", "Changée en liste de courses, panier compris."],
+  coursesOn: ["Mémo / shopping. Le faisan a sorti son cabas.", "Changée en mémo, panier compris."],
   coursesOff: ["Redevenue une liste normale.", "Le cabas est rangé : liste normale."],
 };
 function actionToast(kind){
@@ -9998,16 +10042,23 @@ const Sync = (()=>{
     pending: "Connecté — des changements attendent le réseau",
     error: "La synchro a un souci — clic pour voir",
   };
+  const tag = document.getElementById("plumeTag");
   function paint(){
     const st = Sync.status.state || "off";
+    const offline = navigator.onLine === false;   // 10.23
     plume.dataset.state = st;
-    plume.classList.toggle("on", st === "ok" || st === "pending");
+    plume.classList.toggle("on", !offline && (st === "ok" || st === "pending"));
+    if(tag){
+      const txt = (st === "off" || offline) ? "Hors ligne" : st === "error" ? "Souci de synchro" : "";
+      tag.textContent = txt; tag.hidden = !txt;
+    }
     plume.classList.toggle("waiting", st === "pending" || st === "connecting");
     const who = Sync.status.email ? " (" + Sync.status.email + ")" : "";
     plume.setAttribute("aria-label", LABEL[st] || LABEL.off);
     plume.title = (LABEL[st] || LABEL.off) + (st === "ok" || st === "pending" ? who : "");
   }
   Sync.onStatus = ()=>{ paint(); if(shareOpen) renderShare(); renderBackupNudge(); };   // 10.2 : le panneau Partage suit la connexion
+  window.addEventListener("online", paint); window.addEventListener("offline", paint);   // 10.23
   paint();
 
   const ERR = {
