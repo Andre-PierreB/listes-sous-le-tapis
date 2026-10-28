@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.28 -->
+<!-- Sous le tapis — version AUTONOME 10.29 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -884,6 +884,11 @@
     « [en cours] », quantité pour les courses), pour les coller ailleurs
     (par ex. chez Claude). Le lien affiche « Copié (N) » un instant.
   - 10.28 : le lien s'appelle « Copier (toutes les tâches de la liste) ».
+  - 10.29 : case urgente, cohérence visuelle : le triangle allumé apparaît
+    aussi sur les tâches arrivées là à cause de leur date (relance tombée,
+    échéance dépassée). Pour elles il est inerte (.urgent-btn.auto, pas de
+    clic) : la tâche reste urgente tant que la date est passée. Seules les
+    tâches marquées urgentes à la main gardent le triangle cliquable.
     Trèfle du jour fait : le trèfle redevient un bouton, la case se replie
     (grisée, « Trèfle du jour fait ! », clé luckydoneclosed du jour) ; un
     clic dessus fait tourner le trèfle et lance une nouvelle tournée (deux
@@ -1329,6 +1334,7 @@ header{
 .urgent-actions .waiting-btn:hover{ color:var(--urgent-ink); }
 .urgent-actions .urgent-btn.active{ opacity:0.7; }
 .urgent-actions .urgent-btn.active:hover{ opacity:1; }
+.urgent-actions .urgent-btn.auto, .urgent-actions .urgent-btn.auto:hover{ cursor:default; opacity:0.7; }   /* 10.29 : triangle inerte */
 .urgent-jump{
   appearance:none;
   border:none;
@@ -3179,7 +3185,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.28</span>
+    <span class="version-tag">v10.29</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6652,7 +6658,8 @@ function renderUrgentBanner(){
         ${entry.relance
           ? `<button type="button" class="waiting-btn postpone-btn" aria-label="Reporter la relance" data-tip="Reporter la relance"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 2.5h6"/></svg></button><button type="button" class="waiting-btn back-btn" aria-label="Sortir de « En cours »" data-tip="Sortir de « En cours »">${hookArrowSvg(15, true)}</button>`
           : `<button type="button" class="waiting-btn" aria-label="Classé, suivi en cours" data-tip="Classé, suivi en cours">${hookArrowSvg(15)}</button>`}
-        ${entry.manual ? `<button type="button" class="urgent-btn active" aria-label="Ne plus marquer urgent" data-tip="Ne plus marquer urgent">${triangleSvg(15)}</button>` : ""}
+        ${entry.manual ? `<button type="button" class="urgent-btn active" aria-label="Ne plus marquer urgent" data-tip="Ne plus marquer urgent">${triangleSvg(15)}</button>`
+          : `<span class="urgent-btn active auto" role="img" aria-label="Urgent à cause de la date" data-tip="Urgent à cause de la date">${triangleSvg(15)}</span>`}
       </span>
     `;
     if(entry.note) markNoteHolder(li, entry.key);
