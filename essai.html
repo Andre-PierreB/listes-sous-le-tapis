@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.35 -->
+<!-- Sous le tapis — version AUTONOME 10.36 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -974,6 +974,15 @@
     tolérance 10 px, voir afterTouchHold) ; sinon la poignée laisse défiler
     la page (touch-action:pan-y sur écran tactile). Évite les tâches
     attrapées par inadvertance en balayant l'écran. Souris : inchangé.
+  - 10.36 : alignements. Une seule colonne pour les marqueurs et une pour le
+    texte, partout : le rond des mémos (marge gauche 7.5px au lieu de
+    11.5px) et la puce du bandeau urgent (left -0.17rem, padding du texte
+    1.45rem au lieu de 1.65rem) tombent pile sur le centre des cases à
+    cocher des listes, et leur texte commence au même endroit que celui des
+    tâches. Bandeau urgent : la puce s'efface quand la case à cocher
+    apparaît (survol ou toucher), pour ne pas se chevaucher.
+    Mémos : titre et premier article descendus de quelques pixels, posés sur
+    les mêmes lignes que le titre et la première tâche des cartes voisines.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1396,6 +1405,10 @@ header{
 /* dévoilement : au survol avec une souris ; au toucher, par la classe
    « revealed » (8.38, voir la section des écrans tactiles) */
 @media (hover:hover){ .urgent-list li:hover .urgent-check{ opacity:1; } }
+/* 10.36 : la puce s'efface quand la case à cocher apparaît (elle est plus à gauche, alignée sur les listes) */
+.urgent-bullet{ transition:opacity .12s ease; }
+@media (hover:hover){ .urgent-list li:hover .urgent-bullet{ opacity:0; } }
+.urgent-list li.revealed .urgent-bullet{ opacity:0; }
 .urgent-check:hover{ border-color:var(--urgent-ink); background:color-mix(in srgb, var(--urgent-ink) 12%, var(--surface)); }
 /* 10.33 : comme dans les listes, la coche apparaît au survol avec le petit zoom */
 .urgent-check::after{
@@ -1448,7 +1461,7 @@ header{
   line-height:1.3;
   color:var(--urgent-ink);   /* 10.25 : les tâches urgentes dans l'encre de l'urgence (avant : noir) */
   font-weight:500;
-  padding:0.3rem 0.4rem 0.3rem 1.65rem; /* place de la puce ; texte à la même place qu'avant (8.30 ; 10.34 : retour à 0.3rem) */
+  padding:0.3rem 0.4rem 0.3rem 1.45rem; /* place de la puce (8.30) ; 10.36 : 1.45rem (avant 1.65rem) : texte aligné sur celui des listes */
   border-radius:8px;
   cursor:default;
   -webkit-tap-highlight-color:transparent; /* pas de voile gris au toucher (8.34) */
@@ -1458,7 +1471,7 @@ header{
 /* puce : un rond plein dans le rouge du titre, centré sur la 1re ligne (8.29) */
 .urgent-bullet{
   position:absolute;
-  left:0.45rem;
+  left:-0.17rem;   /* 10.36 : puce alignée sur les cases des listes (avant 0.45rem) */
   top:calc(0.3rem + var(--task-size) * 0.65); /* moitié de la 1re ligne : taille × 1.3 / 2 */
   transform:translateY(-50%);
   width:7px;
@@ -1744,6 +1757,8 @@ header{
   gap:0.75rem;
 }
 .category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:0.35rem; }   /* 10.35 : plus d'air entre le titre et les tâches */
+.category.courses .cat-head{ margin-top:0.11rem; }   /* 10.36 : titre des mémos sur la même ligne que les autres titres */
+.category.courses:not(.collapsed) .cat-head{ margin-bottom:0.12rem; }   /* 10.36 : 1er article sur la même ligne que la 1re tâche des listes voisines */
 .cat-title-group{
   display:flex;
   align-items:center;
@@ -2295,7 +2310,7 @@ ul.items{
   width:11px;
   height:11px;
   flex:none;
-  margin:calc(0.15rem + 3.5px) 6.5px 3.5px 11.5px; /* 10.18 : +4 px à gauche, de l'air après la marge */
+  margin:calc(0.15rem + 3.5px) 6.5px 3.5px 7.5px; /* 10.18 : de l'air après la marge ; 10.36 : 7.5px (avant 11.5px) : rond et texte alignés sur les cases et le texte des listes */
   padding:0;
   border:1.5px solid var(--ink-faint);
   border-radius:50%;
@@ -3369,7 +3384,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.35</span>
+    <span class="version-tag">v10.36</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
