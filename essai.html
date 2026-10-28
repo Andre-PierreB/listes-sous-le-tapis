@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.26 -->
+<!-- Sous le tapis — version AUTONOME 10.27 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -878,6 +878,11 @@
     confirmation ; une faute de frappe probable dans le domaine (gmial.com,
     hotmail.con…) est signalée avec la correction proposée, dès qu'on quitte
     le champ.
+  - 10.27 : « Copier les tâches » dans le renommage d'une liste (double-clic
+    sur le titre), sous « Convertir » : copie les tâches pas encore cochées,
+    une par ligne (« - titre », détail entre parenthèses, « [urgent] »,
+    « [en cours] », quantité pour les courses), pour les coller ailleurs
+    (par ex. chez Claude). Le lien affiche « Copié (N) » un instant.
     Trèfle du jour fait : le trèfle redevient un bouton, la case se replie
     (grisée, « Trèfle du jour fait ! », clé luckydoneclosed du jour) ; un
     clic dessus fait tourner le trèfle et lance une nouvelle tournée (deux
@@ -3173,7 +3178,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.26</span>
+    <span class="version-tag">v10.27</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -7791,6 +7796,41 @@ function buildCatConvertRow(cat, head){
   });
   return row;
 }
+// 10.27 : copier les tâches pas encore cochées d'une liste, une par ligne
+function catTasksText(cat){
+  state = loadState();
+  const items = getEffectiveItems(cat);
+  const courses = isCoursesList(cat.id);
+  return getCatOrder(cat)
+    .map(idx => ({ key: itemKey(cat.id, idx), base: items[idx] }))
+    .filter(r => r.base && !isDeleted(r.key) && !state[r.key])
+    .map(r => {
+      const e = getEffective(r.key, r.base);
+      let line = "- " + (e.t || "").trim();
+      if(courses && e.q) line += " " + coursesQtyLabel(e.q);
+      if(e.note && String(e.note).trim()) line += " (" + String(e.note).trim().replace(/\s*\n\s*/g, " ; ") + ")";
+      if(e.urgent) line += " [urgent]";
+      if(e.waiting) line += " [en cours]";
+      return line;
+    })
+    .filter(l => l !== "- ");
+}
+function buildCatCopyRow(cat){
+  const row = document.createElement("div");
+  row.className = "cat-convert cat-copy";
+  row.innerHTML = `<button type="button" class="cat-share-link">Copier les tâches</button>`;
+  row.addEventListener("mousedown", e => { if(e.target.closest("button")) e.preventDefault(); }); // le curseur reste dans le titre
+  row.addEventListener("click", e => e.stopPropagation());
+  const b = row.querySelector("button");
+  b.addEventListener("click", async ()=>{
+    const lines = catTasksText(cat);
+    if(!lines.length){ b.textContent = "Rien à copier"; setTimeout(()=>{ b.textContent = "Copier les tâches"; }, 1600); return; }
+    const ok = await copyText(cat.title + "\n" + lines.join("\n"));
+    b.textContent = ok ? `Copié (${lines.length})` : "La copie n'a pas marché";
+    setTimeout(()=>{ b.textContent = "Copier les tâches"; }, 1800);
+  });
+  return row;
+}
 // Hauteur d'une liste de courses : au plus celle de la plus haute des autres
 // listes affichées (au moins ~24 lignes de texte, au plus 3/4 de l'écran) ;
 // au-delà, seule la zone des articles défile. Position de défilement gardée,
@@ -8042,6 +8082,7 @@ function render(){
       if(shareRow) card.appendChild(shareRow);
       const convRow = buildCatConvertRow(cat, head);
       if(convRow) card.appendChild(convRow);
+      card.appendChild(buildCatCopyRow(cat));   // 10.27
     }
 
     const ul = document.createElement("ul");
