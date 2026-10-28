@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.36 -->
+<!-- Sous le tapis — version AUTONOME 10.37 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -983,6 +983,19 @@
     apparaît (survol ou toucher), pour ne pas se chevaucher.
     Mémos : titre et premier article descendus de quelques pixels, posés sur
     les mêmes lignes que le titre et la première tâche des cartes voisines.
+  - 10.37 : petites icônes des lignes (↳ ⚠ × ; mémos : crayon ×) en
+    surimpression : elles ne réservent plus de place à droite, le texte
+    prend toute la largeur (moins de tâches sur deux lignes) ; au survol ou
+    au toucher, elles se posent en bout de ligne sur un fondu (--ctl-bg).
+    Essayées au banc et écartées : icônes en colonne (débordent sur la ligne
+    du dessous), rond des mémos dans la marge (moins horizontal).
+    Pleine page : bouton à deux flèches en diagonale en haut à droite de
+    chaque carte (listes et mémos) ; la carte s'ouvre sur toute la hauteur,
+    centrée (820px max), fond de page derrière ; même bouton ou Échap pour
+    revenir. Ordre des icônes de ligne : ⚠ puis ↳ puis × (avant : ↳ ⚠ ×),
+    pareil dans le bandeau urgent. État dans fullpageCat (pas dans les données), classe
+    « fullpage » remise à chaque rendu. .wrap perd son isolation le temps
+    de la pleine page (sinon la carte reste sous le fond).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1771,6 +1784,50 @@ header{
   align-items:center;
   gap:0.5rem;
 }
+/* 10.37 : bouton pleine page (flèches en diagonale), dans la famille des petits boutons à icône */
+.cat-full{
+  appearance:none; border:none; background:transparent; color:var(--ink-faint);
+  padding:3px; line-height:0; border-radius:6px; cursor:pointer;
+}
+.cat-full svg{ display:block; transition:scale .3s var(--pop-ease); }
+.cat-full:hover{ background:var(--surface-2); color:var(--ink-soft); }
+.cat-full:hover svg{ scale:var(--pop-scale); }
+.cat-full:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+@media (prefers-reduced-motion:reduce){ .cat-full:hover svg{ scale:none; } }
+/* la carte ouverte : posée sur toute la hauteur, centrée, fond de page derrière */
+body.has-fullpage{ overflow:hidden; }
+body.has-fullpage .wrap{ isolation:auto; }   /* sinon la carte reste prise sous le fond (la page isole .wrap) */
+body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; background:var(--bg); }
+.category.fullpage{
+  position:fixed; z-index:150;
+  top:0; bottom:0; left:50%; transform:translateX(-50%);
+  width:min(820px, 100vw); box-sizing:border-box;
+  max-height:none; border-radius:0;
+  padding-top:max(1.15rem, calc(env(safe-area-inset-top, 0px) + 0.75rem));
+  padding-bottom:max(1.3rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem));
+  padding-left:max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right:max(1.25rem, env(safe-area-inset-right, 0px));
+  box-shadow:0 0 0 1px var(--line), 0 20px 60px -30px rgba(30,40,45,.35);
+}
+.category.fullpage:not(.courses){ overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.category.fullpage .cat-grip{ display:none; }
+.category.fullpage .cat-full{ color:var(--ink-soft); }
+@media (max-width:820px){ .category.fullpage{ box-shadow:none; } }
+
+/* 10.37 : petites icônes de ligne en surimpression : plus de place réservée
+   à droite, le texte prend toute la largeur ; au survol (ou au toucher), les
+   icônes se posent sur un fondu de la couleur de survol, en bout de ligne. */
+.item .item-controls{
+  position:absolute; right:0.3rem; z-index:2;
+  top:calc(var(--row-pad) - 0.1rem);
+  padding-left:1.4rem;
+  background:linear-gradient(90deg, transparent, var(--ctl-bg, var(--surface-2)) 1.2rem);
+}
+#waitingSection .item .item-controls{ --ctl-bg:color-mix(in srgb, var(--wait) 8%, var(--wait-soft)); }
+.courses-item .item-controls{ --ctl-bg:color-mix(in srgb, var(--paper-rule) 30%, var(--surface)); top:auto; bottom:0.15rem; }
+/* au doigt, les icônes des mémos restent visibles en permanence (le toucher raye l'article) : elles gardent leur place */
+@media (hover:none){ .courses-item .item-controls{ position:static; background:none; padding-left:0; } }
+
 .cat-title{
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.74rem;
@@ -3384,7 +3441,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.36</span>
+    <span class="version-tag">v10.37</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6567,6 +6624,24 @@ function moveDragSlot(parents, moveFn){
 // parfois une tâche. Si le doigt bouge pendant l'attente, c'est un défilement
 // ordinaire (la poignée laisse défiler verticalement, touch-action:pan-y).
 // À la souris, rien ne change : le glisser part tout de suite.
+// 10.37 : une liste ouverte en pleine page (une seule à la fois). L'état vit
+// ici (pas dans les données) : la carte reçoit la classe « fullpage » à
+// chaque rendu tant que fullpageCat la désigne. Échap ou le même bouton
+// referme.
+let fullpageCat = null;
+const FULL_IN_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M10 20H4v-6"/><path d="M20 4 13.5 10.5"/><path d="M4 20l6.5-6.5"/></svg>`;
+const FULL_OUT_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4v6h6"/><path d="M10 20v-6H4"/><path d="M14 10l6.5-6.5"/><path d="M10 14l-6.5 6.5"/></svg>`;
+function setFullpage(id){
+  fullpageCat = id;
+  document.body.classList.toggle("has-fullpage", !!id);
+  renderAll();
+  if(!document.querySelector(".category.fullpage")){ fullpageCat = null; document.body.classList.remove("has-fullpage"); }
+  else window.scrollTo(0, window.scrollY);
+}
+document.addEventListener("keydown", e=>{
+  if(e.key === "Escape" && fullpageCat && !editingKey && !editingCoursesKey && !editingCategoryTitle) setFullpage(null);
+});
+
 const TOUCH_HOLD_MS = 280;
 const TOUCH_HOLD_SLOP = 10;
 function afterTouchHold(e, begin){
@@ -6970,11 +7045,11 @@ function renderUrgentBanner(){
       <button type="button" class="urgent-check" aria-label="Marquer cette tâche comme faite"></button>
       <button type="button" class="urgent-jump"><span class="urgent-bullet" aria-hidden="true">&#8226;</span>${entry.note ? titleWithToggle(entry.text, noteToggleHtml(false)) : escapeAttr(entry.text)}<span class="urgent-jump-cat">${escapeAttr(entry.catTitle)}</span>${badge}${entry.note ? noteFoldHtml(entry.note, "urgent-note") : ""}</button>
       <span class="urgent-actions">
+        ${entry.manual ? `<button type="button" class="urgent-btn active" aria-label="Ne plus marquer urgent" data-tip="Ne plus marquer urgent">${triangleSvg(15)}</button>`
+          : `<span class="urgent-btn active auto" role="img" aria-label="Urgent à cause de la date" data-tip="Urgent à cause de la date">${triangleSvg(15)}</span>`}
         ${entry.relance
           ? `<button type="button" class="waiting-btn postpone-btn" aria-label="Reporter la relance" data-tip="Reporter la relance"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 2.5h6"/></svg></button><button type="button" class="waiting-btn back-btn" aria-label="Sortir de « En cours »" data-tip="Sortir de « En cours »">${hookArrowSvg(15, true)}</button>`
           : `<button type="button" class="waiting-btn" aria-label="Classé, suivi en cours" data-tip="Classé, suivi en cours">${hookArrowSvg(15)}</button>`}
-        ${entry.manual ? `<button type="button" class="urgent-btn active" aria-label="Ne plus marquer urgent" data-tip="Ne plus marquer urgent">${triangleSvg(15)}</button>`
-          : `<span class="urgent-btn active auto" role="img" aria-label="Urgent à cause de la date" data-tip="Urgent à cause de la date">${triangleSvg(15)}</span>`}
       </span>
     `;
     if(entry.note) markNoteHolder(li, entry.key);
@@ -7814,8 +7889,8 @@ function buildItemLi(cat, idx, base, key, opts){
     ${isEgg ? `<span class="egg-dot" title="En couvaison">${eggSvg(20)}</span>` : `<input type="checkbox" ${checked ? "checked" : ""} aria-label="${escapeAttr(eff.t)}">`}
     ${isNewHere ? newTagHtml(cat, base) : ""}<span class="item-text">${checkerTag}${whoTag}${personTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
     <span class="item-controls">
-      <button type="button" class="waiting-btn${eff.waiting ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${waitingBtnTitle}" data-tip="${waitingBtnTitle}">${waitingBtnIcon}</button>
       ${isEgg ? `<button type="button" class="hatch-btn" aria-label="Faire éclore" data-tip="Faire éclore"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="chick" cx="12" cy="8.2" r="3.6"/><path class="beak" d="M15.5 8.1l2 .7-2 .7"/><circle cx="13.1" cy="7.3" r=".55" fill="currentColor" stroke="none"/><path class="shell" d="M5.2 13.6c0 4.3 3 7.6 6.8 7.6s6.8-3.3 6.8-7.6l-2.3 1.5-2.2-1.7-2.3 1.7-2.3-1.7-2.2 1.7z"/></svg></button>` : `<button type="button" class="urgent-btn${eff.urgent ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}" data-tip="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}">${triangleSvg(15)}</button>`}
+      <button type="button" class="waiting-btn${eff.waiting ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${waitingBtnTitle}" data-tip="${waitingBtnTitle}">${waitingBtnIcon}</button>
       ${!canRemove ? `<span class="delete-spacer" aria-hidden="true"></span>` : checked
         ? `<button type="button" class="delete-btn" aria-label="Mettre à la corbeille des tâches accomplies" data-tip="Mettre à la corbeille"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>`
         : `<button type="button" class="delete-btn" aria-label="Effacer la tâche" data-tip="Effacer la tâche"><span class="x">&times;</span></button>`}
@@ -8300,12 +8375,16 @@ function render(){
       </span>
       <span class="cat-head-right">
         ${courses ? "" : `<button type="button" class="cat-order${reversed ? " reversed" : ""}" aria-label="${reversed ? "Mettre les récentes en haut" : "Mettre les récentes en bas"}" data-tip="${reversed ? "Récentes en haut ?" : "Récentes en bas ?"}"><svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true"><path d="M5 1.8 9 8.2H1z" fill="currentColor"/></svg></button>`}
+        <button type="button" class="cat-full" aria-label="${fullpageCat === cat.id ? "Revenir aux listes" : "Ouvrir en pleine page"}" data-tip="${fullpageCat === cat.id ? "Réduire" : "Pleine page"}">${fullpageCat === cat.id ? FULL_OUT_SVG : FULL_IN_SVG}</button>
         <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
         ${canDeleteCat ? `<button type="button" class="cat-delete-btn" aria-label="Supprimer cette case vide" title="Supprimer cette case vide"><span class="g">&times;</span></button>` : ""}
       </span>
     `;
     if(shareChips){ card.insertAdjacentHTML("beforeend", shareChips); card.classList.add("has-people"); }   // 10.31 : initiales en bas à droite
     wireDragCard(card, head.querySelector(".cat-grip"), catIdx);
+    // 10.37 : pleine page
+    if(fullpageCat === cat.id) card.classList.add("fullpage");
+    head.querySelector(".cat-full").addEventListener("click", e=>{ e.stopPropagation(); setFullpage(fullpageCat === cat.id ? null : cat.id); });
     // 10.19 : liste de courses ouverte : un clic sur le bandeau, à côté du
     // titre, la replie (le titre garde son double-clic qui le renomme)
     if(courses && !folded && !renamingThisCat) head.addEventListener("click", e=>{
