@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.25 -->
+<!-- Sous le tapis — version AUTONOME 10.26 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -868,6 +868,16 @@
     petite en passant ? » en --phrase aussi (l'olive disparaît) ; fond
     citron un cran plus pâle (--lucky-bg #FBFADF → #FCFBE9) ; encre urgente
     finalement #562F96, un rien moins rouge.
+  - 10.26 : connexion sur iPad. Les champs e-mail / mot de passe (et la date
+    de relance) passent à 16 px sur écran tactile : en dessous, Safari iOS
+    zoome tout seul au toucher, et le doigt qui remettait la page en place
+    tombait hors de la fenêtre et la refermait. La fenêtre de la plume ne se
+    referme plus d'un toucher à côté quand un champ est rempli (le clavier se
+    range, c'est tout ; la plume ou Échap la ferment), ni pendant un zoom.
+    E-mail : à « Créer un compte », l'adresse est réaffichée en grand pour
+    confirmation ; une faute de frappe probable dans le domaine (gmial.com,
+    hotmail.con…) est signalée avec la correction proposée, dès qu'on quitte
+    le champ.
     Trèfle du jour fait : le trèfle redevient un bouton, la case se replie
     (grisée, « Trèfle du jour fait ! », clé luckydoneclosed du jour) ; un
     clic dessus fait tourner le trèfle et lance une nouvelle tournée (deux
@@ -2546,6 +2556,16 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   border:1px solid color-mix(in srgb, var(--accent) 25%, var(--line)); border-radius:8px; background:var(--surface); color:var(--ink);
 }
 .sp-email:focus, .sp-pw:focus{ outline:none; border-color:var(--accent); }
+/* 10.26 : 16 px sur tactile, sinon Safari iOS zoome au toucher du champ */
+@media (pointer:coarse){ .sp-email, .sp-pw, .rp-date input{ font-size:16px; } }
+.sp-hint{ font-size:0.8rem; color:var(--ink-soft); margin:-0.15rem 0 0.45rem; }
+.sp-hint:empty{ display:none; }
+.sp-hint button, .sp-confirm .sp-fix{ appearance:none; border:0; background:none; padding:0; font:inherit; font-weight:600; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.sp-confirm{ margin-top:0.55rem; padding:0.55rem 0.6rem; border:1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius:10px; font-size:0.8rem; color:var(--ink-soft); text-align:center; }
+.sp-confirm[hidden]{ display:none; }
+.sp-confirm .sp-addr{ display:block; margin:0.25rem 0 0.5rem; font-size:1rem; font-weight:600; color:var(--ink); word-break:break-all; }
+.sp-confirm .rp-opts{ display:grid; grid-template-columns:1fr 1fr; }
+.sp-confirm .rp-opts button{ text-align:center; padding-inline:0.3rem; font-size:0.82rem; }
 .sp-forgot{ appearance:none; border:0; background:none; padding:0; margin-top:0.55rem; font-family:inherit; font-size:0.78rem; color:var(--ink-soft); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
 .sync-pop .rp-title{ text-align:center; }
 .sync-pop .rp-opts:has(.sp-login){ display:grid; grid-template-columns:1fr 1fr; }
@@ -3153,7 +3173,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.25</span>
+    <span class="version-tag">v10.26</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4764,7 +4784,19 @@ function addMonthISO(iso){
 }
 function shortDateFR(iso){ const [y,m,d] = iso.split("-"); return parseInt(d,10) + "/" + parseInt(m,10); }
 let relancePop = null;
-function relanceOutside(e){ if(relancePop && !relancePop.contains(e.target)) closeRelancePop(); }
+function relanceOutside(e){
+  if(!relancePop || relancePop.contains(e.target)) return;
+  // 10.26 : page zoomée (pincement sur tablette) : on laisse dézoomer sans fermer
+  if(e.pointerType !== "mouse" && window.visualViewport && window.visualViewport.scale > 1.01) return;
+  // 10.26 : fenêtre de la plume avec un champ rempli : un toucher à côté range
+  // juste le clavier (la plume ou Échap la ferment)
+  if(relancePop.classList.contains("sync-pop") && [...relancePop.querySelectorAll("input")].some(i => i.value)){
+    const a = document.activeElement;
+    if(a && relancePop.contains(a)) a.blur();
+    return;
+  }
+  closeRelancePop();
+}
 function relanceEsc(e){ if(e.key === "Escape" && relancePop){ e.stopPropagation(); closeRelancePop(); } }
 function closeRelancePop(){
   if(!relancePop) return;
@@ -10159,6 +10191,27 @@ const Sync = (()=>{
   window.addEventListener("online", paint); window.addEventListener("offline", paint);   // 10.23
   paint();
 
+  // 10.26 : domaines courants ; une adresse à 1–2 lettres de l'un d'eux est
+  // probablement une faute de frappe (gmial.com, hotmail.con…)
+  const KNOWN_DOMAINS = ["gmail.com","hotmail.com","hotmail.be","hotmail.fr","outlook.com","outlook.be","outlook.fr","live.be","live.com","live.fr","msn.com","yahoo.com","yahoo.fr","icloud.com","me.com","skynet.be","telenet.be","proximus.be","voo.be","scarlet.be","orange.fr","free.fr","laposte.net"];
+  function editDist(a, b){
+    const d = Array.from({length:a.length+1}, (_, i)=> [i]);
+    for(let j = 1; j <= b.length; j++) d[0][j] = j;
+    for(let i = 1; i <= a.length; i++) for(let j = 1; j <= b.length; j++){
+      d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+      if(i > 1 && j > 1 && a[i-1] === b[j-2] && a[i-2] === b[j-1]) d[i][j] = Math.min(d[i][j], d[i-2][j-2]+1);   // lettres inversées
+    }
+    return d[a.length][b.length];
+  }
+  function emailSuggest(addr){
+    const at = addr.lastIndexOf("@");
+    if(at < 1) return "";
+    const local = addr.slice(0, at), dom = addr.slice(at + 1).toLowerCase();
+    if(!dom || KNOWN_DOMAINS.includes(dom)) return "";
+    let best = "", bestD = 3;
+    for(const k of KNOWN_DOMAINS){ const dd = editDist(dom, k); if(dd < bestD){ bestD = dd; best = k; } }
+    return best && bestD <= (dom.length > 6 ? 2 : 1) ? local + "@" + best : "";
+  }
   const ERR = {
     "auth/invalid-credential": "E-mail ou mot de passe incorrect.",
     "auth/wrong-password": "E-mail ou mot de passe incorrect.",
@@ -10198,9 +10251,11 @@ const Sync = (()=>{
         ${pendingInvite() ? `<div class="sp-state">Connecte-toi (ou crée un compte) pour l'accepter : les listes qu'on partagera avec toi apparaîtront ici.</div>` : ""}
         <button type="button" class="sp-google">Continuer avec Google</button>
         <div class="sp-or">ou</div>
-        <input type="email" class="sp-email" placeholder="Adresse e-mail" autocomplete="username">
+        <input type="email" class="sp-email" placeholder="Adresse e-mail" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <div class="sp-hint" role="status"></div>
         <input type="password" class="sp-pw" placeholder="Mot de passe" autocomplete="current-password">
         <div class="rp-opts"><button type="button" class="sp-login">Se connecter</button><button type="button" class="sp-create rp-none">Créer un compte</button></div>
+        <div class="sp-confirm" hidden></div>
         <button type="button" class="sp-forgot">Mot de passe oublié ?</button>
         <div class="sp-msg" role="status"></div>`;
       const msg = pop.querySelector(".sp-msg");
@@ -10230,7 +10285,39 @@ const Sync = (()=>{
         });
       }
       pop.querySelector(".sp-login").addEventListener("click", e=>{ e.stopPropagation(); run(()=> Sync.signInEmail(email.value.trim(), pw.value)); });
-      pop.querySelector(".sp-create").addEventListener("click", e=>{ e.stopPropagation(); run(()=> Sync.createEmail(email.value.trim(), pw.value)); });
+      // 10.26 : faute de frappe probable dans le domaine, signalée en quittant le champ
+      const hint = pop.querySelector(".sp-hint");
+      const showHint = ()=>{
+        hint.textContent = "";
+        const sug = emailSuggest(email.value.trim());
+        if(!sug) return;
+        hint.append("Tu voulais dire ");
+        const b = document.createElement("button"); b.type = "button"; b.textContent = sug;
+        b.addEventListener("click", ev=>{ ev.stopPropagation(); email.value = sug; hint.textContent = ""; hideConfirm(); });
+        hint.append(b, " ?");
+      };
+      email.addEventListener("blur", showHint);
+      email.addEventListener("input", ()=>{ hint.textContent = ""; hideConfirm(); });
+      // 10.26 : avant de créer le compte, l'adresse est réaffichée en grand
+      const confirmBox = pop.querySelector(".sp-confirm");
+      const hideConfirm = ()=>{ confirmBox.hidden = true; confirmBox.textContent = ""; };
+      pop.querySelector(".sp-create").addEventListener("click", e=>{
+        e.stopPropagation();
+        const addr = email.value.trim();
+        msg.textContent = "";
+        if(!addr){ msg.textContent = "Écris d'abord ton adresse e-mail."; email.focus(); return; }
+        if(!pw.value){ msg.textContent = "Il manque le mot de passe."; pw.focus(); return; }
+        const sug = emailSuggest(addr);
+        confirmBox.innerHTML = `Le compte sera créé pour :<span class="sp-addr">${escapeAttr(addr)}</span>`
+          + (sug ? `<div class="sp-hint" style="margin:0 0 0.5rem">Tu voulais dire <button type="button" class="sp-fix">${escapeAttr(sug)}</button> ?</div>` : "")
+          + `<div class="rp-opts"><button type="button" class="sp-yes">Oui, c'est ça</button><button type="button" class="sp-no rp-none">Corriger</button></div>`;
+        confirmBox.hidden = false;
+        if(document.activeElement) document.activeElement.blur();
+        const fix = confirmBox.querySelector(".sp-fix");
+        if(fix) fix.addEventListener("click", ev=>{ ev.stopPropagation(); email.value = sug; hint.textContent = ""; pop.querySelector(".sp-create").click(); });
+        confirmBox.querySelector(".sp-yes").addEventListener("click", ev=>{ ev.stopPropagation(); hideConfirm(); run(()=> Sync.createEmail(addr, pw.value)); });
+        confirmBox.querySelector(".sp-no").addEventListener("click", ev=>{ ev.stopPropagation(); hideConfirm(); email.focus(); });
+      });
       pop.querySelector(".sp-forgot").addEventListener("click", e=>{
         e.stopPropagation();
         if(!email.value.trim()){ msg.textContent = "Écris d'abord ton adresse e-mail juste au-dessus."; email.focus(); return; }
