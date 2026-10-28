@@ -934,6 +934,13 @@
     éclosion, ⟳ du trèfle (qui ne fait plus demi-tour), et les trois
     boutons d'une ligne. Variables --pop-scale / --pop-ease. Restent à part,
     exprès : la plume (s'incline) et le trèfle-manivelle (tourne).
+    Triangle urgent : retour au mauve (le jaune orangé de la 10.31 est
+    abandonné). Le survol montre l'effet du clic : pas urgente → il
+    s'allume en mauve et grossit (« mettre urgent ») ; déjà urgente → il
+    s'éteint en gris, vide, et rapetisse (« retirer d'urgent »).
+    Case urgente : ses boutons ont les mêmes survols que dans les listes
+    (flèche aux couleurs d'« En cours », triangle comme ci-dessus) ; au
+    repos ils gardent le ton de la case ; le triangle inerte ne bouge pas.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1367,15 +1374,11 @@ header{
   .urgent-list li:focus-within .urgent-actions{ opacity:1; pointer-events:auto; }
 }
 .urgent-actions button{ transition:color .12s ease, opacity .12s ease; }
-.urgent-actions .waiting-btn,
-.urgent-actions .waiting-btn:hover,
-.urgent-actions .urgent-btn.active,
-.urgent-actions .urgent-btn.active:hover{ background:transparent; }
-.urgent-actions .waiting-btn{ color:color-mix(in srgb, var(--urgent-ink) 55%, transparent); }
-.urgent-actions .waiting-btn:hover{ color:var(--urgent-ink); }
-.urgent-actions .urgent-btn.active{ opacity:0.7; }
-.urgent-actions .urgent-btn.active:hover{ opacity:1; }
-.urgent-actions .urgent-btn.auto, .urgent-actions .urgent-btn.auto:hover{ cursor:default; opacity:0.7; }   /* 10.29 : triangle inerte */
+.urgent-actions .waiting-btn{ color:color-mix(in srgb, var(--urgent-ink) 55%, transparent); }   /* au repos : dans le ton de la case */
+.urgent-actions .urgent-btn.active{ background:transparent; }
+/* 10.32 : au survol, mêmes couleurs et même zoom que dans les listes (règles
+   générales .waiting-btn:hover / .urgent-btn:hover) */
+.urgent-actions .urgent-btn.auto, .urgent-actions .urgent-btn.auto:hover{ cursor:default; background:transparent; color:var(--urgent-ink); opacity:0.7; }   /* 10.29 : triangle inerte */
 .urgent-jump{
   appearance:none;
   border:none;
@@ -2124,13 +2127,19 @@ ul.items{
 /* 10.2 : à la place de l'effacement, dans une liste partagée (tâche d'un autre) */
 .delete-spacer{ display:block; flex:none; width:26px; height:1px; }
 .urgent-btn svg, .delete-btn svg{ display:block; }
-/* 10.31 : survol du triangle — jaune orangé (--lucky-gold), il se remplit
-   légèrement et grossit un peu, comme une alerte qui s'allume */
+/* 10.32 : le survol montre ce que le clic va faire, dans le mauve de l'urgence.
+   Pas urgente → « mettre urgent » : le triangle s'allume en mauve et grossit.
+   Déjà urgente → « retirer d'urgent » : il s'éteint (gris, vide) et rapetisse. */
 .urgent-btn:not(.active):hover{
-  background:color-mix(in srgb, var(--lucky-gold) 22%, transparent);
-  color:color-mix(in srgb, var(--lucky-gold) 55%, var(--late));   /* jaune orangé : or tiré vers la terre cuite */
+  background:var(--urgent-soft);
+  color:var(--urgent-ink);
 }
-.urgent-btn:not(.active):hover svg .tri{ fill:color-mix(in srgb, var(--lucky-gold) 60%, transparent); }
+.urgent-btn:not(.active):hover svg .tri{ fill:color-mix(in srgb, var(--urgent-ink) 22%, transparent); }
+.urgent-btn.active:not(.auto):hover{
+  background:var(--surface-2);
+  color:var(--ink-faint);
+}
+.urgent-btn.active:not(.auto):hover svg .tri{ fill:none; }
 /* 10.32 : UN SEUL petit zoom au survol pour tous les boutons à icône de
    l'appli. Propriété « scale » (et non transform) : elle s'ajoute aux
    rotations déjà posées (tri ▲▼, repli de carte) sans les écraser. Le fond
@@ -2148,6 +2157,7 @@ ul.items{
 .cat-order:hover svg, .cat-grip:hover svg, .cat-fold:hover svg, .lucky-reroll:hover svg, .hatch-btn:hover svg{
   scale:var(--pop-scale);
 }
+.urgent-btn.active:not(.auto):hover svg{ scale:0.85; }   /* retirer : il rapetisse */
 .urgent-btn.auto:hover svg{ scale:none; }   /* triangle inerte de la case urgente */
 @media (prefers-reduced-motion:reduce){
   .urgent-btn svg, .waiting-btn svg, .delete-btn svg, .delete-btn .x, .add-btn .g, .cat-delete-btn .g, .note-toggle svg, .courses-edit-btn svg, .cat-order svg, .cat-grip svg, .cat-fold svg, .lucky-reroll svg, .hatch-btn svg{ transition:none; }
