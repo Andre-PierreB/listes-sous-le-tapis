@@ -928,7 +928,12 @@
     mot du titre ; le champ express reste à côté du titre s'il tient en
     entier (8rem), sinon il passe à la ligne, avec l'invite « Nouvelle
     tâche… » ; les initiales des personnes vont en bas à droite de la carte.
-  - 10.32 : survols uniformisés : même petit zoom (×1,18, léger rebond)
+  - 10.32 : textes de l'interface sans tutoiement (tournures impersonnelles
+    ou « on ») : invitations, partage, connexion, messages d'erreur, rappel
+    de connexion. Le tutoiement reste dans les phrases d'encouragement
+    (compteur, toasts, défi de la semaine) et dans le message WhatsApp
+    d'invitation (écrit d'une personne à une autre).
+    Survols uniformisés : même petit zoom (×1,18, léger rebond)
     sur tous les boutons à icône — + d'une liste, croix d'une liste vide,
     tri ▲▼, poignée, repli, crayon des courses, détail d'une tâche,
     éclosion, ⟳ du trèfle (qui ne fait plus demi-tour), et les trois
@@ -5062,7 +5067,7 @@ function renderBackupNudge(){
   try{ cloud = !!Sync.available; logged = !!(Sync.user && ((Sync.status && Sync.status.state) || "off") !== "off"); }catch(e){}
   let text;
   if(cloud){
-    text = (hasAnyList() && !logged) ? "Connecte-toi pour ne jamais perdre tes listes" : "";
+    text = (hasAnyList() && !logged) ? "Se connecter pour ne jamais perdre ses listes" : "";
   }else text = hasAnyList() ? backupNudgeText() : "";
   el.textContent = text;
   el.hidden = !text;
@@ -5315,7 +5320,7 @@ function importData(file){
       if(online){
         // 10.6 : connecté, on ne touche ni aux listes partagées (dans un sens
         // ou dans l'autre) ni au carnet : ils gardent leur état actuel
-        if(!confirm("Importer cette sauvegarde ? Elle remplacera tes listes non partagées. Les listes partagées et ton carnet restent tels qu'ils sont.")) return;
+        if(!confirm("Importer cette sauvegarde ? Elle remplacera les listes non partagées. Les listes partagées et le carnet restent tels qu'ils sont.")) return;
         dump = keepSharedOnImport(dump);
       }else if(!confirm("Importer cette sauvegarde ? Elle remplacera la liste actuelle de ce fichier.")) return;
       Store.importModel(dump);
@@ -5325,7 +5330,7 @@ function importData(file){
       celebrate("Sauvegarde importée");
       return;
     }
-    if(online){ alert("Cette sauvegarde vient d'une version plus ancienne : elle ne peut pas être restaurée pendant que tu es connecté."); return; }
+    if(online){ alert("Cette sauvegarde vient d'une version plus ancienne : elle ne peut pas être restaurée tant que le compte est connecté."); return; }
     // Sauvegarde autonome (photo) : reconstruit toute la liste, quelle que soit
     // la version d'origine. C'est le chemin normal ici.
     if(dump && dump.snapshot && Array.isArray(dump.snapshot.categories)){
@@ -5883,7 +5888,7 @@ function buildCatShareRow(cat){
   row.addEventListener("click", e => e.stopPropagation());
   if(!iOwnList(cat.id)){
     const i = listInfo(cat.id) || {};
-    row.innerHTML = `<span>Liste ${escapeAttr(deName(personName(i.owner, cat.id)))}, partagée avec toi. ${isCoursesList(cat.id) ? "Tu peux rayer et retirer tous les articles." : "Tu peux tout cocher, et effacer les tâches que tu as ajoutées."}</span>`;
+    row.innerHTML = `<span>Liste ${escapeAttr(deName(personName(i.owner, cat.id)))}, en partage. ${isCoursesList(cat.id) ? "On peut rayer et retirer tous les articles." : "On peut tout cocher, et effacer les tâches qu'on a ajoutées."}</span>`;
     return row;
   }
   const label = `<span class="cat-share-label">Partagée avec</span>`;
@@ -8143,7 +8148,7 @@ function render(){
       const names = people.map(u => personName(u, cat.id));
       const tip = iOwnList(cat.id)
         ? "Partagée avec " + names.join(", ")
-        : "Liste " + deName(personName(ownerUid, cat.id)) + ", partagée avec toi";
+        : "Liste " + deName(personName(ownerUid, cat.id)) + ", en partage";
       shareChips = `<span class="share-chips" data-tip="${escapeAttr(tip)}" aria-label="${escapeAttr(tip)}">` +
         names.slice(0, 3).map(n => `<span class="share-chip">${escapeAttr(initialOf(n))}</span>`).join("") +
         (names.length > 3 ? `<span class="share-chip share-more">+${names.length - 3}</span>` : "") + `</span>`;
@@ -8672,7 +8677,7 @@ function removeContact(uid){
   const cm = contactsMap();
   const name = (cm[uid] && cm[uid].name) || "?";
   const n = myListsSharedWith(uid);
-  if(!confirm("Retirer " + name + " du carnet ?" + (n ? " Tes listes partagées avec " + name + " disparaîtront de chez elle ou lui." : ""))) return;
+  if(!confirm("Retirer " + name + " du carnet ?" + (n ? " Les listes partagées avec " + name + " disparaîtront de chez elle ou lui." : ""))) return;
   DATA.forEach(c => { if(iOwnList(c.id) && (listInfo(c.id) || { members:[] }).members.includes(uid)) setListSharedWith(c.id, uid, false); });
   delete cm[uid];
   Store.setUserField("contacts", cm);
@@ -8695,7 +8700,7 @@ function renderShare(){
   const head = `<div class="share-head"><div class="share-title">Partage</div><button type="button" class="trash-close">Fermer</button></div>`;
   if(!S || !S.user){
     panel.innerHTML = head + `
-      <p class="share-help">Pour partager des listes, il faut d'abord te connecter (la plume, à droite du titre).</p>
+      <p class="share-help">Pour partager des listes, il faut d'abord se connecter (la plume, à droite du titre).</p>
       <div class="sh-actions"><button type="button" class="sh-btn sh-btn-primary sh-login">Se connecter</button></div>`;
     panel.querySelector(".sh-login").addEventListener("click", e=>{ e.stopPropagation(); const p = document.getElementById("plume"); if(p) p.click(); });
   }else{
@@ -8710,9 +8715,9 @@ function renderShare(){
       return `<li class="sh-person sh-pending"><span class="share-chip">?</span><span class="sh-pname">Invitation${when ? " du " + when : ""}</span><span class="sh-state">pas encore ouverte</span><button type="button" class="sh-copy-old" data-code="${escapeAttr(inv.code)}">Copier le lien</button><button type="button" class="sh-x" data-code="${escapeAttr(inv.code)}" aria-label="Annuler cette invitation" data-tip="Annuler l'invitation">&times;</button></li>`;
     }).join("");
     panel.innerHTML = head + `
-      <p class="share-help">Une invitation par personne. Elle ouvre le lien, se connecte, et rejoint ton carnet de contacts. Ensuite, double-clic sur le titre d'une liste : tu coches son nom, et la liste apparaît chez elle.</p>
-      <label class="sh-me"><span>Ton prénom pour les autres</span><input type="text" class="sh-name" maxlength="30" value="${escapeAttr(myName())}" autocomplete="off"></label>
-      <div class="sh-sub">Ton carnet</div>
+      <p class="share-help">Une invitation par personne. Elle ouvre le lien, se connecte, et rejoint le carnet de contacts. Ensuite, double-clic sur le titre d'une liste : cocher son nom, et la liste apparaît chez elle.</p>
+      <label class="sh-me"><span>Prénom affiché pour les autres</span><input type="text" class="sh-name" maxlength="30" value="${escapeAttr(myName())}" autocomplete="off"></label>
+      <div class="sh-sub">Carnet</div>
       ${peopleHtml ? `<ul class="sh-people">${peopleHtml}</ul>` : `<p class="share-help sh-empty">Personne pour l'instant.</p>`}
       <div class="sh-actions"><button type="button" class="sh-btn sh-btn-primary sh-invite">Créer un lien d'invitation</button></div>
       ${shareNewLink ? `<div class="sh-newlink">
@@ -8759,7 +8764,7 @@ function renderShare(){
         console.error("[partage] invitation", err);
         shareMsg = err && err.code === "permission-denied"
           ? "Refusé par la base en ligne : ses règles ne sont sans doute pas à jour (firestore.rules)."
-          : "Pas réussi à créer le lien (réseau ?). Réessaie dans un moment.";
+          : "Pas réussi à créer le lien (réseau ?). Réessayer dans un moment.";
       }
       renderAll();
     });
@@ -8781,7 +8786,7 @@ function noteInviteUsed(inv){
   if(!cm[inv.usedBy]){
     cm[inv.usedBy] = { name: String(inv.usedByName || "?").slice(0, 30), since: todayISO() };
     Store.setUserField("contacts", cm);
-    celebrate((inv.usedByName || "Quelqu'un") + " a accepté ton invitation : la voilà dans ton carnet.", true);
+    celebrate((inv.usedByName || "Quelqu'un") + " a accepté l'invitation : la voilà dans le carnet.", true);
     return true;
   }
   return false;
@@ -8811,17 +8816,17 @@ async function acceptPendingInvite(){
       cm[r.from] = { name: String(r.fromName || "?").slice(0, 30), since: todayISO() };
       Store.setUserField("contacts", cm);
       renderAll();
-      celebrate("Te voilà dans le carnet de " + (r.fromName || "?") + ". Les listes qu'on partagera avec toi apparaîtront ici.", true);
+      celebrate("Ajouté au carnet de " + (r.fromName || "?") + ". Les listes partagées apparaîtront ici.", true);
     }else if(r.status === "self"){
-      celebrate("C'est ton propre lien d'invitation : envoie-le à quelqu'un d'autre.", true);
+      celebrate("C'est le lien d'invitation de ce compte : il est à envoyer à quelqu'un d'autre.", true);
     }else{
-      celebrate("Ce lien d'invitation a déjà servi ou a été annulé : demande-en un nouveau.", true);
+      celebrate("Ce lien d'invitation a déjà servi ou a été annulé : il faut en demander un nouveau.", true);
     }
   }catch(err){
     console.error("[partage] acceptation", err);
     if(err && err.code === "permission-denied"){
       localStorage.removeItem(PENDING_INVITE_KEY);
-      celebrate("Cette invitation n'a pas pu être acceptée : demande un nouveau lien.", true);
+      celebrate("Cette invitation n'a pas pu être acceptée : il faut demander un nouveau lien.", true);
     }
     // sinon (réseau) : on réessaiera à la prochaine connexion
   }
@@ -8955,7 +8960,7 @@ const ACTION_MESSAGES = {
   urgentOff: ["Fausse alerte. On range le tocsin.", "Plus urgent. Le garde champêtre retourne à sa sieste.", "Rétrogradée au rang de simple tâche. Sans rancune."],
   waitingOn: ["Balle dans leur camp. À eux de la renvoyer.", "Expédiée comme un pigeon voyageur. Reste à guetter le colombier.", "Dossier transmis. L'administration a la main."],
   relancePush: ["Relance reportée. Le pigeon attendra au colombier.", "Nouvelle date notée au registre.", "Reporté, avec la bénédiction du garde champêtre."],
-  waitingOff: ["Retour au bercail.", "Revenue dans sa case, comme un pigeon au colombier.", "Le dossier revient sur ton bureau."],
+  waitingOff: ["Retour au bercail.", "Revenue dans sa case, comme un pigeon au colombier.", "Le dossier revient sur le bureau."],
   add: ["Inscrite au registre.", "Ajoutée. Le notaire a paraphé.", "Une ligne de plus au cadastre.", "Dûment enregistrée à la maison communale."],
   erase: ["Effacée. Ni vu ni connu.", "Rayée du cadastre, sans frais de notaire.", "Partie sans laisser d'adresse."],
   trash: ["Classée aux archives des affaires réglées.", "Une victoire de plus au reliquaire.", "Direction la corbeille, au compteur des victoires."],
@@ -10007,7 +10012,7 @@ const Sync = (()=>{
         const local = Store.readDocs();
         const localHas = Object.keys(local.lists).length > 0;
         if(!uSnap.exists() && lSnap.empty){
-          if(localHas && !confirm("Premier branchement de ce compte : envoyer les listes de cet appareil dans ton compte en ligne ?")){
+          if(localHas && !confirm("Premier branchement de ce compte : envoyer les listes de cet appareil dans le compte en ligne ?")){
             await fb.signOut(auth); return;
           }
           state = { uid, email: user.email || "", bases: {} };
@@ -10029,7 +10034,7 @@ const Sync = (()=>{
           state = { uid, email: user.email || "", bases };
           saveState();
           storeChangedElsewhere(Store.ns + "remote");
-          if(localHas) celebrate("Tes listes en ligne sont arrivées. Celles de cet appareil sont gardées de côté.");
+          if(localHas) celebrate("Les listes en ligne sont arrivées. Celles de cet appareil sont gardées de côté.");
         }
         saveState();
       }
@@ -10263,7 +10268,7 @@ const Sync = (()=>{
     Store.writeDocs({ lists: { [x.id]: remote } });
     storeChangedElsewhere(Store.ns + "remote-shared");
     celebrate(remote ? "Ce geste n'est pas permis dans la liste de quelqu'un d'autre : elle revient comme en ligne."
-                     : "Une liste partagée avec toi ne l'est plus : elle disparaît d'ici.", true);
+                     : "Une liste partagée ne l'est plus : elle disparaît d'ici.", true);
     return true;
   }
   async function pushDelete(key){
@@ -10450,9 +10455,9 @@ const Sync = (()=>{
     "auth/weak-password": "Mot de passe trop court (6 caractères minimum).",
     "auth/invalid-email": "Cette adresse e-mail ne ressemble pas à une adresse.",
     "auth/missing-password": "Il manque le mot de passe.",
-    "auth/popup-blocked": "Le navigateur a bloqué la fenêtre Google : autorise les fenêtres pour ce site.",
+    "auth/popup-blocked": "Le navigateur a bloqué la fenêtre Google : il faut autoriser les fenêtres pour ce site.",
     "auth/network-request-failed": "Pas de réseau pour l'instant.",
-    "auth/too-many-requests": "Trop d'essais : le faisan monte la garde, réessaie dans un moment.",
+    "auth/too-many-requests": "Trop d'essais : le faisan monte la garde. Réessayer dans un moment.",
   };
   const errText = e => ERR[e && e.code] || "Ça n'a pas marché (" + ((e && (e.code || e.message)) || "erreur inconnue") + ").";
 
@@ -10477,8 +10482,8 @@ const Sync = (()=>{
       });
     }else{
       pop.innerHTML = `
-        <div class="rp-title">${pendingInvite() ? "Une invitation t'attend" : "Retrouver ses listes partout"}</div>
-        ${pendingInvite() ? `<div class="sp-state">Connecte-toi (ou crée un compte) pour l'accepter : les listes qu'on partagera avec toi apparaîtront ici.</div>` : ""}
+        <div class="rp-title">${pendingInvite() ? "Une invitation attend" : "Retrouver ses listes partout"}</div>
+        ${pendingInvite() ? `<div class="sp-state">Se connecter (ou créer un compte) pour l'accepter : les listes partagées apparaîtront ici.</div>` : ""}
         <button type="button" class="sp-google">Continuer avec Google</button>
         <div class="sp-or">ou</div>
         <input type="email" class="sp-email" placeholder="Adresse e-mail" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
@@ -10521,7 +10526,7 @@ const Sync = (()=>{
         hint.textContent = "";
         const sug = emailSuggest(email.value.trim());
         if(!sug) return;
-        hint.append("Tu voulais dire ");
+        hint.append("Plutôt ");
         const b = document.createElement("button"); b.type = "button"; b.textContent = sug;
         b.addEventListener("click", ev=>{ ev.stopPropagation(); email.value = sug; hint.textContent = ""; hideConfirm(); });
         hint.append(b, " ?");
@@ -10535,11 +10540,11 @@ const Sync = (()=>{
         e.stopPropagation();
         const addr = email.value.trim();
         msg.textContent = "";
-        if(!addr){ msg.textContent = "Écris d'abord ton adresse e-mail."; email.focus(); return; }
+        if(!addr){ msg.textContent = "Il manque l'adresse e-mail."; email.focus(); return; }
         if(!pw.value){ msg.textContent = "Il manque le mot de passe."; pw.focus(); return; }
         const sug = emailSuggest(addr);
         confirmBox.innerHTML = `Le compte sera créé pour :<span class="sp-addr">${escapeAttr(addr)}</span>`
-          + (sug ? `<div class="sp-hint" style="margin:0 0 0.5rem">Tu voulais dire <button type="button" class="sp-fix">${escapeAttr(sug)}</button> ?</div>` : "")
+          + (sug ? `<div class="sp-hint" style="margin:0 0 0.5rem">Plutôt <button type="button" class="sp-fix">${escapeAttr(sug)}</button> ?</div>` : "")
           + `<div class="rp-opts"><button type="button" class="sp-yes">Oui, c'est ça</button><button type="button" class="sp-no rp-none">Corriger</button></div>`;
         confirmBox.hidden = false;
         if(document.activeElement) document.activeElement.blur();
@@ -10550,7 +10555,7 @@ const Sync = (()=>{
       });
       pop.querySelector(".sp-forgot").addEventListener("click", e=>{
         e.stopPropagation();
-        if(!email.value.trim()){ msg.textContent = "Écris d'abord ton adresse e-mail juste au-dessus."; email.focus(); return; }
+        if(!email.value.trim()){ msg.textContent = "Il faut d'abord l'adresse e-mail, juste au-dessus."; email.focus(); return; }
         run(()=> Sync.resetPassword(email.value.trim()), "Un e-mail est parti pour choisir un nouveau mot de passe.");
       });
       pw.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); pop.querySelector(".sp-login").click(); } });
