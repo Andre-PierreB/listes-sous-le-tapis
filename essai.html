@@ -893,7 +893,8 @@
     « Une petite en passant ? » : fond citron givré (--lucky-bg), titre en
     bleu de la phrase (--phrase), pointillés et + en citron (--lucky-lemon),
     même survol (halo citron, carte qui se soulève d'1 px, + qui grossit
-    un peu). Le + est dessiné en SVG, centré dans son rond à toute taille. Champs de la
+    un peu). Le + est dessiné en SVG, centré dans son rond à toute taille.
+    Lien sous le bouton : « ou restaurer à partir d'une sauvegarde ». Champs de la
     carte « Nouvelle liste » du premier lancement : citron aussi. --lucky-gold
     ne sert plus nulle part (gardé dans :root, on ne supprime rien).
     Trèfle du jour fait : le trèfle redevient un bouton, la case se replie
@@ -5352,7 +5353,7 @@ function renderAddCategoryRow(){
         <span class="onboarding-title">Go dépoussiérage</span>
         <span class="onboarding-sub">une petite liste ?</span>
       </button>
-      <button type="button" class="onboarding-restore">ou <span>restaurer une sauvegarde</span></button>`;
+      <button type="button" class="onboarding-restore">ou <span>restaurer à partir d'une sauvegarde</span></button>`;
       el.querySelector(".onboarding-restore").addEventListener("click", (e)=>{
         e.stopPropagation();
         document.getElementById("importFile").click();
