@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.27 -->
+<!-- Sous le tapis — version AUTONOME 10.28 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -883,6 +883,7 @@
     une par ligne (« - titre », détail entre parenthèses, « [urgent] »,
     « [en cours] », quantité pour les courses), pour les coller ailleurs
     (par ex. chez Claude). Le lien affiche « Copié (N) » un instant.
+  - 10.28 : le lien s'appelle « Copier (toutes les tâches de la liste) ».
     Trèfle du jour fait : le trèfle redevient un bouton, la case se replie
     (grisée, « Trèfle du jour fait ! », clé luckydoneclosed du jour) ; un
     clic dessus fait tourner le trèfle et lance une nouvelle tournée (deux
@@ -3178,7 +3179,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.27</span>
+    <span class="version-tag">v10.28</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -7818,16 +7819,16 @@ function catTasksText(cat){
 function buildCatCopyRow(cat){
   const row = document.createElement("div");
   row.className = "cat-convert cat-copy";
-  row.innerHTML = `<button type="button" class="cat-share-link">Copier les tâches</button>`;
+  row.innerHTML = `<button type="button" class="cat-share-link">Copier (toutes les tâches de la liste)</button>`;
   row.addEventListener("mousedown", e => { if(e.target.closest("button")) e.preventDefault(); }); // le curseur reste dans le titre
   row.addEventListener("click", e => e.stopPropagation());
   const b = row.querySelector("button");
   b.addEventListener("click", async ()=>{
     const lines = catTasksText(cat);
-    if(!lines.length){ b.textContent = "Rien à copier"; setTimeout(()=>{ b.textContent = "Copier les tâches"; }, 1600); return; }
+    if(!lines.length){ b.textContent = "Rien à copier"; setTimeout(()=>{ b.textContent = "Copier (toutes les tâches de la liste)"; }, 1600); return; }
     const ok = await copyText(cat.title + "\n" + lines.join("\n"));
     b.textContent = ok ? `Copié (${lines.length})` : "La copie n'a pas marché";
-    setTimeout(()=>{ b.textContent = "Copier les tâches"; }, 1800);
+    setTimeout(()=>{ b.textContent = "Copier (toutes les tâches de la liste)"; }, 1800);
   });
   return row;
 }
