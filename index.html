@@ -892,7 +892,8 @@
   - 10.30 : bouton d'accueil « Go dépoussiérage » aux couleurs de la case
     « Une petite en passant ? » : fond citron givré (--lucky-bg), titre en
     bleu de la phrase (--phrase), pointillés et + en citron (--lucky-lemon),
-    même survol (halo citron, carte qui se soulève d'1 px). Champs de la
+    même survol (halo citron, carte qui se soulève d'1 px, + qui grossit
+    un peu). Le + est dessiné en SVG, centré dans son rond à toute taille. Champs de la
     carte « Nouvelle liste » du premier lancement : citron aussi. --lucky-gold
     ne sert plus nulle part (gardé dans :root, on ne supprime rien).
     Trèfle du jour fait : le trèfle redevient un bouton, la case se replie
@@ -2921,17 +2922,17 @@ body.no-list .add-category-row{
   border:1.5px dashed var(--lucky-lemon);
   background:transparent;
   color:color-mix(in srgb, var(--lucky-lemon) 55%, var(--ink));
-  font-size:1.15rem;
-  font-weight:400;
-  line-height:1;
+  line-height:0;
+  box-sizing:border-box;
   margin-bottom:0.3rem;
-  transition:border-color .15s ease, background .15s ease, transform .45s cubic-bezier(.34,1.4,.64,1);
+  transition:border-color .15s ease, background .15s ease, transform .2s ease;
 }
+.onboarding-plus svg{ display:block; flex:none; }   /* 10.30 : + dessiné, toujours au centre du rond (le caractère « + » ne l'était pas) */
 .add-category-btn.onboarding:hover .onboarding-plus, .add-category-btn.onboarding:focus-visible .onboarding-plus{
   border-style:solid;
   background:var(--lucky-lemon);
   color:var(--ink);
-  transform:rotate(90deg);
+  transform:scale(1.08);
 }
 .onboarding-title{
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
@@ -5347,7 +5348,7 @@ function renderAddCategoryRow(){
     if(noList){
       // App vierge : un appel à l'action clair plutôt qu'un petit bouton perdu.
       el.innerHTML = `<button type="button" class="add-category-btn onboarding">
-        <span class="onboarding-plus" aria-hidden="true">+</span>
+        <span class="onboarding-plus" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 2.5v11M2.5 8h11"/></svg></span>
         <span class="onboarding-title">Go dépoussiérage</span>
         <span class="onboarding-sub">une petite liste ?</span>
       </button>
