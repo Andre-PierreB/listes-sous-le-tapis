@@ -904,7 +904,9 @@
   - 10.31 : survol du triangle urgent d'une tâche (pas encore urgente) :
     jaune orangé (--lucky-gold, qui resservait plus), triangle qui se
     remplit un peu et grossit (zoom seul). Déjà urgente : même zoom, couleurs
-    de l'urgence inchangées.
+    de l'urgence inchangées. Survol de la flèche « En cours » : couleurs de
+    la case « En cours » (--wait-soft / --wait) ; survol de la croix : le
+    bleu qu'avait la flèche (--accent-soft / --accent-strong).
     Lien d'accueil sur deux lignes : « ou restaurer » (seul
     « restaurer » se souligne au survol), dessous, en petit, « (à partir
     d'une sauvegarde) ».
@@ -2091,10 +2093,11 @@ ul.items{
   cursor:pointer;
   border-radius:4px;
 }
-.waiting-btn:hover{
-  background:var(--accent-soft);
-  color:var(--accent-strong);
+.waiting-btn:hover{   /* 10.31 : aux couleurs de la case « En cours » (avant : bleu --accent) */
+  background:var(--wait-soft);
+  color:color-mix(in srgb, var(--wait) 75%, var(--ink));
 }
+#waitingSection .waiting-btn:hover{ background:color-mix(in srgb, var(--wait) 18%, var(--wait-soft)); }   /* sinon invisible sur le fond de la case */
 .waiting-btn.active{
   color:var(--accent-strong);
 }
@@ -2125,9 +2128,9 @@ ul.items{
 .urgent-btn:not(.active):hover svg .tri{ fill:color-mix(in srgb, var(--lucky-gold) 60%, transparent); }
 .urgent-btn.auto:hover svg{ transform:none; }
 @media (prefers-reduced-motion:reduce){ .urgent-btn svg{ transition:none; } .urgent-btn:hover svg{ transform:none; } }
-.delete-btn:hover{
-  background:var(--urgent-soft);
-  color:var(--urgent-ink);
+.delete-btn:hover{   /* 10.31 : le bleu qu'avait la flèche « En cours » (avant : améthyste) */
+  background:var(--accent-soft);
+  color:var(--accent-strong);
 }
 .urgent-btn.active{
   background:var(--urgent-soft);
