@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.30 -->
+<!-- Sous le tapis — version AUTONOME 10.31 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -901,6 +901,22 @@
     Lien sous le bouton : « ou restaurer à partir d'une sauvegarde ». Champs de la
     carte « Nouvelle liste » du premier lancement : citron aussi. --lucky-gold
     ne sert plus nulle part (gardé dans :root, on ne supprime rien).
+  - 10.31 : lien d'accueil sur deux lignes : « ou restaurer » (seul
+    « restaurer » se souligne au survol), dessous, en petit, « (à partir
+    d'une sauvegarde) ».
+    NOUVEAUTÉS DANS LES LISTES PARTAGÉES (étage 1, sans serveur) : une tâche
+    ajoutée par quelqu'un d'autre (base.by ≠ moi) depuis ma dernière visite
+    porte une pastille « nouveau » + l'initiale de qui l'a ajoutée ; la carte
+    de la liste affiche « N nouvelles » à côté du titre (un clic : marqué vu).
+    Si ça arrive pendant que l'appli est à l'écran : un message en bas
+    (« Hiske a ajouté « … » à Courses »). Mémoire du « vu » : clé locale
+    sous-le-tapis-vu (hors fiches, propre à l'appareil) = { idListe: nombre
+    de tâches déjà vues } ; les tâches ne font que s'ajouter en fin de liste
+    (un invité ne peut pas en faire baisser le nombre), donc tout index ≥ ce
+    nombre est nouveau. Première rencontre d'une liste : tout est vu (pas
+    d'avalanche). Une liste est marquée vue quand on quitte l'appli
+    (onglet caché / fermé), jusqu'à ce qui a été réellement affiché à
+    l'écran — ce qui arrive appli cachée reste « nouveau ».
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1733,6 +1749,22 @@ header{
   font-size:0.62rem; font-weight:700; line-height:1;
 }
 .share-chip + .share-chip{ margin-left:-0.3rem; }
+/* 10.31 : nouveautés venues d'autres personnes */
+.cat-new{
+  appearance:none; border:0; cursor:pointer; flex:none; margin-left:0.4rem;
+  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.62rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+  padding:0.12rem 0.45rem; border-radius:999px;
+  background:var(--cat-color, var(--accent)); color:var(--surface);
+  transition:opacity .15s ease;
+}
+.cat-new:hover{ opacity:.8; }
+.new-tag{
+  display:inline-block; margin-right:0.4rem; vertical-align:0.1em;
+  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.62rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+  padding:0.05rem 0.4rem; border-radius:999px;
+  background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface));
+  color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
+}
 .share-more{ font-size:0.55rem; }
 /* 10.2 : « Partagée avec » sous les couleurs, dans le renommage d'une liste */
 .cat-share{ display:flex; flex-wrap:wrap; align-items:center; gap:0.35rem 0.5rem; margin-top:0.55rem; font-size:0.8rem; color:var(--ink-soft); }
@@ -2957,6 +2989,7 @@ body.no-list .add-category-row{
 .onboarding-restore span{ text-decoration:underline; text-decoration-color:transparent; text-underline-offset:3px; transition:text-decoration-color .15s ease; }
 .onboarding-restore:hover{ color:var(--ink-soft); }
 .onboarding-restore:hover span{ text-decoration-color:currentColor; }
+.onboarding-restore small{ display:block; margin-top:0.1rem; font-size:0.78em; color:var(--ink-faint); }   /* 10.31 */
 /* carte « nouvelle liste » : nom, première tâche, détail, échéance (7.22) */
 .new-list-card{
   width:min(440px, 100%);
@@ -3195,7 +3228,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.30</span>
+    <span class="version-tag">v10.31</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5353,7 +5386,7 @@ function renderAddCategoryRow(){
         <span class="onboarding-title">Go dépoussiérage</span>
         <span class="onboarding-sub">une petite liste ?</span>
       </button>
-      <button type="button" class="onboarding-restore">ou <span>restaurer à partir d'une sauvegarde</span></button>`;
+      <button type="button" class="onboarding-restore">ou <span>restaurer</span><small>(à partir d'une sauvegarde)</small></button>`;
       el.querySelector(".onboarding-restore").addEventListener("click", (e)=>{
         e.stopPropagation();
         document.getElementById("importFile").click();
@@ -5683,6 +5716,69 @@ function personName(uid, catId){
   if(c && c.name) return c.name;
   if(i && i.names[uid]) return i.names[uid];
   return "?";
+}
+// ---- 10.31 : nouveautés dans les listes partagées (voir NOTE, 10.31) ----
+const SEEN_KEY = "sous-le-tapis-vu";
+let seenMap = (()=>{ try{ const o = JSON.parse(localStorage.getItem(SEEN_KEY) || "{}"); return o && typeof o === "object" ? o : {}; }catch(e){ return {}; } })();
+const shownCount = {};          // ce qui a été affiché à l'écran depuis la dernière sortie
+function saveSeen(){ try{ localStorage.setItem(SEEN_KEY, JSON.stringify(seenMap)); }catch(e){} }
+// index des tâches ajoutées par d'autres, pas encore vues (ni effacées, ni cochées)
+function newFromOthers(cat){
+  try{
+    if(!isSharedList(cat.id)) return [];
+    const me = myUid();
+    if(!me) return [];
+    const items = getEffectiveItems(cat);
+    if(typeof seenMap[cat.id] !== "number"){ seenMap[cat.id] = items.length; saveSeen(); return []; }
+    const out = [];
+    for(let i = seenMap[cat.id]; i < items.length; i++){
+      const b = items[i], key = itemKey(cat.id, i);
+      if(!b || !b.by || b.by === me || isDeleted(key) || state[key]) continue;
+      out.push(i);
+    }
+    return out;
+  }catch(e){ return []; }
+}
+function markSeen(catId, upTo){
+  const cat = DATA.find(c => c.id === catId);
+  if(!cat) return;
+  const n = typeof upTo === "number" ? upTo : getEffectiveItems(cat).length;
+  if(typeof seenMap[catId] !== "number" || n > seenMap[catId]){ seenMap[catId] = n; saveSeen(); }
+}
+// noté à chaque rendu fait pendant que l'appli est à l'écran
+function noteShown(){
+  if(document.visibilityState !== "visible") return;
+  DATA.forEach(c => { try{ if(isSharedList(c.id)) shownCount[c.id] = getEffectiveItems(c).length; }catch(e){} });
+}
+function leaveMarksSeen(){
+  Object.keys(shownCount).forEach(id => { markSeen(id, shownCount[id]); delete shownCount[id]; });
+}
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState === "hidden") leaveMarksSeen(); else noteShown(); });
+window.addEventListener("pagehide", leaveMarksSeen);
+// message quand une tâche d'un autre arrive pendant qu'on regarde
+let prevNewKeys = null;
+function renderNewNotice(){
+  const now = new Map();
+  DATA.forEach(c => {
+    if(isCategoryDeleted(c.id)) return;
+    newFromOthers(c).forEach(i => now.set(itemKey(c.id, i), { cat:c, idx:i }));
+  });
+  if(prevNewKeys && document.visibilityState === "visible"){
+    const fresh = [...now.keys()].filter(k => !prevNewKeys.has(k));
+    if(fresh.length){
+      const { cat, idx } = now.get(fresh[0]);
+      const b = getEffectiveItems(cat)[idx];
+      const who = personName(b.by, cat.id);
+      const t = getEffective(itemKey(cat.id, idx), b).t;
+      celebrate(`${who} a ajouté « ${t} » à ${cat.title}` + (fresh.length > 1 ? ` (et ${fresh.length - 1} autre${fresh.length > 2 ? "s" : ""})` : ""), true);
+    }
+  }
+  prevNewKeys = new Set(now.keys());
+  noteShown();
+}
+function newTagHtml(cat, base){
+  const who = personName(base.by, cat.id);
+  return `<span class="new-tag" data-tip="Ajoutée par ${escapeAttr(who)}" aria-label="Nouvelle, ajoutée par ${escapeAttr(who)}">nouveau · ${escapeAttr(initialOf(who))}</span>`;
 }
 // « de André » → « d'André »
 function deName(name){ const n = String(name || "?"); return /^[aeiouyhàâäéèêëîïôöùûü]/i.test(n) ? "d'" + n : "de " + n; }
@@ -7430,7 +7526,7 @@ function buildItemLi(cat, idx, base, key, opts){
     li.innerHTML = `
       <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
       <button type="button" class="strike-dot" role="checkbox" aria-checked="${struck}" aria-label="${escapeAttr((struck ? "Dé-rayer " : "Rayer ") + eff.t)}"></button>
-      <span class="item-text">${strikerTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${qtyTag}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
+      <span class="item-text">${strikerTag}${!struck && newFromOthers(cat).includes(idx) ? newTagHtml(cat, base) : ""}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${qtyTag}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
       <span class="item-controls">
         <button type="button" class="courses-edit-btn" aria-label="Modifier l'article" data-tip="Modifier"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg></button>
         <button type="button" class="delete-btn" aria-label="Retirer l'article" data-tip="Retirer l'article">&times;</button>
@@ -7497,6 +7593,7 @@ function buildItemLi(cat, idx, base, key, opts){
   // 10.2 : liste partagée — initiale de qui a coché ; pas d'effacement des
   // tâches des autres quand la liste n'est pas à moi
   const canRemove = canRemoveTask(cat, base);
+  const isNewHere = !checked && newFromOthers(cat).includes(idx);   // 10.31
   let checkerTag = "";
   if(checked && isSharedList(cat.id)){
     const who = personName(checkerOf(cat.id, key), cat.id);
@@ -7505,7 +7602,7 @@ function buildItemLi(cat, idx, base, key, opts){
   li.innerHTML = `
     ${dragHandleHtml}
     ${isEgg ? `<span class="egg-dot" title="En couvaison">${eggSvg(20)}</span>` : `<input type="checkbox" ${checked ? "checked" : ""} aria-label="${escapeAttr(eff.t)}">`}
-    <span class="item-text">${checkerTag}${whoTag}${personTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
+    <span class="item-text">${checkerTag}${whoTag}${personTag}${isNewHere ? newTagHtml(cat, base) : ""}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
     <span class="item-controls">
       <button type="button" class="waiting-btn${eff.waiting ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${waitingBtnTitle}" data-tip="${waitingBtnTitle}">${waitingBtnIcon}</button>
       ${isEgg ? `<button type="button" class="hatch-btn" aria-label="Faire éclore" data-tip="Faire éclore"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="chick" cx="12" cy="8.2" r="3.6"/><path class="beak" d="M15.5 8.1l2 .7-2 .7"/><circle cx="13.1" cy="7.3" r=".55" fill="currentColor" stroke="none"/><path class="shell" d="M5.2 13.6c0 4.3 3 7.6 6.8 7.6s6.8-3.3 6.8-7.6l-2.3 1.5-2.2-1.7-2.3 1.7-2.3-1.7-2.2 1.7z"/></svg></button>` : `<button type="button" class="urgent-btn${eff.urgent ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}" data-tip="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}">${triangleSvg(15)}</button>`}
@@ -7639,7 +7736,7 @@ function renderWaitingSection(){
 }
 
 // Tout ce qui se redessine, dans l'ordre.
-const RENDERERS = [render, renderWaitingSection, renderAddCategoryRow, updateProgress, renderTrash, renderShare, renderBackupNudge];
+const RENDERERS = [render, renderWaitingSection, renderAddCategoryRow, updateProgress, renderTrash, renderShare, renderBackupNudge, renderNewNotice];   // 10.31 : renderNewNotice
 // 10.8 : un changement venu d'ailleurs (autre onglet, en ligne) arrivé
 // pendant une édition ou une petite fenêtre n'est plus perdu : il est
 // appliqué au rendu suivant (avant, il n'apparaissait qu'au rechargement)
@@ -7979,6 +8076,9 @@ function render(){
         (names.length > 3 ? `<span class="share-chip share-more">+${names.length - 3}</span>` : "") + `</span>`;
     }
 
+    // 10.31 : « N nouvelles » (tâches ajoutées par d'autres, pas encore vues)
+    const nNew = newFromOthers(cat).length;
+    const newChip = nNew ? `<button type="button" class="cat-new" data-tip="Marquer comme vu" aria-label="${nNew} nouvelle${nNew > 1 ? "s" : ""}, marquer comme vu">${nNew} nouvelle${nNew > 1 ? "s" : ""}</button>` : "";
     const renamingThisCat = editingCategoryTitle === cat.id;
     const reversed = isCatReversed(cat.id);
     const head = document.createElement("div");
@@ -7987,7 +8087,7 @@ function render(){
       <span class="cat-title-group">
         ${renamingThisCat
           ? `<input type="text" class="cat-title-input" value="${escapeAttr(cat.title)}">`
-          : `${courses ? BASKET_SVG : ""}<span class="cat-title">${escapeAttr(cat.title)}</span>${shareChips}${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} ${courses ? "à prendre" : "à faire"}">${leftCount}</span>` : ""}`}
+          : `${courses ? BASKET_SVG : ""}<span class="cat-title">${escapeAttr(cat.title)}</span>${shareChips}${newChip}${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} ${courses ? "à prendre" : "à faire"}">${leftCount}</span>` : ""}`}
         ${courses ? "" : `<button type="button" class="add-btn" aria-label="Ajouter une tâche">+</button>`}
         ${renamingThisCat || courses ? "" : `<label class="cat-quick-wrap" title="Ajouter une tâche"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" aria-label="Ajouter une tâche à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
       </span>
@@ -7998,6 +8098,7 @@ function render(){
       </span>
     `;
     wireDragCard(card, head.querySelector(".cat-grip"), catIdx);
+    { const nb = head.querySelector(".cat-new"); if(nb) nb.addEventListener("click", e=>{ e.stopPropagation(); markSeen(cat.id); delete shownCount[cat.id]; renderAll(); }); }   // 10.31
     // 10.19 : liste de courses ouverte : un clic sur le bandeau, à côté du
     // titre, la replie (le titre garde son double-clic qui le renomme)
     if(courses && !folded && !renamingThisCat) head.addEventListener("click", e=>{
