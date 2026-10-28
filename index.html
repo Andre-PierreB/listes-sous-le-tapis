@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.33 -->
+<!-- Sous le tapis — version AUTONOME 10.34 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -960,10 +960,15 @@
     (avant : bleue) pour faire moins de bruit. Même coche au survol, dans
     l'encre mauve, sur les cases du bandeau urgent (recentrées sur la
     nouvelle taille de texte).
+  - 10.34 : un chouïa moins serré : --row-pad 0.34rem, écart entre tâches
+    0.1rem ; bandeau urgent revenu à l'interligne d'avant (0.3rem, 0.15rem).
+    Listes mémo (courses) : police à part, IBM Plex Mono (choisie au banc
+    d'essai), réglable dans :root : --font-memo et --memo-size. Concerne les
+    articles, le champ « Ajouter un article » et le nom en édition.
 -->
 <title>Sous le tapis</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Courier+Prime:wght@400;700&family=Work+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Courier+Prime:wght@400;700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 /* ==========================================================================
    Feuille de style rangée en 8.0 : chaque retouche (7.x) est fondue dans sa
@@ -1017,7 +1022,9 @@
   /* 10.33 : texte des tâches, réglable ici seulement */
   --font-task:'Work Sans', system-ui, -apple-system, sans-serif;
   --task-size:0.92rem;
-  --row-pad:0.28rem;
+  --font-memo:'IBM Plex Mono', ui-monospace, monospace;   /* 10.34 : listes mémo / courses, réglable à part */
+  --memo-size:0.88rem;
+  --row-pad:0.34rem;   /* 10.34 : un chouïa moins serré (10.33 : 0.28rem ; avant : 0.42rem) */
   --shadow: 0 1px 2px rgba(30,40,45,0.04), 0 8px 24px -12px rgba(30,40,45,0.12);
   --rose:#D98DA1; /* couleur fixe : un color-mix s'interpole mal dans l'animation */
   --phrase:#3F6A8C; /* bleu acier : phrase du compteur (8.4) */
@@ -1335,7 +1342,7 @@ header{
   padding:0;
   display:flex;
   flex-direction:column;
-  gap:0.05rem;   /* 10.33 : rangées serrées */
+  gap:0.15rem;   /* 10.34 : interligne d'avant rétabli dans le bandeau urgent */
 }
 .urgent-list li{
   display:flex;
@@ -1366,7 +1373,7 @@ header{
   box-sizing:border-box;
   padding:0;
   flex:none;
-  margin:calc(0.2rem + var(--task-size) * 0.65 - 7px) 0 0; /* centrée sur la 1re ligne (8.30 ; 10.33 : nouvelle taille) */
+  margin:calc(0.3rem + var(--task-size) * 0.65 - 7px) 0 0; /* centrée sur la 1re ligne (8.30 ; 10.33 : nouvelle taille) */
   position:relative;
   width:14px;
   height:14px;
@@ -1432,7 +1439,7 @@ header{
   line-height:1.3;
   color:var(--urgent-ink);   /* 10.25 : les tâches urgentes dans l'encre de l'urgence (avant : noir) */
   font-weight:500;
-  padding:0.2rem 0.4rem 0.2rem 1.65rem; /* place de la puce (8.30) ; 10.33 : 0.2rem en haut et en bas (avant 0.3rem) */
+  padding:0.3rem 0.4rem 0.3rem 1.65rem; /* place de la puce ; texte à la même place qu'avant (8.30 ; 10.34 : retour à 0.3rem) */
   border-radius:8px;
   cursor:default;
   -webkit-tap-highlight-color:transparent; /* pas de voile gris au toucher (8.34) */
@@ -1443,7 +1450,7 @@ header{
 .urgent-bullet{
   position:absolute;
   left:0.45rem;
-  top:calc(0.2rem + var(--task-size) * 0.65); /* moitié de la 1re ligne : taille × 1.3 / 2 (10.33) */
+  top:calc(0.3rem + var(--task-size) * 0.65); /* moitié de la 1re ligne : taille × 1.3 / 2 */
   transform:translateY(-50%);
   width:7px;
   height:7px;
@@ -1984,7 +1991,7 @@ ul.items{
   padding:0;
   display:flex;
   flex-direction:column;
-  gap:0.05rem;   /* 10.33 : rangées serrées (avant 0.15rem) */
+  gap:0.1rem;   /* 10.34 (10.33 : 0.05rem ; avant : 0.15rem) */
 }
 .item{
   display:flex;
@@ -2292,6 +2299,7 @@ ul.items{
 /* 10.17 : chaque article posé sur une ligne de cahier */
 .courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:0.76rem 0.3rem 0; } /* 10.18 : texte posé sur sa ligne (plus d'air au-dessus, moins en dessous) */
 .courses-item:hover{ background:color-mix(in srgb, var(--paper-rule) 30%, transparent); } /* voile léger : la marge rouge reste visible */
+.courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); }   /* 10.34 */
 .courses-item .item-text{ cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
 /* quantité : après le nom (en ligne, pour être barrée avec lui) ; 10.17 : à
    l'encre rose (le rouge reste aux urgences), bien visible, plus de badge gris */
@@ -2311,6 +2319,7 @@ ul.items{
 .courses-item.editing{ align-items:center; }
 .courses-item.editing .drag-handle, .courses-item.editing .strike-dot{ visibility:hidden; }
 .courses-edit{ flex:1; min-width:0; display:flex; flex-wrap:wrap; align-items:center; gap:0.4rem; } /* 10.19 : le détail passe dessous */
+.courses-edit-name{ font-family:var(--font-memo) !important; }   /* 10.34 */
 .courses-edit input{
   font-family:inherit; font-size:0.95rem; line-height:1.4; color:var(--ink);
   background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
@@ -2342,7 +2351,7 @@ ul.items{
 .courses-input{
   flex:1; width:100%; margin:0;
   resize:none; overflow:hidden;
-  font-family:inherit; font-size:0.95rem; line-height:1.4; color:var(--ink);
+  font-family:var(--font-memo); font-size:var(--memo-size); line-height:1.4; color:var(--ink);   /* 10.34 */
   background:transparent;
   border:none; border-bottom:1px dashed var(--line); border-radius:0;
   padding:0 0.1rem 0.15rem;
@@ -3347,7 +3356,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.33</span>
+    <span class="version-tag">v10.34</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
