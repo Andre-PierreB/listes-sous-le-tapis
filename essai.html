@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.34 -->
+<!-- Sous le tapis — version AUTONOME 10.35 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -965,6 +965,15 @@
     Listes mémo (courses) : police à part, IBM Plex Mono (choisie au banc
     d'essai), réglable dans :root : --font-memo et --memo-size. Concerne les
     articles, le champ « Ajouter un article » et le nom en édition.
+  - 10.35 : plus d'air entre le titre d'une liste et ses tâches (0.35rem de
+    plus) et sous le titre du bandeau urgent (0.55rem au lieu de 0.2rem) ;
+    « En cours » inchangé. Pas des lignes calé sur celui des mémos (≈ 36 px
+    pour une ligne) : --row-pad revient à 0.42rem, articles des mémos un peu
+    resserrés (0.61rem au-dessus au lieu de 0.76rem). Glisser au doigt : une tâche ou une liste ne se
+    saisit plus qu'après un appui tenu sans bouger (TOUCH_HOLD_MS = 280 ms,
+    tolérance 10 px, voir afterTouchHold) ; sinon la poignée laisse défiler
+    la page (touch-action:pan-y sur écran tactile). Évite les tâches
+    attrapées par inadvertance en balayant l'écran. Souris : inchangé.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1024,7 +1033,7 @@
   --task-size:0.92rem;
   --font-memo:'IBM Plex Mono', ui-monospace, monospace;   /* 10.34 : listes mémo / courses, réglable à part */
   --memo-size:0.88rem;
-  --row-pad:0.34rem;   /* 10.34 : un chouïa moins serré (10.33 : 0.28rem ; avant : 0.42rem) */
+  --row-pad:0.42rem;   /* 10.35 : retour à l'espacement d'avant 10.33, calé sur le pas des mémos (10.34 : 0.34rem ; 10.33 : 0.28rem) */
   --shadow: 0 1px 2px rgba(30,40,45,0.04), 0 8px 24px -12px rgba(30,40,45,0.12);
   --rose:#D98DA1; /* couleur fixe : un color-mix s'interpole mal dans l'animation */
   --phrase:#3F6A8C; /* bleu acier : phrase du compteur (8.4) */
@@ -1329,7 +1338,7 @@ header{
   letter-spacing:0.1em;
   text-transform:uppercase;
   color:color-mix(in srgb, var(--urgent-ink) 50%, var(--urgent-soft));   /* 10.25 : titre pâli */
-  margin-bottom:0.2rem;
+  margin-bottom:0.55rem;   /* 10.35 : plus d'air sous le titre (avant 0.2rem) */
 }
 .urgent-banner-body{flex:1; min-width:0;}
 /* rien d'urgent : la case reste, au calme */
@@ -1734,6 +1743,7 @@ header{
   align-items:center;
   gap:0.75rem;
 }
+.category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:0.35rem; }   /* 10.35 : plus d'air entre le titre et les tâches */
 .cat-title-group{
   display:flex;
   align-items:center;
@@ -2297,7 +2307,7 @@ ul.items{
 .strike-dot:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 .item.is-checked .strike-dot{ border-color:var(--line); }
 /* 10.17 : chaque article posé sur une ligne de cahier */
-.courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:0.76rem 0.3rem 0; } /* 10.18 : texte posé sur sa ligne (plus d'air au-dessus, moins en dessous) */
+.courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:0.61rem 0.3rem 0; } /* 10.35 : 0.61rem (avant 0.76rem) : même pas de ligne que les tâches */ /* 10.18 : texte posé sur sa ligne (plus d'air au-dessus, moins en dessous) */
 .courses-item:hover{ background:color-mix(in srgb, var(--paper-rule) 30%, transparent); } /* voile léger : la marge rouge reste visible */
 .courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); }   /* 10.34 */
 .courses-item .item-text{ cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
@@ -3259,6 +3269,9 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
 @media (hover:none){
   /* les contrôles doivent rester repérables sans attendre un survol qui n'arrivera jamais */
   .item .drag-handle, .urgent-list .drag-handle, .trash-item .item-controls{opacity:0.65;}
+  /* 10.35 : la poignée laisse défiler la page ; on saisit par un appui tenu (voir afterTouchHold) */
+  .drag-handle, .cat-grip{ touch-action:pan-y; }
+  .drag-handle.holding, .cat-grip.holding{ opacity:1; color:var(--ink-soft); }
   /* 8.39 : ↳ ⚠ × d'une ligne apparaissent au toucher de la ligne ; cachés,
      ils ne réagissent pas */
   .item.revealed .item-controls{ opacity:1; }
@@ -3356,7 +3369,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.34</span>
+    <span class="version-tag">v10.35</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6533,6 +6546,38 @@ function moveDragSlot(parents, moveFn){
 // ligne à la fois et cassait la fluidité de l'animation. Avec la capture
 // fixée sur <html>, un seul jeu d'écouteurs globaux (posés une fois plus bas)
 // suit tout le geste, quel que soit le nombre de lignes franchies.
+// 10.35 : au doigt, on ne saisit une ligne (ou une carte) qu'après un appui
+// tenu sans bouger (TOUCH_HOLD_MS). Avant, la poignée bloquait le défilement
+// et partait au moindre contact : en balayant l'écran, le pouce attrapait
+// parfois une tâche. Si le doigt bouge pendant l'attente, c'est un défilement
+// ordinaire (la poignée laisse défiler verticalement, touch-action:pan-y).
+// À la souris, rien ne change : le glisser part tout de suite.
+const TOUCH_HOLD_MS = 280;
+const TOUCH_HOLD_SLOP = 10;
+function afterTouchHold(e, begin){
+  if(e.pointerType !== "touch"){ begin(e); return; }
+  const id = e.pointerId, x0 = e.clientX, y0 = e.clientY, grip = e.currentTarget;
+  let timer = null;
+  const stop = ()=>{
+    clearTimeout(timer);
+    grip.classList.remove("holding");
+    document.removeEventListener("pointermove", onMove, true);
+    document.removeEventListener("pointerup", stop, true);
+    document.removeEventListener("pointercancel", stop, true);
+  };
+  const onMove = (ev)=>{
+    if(ev.pointerId !== id) return;
+    if(Math.abs(ev.clientX - x0) > TOUCH_HOLD_SLOP || Math.abs(ev.clientY - y0) > TOUCH_HOLD_SLOP) stop();
+  };
+  document.addEventListener("pointermove", onMove, true);
+  document.addEventListener("pointerup", stop, true);
+  document.addEventListener("pointercancel", stop, true);
+  grip.classList.add("holding");
+  timer = setTimeout(()=>{ stop(); begin(e); }, TOUCH_HOLD_MS);
+}
+// une fois la saisie partie au doigt, plus de défilement de la page
+document.addEventListener("touchmove", (e)=>{ if(dragState) e.preventDefault(); }, { passive:false });
+
 function wireDragRow(li, value, dragMode, cat){
   li.dataset.dragId = value;
   li.dataset.dragMode = dragMode;
@@ -6540,6 +6585,10 @@ function wireDragRow(li, value, dragMode, cat){
 
   grip.addEventListener("pointerdown", (e)=>{
     if(e.pointerType === "mouse" && e.button !== 0) return;
+    if(dragState || editingKey || addingCat || addingCategory || editingCategoryTitle || editingCoursesKey) return;
+    afterTouchHold(e, beginRowDrag);
+  });
+  function beginRowDrag(e){
     if(dragState || editingKey || addingCat || addingCategory || editingCategoryTitle || editingCoursesKey) return;
     e.preventDefault();
     try{ document.documentElement.setPointerCapture(e.pointerId); }catch(err){}
@@ -6566,7 +6615,7 @@ function wireDragRow(li, value, dragMode, cat){
     dragState = { el: li, value, dragMode, cat, pointerId: e.pointerId };
     li.classList.add("dragging");
     haptic.tick();
-  });
+  }
 }
 
 // Le déplacement réel (mesure + réinsertion + animation FLIP) est coalescé
@@ -6600,6 +6649,10 @@ function wireDragCard(card, grip, catIdx){
   grip.addEventListener("pointerdown", (e)=>{
     if(e.pointerType === "mouse" && e.button !== 0) return;
     if(editingKey || addingCat || editingCategoryTitle || dragState) return;
+    afterTouchHold(e, beginCardDrag);
+  });
+  function beginCardDrag(e){
+    if(editingKey || addingCat || editingCategoryTitle || dragState) return;
     e.preventDefault();
     try{ document.documentElement.setPointerCapture(e.pointerId); }catch(err){}
     // 5.17 : un « fantôme » de la carte suit le pointeur, et la carte
@@ -6620,7 +6673,7 @@ function wireDragCard(card, grip, catIdx){
     card.classList.add("dragging-card");
     document.body.classList.add("dragging-lists");
     haptic.tick();
-  });
+  }
 }
 
 // Grille des listes : on cherche la carte dont le centre est le plus proche
