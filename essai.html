@@ -907,7 +907,7 @@
     NOUVEAUTÉS DANS LES LISTES PARTAGÉES (étage 1, sans serveur) : une tâche
     ajoutée par quelqu'un d'autre (base.by ≠ moi) depuis ma dernière visite
     porte « new Hiske » en haut à droite de la ligne (s'efface au survol pour
-    laisser les boutons) ; la carte affiche « +N » en haut à droite (un clic :
+    laisser les boutons) ; la carte affiche « +N » en exposant devant le titre (un clic :
     marqué vu). Mise en page de l'en-tête revue (choisie au banc d'essai) :
     le + suit le dernier mot du titre ; le champ express reste à côté du
     titre s'il tient en entier (8rem), sinon il passe à la ligne, avec le
@@ -1756,9 +1756,10 @@ header{
 .share-chip + .share-chip{ margin-left:-0.3rem; }
 /* 10.31 : nouveautés venues d'autres personnes */
 .cat-new{
+  display:inline-block; vertical-align:super; margin-right:0.25rem; position:relative; top:-0.1em;   /* devant le titre, en exposant */
   appearance:none; border:0; cursor:pointer; flex:none; line-height:1.2;
-  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.62rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
-  padding:0.12rem 0.45rem; border-radius:999px;
+  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.56rem; font-weight:700; letter-spacing:0.02em; text-transform:uppercase;
+  padding:0.05rem 0.3rem; border-radius:999px;
   background:var(--cat-color, var(--accent)); color:var(--surface);
   transition:opacity .15s ease;
 }
@@ -8105,12 +8106,11 @@ function render(){
       <span class="cat-title-group">
         ${renamingThisCat
           ? `<input type="text" class="cat-title-input" value="${escapeAttr(cat.title)}">`
-          : `${courses ? BASKET_SVG : ""}<span class="cat-title-line"><span class="cat-title">${escapeAttr(cat.title)}</span>${courses ? "" : `<button type="button" class="add-btn" aria-label="Ajouter une tâche">+</button>`}</span>${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} ${courses ? "à prendre" : "à faire"}">${leftCount}</span>` : ""}`}
+          : `${courses ? BASKET_SVG : ""}<span class="cat-title-line">${newChip}<span class="cat-title">${escapeAttr(cat.title)}</span>${courses ? "" : `<button type="button" class="add-btn" aria-label="Ajouter une tâche">+</button>`}</span>${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} ${courses ? "à prendre" : "à faire"}">${leftCount}</span>` : ""}`}
         ${renamingThisCat && !courses ? `<button type="button" class="add-btn" aria-label="Ajouter une tâche">+</button>` : ""}
         ${renamingThisCat || courses ? "" : `<label class="cat-quick-wrap" title="Ajouter une tâche"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" placeholder="Nouvelle tâche…" aria-label="Ajouter une tâche à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
       </span>
       <span class="cat-head-right">
-        ${newChip}
         ${courses ? "" : `<button type="button" class="cat-order${reversed ? " reversed" : ""}" aria-label="${reversed ? "Mettre les récentes en haut" : "Mettre les récentes en bas"}" data-tip="${reversed ? "Récentes en haut ?" : "Récentes en bas ?"}"><svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true"><path d="M5 1.8 9 8.2H1z" fill="currentColor"/></svg></button>`}
         <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
         ${canDeleteCat ? `<button type="button" class="cat-delete-btn" aria-label="Supprimer cette case vide" title="Supprimer cette case vide">&times;</button>` : ""}
