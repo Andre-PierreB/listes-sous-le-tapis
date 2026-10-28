@@ -901,7 +901,9 @@
     Lien sous le bouton : « ou restaurer à partir d'une sauvegarde ». Champs de la
     carte « Nouvelle liste » du premier lancement : citron aussi. --lucky-gold
     ne sert plus nulle part (gardé dans :root, on ne supprime rien).
-  - 10.31 : lien d'accueil sur deux lignes : « ou restaurer » (seul
+  - 10.31 : survol du triangle urgent d'une tâche : encre de l'urgence,
+    fond améthyste pâle, triangle qui se remplit un peu et bascule.
+    Lien d'accueil sur deux lignes : « ou restaurer » (seul
     « restaurer » se souligne au survol), dessous, en petit, « (à partir
     d'une sauvegarde) ».
     NOUVEAUTÉS DANS LES LISTES PARTAGÉES (étage 1, sans serveur) : une tâche
@@ -2110,10 +2112,17 @@ ul.items{
 /* 10.2 : à la place de l'effacement, dans une liste partagée (tâche d'un autre) */
 .delete-spacer{ display:block; flex:none; width:26px; height:1px; }
 .urgent-btn svg, .delete-btn svg{ display:block; }
+.urgent-btn svg{ transition:transform .3s cubic-bezier(.34,1.4,.64,1); transform-origin:50% 60%; }
+/* 10.31 : survol du triangle — il prend l'encre de l'urgence, se remplit
+   légèrement et bascule un peu, comme une alerte qui s'allume */
 .urgent-btn:hover{
-  background:var(--surface-2);
-  color:var(--ink-soft);
+  background:color-mix(in srgb, var(--urgent-soft) 75%, transparent);
+  color:var(--urgent-ink);
 }
+.urgent-btn:hover svg{ transform:scale(1.15) rotate(-8deg); }
+.urgent-btn:hover svg .tri{ fill:color-mix(in srgb, currentColor 14%, transparent); }
+.urgent-btn.auto:hover svg{ transform:none; }
+@media (prefers-reduced-motion:reduce){ .urgent-btn svg{ transition:none; } .urgent-btn:hover svg{ transform:none; } }
 .delete-btn:hover{
   background:var(--urgent-soft);
   color:var(--urgent-ink);
