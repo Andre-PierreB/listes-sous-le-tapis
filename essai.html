@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.32 -->
+<!-- Sous le tapis — version AUTONOME 10.33 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -946,10 +946,24 @@
     Case urgente : ses boutons ont les mêmes survols que dans les listes
     (flèche aux couleurs d'« En cours », triangle comme ci-dessus) ; au
     repos ils gardent le ton de la case ; le triangle inerte ne bouge pas.
+  - 10.33 : police des tâches (choisie au banc d'essai) : Work Sans, rangées
+    serrées. Réglable en un seul endroit dans :root : --font-task (police),
+    --task-size (taille), --row-pad (haut/bas d'une ligne, avant 0.42rem).
+    Concerne seulement le texte des tâches : listes, bandeau urgent, champs
+    d'édition d'une tâche. Titres, noms de liste en Courier, compteur,
+    phrase d'encouragement, badges et corbeille ne bougent pas. Pour changer
+    de police : modifier --font-task et l'ajouter à l'@import Google Fonts.
+    Case « En cours », thème clair : la tâche survolée se teinte à partir du
+    fond de la case (vert d'attente à 8 %) au lieu du beige des listes.
+    Cases à cocher : la coche (case bleue + ✓) apparaît au survol, avec le
+    même petit zoom que les boutons à icône ; cochée, la case reste grise
+    (avant : bleue) pour faire moins de bruit. Même coche au survol, dans
+    l'encre mauve, sur les cases du bandeau urgent (recentrées sur la
+    nouvelle taille de texte).
 -->
 <title>Sous le tapis</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Courier+Prime:wght@400;700&family=Work+Sans:wght@400;500;600&display=swap');
 
 /* ==========================================================================
    Feuille de style rangée en 8.0 : chaque retouche (7.x) est fondue dans sa
@@ -1000,6 +1014,10 @@
   --lucky-gold:#E3B53C;
   --share-hover:#F2EA8C;
   --line:#EDE7DC;
+  /* 10.33 : texte des tâches, réglable ici seulement */
+  --font-task:'Work Sans', system-ui, -apple-system, sans-serif;
+  --task-size:0.92rem;
+  --row-pad:0.28rem;
   --shadow: 0 1px 2px rgba(30,40,45,0.04), 0 8px 24px -12px rgba(30,40,45,0.12);
   --rose:#D98DA1; /* couleur fixe : un color-mix s'interpole mal dans l'animation */
   --phrase:#3F6A8C; /* bleu acier : phrase du compteur (8.4) */
@@ -1317,7 +1335,7 @@ header{
   padding:0;
   display:flex;
   flex-direction:column;
-  gap:0.15rem;
+  gap:0.05rem;   /* 10.33 : rangées serrées */
 }
 .urgent-list li{
   display:flex;
@@ -1348,7 +1366,8 @@ header{
   box-sizing:border-box;
   padding:0;
   flex:none;
-  margin:calc(0.3rem + 0.6175rem - 7px) 0 0; /* centrée sur la 1re ligne (8.30) */
+  margin:calc(0.2rem + var(--task-size) * 0.65 - 7px) 0 0; /* centrée sur la 1re ligne (8.30 ; 10.33 : nouvelle taille) */
+  position:relative;
   width:14px;
   height:14px;
   border:1.5px solid color-mix(in srgb, var(--urgent-ink) 45%, transparent);
@@ -1356,12 +1375,29 @@ header{
   background:var(--surface);
   cursor:pointer;
   opacity:0;
-  transition:opacity .12s ease, border-color .12s ease, background .12s ease;
+  transition:opacity .12s ease, border-color .12s ease, background .12s ease, scale .3s var(--pop-ease);
 }
 /* dévoilement : au survol avec une souris ; au toucher, par la classe
    « revealed » (8.38, voir la section des écrans tactiles) */
 @media (hover:hover){ .urgent-list li:hover .urgent-check{ opacity:1; } }
 .urgent-check:hover{ border-color:var(--urgent-ink); background:color-mix(in srgb, var(--urgent-ink) 12%, var(--surface)); }
+/* 10.33 : comme dans les listes, la coche apparaît au survol avec le petit zoom */
+.urgent-check::after{
+  content:"";
+  position:absolute;
+  left:3.5px; top:0.5px;
+  width:4px; height:7.5px;
+  border:solid var(--urgent-ink);
+  border-width:0 1.5px 1.5px 0;
+  transform:rotate(40deg);
+  opacity:0;
+  transition:opacity .12s ease;
+}
+@media (hover:hover){
+  .urgent-check:hover{ scale:var(--pop-scale); }
+  .urgent-check:hover::after{ opacity:1; }
+}
+@media (prefers-reduced-motion:reduce){ .urgent-check:hover{ scale:none; } }
 .urgent-actions{
   margin-left:auto;
   flex:none;
@@ -1391,12 +1427,12 @@ header{
   flex:1;
   min-width:0;
   text-align:left;
-  font-family:inherit;
-  font-size:0.95rem;
+  font-family:var(--font-task);   /* 10.33 */
+  font-size:var(--task-size);
   line-height:1.3;
   color:var(--urgent-ink);   /* 10.25 : les tâches urgentes dans l'encre de l'urgence (avant : noir) */
   font-weight:500;
-  padding:0.3rem 0.4rem 0.3rem 1.65rem; /* place de la puce ; texte à la même place qu'avant (8.30) */
+  padding:0.2rem 0.4rem 0.2rem 1.65rem; /* place de la puce (8.30) ; 10.33 : 0.2rem en haut et en bas (avant 0.3rem) */
   border-radius:8px;
   cursor:default;
   -webkit-tap-highlight-color:transparent; /* pas de voile gris au toucher (8.34) */
@@ -1407,7 +1443,7 @@ header{
 .urgent-bullet{
   position:absolute;
   left:0.45rem;
-  top:calc(0.3rem + 0.6175rem); /* moitié de la 1re ligne : 0.95rem × 1.3 / 2 */
+  top:calc(0.2rem + var(--task-size) * 0.65); /* moitié de la 1re ligne : taille × 1.3 / 2 (10.33) */
   transform:translateY(-50%);
   width:7px;
   height:7px;
@@ -1948,17 +1984,19 @@ ul.items{
   padding:0;
   display:flex;
   flex-direction:column;
-  gap:0.15rem;
+  gap:0.05rem;   /* 10.33 : rangées serrées (avant 0.15rem) */
 }
 .item{
   display:flex;
   align-items:flex-start;
   gap:0.65rem;
-  padding:0.42rem 0.3rem;
+  padding:var(--row-pad) 0.3rem;   /* 10.33 : avant 0.42rem */
   border-radius:8px;
   cursor:pointer;
 }
 .item:hover{background:var(--surface-2);}
+/* 10.33 : dans « En cours », le survol part du fond de la case (le règlage sombre plus bas reste) */
+#waitingSection .item:not(.editing):hover{ background:color-mix(in srgb, var(--wait) 8%, transparent); }
 /* dévoilés au survol de la souris ou au focus clavier ; au toucher, par la
    classe « revealed » (8.39, voir la section des écrans tactiles) */
 @media (hover:hover){ .item:hover .item-controls{opacity:1;} }
@@ -1968,14 +2006,15 @@ ul.items{
 .item.dragging{opacity:0.4;}
 .item-text{
   flex:1;
-  font-size:0.95rem;
+  font-family:var(--font-task);
+  font-size:var(--task-size);
   line-height:1.4;
   color:var(--ink);
   cursor:text;
 }
 .item-text .note{
   display:block;
-  font-size:0.86rem;
+  font-size:calc(var(--task-size) * 0.905);
   color:var(--ink-soft);
   padding-top:0.15rem;
   line-height:1.4;
@@ -2023,13 +2062,12 @@ ul.items{
   cursor:pointer;
   position:relative;
   background:var(--surface);
-  transition:background .15s ease, border-color .15s ease;
+  transition:background .15s ease, border-color .15s ease, scale .3s var(--pop-ease);
 }
-.item input[type="checkbox"]:checked{
-  background:var(--accent);
-  border-color:var(--accent);
-}
-.item input[type="checkbox"]:checked::after{
+/* 10.33 : la coche se montre au survol (case bleue + ✓, même petit zoom que
+   les boutons à icône) ; une fois cochée, la case reste grise pour faire
+   moins de bruit (avant : bleue --accent). */
+.item input[type="checkbox"]::after{
   content:"";
   position:absolute;
   left:5px; top:1.5px;
@@ -2037,6 +2075,22 @@ ul.items{
   border:solid white;
   border-width:0 2px 2px 0;
   transform:rotate(40deg);
+  opacity:0;
+  transition:opacity .15s ease;
+}
+.item input[type="checkbox"]:checked{
+  background:var(--ink-faint);
+  border-color:var(--ink-faint);
+}
+.item input[type="checkbox"]:checked::after{ opacity:1; }
+@media (hover:hover){
+  .item input[type="checkbox"]:hover{ scale:var(--pop-scale); }
+  .item input[type="checkbox"]:not(:checked):hover{ background:var(--accent); border-color:var(--accent); }
+  .item input[type="checkbox"]:not(:checked):hover::after{ opacity:1; }
+}
+@media (prefers-reduced-motion:reduce){
+  .item input[type="checkbox"]{ transition:background .15s ease, border-color .15s ease; }
+  .item input[type="checkbox"]:hover{ scale:none; }
 }
 .item.is-checked .item-text{
   color:var(--ink-faint);
@@ -2434,6 +2488,7 @@ ul.items{
   width:100%;
   padding:0.3rem 0.2rem;
 }
+.edit-form .edit-title, .edit-form .edit-note{ font-family:var(--font-task) !important; }   /* 10.33 : même police que la tâche */
 .edit-form input[type="text"], .edit-form textarea{
   font-family:inherit;
   font-size:0.95rem;
@@ -3292,7 +3347,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.32</span>
+    <span class="version-tag">v10.33</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
