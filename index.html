@@ -3020,20 +3020,20 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 /* 10.46 : rappel de relance — titre, « Aucune relance » en premier choix
    (bouton plein, sobre), puis une rangée de petits boutons abrégés et un
    calendrier en pictogramme, tous de même hauteur */
-/* 10.51 : fenêtre blanche ; boutons dans le code du « + » des listes
-   (.add-btn), sans sa bordure : papier --surface-2 et --ink-soft au repos,
-   --accent-soft et --accent-strong au survol */
+/* 10.52 : dans le code de la fenêtre de la plume : fenêtre blanche, boutons
+   comme « Continuer avec Google » (accent 12 %, texte --phrase), titre comme
+   « Retrouver ses listes partout » ; survol comme la case à cocher d'une
+   tâche : plein --accent, écriture blanche comme sa coche */
 .relance-ask{
   width:auto; max-width:calc(100vw - 32px); padding:0.7rem 0.7rem 0.7rem;
   background:var(--surface);
-  --rp-ink:var(--ink-soft);
-  --rp-btn:var(--surface-2);
-  --rp-btn-hover:var(--accent-soft);
-  --rp-ink-hover:var(--accent-strong);
+  --rp-ink:var(--phrase);
+  --rp-btn:color-mix(in srgb, var(--accent) 12%, transparent);
+  --rp-btn-hover:var(--accent);
+  --rp-ink-hover:#fff;
 }
 
-/* 10.51 : titre dans la couleur du titre de « En cours » (--ink-soft) */
-.relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; color:var(--ink-soft); }
+.relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; color:var(--accent); text-align:center; }
 /* tous les boutons pareils : fond légèrement teinté, sans bordure, même
    graisse ; « Aucune relance » sur toute la largeur, un rien plus haut */
 .relance-ask .rp-skip{
