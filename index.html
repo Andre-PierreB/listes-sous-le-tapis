@@ -2083,8 +2083,8 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 }
 /* 10.41 : dans la marge, à gauche du titre (avant : en haut à droite, avec la
    flèche d'ordre et la pleine page) ; « .category » l'emporte sur [data-tip] */
-.category .cat-grip{ position:absolute; left:1px; top:1.38rem; }
-.category.courses .cat-grip{ top:1.49rem; }   /* titre des mémos un peu plus bas (10.36) */
+.category .cat-grip{ position:absolute; left:1px; top:1.2rem; }   /* un rien au-dessus du centre du titre */
+.category.courses .cat-grip{ top:1.31rem; }   /* titre des mémos un peu plus bas (10.36) */
 .category:hover .cat-grip{ opacity:1; }
 @media (hover:hover){ .cat-grip{ opacity:0; } }   /* 10.41 : à la souris, n'apparaît qu'au survol de la carte */
 .cat-grip:hover{ background:var(--surface-2); color:var(--ink-soft); }
@@ -5261,6 +5261,9 @@ function isQuickTyping(){
   return !!(a && a.classList && (a.classList.contains("cat-quick") || a.classList.contains("courses-input")) && a.value);
 }
 let refocusQuickCat = null;
+// 10.41 : texte tapé dans l'ajout express puis clic sur « + » : il passe dans
+// le formulaire détaillé ({ catId, t }, lu une fois à son ouverture)
+let addPrefill = null;
 // ---- 10.7 : volets (listes repliées), par appareil ----
 const FOLD_KEY = "sltapis-volets";
 function loadFolded(){ try{ const a = JSON.parse(localStorage.getItem(FOLD_KEY) || "[]"); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
@@ -8589,6 +8592,8 @@ function render(){
     if(!courses) head.querySelector(".add-btn").addEventListener("click", (e)=>{
       e.stopPropagation();
       addingCat = addingCat === cat.id ? null : cat.id;
+      const typed = quickInp ? quickInp.value.trim() : "";
+      addPrefill = addingCat && typed ? { catId: cat.id, t: typed } : null;
       if(addingCat && isFolded(cat.id)) setFolded(cat.id, false); // 10.7
       renderAll();
     });
@@ -8742,8 +8747,9 @@ function render(){
           if(e.key === "Escape"){ addingCat = null; renderAll(); }
         });
       });
+      if(addPrefill && addPrefill.catId === cat.id){ titleInput.value = addPrefill.t; addPrefill = null; }
       if(reversed) ul.appendChild(li); else ul.insertBefore(li, ul.firstChild);
-      requestAnimationFrame(()=> titleInput.focus());
+      requestAnimationFrame(()=>{ titleInput.focus(); const n = titleInput.value.length; titleInput.setSelectionRange(n, n); });
     }
 
     if(courses){   // 10.15 : saisie et Vider les rayés (10.38 : saisie en haut)
