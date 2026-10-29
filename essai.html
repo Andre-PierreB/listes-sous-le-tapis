@@ -1177,6 +1177,7 @@
      (calculés sur les couleurs ci-dessus : suivent le mode sombre) */
   --ub-bg:color-mix(in srgb, color-mix(in srgb, var(--urgent-soft) 50%, var(--accent-soft)) 70%, var(--surface));   /* 10.25 : fond pâli, tiré vers le bleu (--accent-soft) pour moins de rouge */
   --ub-title:color-mix(in srgb, var(--urgent-ink) 50%, var(--urgent-soft));   /* 10.25 : titre pâli */
+  --title-mauve:color-mix(in srgb, var(--ub-title) 75%, var(--urgent-ink));   /* 10.48 : titres des petites fenêtres de tâche et de « En cours » */
   --late:#A9472A; --late-soft:#FBE7DE;   /* 10.25 : « En retard » en terre cuite */
   --relance:#C24F6E;
   --relance-soft:#F6E3E8;
@@ -2966,7 +2967,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   font-weight:600;
   letter-spacing:0.09em;
   text-transform:uppercase;
-  color:var(--ink-soft);
+  color:var(--title-mauve);   /* 10.48 : mauve, comme le titre de la fenêtre de relance (avant --ink-soft) */
   margin:0 0 1.1rem;
 }
 #waitingList .empty-note{ color:color-mix(in srgb, var(--ink-faint) 72%, var(--wait-soft)); }
@@ -3009,7 +3010,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 /* une touche de mauve, au seul titre, posé dans un petit onglet citron givré */
 .relance-ask .rp-title{
   display:inline-block; font-size:0.62rem; margin:0.1rem 0 0.5rem; padding:0.2rem 0.5rem; border-radius:5px;
-  background:var(--lucky-bg); color:color-mix(in srgb, var(--ub-title) 75%, var(--urgent-ink));
+  background:var(--lucky-bg); color:var(--title-mauve);
 }
 /* tous les boutons pareils : fond légèrement teinté, sans bordure, même
    graisse ; « Aucune relance » sur toute la largeur, un rien plus haut */
@@ -5913,7 +5914,7 @@ function renderAddCategoryRow(){
     <div class="new-list-card">
       <div class="edit-form">
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
-        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Mémo / shopping</label>` : ""}
+        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste mémo – shopping</label>` : ""}
         <div class="edit-actions">
           <button type="button" class="add-cancel nl-cancel">Annuler</button>
           <button type="button" class="add-save nl-save">Créer</button>
@@ -5926,9 +5927,13 @@ function renderAddCategoryRow(){
   const card = el.querySelector(".new-list-card");
   const nameInput = card.querySelector(".nl-name");
   const coursesSwitch = card.querySelector(".nl-courses-switch");
-  const cancel = ()=>{ addingCategory = false; renderAll(); };
+  // 10.48 : un clic (ou toucher) en dehors de la fenêtre annule
+  const outside = e=>{ if(!card.isConnected || card.contains(e.target)) return; cancel(); };
+  const cancel = ()=>{ document.removeEventListener("pointerdown", outside, true); if(!addingCategory) return; addingCategory = false; renderAll(); };
+  setTimeout(()=> document.addEventListener("pointerdown", outside, true), 0);
   const save = ()=>{
     if(!nameInput.value.trim()){ nameInput.focus(); return; }
+    document.removeEventListener("pointerdown", outside, true);
     try{
       const cat = addCategory(nameInput.value);
       if(cat){
