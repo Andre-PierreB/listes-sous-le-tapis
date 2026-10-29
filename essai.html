@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.40 -->
+<!-- Sous le tapis — version AUTONOME 10.41 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1066,6 +1066,18 @@
     au survol de la carte ; en pleine page, bien visibles).
     Sombre : « En cours » plus frais et effacé (--wait-soft #16292B, avant
     #142C29) ; fond urgent un rien plus présent (--ub-bg propre au sombre).
+  - 10.41 : poignée des listes (.cat-grip) dans la marge, à gauche du titre,
+    autant d'air côté liseré que côté titre (titre décalé de 0.3rem :
+    padding-left de .cat-head) ; à la souris, visible au survol de la carte
+    seulement ; en haut à droite ne restent que la flèche d'ordre et la
+    pleine page. Prénom composé → deux initiales (André-Pierre → AP,
+    initialOf) ; pastilles allongées au besoin, moins serrées. Rien
+    d'enregistré : les listes déjà partagées suivent d'elles-mêmes.
+    Texte tapé dans l'ajout express puis clic sur « + » : le formulaire
+    détaillé s'ouvre avec ce texte (addPrefill) ; Annuler l'efface.
+    Tapis qui se déroule : ×2 au plus (×3 en 10.40, 1er déroulé lourd sur
+    iPhone) et préparé de nouveau en douce quand la page change de hauteur
+    (ResizeObserver), pour que le clic parte tout de suite.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -3571,7 +3583,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.40</span>
+    <span class="version-tag">v10.41</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
