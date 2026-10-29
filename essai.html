@@ -1499,6 +1499,10 @@ header{
   color:var(--urgent-ink);
   opacity:0;
   transition:opacity .15s ease;
+  /* 10.44 : calée sur la 1re ligne, comme la case (centre à 0.3rem + 0.65 ×
+     taille du texte), et non au milieu d'une tâche sur plusieurs lignes */
+  align-self:flex-start; align-items:flex-start; line-height:18px;
+  padding-top:calc(0.3rem + var(--task-size) * 0.65 - 9px);
 }
 .urgent-list li:hover .drag-handle{ opacity:0.5; }
 .urgent-check{
@@ -1863,8 +1867,8 @@ header{
 /* 10.43 : liste repliée, tâches restantes dans une bulle à la couleur de la
    liste (comme « nouveau ») ; avant : chiffre gris seul, peu clair */
 .cat-count{
-  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:700; flex:none;
-  min-width:1.3rem; height:1.1rem; box-sizing:border-box; padding:0.34rem 0.45rem 0; border-radius:999px; line-height:1;   /* padding-top : les chiffres de Courier Prime sont hauts, on les recentre dans la bulle */
+  font-family:'Public Sans', system-ui, sans-serif; font-size:0.68rem; font-weight:700; flex:none;   /* 10.44 : chiffres bien centrés d'un navigateur à l'autre (ceux de Courier Prime variaient) */
+  min-width:1.3rem; height:1.1rem; box-sizing:border-box; padding:1.5px 0.45rem 0; border-radius:999px; line-height:1;   /* 1.5px : centre optique des chiffres */
   display:inline-flex; align-items:center; justify-content:center;
   background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface));
   color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
@@ -4797,7 +4801,7 @@ const WEEKDAY_MESSAGES = {
   "4": [
     "Jeudi, jour de belote dans les estaminets. La liste, elle, ne triche pas aux annonces.",
     "Jeudi, veille de la veille du week-end. Les almanachs appellent ça une perspective.",
-    "Le jeudi, un faisan sur deux prépare son week-end. L'autre prépare un mauvais coup."
+    "Le jeudi, un faisan sur deux prépare son week-end. L'autre prépare un coup fourré."
   ],
   "5": [
     "Vendredi : la liste tourne rond comme la camionnette du poissonnier un jour de marché.",
