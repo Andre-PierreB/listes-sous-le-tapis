@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.39 -->
+<!-- Sous le tapis — version AUTONOME 10.40 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1028,6 +1028,44 @@
     largeur), fond de survol --uhover opaque calculé sur --ub-bg. Zones de
     toucher agrandies (pseudo-élément ::after) : rond des mémos, pleine
     page, flèche d'ordre.
+  - 10.40 : entrée dans l'appli simplifiée.
+    Nouvelle liste : la fenêtre ne garde que le nom, l'interrupteur
+    Mémo / shopping et Annuler / Créer (Entrée crée) ; la carte créée s'ouvre
+    avec le curseur dans « Nouvelle tâche… » ou « Ajouter un article »
+    (refocusQuickCat / refocusCoursesCat). Champs nl-task, nl-note, nl-due,
+    nl-time, nl-items et leur logique retirés.
+    Accueil sans liste : plus de compteur tant qu'il n'y a rien à compter
+    (body.no-tasks : aucune tâche hors mémos, rien coché cette semaine) ; à
+    sa place, un cadre aux couleurs du bandeau urgent (--ub-bg, --ub-title,
+    désormais rangés avec les couleurs et partagés) avec « Ce qui dort sous
+    le tapis n'est pas perdu... » (une ligne si possible, sinon coupée entre
+    ses deux moitiés) ; tapis collé sous ce cadre (cardsRef) et bouton
+    remonté (aim 0.42 ordi, 0.32 téléphone). Lien sous le bouton : sans
+    compte « ou se connecter / pour retrouver ses listes » (ouvre la plume,
+    où Restaurer est aussi) ; connecté ou sans plume (mode de secours) :
+    « ou restaurer », comme avant — la restauration reste toujours à portée
+    (cloudState, refreshWelcome). Sous la plume, sur l'accueil et sans
+    compte : « Se connecter » en gris (#plumeLogin, body.signed-out) au lieu
+    de « Hors ligne ». Dans la plume, « Copie de secours » seulement s'il y a
+    une liste. Titre décalé (body.no-tasks / no-list header) pour que la
+    mention sous la plume ne touche jamais le cadre suivant.
+    Rappel du bas « Se connecter pour ne jamais perdre ses listes » : la
+    fenêtre s'ouvre sous le lien (openLoginAt) et non plus près de la plume,
+    hors de vue en haut de page.
+    Tapis qui se déroule : image SVG faite à la taille réelle en pixels
+    (jusqu'à ×3) — Safari l'agrandissait depuis 400 px, d'où le flou sur
+    téléphone (idem filigrane de l'accueil) ; en sombre, ni lustre ni
+    marbrures (taches) ; « Hors ligne » / « Se connecter » masqués tant que
+    le tapis est sorti (body.tapis-out).
+    Petits messages (#toast) : durée selon la longueur (3,5 à 7 s, avant
+    1,9 s), pause au survol, clic pour fermer, deux lignes sur téléphone ;
+    aux couleurs de « Une petite en passant ? » (--lucky-bg, --phrase), fins
+    et carrés ; étape = même case en gras. « Catégorie créée » devient
+    « Liste créée ». Flèche de « Une petite en passant ? » retirée.
+    Flèches pleine page discrètes comme leurs voisines (opacité 0.5, pleines
+    au survol de la carte ; en pleine page, bien visibles).
+    Sombre : « En cours » plus frais et effacé (--wait-soft #16292B, avant
+    #142C29) ; fond urgent un rien plus présent (--ub-bg propre au sombre).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2913,8 +2951,8 @@ body.cloud #exportBtn, body.cloud #importBtn{ display:none; }
      noire), plus fin et plus carré */
   background:var(--lucky-bg);
   color:var(--phrase);
-  padding:0.45rem 0.95rem;
-  border-radius:8px;
+  padding:0.28rem 0.85rem;
+  border-radius:6px;
   font-size:0.86rem;
   font-weight:500;
   box-shadow:0 8px 24px -8px rgba(0,0,0,0.28), var(--shadow);
@@ -2933,7 +2971,7 @@ body.cloud #exportBtn, body.cloud #importBtn{ display:none; }
 }
 #toast.milestone{   /* message d'étape : même case, en gras */
   font-weight:700;
-  padding:0.5rem 1.05rem;
+  padding:0.32rem 0.95rem;
   font-size:0.9rem;
 }
 
@@ -3527,7 +3565,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.39</span>
+    <span class="version-tag">v10.40</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
