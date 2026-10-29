@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.45 -->
+<!-- Sous le tapis — version AUTONOME 10.46 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1112,6 +1112,16 @@
     à droite, trèfle à l'aplomb de la plume, titre qui finit où finit
     « Sous le tapis » ; ⟳ passe à gauche. Bouton « + Nouvelle liste » en
     citron givré, pointillés citron, petit zoom et halo au survol.
+  - 10.46 : fenêtre « Rappel de relance ? » revue (askRelance, classe
+    relance-ask) : titre en tête, petit et en mauve ; « Aucune relance »
+    (« Plus de relance » pour un report) sur toute la largeur, curseur dessus
+    à l'ouverture ; dessous, une rangée de petits boutons de même largeur
+    (1 sem. / 2 sem. / 1 mois / date d'échéance s'il y en a une / calendrier
+    en pictogramme, avec le vrai champ date invisible posé dessus : pas de
+    zoom sur iPhone). Tous pareils : fond teinté (--wait 12 %), sans bordure,
+    graisse normale, texte --phrase ; survol citron givré à fin liseré citron.
+    La date exacte d'un délai est dans son infobulle. Les autres petites
+    fenêtres (échéance au retour, plume) gardent leur forme.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2977,6 +2987,36 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 .rp-skip:hover{ background:var(--wait); border-color:var(--wait); color:var(--surface); }
 .rp-date{ display:flex; gap:0.4rem; margin-top:0.55rem; }
 .rp-date input{ flex:1; min-width:0; font-family:inherit; font-size:0.86rem; padding:0.3rem 0.5rem; border:1px solid color-mix(in srgb, var(--wait) 30%, var(--line)); border-radius:8px; background:var(--surface); color:var(--ink); }
+/* 10.46 : rappel de relance — titre, « Aucune relance » en premier choix
+   (bouton plein, sobre), puis une rangée de petits boutons abrégés et un
+   calendrier en pictogramme, tous de même hauteur */
+.relance-ask{ width:auto; max-width:calc(100vw - 32px); padding:0.7rem 0.7rem 0.7rem; --rp-ink:var(--phrase); }
+.relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; color:color-mix(in srgb, var(--ub-title) 75%, var(--urgent-ink)); }   /* une touche de mauve, au seul titre */
+/* tous les boutons pareils : fond légèrement teinté, sans bordure, même
+   graisse ; « Aucune relance » sur toute la largeur, un rien plus haut */
+.relance-ask .rp-skip{
+  margin:0 0 0.25rem; border:0; border-radius:5px; height:1.6rem; padding:0 0.6rem;
+  font-size:0.76rem; font-weight:400; text-align:center;
+  background:color-mix(in srgb, var(--wait) 12%, transparent); color:var(--rp-ink);
+}
+.rp-chips{ display:grid; grid-auto-columns:1fr; grid-auto-flow:column; gap:0.25rem; }   /* même largeur pour tous */
+.rp-chip{
+  appearance:none; display:inline-flex; align-items:center; justify-content:center; min-width:0;
+  height:1.4rem; padding:0 0.3rem; border-radius:5px; cursor:pointer;
+  border:0; background:color-mix(in srgb, var(--wait) 12%, transparent); color:var(--rp-ink);
+  font-family:inherit; font-size:0.72rem; white-space:nowrap; font-variant-numeric:tabular-nums;
+  transition:background .12s ease, border-color .12s ease, color .12s ease;
+}
+/* survol : citron givré, fin liseré citron (comme les petites satisfactions) */
+.rp-chip:hover, .rp-chip:focus-visible, .rp-custom:focus-within,
+.relance-ask .rp-skip:hover, .relance-ask .rp-skip:focus-visible{
+  outline:none; background:var(--lucky-bg); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--lucky-lemon) 60%, transparent); color:var(--rp-ink);
+}
+.rp-custom{ position:relative; }
+.rp-custom svg{ width:12px; height:12px; }
+/* le vrai champ, invisible, couvre la ligne : calendrier du système au clic
+   (16px : pas de zoom automatique sur iPhone) */
+.rp-custom input{ position:absolute; inset:0; width:100%; height:100%; opacity:0; font-size:16px; border:0; padding:0; margin:0; cursor:pointer; }
 /* 10.1 : fenêtre de la plume (connexion), même forme, aux couleurs de l'accent */
 .sync-pop{ width:min(290px, calc(100vw - 32px)); background:var(--surface); border-color:color-mix(in srgb, var(--accent) 30%, var(--line)); }
 .sync-pop .rp-title{ color:var(--accent); }
@@ -2994,7 +3034,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 }
 .sp-email:focus, .sp-pw:focus{ outline:none; border-color:var(--accent); }
 /* 10.26 : 16 px sur tactile, sinon Safari iOS zoome au toucher du champ */
-@media (pointer:coarse){ .sp-email, .sp-pw, .rp-date input{ font-size:16px; } }
+@media (pointer:coarse){ .sp-email, .sp-pw, .rp-date input{ font-size:16px; } .rp-chip, .relance-ask .rp-skip{ height:1.85rem; } }
 .sp-hint{ font-size:0.8rem; color:var(--ink-soft); margin:-0.15rem 0 0.45rem; }
 .sp-hint:empty{ display:none; }
 .sp-hint button, .sp-confirm .sp-fix{ appearance:none; border:0; background:none; padding:0; font:inherit; font-weight:600; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
@@ -3646,7 +3686,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.45</span>
+    <span class="version-tag">v10.46</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5293,26 +5333,30 @@ function askRelance(anchor, key){
     [addMonthISO(today), "1 mois"],
   ];
   const dueDate = eff.due ? splitDue(eff.due).date : "";
-  if(!postpone && dueDate > today) opts.push([dueDate, "Garder le " + shortDateFR(dueDate)]);
+  if(!postpone && dueDate > today) opts.push([dueDate, shortDateFR(dueDate)]);
   const pop = document.createElement("div");
-  pop.className = "relance-pop";
+  pop.className = "relance-pop relance-ask";
   pop.setAttribute("role", "dialog");
-  // 8.2 : « Pas de relance » tout en haut, en un clic ; une date choisie dans
-  // le calendrier est prise directement (plus de bouton OK).
+  pop.setAttribute("aria-label", postpone ? "Reporter la relance" : "Rappel de relance");
+  // 8.2 : une date choisie dans le calendrier est prise directement (plus de
+  // bouton OK). 10.46 : titre en tête, « Aucune relance » en premier choix,
+  // puis une rangée de petits boutons abrégés et un calendrier (pictogramme).
   pop.innerHTML = `
-    <button type="button" class="rp-skip" data-v="">Pas de relance</button>
-    <div class="rp-title">${postpone ? "Ou la reporter ?" : "Ou un petit rappel de relance ?"}</div>
-    <div class="rp-opts">${opts.map(([v,l]) => `<button type="button" data-v="${v}">${l}</button>`).join("")}</div>
-    <div class="rp-date"><input type="date" min="${today}" aria-label="Date de relance précise"></div>
+    <div class="rp-title">${postpone ? "Reporter la relance ?" : "Rappel de relance ?"}</div>
+    <button type="button" class="rp-skip" data-v="">${postpone ? "Plus de relance" : "Aucune relance"}</button>
+    <div class="rp-chips">${opts.map(([v,l]) => `<button type="button" class="rp-chip" data-v="${v}" title="${shortDateFR(v)}">${l}</button>`).join("")}<label class="rp-chip rp-custom" title="Autre date"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><input type="date" min="${today}" aria-label="Autre date de relance"></label></div>
   `;
   const choose = v => { closeRelancePop(); sendToWaiting(key, v); };
-  pop.querySelectorAll(".rp-skip, .rp-opts button").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); choose(b.dataset.v); }));
-  const dateInp = pop.querySelector(".rp-date input");
+  pop.querySelectorAll(".rp-skip, .rp-chip[data-v]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); choose(b.dataset.v); }));
+  const dateInp = pop.querySelector(".rp-custom input");
   // une date complète et à venir : prise tout de suite (pendant la frappe au
   // clavier, l'année incomplète donne une date passée, qu'on ignore)
   dateInp.addEventListener("change", ()=>{ if(dateInp.value && dateInp.value >= today) choose(dateInp.value); });
   dateInp.addEventListener("keydown", e => { if(e.key === "Enter" && dateInp.value){ e.preventDefault(); choose(dateInp.value); } });
+  // 10.46 : le champ est invisible, posé sur la ligne : un clic ouvre le calendrier
+  dateInp.addEventListener("click", e => { e.stopPropagation(); try{ dateInp.showPicker(); }catch(err){} });
   openPopAt(pop, anchor);
+  requestAnimationFrame(()=> pop.querySelector(".rp-skip").focus({ preventScroll:true }));
 }
 
 // ---- 7.3 : passage à la nouvelle semaine, même onglet ouvert ----
