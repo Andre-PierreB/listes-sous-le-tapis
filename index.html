@@ -3194,10 +3194,10 @@ body.no-list .plume-tag.logged-out{ display:none; }
 body.no-list .welcome-card{
   display:block;
   background:var(--surface); border-radius:16px; box-shadow:var(--shadow);
-  padding:1.3rem 2.2rem 1.4rem;
+  padding:1.05rem 2.2rem 1.1rem;
 }
 .welcome-msg{
-  margin:0 auto; max-width:30ch; text-align:center;   /* phrase ramassée au centre du cadre */
+  margin:0 auto; max-width:30ch; text-align:center; text-wrap:balance;   /* phrase ramassée au centre du cadre */
   font-family:'Public Sans', system-ui, sans-serif; font-size:0.95rem; font-weight:600;
   line-height:1.4; color:var(--phrase); text-wrap:pretty;
 }
@@ -3218,7 +3218,7 @@ body.cloud.no-list.signed-out .plume-login::before{ content:""; position:absolut
 body.no-list .add-category-row{
   flex-direction:column;
   align-items:center;
-  gap:1.15rem;
+  gap:0.55rem;   /* 10.40 : lien collé au bouton (avant 1.15rem) */
   transition:margin-top .55s cubic-bezier(.22,1,.36,1);
 }
 /* bouton d'accueil (7.9) — 10.30 : aux couleurs de « Une petite en passant ? » */
@@ -3496,7 +3496,7 @@ body.arrive footer{ animation-delay:.52s; }
     </div>
     <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
   </div>
-  <div class="welcome-card"><p class="welcome-msg">Ce qu'on cache sous le tapis, c'est ici qu'on en fait le tri.</p></div>
+  <div class="welcome-card"><p class="welcome-msg">Ce qui dort sous le tapis n’est&nbsp;pas&nbsp;perdu…</p></div>
 
   <div class="urgent-banner" id="urgentBanner" hidden></div>
   <div class="lucky-line" id="luckyLine" hidden></div>
@@ -5621,8 +5621,9 @@ function updateWatermark(show){
     const wr = wrap.getBoundingClientRect(), rr = ref.getBoundingClientRect();
     const width = rr.width;
     const VW = width >= 600 ? 560 : 400, scale = width / VW;
-    const top = rr.bottom - wr.top + 18;
-    const height = Math.max(240, window.innerHeight - rr.bottom - 18 - 12);
+    const gap = ref.classList.contains("welcome-card") ? 6 : 18;   // 10.40 : collé au cadre de l'accueil
+    const top = rr.bottom - wr.top + gap;
+    const height = Math.max(240, window.innerHeight - rr.bottom - gap - 12);
     const VH = Math.round(height / scale);
     // le bouton d'accueil se pose au centre du tapis (sur le médaillon)
     // … et le champ du nom, plus haut, comme un commencement
@@ -5634,7 +5635,7 @@ function updateWatermark(show){
     const baseM = 0.85 * parseFloat(getComputedStyle(document.documentElement).fontSize);
     const curM = parseFloat(getComputedStyle(row).marginTop) || baseM;
     const naturalCenter = brr.top - (curM - baseM) + brr.height / 2;
-    const shift = Math.max(0, (rr.bottom + 18 + height * aim) - naturalCenter);
+    const shift = Math.max(0, (rr.bottom + gap + height * aim) - naturalCenter);
     row.style.marginTop = Math.round(baseM + shift) + "px";
     if(!watermarkEl){
       watermarkEl = document.createElement("div");
