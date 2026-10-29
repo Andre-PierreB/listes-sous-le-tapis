@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.48 -->
+<!-- Sous le tapis — version AUTONOME 10.49 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1136,6 +1136,10 @@
     (écouteur pointerdown posé à l'ouverture, retiré à la fermeture). Titre
     de « En cours » en mauve : nouvelle couleur --title-mauve (rangée avec
     --ub-title), partagée avec le titre des petites fenêtres de tâche.
+  - 10.49 : titre des petites fenêtres de tâche (relance, retour d'« En
+    cours ») sans l'onglet citron de la 10.47 : mauve seul. Phrase « Une case
+    non cochée est une promesse ; une case cochée, un acte authentique. »
+    sans guillemets ni « jurisprudence de cour de récré ».
 -->
 <title>Sous le tapis</title>
 <style>
@@ -3012,11 +3016,8 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   --rp-btn-hover:var(--lucky-bg);
 }
 
-/* une touche de mauve, au seul titre, posé dans un petit onglet citron givré */
-.relance-ask .rp-title{
-  display:inline-block; font-size:0.62rem; margin:0.1rem 0 0.5rem; padding:0.2rem 0.5rem; border-radius:5px;
-  background:var(--lucky-bg); color:var(--title-mauve);
-}
+/* une touche de mauve, au seul titre (10.49 : sans l'onglet citron de la 10.47) */
+.relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; color:var(--title-mauve); }
 /* tous les boutons pareils : fond légèrement teinté, sans bordure, même
    graisse ; « Aucune relance » sur toute la largeur, un rien plus haut */
 .relance-ask .rp-skip{
@@ -3712,7 +3713,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.48</span>
+    <span class="version-tag">v10.49</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4835,7 +4836,7 @@ const AMBIENT_MESSAGES = [
   "Aussi indéboulonnable qu'un pilier de bar à Waterloo, et nettement moins défait.",
   "Un audit indépendant mené par trois chats de ferme conclut à la parfaite régularité de cette liste.",
   "Elle brille comme les cuivres d'une chapelle astiqués la veille du pèlerinage à Banneux.",
-  "« Une case non cochée est une promesse ; une case cochée, un acte authentique. » — jurisprudence de cour de récré.",
+  "Une case non cochée est une promesse ; une case cochée, un acte authentique.",
   "Le faisan, escroc de haute volée au sens strict du terme, n'a toujours pas trouvé la faille.",
   "Le faisan, figure héraldique méconnue, figurerait en cimier sur le blason de cette liste.",
   "Le faisan, dandy des sous-bois, porte ses couleurs comme cette liste porte ses échéances : avec ostentation.",
