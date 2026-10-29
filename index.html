@@ -1625,8 +1625,8 @@ header{
   padding-top:0.1rem;
   line-height:1.4;
 }
-.urgent-list .note-toggle{ color:color-mix(in srgb, var(--urgent-ink) 45%, transparent); }
-.urgent-list .note-toggle:hover{ color:var(--urgent-ink); background:transparent; }   /* 10.43 : pas le jaune des listes dans la case urgente */
+.urgent-list .note-toggle{ color:color-mix(in srgb, var(--urgent-ink) 45%, transparent); background:transparent; }   /* 10.43 : pas le jaune des listes dans la case urgente */
+.urgent-list .note-toggle:hover{ color:var(--urgent-ink); background:transparent; }
 .urgent-list li.note-open .note-toggle{ color:var(--urgent-ink); background:var(--urgent-soft); }
 /* relance arrivée (tâche en cours dont la date est là) — 10.23 : dans la
    case urgente, plus de couleur à part (avant : framboise --relance) : elle
@@ -1865,6 +1865,7 @@ header{
 /* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
 .category.courses.collapsed .courses-entry{ cursor:auto; }
 .category.collapsed .cat-fold svg{ transform:rotate(180deg); }
+.category.collapsed .cat-order{ display:none; }   /* 10.45 : repliée, la flèche d'ordre se confondait avec celle qui rouvre */
 .category.courses.collapsed{ cursor:pointer; } /* 10.18 : toute la carte repliée se déplie d'un clic */
 .category.courses .cat-head{ cursor:pointer; } /* 10.19 : ouverte, un clic sur le bandeau (hors titre) la replie */
 .category.courses .cat-title{ cursor:auto; }
@@ -2263,17 +2264,20 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
   align-items:center;
   vertical-align:-2px;
   margin-left:0.35rem;
-  padding:1px 4px;
-  border-radius:5px;
-  color:color-mix(in srgb, var(--lucky-lemon) 62%, var(--ink));   /* 10.43 : jaune du trèfle, foncé pour se lire (avant : gris pâle), et plus grand */
+  padding:3px;
+  border-radius:50%;
+  /* 10.43 : jaune du trèfle, foncé pour se lire, et plus grand ; 10.45 :
+     toujours dans sa pastille ronde (avant : seulement au survol ou ouvert,
+     d'où des fonds inégaux dans une même liste), un peu plus soutenue */
+  color:color-mix(in srgb, var(--lucky-lemon) 55%, var(--ink));
+  background:color-mix(in srgb, var(--lucky-lemon) 22%, var(--surface));
   cursor:pointer;
   transition:color .15s ease, background .15s ease;
 }
 .note-toggle svg{ display:block; }
 .note-tail{ white-space:nowrap; } /* dernier mot + sigle (8.39) */
 .item[data-note-key], .note-toggle{ -webkit-tap-highlight-color:transparent; }
-.note-toggle:hover{ color:color-mix(in srgb, var(--lucky-lemon) 45%, var(--ink)); background:var(--lucky-bg); }
-.note-open .note-toggle{ color:color-mix(in srgb, var(--lucky-lemon) 45%, var(--ink)); background:var(--lucky-bg); }
+.note-toggle:hover{ color:color-mix(in srgb, var(--lucky-lemon) 40%, var(--ink)); background:color-mix(in srgb, var(--lucky-lemon) 38%, var(--surface)); }   /* ouverte ou non, même pastille : seul le survol la fonce */
 .item.is-checked .note-toggle{ opacity:0.6; }
 .item input[type="checkbox"]{
   appearance:none;
