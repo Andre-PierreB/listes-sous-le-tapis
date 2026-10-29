@@ -3194,17 +3194,19 @@ body.no-list .plume-tag.logged-out{ display:none; }
 body.no-list .welcome-card{
   display:block;
   background:var(--surface); border-radius:16px; box-shadow:var(--shadow);
-  padding:1.3rem 1.6rem 1.4rem;
+  padding:1.3rem 2.2rem 1.4rem;
 }
 .welcome-msg{
-  margin:0; text-align:center;
+  margin:0 auto; max-width:30ch; text-align:center;   /* phrase ramassée au centre du cadre */
   font-family:'Public Sans', system-ui, sans-serif; font-size:0.95rem; font-weight:600;
   line-height:1.4; color:var(--phrase); text-wrap:pretty;
 }
 body.no-tasks header{ margin-bottom:2.6rem; }   /* sans compteur : la mention sous la plume (~44px sous le haut du titre) ne touche pas la carte suivante */
+body.no-list header{ margin-bottom:1.9rem; }   /* accueil : mention remontée contre la plume */
+body.no-list .plume-tag{ top:25px; }
 .plume-login{ display:none; }
 body.cloud.no-list.signed-out .plume-login{
-  display:block; position:absolute; right:12px; top:33px;
+  display:block; position:absolute; right:12px; top:25px;
   appearance:none; border:none; background:transparent; padding:0; cursor:pointer;
   font-family:'Courier Prime', 'Courier New', monospace; font-size:0.6rem; font-weight:700;
   letter-spacing:0.08em; text-transform:uppercase; color:var(--accent);
@@ -3494,7 +3496,7 @@ body.arrive footer{ animation-delay:.52s; }
     </div>
     <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
   </div>
-  <div class="welcome-card"><p class="welcome-msg">Chacun a des listes cachées sous son tapis. Ici, on soulève un coin de temps en temps pour voir ce qu'elles racontent.</p></div>
+  <div class="welcome-card"><p class="welcome-msg">Ce qu'on cache sous le tapis, c'est ici qu'on en fait le tri.</p></div>
 
   <div class="urgent-banner" id="urgentBanner" hidden></div>
   <div class="lucky-line" id="luckyLine" hidden></div>
@@ -6428,11 +6430,15 @@ function hasAnyTask(){
     return getEffectiveItems(c).some((base, j) => !isDeleted(itemKey(c.id, j)));
   });
 }
-// 10.40 : la largeur des cartes, prise sur le compteur, ou sur la colonne
-// des listes quand le compteur est masqué (tapis de l'accueil, tapis qui se déroule)
+// 10.40 : la largeur des cartes (tapis de l'accueil, tapis qui se déroule),
+// prise sur le compteur, le cadre de l'accueil (le tapis se pose alors juste
+// dessous) ou la colonne des listes
 function cardsRef(){
-  const pc = document.querySelector(".progress-card");
-  return pc && pc.offsetParent ? pc : document.getElementById("categories");
+  for(const sel of [".progress-card", ".welcome-card"]){
+    const el = document.querySelector(sel);
+    if(el && el.offsetParent) return el;
+  }
+  return document.getElementById("categories");
 }
 
 function getCategoryOrder(){
