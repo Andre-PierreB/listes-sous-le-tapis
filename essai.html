@@ -1608,7 +1608,7 @@ header{
   line-height:1.4;
 }
 .urgent-list .note-toggle{ color:color-mix(in srgb, var(--urgent-ink) 45%, transparent); }
-.urgent-list .note-toggle:hover{ color:var(--urgent-ink); }
+.urgent-list .note-toggle:hover{ color:var(--urgent-ink); background:transparent; }   /* 10.43 : pas le jaune des listes dans la case urgente */
 .urgent-list li.note-open .note-toggle{ color:var(--urgent-ink); background:var(--urgent-soft); }
 /* relance arrivée (tâche en cours dont la date est là) — 10.23 : dans la
    case urgente, plus de couleur à part (avant : framboise --relance) : elle
@@ -1850,7 +1850,14 @@ header{
 .category.courses.collapsed{ cursor:pointer; } /* 10.18 : toute la carte repliée se déplie d'un clic */
 .category.courses .cat-head{ cursor:pointer; } /* 10.19 : ouverte, un clic sur le bandeau (hors titre) la replie */
 .category.courses .cat-title{ cursor:auto; }
-.cat-count{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:700; color:var(--ink-faint); flex:none; }
+/* 10.43 : liste repliée, tâches restantes dans une bulle à la couleur de la
+   liste (comme « nouveau ») ; avant : chiffre gris seul, peu clair */
+.cat-count{
+  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:700; flex:none;
+  min-width:1.3rem; box-sizing:border-box; padding:0.1rem 0.45rem; border-radius:999px; text-align:center; line-height:1.2;
+  background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface));
+  color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
+}
 @media (prefers-reduced-motion: reduce){ .cat-fold svg{ transition:none; } }
 .cat-head{
   display:flex;
@@ -2194,7 +2201,13 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
    classe « revealed » (8.39, voir la section des écrans tactiles) */
 @media (hover:hover){ .item:hover .item-controls{opacity:1;} }
 .item:has(:focus-visible) .item-controls{opacity:1;}
-.item .drag-handle{ opacity:0; transition:opacity .15s ease; }
+.item .drag-handle{
+  opacity:0; transition:opacity .15s ease;
+  /* 10.43 : calée sur la 1re ligne, comme la case, l'œuf ou le rond des mémos
+     (centre à 0.15rem + 9px) : ne descend plus au milieu d'une tâche sur
+     plusieurs lignes */
+  align-self:flex-start; align-items:flex-start; line-height:18px; padding-top:0.15rem;
+}
 .item:hover .drag-handle{ opacity:1; }
 .item.dragging{opacity:0.4;}
 .item-text{
@@ -2233,15 +2246,15 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
   margin-left:0.35rem;
   padding:1px 4px;
   border-radius:5px;
-  color:var(--ink-faint);
+  color:color-mix(in srgb, var(--lucky-lemon) 62%, var(--ink));   /* 10.43 : jaune du trèfle, foncé pour se lire (avant : gris pâle), et plus grand */
   cursor:pointer;
   transition:color .15s ease, background .15s ease;
 }
 .note-toggle svg{ display:block; }
 .note-tail{ white-space:nowrap; } /* dernier mot + sigle (8.39) */
 .item[data-note-key], .note-toggle{ -webkit-tap-highlight-color:transparent; }
-.note-toggle:hover{ color:var(--ink-soft); }
-.note-open .note-toggle{ color:var(--accent-strong); background:var(--accent-soft); }
+.note-toggle:hover{ color:color-mix(in srgb, var(--lucky-lemon) 45%, var(--ink)); background:var(--lucky-bg); }
+.note-open .note-toggle{ color:color-mix(in srgb, var(--lucky-lemon) 45%, var(--ink)); background:var(--lucky-bg); }
 .item.is-checked .note-toggle{ opacity:0.6; }
 .item input[type="checkbox"]{
   appearance:none;
@@ -7740,8 +7753,8 @@ function toggleNoteOpen(key){
 // entièrement cliquable) et le détail enveloppé dans son pli animé.
 function noteToggleHtml(asButton, open){
   return asButton
-    ? `<button type="button" class="note-toggle" aria-expanded="${open ? "true" : "false"}" aria-label="Détail">${noteSvg(14)}</button>`
-    : `<span class="note-toggle" aria-hidden="true">${noteSvg(13)}</span>`;
+    ? `<button type="button" class="note-toggle" aria-expanded="${open ? "true" : "false"}" aria-label="Détail">${noteSvg(16)}</button>`
+    : `<span class="note-toggle" aria-hidden="true">${noteSvg(15)}</span>`;
 }
 // 8.39 : le sigle suit directement le titre, collé à son dernier mot (les
 // deux dans un même bloc insécable : ils passent à la ligne ensemble).
