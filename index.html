@@ -1590,12 +1590,6 @@ header{
 }
 .lucky-line.closed:not(.rest):hover .lucky-clover, .lucky-line.closed:focus-visible .lucky-clover{ transform:rotate(-30deg); }
 .lucky-line.closed:active{ transform:translateY(0); }
-.lucky-crank{
-  margin-left:auto; flex:none; line-height:0; padding:4px;
-  color:color-mix(in srgb, var(--lucky-lemon) 55%, var(--ink)); opacity:.75;
-  transition:transform .3s ease, opacity .2s ease;
-}
-.lucky-line.closed:not(.rest):hover .lucky-crank{ opacity:1; transform:translateY(2px); }
 .lucky-clover-btn{
   appearance:none; border:none; background:transparent; padding:3px; margin:-3px;
   border-radius:50%; line-height:0; cursor:pointer; color:inherit; flex:none;
@@ -7527,7 +7521,6 @@ function renderLuckyLine(){
   const winner = donePick ? donePick.key : (picks.some(p => p.key === chosenKey) ? chosenKey : null);
   el.innerHTML =
     `<div class="lucky-head">${closed ? clover : `<button type="button" class="lucky-clover-btn" aria-label="Refermer la case" title="Refermer">${clover}</button>`}<span class="lucky-lead">${done ? "Trèfle du jour fait !" : LUCKY_LEAD}</span>` +
-    (closed ? `<span class="lucky-crank" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>` : "") +
     ((closed || done) ? "" : `<button type="button" class="lucky-reroll" aria-label="Deux autres propositions"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg></button>`) +
     `</div>` +
     `<div class="lucky-opts">` +
@@ -9313,7 +9306,7 @@ const ACTION_MESSAGES = {
   restore: ["Ressuscitée. Le chanoine n'en revient pas.", "Retour dans sa case, comme si de rien n'était."],
   trashDelete: ["Effacée des archives. Le clerc a passé le buvard.", "Rayée pour de bon."],
   moveCat: ["Déménagée dans une autre liste, cartons compris.", "Changement de case, acté par le notaire.", "Mutation acceptée, sans passer par l'échevin."],
-  newCat: ["Nouvelle case ouverte, comme un échevinat de plus.", "Catégorie créée. Le conseil communal a voté à main levée."],
+  newCat: ["Nouvelle case ouverte, comme un échevinat de plus.", "Liste créée. Le conseil communal a voté à main levée."],
   // 10.15 : listes de courses
   newCourses: ["Panier prêt. Direction le marché du dimanche.", "Mémo ouvert, comme l'épicerie du coin."],
   coursesErase: ["Retiré du panier.", "Reposé sur l'étal.", "Le crémier s'en remettra."],
