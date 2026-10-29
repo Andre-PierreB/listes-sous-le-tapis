@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.45 -->
+<!-- Sous le tapis — version AUTONOME 10.46 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1112,6 +1112,16 @@
     à droite, trèfle à l'aplomb de la plume, titre qui finit où finit
     « Sous le tapis » ; ⟳ passe à gauche. Bouton « + Nouvelle liste » en
     citron givré, pointillés citron, petit zoom et halo au survol.
+  - 10.46 : fenêtre « Rappel de relance ? » revue (askRelance, classe
+    relance-ask) : titre en tête, petit et en mauve ; « Aucune relance »
+    (« Plus de relance » pour un report) sur toute la largeur, curseur dessus
+    à l'ouverture ; dessous, une rangée de petits boutons de même largeur
+    (1 sem. / 2 sem. / 1 mois / date d'échéance s'il y en a une / calendrier
+    en pictogramme, avec le vrai champ date invisible posé dessus : pas de
+    zoom sur iPhone). Tous pareils : fond teinté (--wait 12 %), sans bordure,
+    graisse normale, texte --phrase ; survol citron givré à fin liseré citron.
+    La date exacte d'un délai est dans son infobulle. Les autres petites
+    fenêtres (échéance au retour, plume) gardent leur forme.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -3676,7 +3686,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.45</span>
+    <span class="version-tag">v10.46</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
