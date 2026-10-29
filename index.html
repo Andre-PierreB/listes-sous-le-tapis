@@ -1853,7 +1853,6 @@ header{
   justify-content:space-between;
   align-items:center;
   gap:0.75rem;
-  padding-left:0.3rem;   /* 10.41 : le titre s'écarte de la poignée */
 }
 .category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:0.35rem; }   /* 10.35 : plus d'air entre le titre et les tâches */
 .category.courses .cat-head{ margin-top:0.11rem; }   /* 10.36 : titre des mémos sur la même ligne que les autres titres */
@@ -2094,12 +2093,12 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   user-select:none;
   transition:opacity .15s ease, background .15s ease, color .15s ease;
 }
-/* 10.41 : dans la marge, à gauche du titre (avant : en haut à droite, avec la
-   flèche d'ordre et la pleine page) ; « .category » l'emporte sur [data-tip] */
-.category .cat-grip{ position:absolute; left:2.5px; top:calc(1.2rem + 1px); }   /* un rien au-dessus du centre du titre ; autant d'air à gauche (liseré) qu'à droite (titre) */
-.category.courses .cat-grip{ top:calc(1.31rem + 1px); }   /* titre des mémos un peu plus bas (10.36) */
+/* 10.42 : en bas à gauche de la carte, couchée, pendant de la flèche du volet
+   en bas à droite (avant : en haut à droite ; 10.41 : à gauche du titre) ;
+   « .category » l'emporte sur [data-tip] */
+.category .cat-grip{ position:absolute; left:0.55rem; bottom:0.12rem; }
+.category .cat-grip svg{ transform:rotate(90deg); }
 .category:hover .cat-grip{ opacity:1; }
-@media (hover:hover){ .cat-grip{ opacity:0; } }   /* 10.41 : à la souris, n'apparaît qu'au survol de la carte */
 .cat-grip:hover{ background:var(--surface-2); color:var(--ink-soft); }
 /* Volontairement distincte du × discret d'une tâche (.delete-btn) : cette
    croix supprime toute une case, pas une simple ligne — elle doit se voir
