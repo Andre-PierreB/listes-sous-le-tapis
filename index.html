@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.51 -->
+<!-- Sous le tapis — version AUTONOME 10.52 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1153,6 +1153,11 @@
     et --ink-soft au repos, --accent-soft et --accent-strong au survol. Choisi
     au banc parmi des codes existants (papier → citron, boutons du bas,
     10.47), pour ne plus inventer de teinte.
+  - 10.52 : petites fenêtres de tâche dans le code de la fenêtre de la plume :
+    fond blanc, boutons comme « Continuer avec Google » (--accent 12 %, texte
+    --phrase), titre centré en --ink-soft (le gris de « Mot de passe
+    oublié ? » ; bleu et mauve essayés au banc). Survol comme la case à
+    cocher d'une tâche : plein --accent, écriture blanche comme sa coche.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -3021,8 +3026,8 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
    (bouton plein, sobre), puis une rangée de petits boutons abrégés et un
    calendrier en pictogramme, tous de même hauteur */
 /* 10.52 : dans le code de la fenêtre de la plume : fenêtre blanche, boutons
-   comme « Continuer avec Google » (accent 12 %, texte --phrase), titre comme
-   « Retrouver ses listes partout » ; survol comme la case à cocher d'une
+   comme « Continuer avec Google » (accent 12 %, texte --phrase), titre centré
+   comme « Retrouver ses listes partout » mais en gris ; survol comme la case à cocher d'une
    tâche : plein --accent, écriture blanche comme sa coche */
 .relance-ask{
   width:auto; max-width:calc(100vw - 32px); padding:0.7rem 0.7rem 0.7rem;
@@ -3033,7 +3038,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   --rp-ink-hover:#fff;
 }
 
-.relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; color:var(--accent); text-align:center; }
+.relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; color:var(--ink-soft); text-align:center; }   /* gris de « Mot de passe oublié ? » */
 /* tous les boutons pareils : fond légèrement teinté, sans bordure, même
    graisse ; « Aucune relance » sur toute la largeur, un rien plus haut */
 .relance-ask .rp-skip{
@@ -3729,7 +3734,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.51</span>
+    <span class="version-tag">v10.52</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
