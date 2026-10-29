@@ -3202,7 +3202,7 @@ body.no-list .welcome-card{
 .welcome-msg{
   margin:0; text-align:center;   /* une ligne si possible, sinon coupée entre ses deux moitiés */
   font-family:'Public Sans', system-ui, sans-serif; font-size:0.95rem; font-weight:600;
-  line-height:1.4; color:var(--ub-title);
+  line-height:1.4; color:color-mix(in srgb, var(--ub-title) 80%, var(--urgent-ink));   /* titre du bandeau urgent, un chouïa plus lisible */
 }
 .welcome-msg span{ white-space:nowrap; }
 body.no-tasks header{ margin-bottom:2.6rem; }   /* sans compteur : la mention sous la plume (~44px sous le haut du titre) ne touche pas la carte suivante */
@@ -3213,12 +3213,12 @@ body.cloud.no-list.signed-out .plume-login{
   display:block; position:absolute; right:12px; top:25px;
   appearance:none; border:none; background:transparent; padding:0; cursor:pointer;
   font-family:'Courier Prime', 'Courier New', monospace; font-size:0.6rem; font-weight:700;
-  letter-spacing:0.08em; text-transform:uppercase; color:var(--accent);
+  letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint);   /* gris, comme « Hors ligne » */
   text-decoration:underline; text-decoration-color:transparent; text-underline-offset:3px;
-  transition:text-decoration-color .15s ease;
+  transition:color .15s ease, text-decoration-color .15s ease;
 }
 body.cloud.no-list.signed-out .plume-login::before{ content:""; position:absolute; inset:-8px -6px; }   /* zone de toucher */
-.plume-login:hover, .plume-login:focus-visible{ outline:none; text-decoration-color:currentColor; }
+.plume-login:hover, .plume-login:focus-visible{ outline:none; color:var(--ink-soft); text-decoration-color:currentColor; }
 body.no-list .add-category-row{
   flex-direction:column;
   align-items:center;
