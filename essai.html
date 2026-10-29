@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.44 -->
+<!-- Sous le tapis — version AUTONOME 10.45 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1096,6 +1096,22 @@
     (oubliées en 10.43). Bulle du nombre de tâches en Public Sans (les
     chiffres de Courier Prime ne se centraient pas pareil selon le
     navigateur). Phrase du jeudi : « L'autre prépare un coup fourré. »
+  - 10.45 : listes partagées — étiquette « new – AP » (initiales, avant le
+    prénom) et nouvelle « modif – H » : qui a changé le texte, le détail ou
+    l'échéance d'une tâche, ou un article de mémo (overrides editBy / editAt,
+    posés par markEdited, fusionnés et synchronisés avec les modifications ;
+    pas la coche ni l'urgence). Visible 24 h après la première vue (mémoire
+    locale sous-le-tapis-vu, champ m). Les étiquettes s'affichent aussi chez
+    l'auteur (newItems / editedItems) ; le message en bas seulement pour ce
+    que font les autres (« Hiske a modifié … dans … »). Le texte d'une ligne
+    marquée garde 5.4rem à droite pour l'étiquette. Règles Firestore
+    inchangées.
+    Picto du détail toujours dans sa pastille ronde jaune (même fond, ouvert
+    ou non ; plus foncée au survol). Liste repliée : flèche d'ordre masquée
+    (se confondait avec celle qui rouvre). « Une petite en passant ? » calée
+    à droite, trèfle à l'aplomb de la plume, titre qui finit où finit
+    « Sous le tapis » ; ⟳ passe à gauche. Bouton « + Nouvelle liste » en
+    citron givré, pointillés citron, petit zoom et halo au survol.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -3630,7 +3646,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.44</span>
+    <span class="version-tag">v10.45</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
