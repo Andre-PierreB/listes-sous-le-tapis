@@ -3197,10 +3197,11 @@ body.no-list .welcome-card{
   padding:1.05rem 2.2rem 1.1rem;
 }
 .welcome-msg{
-  margin:0 auto; max-width:30ch; text-align:center; text-wrap:balance;   /* phrase ramassée au centre du cadre */
+  margin:0; text-align:center;   /* une ligne si possible, sinon coupée entre ses deux moitiés */
   font-family:'Public Sans', system-ui, sans-serif; font-size:0.95rem; font-weight:600;
-  line-height:1.4; color:var(--phrase); text-wrap:pretty;
+  line-height:1.4; color:var(--urgent);   /* améthyste, comme le chiffre du compteur */
 }
+.welcome-msg span{ white-space:nowrap; }
 body.no-tasks header{ margin-bottom:2.6rem; }   /* sans compteur : la mention sous la plume (~44px sous le haut du titre) ne touche pas la carte suivante */
 body.no-list header{ margin-bottom:1.9rem; }   /* accueil : mention remontée contre la plume */
 body.no-list .plume-tag{ top:25px; }
@@ -3496,7 +3497,7 @@ body.arrive footer{ animation-delay:.52s; }
     </div>
     <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
   </div>
-  <div class="welcome-card"><p class="welcome-msg">Ce qui dort sous le tapis n’est&nbsp;pas&nbsp;perdu…</p></div>
+  <div class="welcome-card"><p class="welcome-msg"><span>Ce qui dort sous le tapis</span> <span>n'est pas perdu...</span></p></div>
 
   <div class="urgent-banner" id="urgentBanner" hidden></div>
   <div class="lucky-line" id="luckyLine" hidden></div>
