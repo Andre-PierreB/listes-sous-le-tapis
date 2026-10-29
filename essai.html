@@ -2981,12 +2981,12 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
    (bouton plein, sobre), puis une rangée de petits boutons abrégés et un
    calendrier en pictogramme, tous de même hauteur */
 .relance-ask{ width:auto; max-width:calc(100vw - 32px); padding:0.7rem 0.7rem 0.7rem; --rp-ink:var(--phrase); }
-.relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; }
-/* tous les boutons pareils : fond légèrement teinté, sans bordure ; « Aucune
-   relance » sur toute la largeur, un rien plus haut et en gras */
+.relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; color:color-mix(in srgb, var(--ub-title) 75%, var(--urgent-ink)); }   /* une touche de mauve, au seul titre */
+/* tous les boutons pareils : fond légèrement teinté, sans bordure, même
+   graisse ; « Aucune relance » sur toute la largeur, un rien plus haut */
 .relance-ask .rp-skip{
   margin:0 0 0.25rem; border:0; border-radius:5px; height:1.6rem; padding:0 0.6rem;
-  font-size:0.76rem; font-weight:500; text-align:center;
+  font-size:0.76rem; font-weight:400; text-align:center;
   background:color-mix(in srgb, var(--wait) 12%, transparent); color:var(--rp-ink);
 }
 .rp-chips{ display:grid; grid-auto-columns:1fr; grid-auto-flow:column; gap:0.25rem; }   /* même largeur pour tous */
