@@ -3182,6 +3182,11 @@ footer:has(#shareLink:not([hidden])) #trashLink{ margin-right:0; }
 body.no-list #trashLink, body.no-list #shareLink, body.no-list .backup-bar, body.no-list #trashPanel, body.no-list #sharePanel{ display:none !important; }
 body.no-list footer{ border-top-color:transparent; }
 body.no-list .version-tag{ display:none; }
+/* 10.40 : pas de compteur tant qu'il n'y a rien à compter (body.no-tasks),
+   ni « Hors ligne » sur l'accueil vide quand le réseau est là : un nouveau
+   venu n'a encore jamais été connecté */
+body.no-tasks .progress-card{ display:none; }
+body.no-list .plume-tag.logged-out{ display:none; }
 body.no-list .add-category-row{
   flex-direction:column;
   align-items:center;
@@ -5252,14 +5257,19 @@ function backupNudgeText(){
   const days = Math.round((new Date(todayISO() + "T00:00:00") - new Date(last + "T00:00:00")) / 86400000);
   return "Dernière sauvegarde il y a " + days + " jours";
 }
+// 10.40 : peut-on se connecter (cloud), l'est-on (logged) ? Sync est déclaré
+// plus bas : au tout premier rendu il n'existe pas encore (tout à false).
+function cloudState(){
+  let cloud = false, logged = false;
+  try{ cloud = !!Sync.available; logged = !!(Sync.user && ((Sync.status && Sync.status.state) || "off") !== "off"); }catch(e){}
+  return { cloud, logged };
+}
 function renderBackupNudge(){
   const el = document.getElementById("backupNudge");
   if(!el) return;
   // 10.6 : quand on peut se connecter, le rappel invite à se connecter (et se
   // tait une fois connecté) ; la copie de secours est dans la plume
-  // (Sync est déclaré plus bas : au tout premier rendu il n'existe pas encore)
-  let cloud = false, logged = false;
-  try{ cloud = !!Sync.available; logged = !!(Sync.user && ((Sync.status && Sync.status.state) || "off") !== "off"); }catch(e){}
+  const { cloud, logged } = cloudState();
   let text;
   if(cloud){
     text = (hasAnyList() && !logged) ? "Se connecter pour ne jamais perdre ses listes" : "";
@@ -5568,7 +5578,7 @@ function updateWatermark(show){
   try{
     const wrap = document.querySelector(".wrap");
     const row = document.getElementById("addCategoryRow");
-    const ref = document.querySelector(".progress-card");
+    const ref = cardsRef();
     if(!show || !wrap || !row || !ref || typeof TAPIS === "undefined"){
       if(row) row.style.marginTop = "";
       if(watermarkEl){
@@ -5578,7 +5588,7 @@ function updateWatermark(show){
       }
       return;
     }
-    // largeur des cases, de sous la case compteur jusqu'au bas de la fenêtre
+    // largeur des cases, de sous la case compteur (ou le titre) jusqu'au bas de la fenêtre
     const wr = wrap.getBoundingClientRect(), rr = ref.getBoundingClientRect();
     const width = rr.width;
     const VW = width >= 600 ? 560 : 400, scale = width / VW;
@@ -5640,15 +5650,21 @@ function renderAddCategoryRow(){
   if(!addingCategory){
     if(noList){
       // App vierge : un appel à l'action clair plutôt qu'un petit bouton perdu.
+      // 10.40 : sans compte, le lien mène à la plume (connexion, et Restaurer
+      // dans la même fenêtre) ; connecté, ou sans plume (mode de secours), il
+      // restaure directement : la restauration reste toujours à portée.
+      const cs = cloudState(), askLogin = cs.cloud && !cs.logged;
       el.innerHTML = `<button type="button" class="add-category-btn onboarding">
         <span class="onboarding-plus" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 2.5v11M2.5 8h11"/></svg></span>
         <span class="onboarding-title">Go dépoussiérage</span>
         <span class="onboarding-sub">une petite liste ?</span>
       </button>
-      <button type="button" class="onboarding-restore">ou <span>restaurer</span><small>(à partir d'une sauvegarde)</small></button>`;
+      ${askLogin ? `<button type="button" class="onboarding-restore">ou <span>se connecter</span><small>pour retrouver ses listes</small></button>`
+                 : `<button type="button" class="onboarding-restore">ou <span>restaurer</span><small>(à partir d'une sauvegarde)</small></button>`}`;
       el.querySelector(".onboarding-restore").addEventListener("click", (e)=>{
         e.stopPropagation();
-        document.getElementById("importFile").click();
+        if(askLogin) document.getElementById("plume").click();   // connexion + Restaurer
+        else document.getElementById("importFile").click();
       });
     }else{
       el.innerHTML = `<button type="button" class="add-category-btn">+ Nouvelle liste</button>`;
@@ -6375,6 +6391,21 @@ function getCatOrder(cat){
 
 function hasAnyList(){
   return getCategoryOrder().some(i => DATA[i] && !isCategoryDeleted(DATA[i].id));
+}
+// 10.40 : au moins une tâche (œufs compris) dans une liste normale ; les
+// articles des mémos ne comptent pas, comme pour le compteur
+function hasAnyTask(){
+  return getCategoryOrder().some(i=>{
+    const c = DATA[i];
+    if(!c || isCategoryDeleted(c.id) || isCoursesList(c.id)) return false;
+    return getEffectiveItems(c).some((base, j) => !isDeleted(itemKey(c.id, j)));
+  });
+}
+// 10.40 : la largeur des cartes, prise sur le compteur, ou sur la colonne
+// des listes quand le compteur est masqué (tapis de l'accueil, tapis qui se déroule)
+function cardsRef(){
+  const pc = document.querySelector(".progress-card");
+  return pc && pc.offsetParent ? pc : document.getElementById("categories");
 }
 
 function getCategoryOrder(){
@@ -9191,6 +9222,8 @@ function updateProgress(){
   // Compteur affiché : tâches cochées depuis lundi (repart de zéro chaque
   // semaine). La barre et les messages gardent le calcul faites / total.
   const weekDone = getWeekDoneCount();
+  // 10.40 : rien à compter (aucune tâche, rien coché cette semaine) : pas de compteur
+  document.body.classList.toggle("no-tasks", !weekDone && !hasAnyTask());
   document.getElementById("doneCount").textContent = weekDone;
   document.getElementById("doneWord").textContent = weekDone > 1 ? "accomplies" : "accomplie";
   fitCountBlock();
@@ -9778,7 +9811,7 @@ const TAPIS = (()=>{
 
   // Emplacement : largeur des cases, du bas du titre jusqu'au-dessus de la version.
   function measure(){
-    const ref = document.querySelector(".progress-card") || wrap;
+    const ref = cardsRef() || wrap;
     const wr = wrap.getBoundingClientRect(), rr = ref.getBoundingClientRect();
     const hr = title.closest("header").getBoundingClientRect();
     const vr = version.getBoundingClientRect();
@@ -10681,15 +10714,20 @@ const Sync = (()=>{
     if(tag){
       const txt = (st === "off" || offline) ? "Hors ligne" : st === "error" ? "Souci de synchro" : "";
       tag.textContent = txt; tag.hidden = !txt;
+      tag.classList.toggle("logged-out", st === "off" && !offline);   // 10.40 : masqué sur l'accueil vide
     }
     plume.classList.toggle("waiting", st === "pending" || st === "connecting");
     const who = Sync.status.email ? " (" + Sync.status.email + ")" : "";
     plume.setAttribute("aria-label", LABEL[st] || LABEL.off);
     plume.title = (LABEL[st] || LABEL.off) + (st === "ok" || st === "pending" ? who : "");
   }
-  Sync.onStatus = ()=>{ paint(); if(shareOpen) renderShare(); renderBackupNudge(); };   // 10.2 : le panneau Partage suit la connexion
+  // 10.40 : le lien de l'accueil vide dépend de la connexion (Sync n'existait
+  // pas encore au premier rendu) : refait ici, puis à chaque changement
+  const refreshWelcome = ()=>{ if(!hasAnyList() && !addingCategory) renderAddCategoryRow(); };
+  Sync.onStatus = ()=>{ paint(); if(shareOpen) renderShare(); renderBackupNudge(); refreshWelcome(); };   // 10.2 : le panneau Partage suit la connexion
   window.addEventListener("online", paint); window.addEventListener("offline", paint);   // 10.23
   paint();
+  refreshWelcome();
 
   // 10.26 : domaines courants ; une adresse à 1–2 lettres de l'un d'eux est
   // probablement une faute de frappe (gmial.com, hotmail.con…)
@@ -10825,11 +10863,13 @@ const Sync = (()=>{
       });
       pw.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); pop.querySelector(".sp-login").click(); } });
     }
-    // 10.6 : copie de secours (fichier), discrète, dans les deux états
+    // 10.6 : copie de secours (fichier), discrète, dans les deux états ;
+    // 10.40 : sans liste, Restaurer seul (rien à copier)
     const bk = document.createElement("div");
     bk.className = "sp-backup";
-    bk.innerHTML = `<button type="button" class="sp-export">Copie de secours</button><span aria-hidden="true">·</span><button type="button" class="sp-import">Restaurer</button>`;
-    bk.querySelector(".sp-export").addEventListener("click", e=>{ e.stopPropagation(); closeRelancePop(); document.getElementById("exportBtn").click(); });
+    const canExport = hasAnyList();
+    bk.innerHTML = (canExport ? `<button type="button" class="sp-export">Copie de secours</button><span aria-hidden="true">·</span>` : "") + `<button type="button" class="sp-import">Restaurer</button>`;
+    if(canExport) bk.querySelector(".sp-export").addEventListener("click", e=>{ e.stopPropagation(); closeRelancePop(); document.getElementById("exportBtn").click(); });
     bk.querySelector(".sp-import").addEventListener("click", e=>{ e.stopPropagation(); closeRelancePop(); document.getElementById("importFile").click(); });
     pop.appendChild(bk);
     openPopAt(pop, plume);
