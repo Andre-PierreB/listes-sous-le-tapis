@@ -2979,9 +2979,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   color:var(--title-mauve);   /* 10.48 : mauve, comme le titre de la fenêtre de relance (avant --ink-soft) */
   margin:0 0 1.1rem;
 }
-/* 10.50 : « En cours » reprend l'onglet citron givré des petites fenêtres */
-#waitingSection .section-title span{ white-space:nowrap; }   /* trop étroit : coupé après le tiret */
-#waitingSection .section-title{ display:inline-block; margin:-0.2rem 0 0.95rem -0.5rem; padding:0.2rem 0.5rem; border-radius:5px; background:var(--lucky-bg); }
+#waitingSection .section-title span{ white-space:nowrap; }   /* 10.50 : trop étroit, coupé après le tiret */
 #waitingList .empty-note{ color:color-mix(in srgb, var(--ink-faint) 72%, var(--wait-soft)); }
 /* choix de la relance (7.3) */
 .relance-pop{
@@ -3019,12 +3017,8 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   --rp-btn-hover:var(--lucky-bg);
 }
 
-/* une touche de mauve, au seul titre, posé dans un petit onglet citron givré
-   (10.47 ; retiré en 10.49, revenu en 10.50, et repris par « En cours ») */
-.relance-ask .rp-title{
-  display:inline-block; font-size:0.62rem; margin:0.1rem 0 0.5rem; padding:0.2rem 0.5rem; border-radius:5px;
-  background:var(--lucky-bg); color:var(--title-mauve);
-}
+/* une touche de mauve, au seul titre (onglet citron essayé en 10.47, écarté) */
+.relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; color:var(--title-mauve); }
 /* tous les boutons pareils : fond légèrement teinté, sans bordure, même
    graisse ; « Aucune relance » sur toute la largeur, un rien plus haut */
 .relance-ask .rp-skip{
@@ -8222,8 +8216,9 @@ function buildItemLi(cat, idx, base, key, opts){
   // N'anime que la tâche qu'on vient tout juste de cocher (voir justCheckedKey),
   // et une seule fois : les re-rendus suivants retombent sur le trait fixe.
   const justChecked = checked && key === justCheckedKey;
-  const isNewHere = !checked && newItems(cat).includes(idx);   // 10.31
-  const isEditedHere = !checked && !isNewHere && editedItems(cat).includes(idx);   // 10.45
+  // 10.50 : pas de marque « new / modif » dans « En cours » (on s'en est déjà occupé)
+  const isNewHere = !checked && !eff.waiting && newItems(cat).includes(idx);   // 10.31
+  const isEditedHere = !checked && !eff.waiting && !isNewHere && editedItems(cat).includes(idx);   // 10.45
   li.className = "item" + (isNewHere || isEditedHere ? " is-new" : "") + (isRelance(eff) && !checked ? " item-relance" : "") + (isUrgent ? " item-urgent" : "") + (eff.egg && !checked ? " is-egg" : "") + (justChecked ? " just-checked" : "") + (checked ? " is-checked" : "");
   li.dataset.key = key;
   const personTag = eff.person ? `<span class="person-tag${eff.tier ? " tier-" + escapeAttr(eff.tier) : ""}">${escapeAttr(eff.person)}</span>` : "";
