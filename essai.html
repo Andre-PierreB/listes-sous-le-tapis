@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.43 -->
+<!-- Sous le tapis — version AUTONOME 10.44 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1092,6 +1092,10 @@
     peu plus haute (2.1rem en bas) pour saisir la poignée sans attraper le
     titre. Texte des mémos un peu adouci (encre à 78 %). « En cours » :
     marge droite vérifiée, déjà comme ailleurs.
+  - 10.44 : poignées de la case urgente calées sur la 1re ligne aussi
+    (oubliées en 10.43). Bulle du nombre de tâches en Public Sans (les
+    chiffres de Courier Prime ne se centraient pas pareil selon le
+    navigateur). Phrase du jeudi : « L'autre prépare un coup fourré. »
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1499,6 +1503,10 @@ header{
   color:var(--urgent-ink);
   opacity:0;
   transition:opacity .15s ease;
+  /* 10.44 : calée sur la 1re ligne, comme la case (centre à 0.3rem + 0.65 ×
+     taille du texte), et non au milieu d'une tâche sur plusieurs lignes */
+  align-self:flex-start; align-items:flex-start; line-height:18px;
+  padding-top:calc(0.3rem + var(--task-size) * 0.65 - 9px);
 }
 .urgent-list li:hover .drag-handle{ opacity:0.5; }
 .urgent-check{
@@ -1863,8 +1871,8 @@ header{
 /* 10.43 : liste repliée, tâches restantes dans une bulle à la couleur de la
    liste (comme « nouveau ») ; avant : chiffre gris seul, peu clair */
 .cat-count{
-  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:700; flex:none;
-  min-width:1.3rem; height:1.1rem; box-sizing:border-box; padding:0.34rem 0.45rem 0; border-radius:999px; line-height:1;   /* padding-top : les chiffres de Courier Prime sont hauts, on les recentre dans la bulle */
+  font-family:'Public Sans', system-ui, sans-serif; font-size:0.68rem; font-weight:700; flex:none;   /* 10.44 : chiffres bien centrés d'un navigateur à l'autre (ceux de Courier Prime variaient) */
+  min-width:1.3rem; height:1.1rem; box-sizing:border-box; padding:1.5px 0.45rem 0; border-radius:999px; line-height:1;   /* 1.5px : centre optique des chiffres */
   display:inline-flex; align-items:center; justify-content:center;
   background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface));
   color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
@@ -3610,7 +3618,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.43</span>
+    <span class="version-tag">v10.44</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4797,7 +4805,7 @@ const WEEKDAY_MESSAGES = {
   "4": [
     "Jeudi, jour de belote dans les estaminets. La liste, elle, ne triche pas aux annonces.",
     "Jeudi, veille de la veille du week-end. Les almanachs appellent ça une perspective.",
-    "Le jeudi, un faisan sur deux prépare son week-end. L'autre prépare un mauvais coup."
+    "Le jeudi, un faisan sur deux prépare son week-end. L'autre prépare un coup fourré."
   ],
   "5": [
     "Vendredi : la liste tourne rond comme la camionnette du poissonnier un jour de marché.",
