@@ -2964,7 +2964,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 /* choix de la relance (7.3) */
 .relance-pop{
   position:absolute; z-index:80; width:min(270px, calc(100vw - 32px));
-  background:var(--surface); border:1px solid var(--line); border-radius:12px;   /* 10.47 : fond blanc, filet neutre (avant : fond --wait-soft, bord --wait) */
+  background:var(--wait-soft); border:0; border-radius:12px;   /* 10.47 : plus de liseré autour (avant : bord --wait) */
   box-shadow:0 2px 6px rgba(30,40,45,0.06), 0 18px 36px -14px rgba(30,40,45,0.35);
   padding:0.7rem 0.75rem 0.75rem; font-family:'Public Sans', system-ui, sans-serif;
   animation:rp-in .14s ease;
@@ -2988,14 +2988,13 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 /* 10.46 : rappel de relance — titre, « Aucune relance » en premier choix
    (bouton plein, sobre), puis une rangée de petits boutons abrégés et un
    calendrier en pictogramme, tous de même hauteur */
-/* 10.47 : boutons dans le vert de « En cours » (un cran plus soutenu que la
-   case, pour se voir sur le blanc), texte de son encre ; survol un cran plus foncé */
+/* 10.47 : boutons citron givré au repos, teinte « En cours » au survol
+   (l'inverse de la 10.46), sans liseré ; texte --phrase */
 .relance-ask{
   width:auto; max-width:calc(100vw - 32px); padding:0.7rem 0.7rem 0.7rem;
-  --rp-ink:color-mix(in srgb, var(--wait) 55%, var(--ink));
-  --rp-mint:color-mix(in srgb, var(--logo-green) 45%, var(--wait));   /* vert d'eau, la teinte de la case « En cours » */
-  --rp-btn:color-mix(in srgb, var(--wait-soft) 84%, var(--rp-mint));
-  --rp-btn-hover:color-mix(in srgb, var(--wait-soft) 70%, var(--rp-mint));
+  --rp-ink:var(--phrase);
+  --rp-btn:var(--lucky-bg);
+  --rp-btn-hover:color-mix(in srgb, var(--wait) 14%, var(--wait-soft));
 }
 
 .relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; color:color-mix(in srgb, var(--ub-title) 75%, var(--urgent-ink)); }   /* une touche de mauve, au seul titre */
