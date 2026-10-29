@@ -3013,14 +3013,14 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 /* 10.46 : rappel de relance — titre, « Aucune relance » en premier choix
    (bouton plein, sobre), puis une rangée de petits boutons abrégés et un
    calendrier en pictogramme, tous de même hauteur */
-/* 10.51 : fenêtre blanche ; boutons légèrement teintés au repos, fond de
-   « En cours » au survol ; texte de la couleur du titre de « En cours » */
+/* 10.51 : fenêtre blanche ; boutons au fond de « En cours », survol comme
+   une ligne de « En cours » ; texte de la couleur du titre de « En cours » */
 .relance-ask{
   width:auto; max-width:calc(100vw - 32px); padding:0.7rem 0.7rem 0.7rem;
   background:var(--surface);
   --rp-ink:var(--ink-soft);
-  --rp-btn:color-mix(in srgb, var(--wait) 10%, var(--surface));
-  --rp-btn-hover:var(--wait-soft);
+  --rp-btn:var(--wait-soft);
+  --rp-btn-hover:color-mix(in srgb, var(--wait) 8%, var(--wait-soft));   /* = #waitingSection .item:hover */
 }
 
 /* 10.51 : titre dans la couleur du titre de « En cours » (--ink-soft) */
@@ -3644,11 +3644,13 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
 :root[data-theme="dark"] .tapis-watermark{ opacity:0.1; }
 :root[data-theme="dark"] .urgent-banner{ box-shadow:var(--shadow); }
 :root[data-theme="dark"] #waitingSection .item:not(.editing):hover{ background:color-mix(in srgb, var(--wait) 14%, transparent); }
+:root[data-theme="dark"] .relance-ask{ --rp-btn-hover:color-mix(in srgb, var(--wait) 14%, var(--wait-soft)); }
 :root[data-theme="dark"] .tapis-roll{ background:linear-gradient(180deg, #34424A 0%, #26323A 50%, #1A2328 100%); border-color:#3A4650; }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .tapis-watermark{ opacity:0.1; }
   :root:not([data-theme="light"]) .urgent-banner{ box-shadow:var(--shadow); }
   :root:not([data-theme="light"]) #waitingSection .item:not(.editing):hover{ background:color-mix(in srgb, var(--wait) 14%, transparent); }
+  :root:not([data-theme="light"]) .relance-ask{ --rp-btn-hover:color-mix(in srgb, var(--wait) 14%, var(--wait-soft)); }
   :root:not([data-theme="light"]) .tapis-roll{ background:linear-gradient(180deg, #34424A 0%, #26323A 50%, #1A2328 100%); border-color:#3A4650; }
 }
 
