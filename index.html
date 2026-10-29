@@ -2964,7 +2964,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 /* choix de la relance (7.3) */
 .relance-pop{
   position:absolute; z-index:80; width:min(270px, calc(100vw - 32px));
-  background:var(--wait-soft); border:1px solid color-mix(in srgb, var(--lucky-lemon) 55%, var(--line)); border-radius:12px;   /* 10.47 : bordée de citron pâle (avant : --wait) */
+  background:var(--surface); border:1px solid var(--line); border-radius:12px;   /* 10.47 : fond blanc, filet neutre (avant : fond --wait-soft, bord --wait) */
   box-shadow:0 2px 6px rgba(30,40,45,0.06), 0 18px 36px -14px rgba(30,40,45,0.35);
   padding:0.7rem 0.75rem 0.75rem; font-family:'Public Sans', system-ui, sans-serif;
   animation:rp-in .14s ease;
@@ -2988,7 +2988,15 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 /* 10.46 : rappel de relance — titre, « Aucune relance » en premier choix
    (bouton plein, sobre), puis une rangée de petits boutons abrégés et un
    calendrier en pictogramme, tous de même hauteur */
-.relance-ask{ width:auto; max-width:calc(100vw - 32px); padding:0.7rem 0.7rem 0.7rem; --rp-ink:var(--phrase); }
+/* 10.47 : boutons dans le vert de « En cours » (un cran plus soutenu que la
+   case, pour se voir sur le blanc), texte de son encre ; survol un cran plus foncé */
+.relance-ask{
+  width:auto; max-width:calc(100vw - 32px); padding:0.7rem 0.7rem 0.7rem;
+  --rp-ink:color-mix(in srgb, var(--wait) 55%, var(--ink));
+  --rp-mint:color-mix(in srgb, var(--logo-green) 45%, var(--wait));   /* vert d'eau, la teinte de la case « En cours » */
+  --rp-btn:color-mix(in srgb, var(--wait-soft) 84%, var(--rp-mint));
+  --rp-btn-hover:color-mix(in srgb, var(--wait-soft) 70%, var(--rp-mint));
+}
 
 .relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; color:color-mix(in srgb, var(--ub-title) 75%, var(--urgent-ink)); }   /* une touche de mauve, au seul titre */
 /* tous les boutons pareils : fond légèrement teinté, sans bordure, même
@@ -2996,21 +3004,18 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 .relance-ask .rp-skip{
   margin:0 0 0.25rem; border:0; border-radius:5px; height:1.6rem; padding:0 0.6rem;
   font-size:0.76rem; font-weight:400; text-align:center;
-  background:color-mix(in srgb, var(--wait) 12%, transparent); color:var(--rp-ink);
+  background:var(--rp-btn); color:var(--rp-ink);
 }
 .rp-chips{ display:grid; grid-auto-columns:1fr; grid-auto-flow:column; gap:0.25rem; }   /* même largeur pour tous */
 .rp-chip{
   appearance:none; display:inline-flex; align-items:center; justify-content:center; min-width:0;
   height:1.4rem; padding:0 0.3rem; border-radius:5px; cursor:pointer;
-  border:0; background:color-mix(in srgb, var(--wait) 12%, transparent); color:var(--rp-ink);
+  border:0; background:var(--rp-btn); color:var(--rp-ink);
   font-family:inherit; font-size:0.72rem; white-space:nowrap; font-variant-numeric:tabular-nums;
   transition:background .12s ease, border-color .12s ease, color .12s ease;
 }
-/* survol : citron givré, fin liseré citron (comme les petites satisfactions) */
 .rp-chip:hover, .rp-chip:focus-visible, .rp-custom:focus-within,
-.relance-ask .rp-skip:hover, .relance-ask .rp-skip:focus-visible{
-  outline:none; background:var(--lucky-bg); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--lucky-lemon) 60%, transparent); color:var(--rp-ink);
-}
+.relance-ask .rp-skip:hover, .relance-ask .rp-skip:focus-visible{ outline:none; background:var(--rp-btn-hover); color:var(--rp-ink); }
 .rp-custom{ position:relative; }
 .rp-custom svg{ width:12px; height:12px; }
 /* le vrai champ, invisible, couvre la ligne : calendrier du système au clic
@@ -3018,17 +3023,17 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 .rp-custom input{ position:absolute; inset:0; width:100%; height:100%; opacity:0; font-size:16px; border:0; padding:0; margin:0; cursor:pointer; }
 /* 10.1 : fenêtre de la plume (connexion), même forme, aux couleurs de l'accent */
 /* 10.47 : boutons dans la forme des petites fenêtres (relance) : fond teinté
-   d'accent, sans bordure, coins doux, texte --phrase ; survol citron givré */
+   d'accent, sans bordure, coins doux, texte --phrase ; survol un cran plus soutenu */
 .sync-pop{ width:min(290px, calc(100vw - 32px)); background:var(--surface); }
 .sync-pop .rp-title{ color:var(--accent); font-size:0.62rem; margin-top:0.2rem; }
 .sp-google, .sync-pop .rp-opts button{
   display:flex; align-items:center; justify-content:center; width:100%; appearance:none; cursor:pointer;
   font-family:inherit; font-size:0.8rem; font-weight:400; height:1.75rem; padding:0 0.6rem;
   border-radius:6px; border:0; background:color-mix(in srgb, var(--accent) 12%, transparent); color:var(--phrase);
-  transition:background .12s ease, box-shadow .12s ease;
+  transition:background .12s ease;
 }
 .sp-google:hover, .sp-google:focus-visible, .sync-pop .rp-opts button:hover, .sync-pop .rp-opts button:focus-visible{
-  outline:none; background:var(--lucky-bg); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--lucky-lemon) 60%, transparent); color:var(--phrase);
+  outline:none; background:color-mix(in srgb, var(--accent) 22%, transparent); color:var(--phrase);
 }
 .sp-or{ text-align:center; font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); margin:0.5rem 0; }
 .sp-email, .sp-pw{
@@ -5249,15 +5254,14 @@ function askBringBack(anchor, key){
   const today = todayISO();
   const d = splitDue(eff.due).date;
   const pop = document.createElement("div");
-  // 10.47 : même forme que la relance — « La garder » en premier choix, puis
-  // « L'effacer » et une autre date (calendrier : prise directement, plus de OK)
+  // 10.47 : même forme que la relance — trois petits boutons : Garder,
+  // Effacer, autre date (calendrier : prise directement, plus de OK)
   pop.className = "relance-pop relance-ask";
   pop.setAttribute("role", "dialog");
   pop.setAttribute("aria-label", "Échéance de la tâche");
   pop.innerHTML = `
     <div class="rp-title">L'échéance du ${shortDateFR(d)}${d < today ? " (dépassée)" : ""} ?</div>
-    <button type="button" class="rp-skip" data-a="keep">La garder</button>
-    <div class="rp-chips"><button type="button" class="rp-chip" data-a="erase">L'effacer</button><label class="rp-chip rp-custom" title="Autre date">${CAL_SVG}<input type="date" min="${today}" aria-label="Nouvelle échéance"></label></div>
+    <div class="rp-chips"><button type="button" class="rp-chip" data-a="keep">Garder</button><button type="button" class="rp-chip" data-a="erase">Effacer</button><label class="rp-chip rp-custom" title="Autre date">${CAL_SVG}<input type="date" min="${today}" aria-label="Nouvelle échéance"></label></div>
   `;
   const done = v => { closeRelancePop(); bringBackFromWaiting(key, v); };
   pop.querySelector('[data-a="keep"]').addEventListener("click", e => { e.stopPropagation(); done(undefined); });
