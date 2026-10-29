@@ -1961,14 +1961,14 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .share-chips{ display:inline-flex; flex:none; }
 .share-chip{
   display:inline-flex; align-items:center; justify-content:center;
-  width:1.15rem; height:1.15rem;
-  border-radius:50%;
+  min-width:1.15rem; height:1.15rem; box-sizing:border-box; padding:0 0.2rem;   /* 10.41 : s'allonge pour deux initiales */
+  border-radius:999px;
   background:color-mix(in srgb, var(--cat-color, var(--accent)) 20%, var(--surface));
   color:color-mix(in srgb, var(--cat-color, var(--accent)) 75%, var(--ink));
   box-shadow:0 0 0 2px var(--surface);
   font-size:0.62rem; font-weight:700; line-height:1;
 }
-.share-chip + .share-chip{ margin-left:-0.3rem; }
+.share-chip + .share-chip{ margin-left:-0.15rem; }   /* 10.41 : moins serrées, deux initiales restent lisibles */
 /* 10.31 : nouveautés venues d'autres personnes */
 .item{ position:relative; }
 .new-tag{
@@ -2081,7 +2081,12 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   user-select:none;
   transition:opacity .15s ease, background .15s ease, color .15s ease;
 }
+/* 10.41 : dans la marge, à gauche du titre (avant : en haut à droite, avec la
+   flèche d'ordre et la pleine page) ; « .category » l'emporte sur [data-tip] */
+.category .cat-grip{ position:absolute; left:1px; top:1.38rem; }
+.category.courses .cat-grip{ top:1.49rem; }   /* titre des mémos un peu plus bas (10.36) */
 .category:hover .cat-grip{ opacity:1; }
+@media (hover:hover){ .cat-grip{ opacity:0; } }   /* 10.41 : à la souris, n'apparaît qu'au survol de la carte */
 .cat-grip:hover{ background:var(--surface-2); color:var(--ink-soft); }
 /* Volontairement distincte du × discret d'une tâche (.delete-btn) : cette
    croix supprime toute une case, pas une simple ligne — elle doit se voir
@@ -3071,7 +3076,7 @@ footer:has(#shareLink:not([hidden])) #trashLink{ margin-right:0; }
 .sh-sub{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.66rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:0.35rem; }
 .sh-people{ list-style:none; margin:0 0 0.8rem; padding:0; border-top:1px solid var(--line); }
 .sh-person{ display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.1rem; border-bottom:1px solid var(--line); font-size:0.9rem; }
-.sh-person .share-chip{ --cat-color:var(--accent); box-shadow:none; width:1.5rem; height:1.5rem; font-size:0.75rem; }
+.sh-person .share-chip{ --cat-color:var(--accent); box-shadow:none; min-width:1.5rem; height:1.5rem; font-size:0.75rem; }
 .sh-pending .share-chip{ background:var(--surface-2); color:var(--ink-faint); }
 .sh-pname{ color:var(--ink); font-weight:600; }
 .sh-pending .sh-pname{ font-weight:400; color:var(--ink-soft); }
@@ -5699,7 +5704,7 @@ function updateWatermark(show){
     const key = VW + "x" + VH;
     if(key !== watermarkKey){
       watermarkKey = key;
-      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const svg = TAPIS.build(VW, VH, false, width*dpr, height*dpr);   // 10.40 : net sur téléphone
       const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
       const old = watermarkEl.dataset.url;
@@ -6085,9 +6090,11 @@ function newTagHtml(cat, base){
 }
 // « de André » → « d'André »
 function deName(name){ const n = String(name || "?"); return /^[aeiouyhàâäéèêëîïôöùûü]/i.test(n) ? "d'" + n : "de " + n; }
+// 10.41 : prénom composé (André-Pierre, Marie Claire) → deux initiales (AP)
 function initialOf(name){
-  const s = String(name || "?").trim();
-  return s ? s.charAt(0).toLocaleUpperCase("fr") : "?";
+  const parts = String(name || "").trim().split(/[-\s]+/).filter(Boolean);
+  if(!parts.length) return "?";
+  return parts.slice(0, 2).map(w => w.charAt(0).toLocaleUpperCase("fr")).join("");
 }
 // Sync est déclaré en fin de script : on y accède sans risque d'ici
 function syncApi(){ try{ return Sync; }catch(e){ return null; } }
@@ -8520,6 +8527,7 @@ function render(){
     const head = document.createElement("div");
     head.className = "cat-head";
     head.innerHTML = `
+        <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
       <span class="cat-title-group">
         ${renamingThisCat
           ? `<input type="text" class="cat-title-input" value="${escapeAttr(cat.title)}">`
@@ -8530,7 +8538,6 @@ function render(){
       <span class="cat-head-right">
         <button type="button" class="cat-order${newBottom ? " reversed" : ""}${reversed ? " custom" : ""}" aria-label="${newBottom ? "Mettre les récentes en haut" : "Mettre les récentes en bas"}" data-tip="${newBottom ? "Récentes en haut ?" : "Récentes en bas ?"}"><svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true"><path d="M5 1.8 9 8.2H1z" fill="currentColor"/></svg></button>
         <button type="button" class="cat-full" aria-label="${fullpageCat === cat.id ? "Revenir aux listes" : "Ouvrir en pleine page"}" data-tip="${fullpageCat === cat.id ? "Réduire" : "Pleine page"}">${fullpageCat === cat.id ? FULL_OUT_SVG : FULL_IN_SVG}</button>
-        <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
         ${canDeleteCat ? `<button type="button" class="cat-delete-btn" aria-label="Supprimer cette case vide" title="Supprimer cette case vide"><span class="g">&times;</span></button>` : ""}
       </span>
     `;
@@ -9935,8 +9942,9 @@ const TAPIS = (()=>{
     const key = [Math.round(m.width), Math.round(m.height), dark ? "d" : "l"].join("x");
     if(built && built.key === key) return Promise.resolve();
     if(building && building.key === key) return building.promise;
-    // 10.40 : jusqu'à 3 (iPhone ; avant 2), et l'image SVG faite à cette taille
-    let dpr = Math.min(window.devicePixelRatio || 1, 3);
+    // 10.40 : l'image SVG faite à cette taille ; 10.41 : ×2 au plus (×3 en
+    // 10.40 : plus de deux fois plus de pixels à préparer, le 1er déroulé accrochait)
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
     while(dpr > 1 && m.width*m.height*dpr*dpr > 14e6) dpr -= 0.25;   // reste raisonnable en mémoire
     const svg = TAPIS.build(m.VW, m.VH, dark, m.width*dpr, m.height*dpr);
     const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
@@ -10120,7 +10128,13 @@ const TAPIS = (()=>{
 
   // Préparé en douce après l'ouverture, pour que le premier clic parte tout de suite.
   const warm = ()=>{ try{ if(target === 0){ const m = measure(); place(m); build(m); } }catch(e){} };
-  if("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 3000 }); else setTimeout(warm, 1200);
+  const warmSoon = ()=>{ if("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 3000 }); else setTimeout(warm, 1200); };
+  warmSoon();
+  // 10.41 : la page change de hauteur (listes arrivées de la synchro, ajouts) :
+  // le tapis préparé n'a plus la bonne taille ; on le refait en douce, sinon
+  // le clic suivant le refaisait avant de partir
+  let wt = 0;
+  if("ResizeObserver" in window) new ResizeObserver(()=>{ clearTimeout(wt); wt = setTimeout(warmSoon, 1500); }).observe(wrap);
 })();
 
 // ---- 10.1 : synchro en ligne (Firebase : connexion + Firestore) ----
