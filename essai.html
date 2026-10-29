@@ -2980,6 +2980,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   margin:0 0 1.1rem;
 }
 /* 10.50 : « En cours » reprend l'onglet citron givré des petites fenêtres */
+#waitingSection .section-title span{ white-space:nowrap; }   /* trop étroit : coupé après le tiret */
 #waitingSection .section-title{ display:inline-block; margin:-0.2rem 0 0.95rem -0.5rem; padding:0.2rem 0.5rem; border-radius:5px; background:var(--lucky-bg); }
 #waitingList .empty-note{ color:color-mix(in srgb, var(--ink-faint) 72%, var(--wait-soft)); }
 /* choix de la relance (7.3) */
@@ -3706,7 +3707,7 @@ body.arrive footer{ animation-delay:.52s; }
   <div class="add-category-row" id="addCategoryRow"></div>
 
   <section class="section-block" id="waitingSection">
-    <h2 class="section-title">En cours - La balle est dans leur camp</h2>
+    <h2 class="section-title"><span>En cours -</span> <span>La balle est dans leur camp</span></h2>
     <ul class="items" id="waitingList"></ul>
   </section>
 
