@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.37 -->
+<!-- Sous le tapis — version AUTONOME 10.39 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -996,10 +996,42 @@
     pareil dans le bandeau urgent. État dans fullpageCat (pas dans les données), classe
     « fullpage » remise à chaque rendu. .wrap perd son isolation le temps
     de la pleine page (sinon la carte reste sous le fond).
+  - 10.38 : mémos dans la police des tâches (--font-memo = --font-task ;
+    IBM Plex Mono retirée de l'@import). Petit espace (0.6rem) avant le
+    premier œuf et avant la première cochée (classe group-start). Une tâche
+    ou un article qu'on coche reste CHECK_LINGER_MS (2,5 s) à sa place, puis
+    descend avec les cochées, en fondu (lingering, en mémoire seulement ;
+    on attend la fin d'une saisie ou d'un glisser) ; les articles rayés des
+    mémos descendent donc aussi en bas. Mémos : saisie en haut, sous le
+    titre, hors de la zone qui défile (buildCoursesParts → entry + foot),
+    alignée sur la 1re tâche des cartes voisines ; hauteur de ligne des
+    articles calculée sur --row-pad (même pas que les tâches) ; « + » de la
+    saisie recentré sur le rond. Flèche d'ordre aussi sur les mémos
+    (newestAtBottom : un mémo enregistre ses nouveaux articles en fin
+    d'ordre, une liste en tête) ; bouton Trier retiré (sortCourses,
+    coursesSorted supprimées). Icônes en surimpression rangées avec la
+    règle .item-controls ; polices des champs d'édition sans !important.
+    Case cochée bleu-vert tant qu'elle est encore à sa place (classe
+    lingering), grise une fois descendue. Article ajouté à un mémo surligné
+    3 s (just-added). Flèche d'ordre colorée seulement quand le sens n'est
+    pas celui par défaut (classe custom).
+  - 10.39 : au doigt, les icônes d'une ligne (tâches, bandeau urgent)
+    s'effacent seules après 4 s (REVEAL_MS), au 2e toucher de la ligne ou
+    au toucher d'ailleurs (revealRow / hideRevealed). Mémos : crayon et
+    croix ne sont plus affichés en permanence au doigt. Défilement :
+    plus d'overscroll-behavior:contain sur les mémos (au bout, la page
+    reprend) ; à la molette, la page garde la main tant qu'on la fait
+    défiler (wireCoursesWheel, PAGE_SCROLL_KEEP_MS). Mémos : on raye
+    seulement par le rond (comme les cases) ; toucher / cliquer la ligne
+    dévoile crayon et croix (au doigt) et déplie le détail, comme ailleurs.
+    Bandeau urgent : boutons en surimpression (le texte prend toute la
+    largeur), fond de survol --uhover opaque calculé sur --ub-bg. Zones de
+    toucher agrandies (pseudo-élément ::after) : rond des mémos, pleine
+    page, flèche d'ordre.
 -->
 <title>Sous le tapis</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Courier+Prime:wght@400;700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Courier+Prime:wght@400;700&family=Work+Sans:wght@400;500;600&display=swap');
 
 /* ==========================================================================
    Feuille de style rangée en 8.0 : chaque retouche (7.x) est fondue dans sa
@@ -1053,8 +1085,8 @@
   /* 10.33 : texte des tâches, réglable ici seulement */
   --font-task:'Work Sans', system-ui, -apple-system, sans-serif;
   --task-size:0.92rem;
-  --font-memo:'IBM Plex Mono', ui-monospace, monospace;   /* 10.34 : listes mémo / courses, réglable à part */
-  --memo-size:0.88rem;
+  --font-memo:var(--font-task);   /* listes mémo, réglable à part (10.34 : IBM Plex Mono ; 10.38 : retour à la police des tâches) */
+  --memo-size:var(--task-size);
   --row-pad:0.42rem;   /* 10.35 : retour à l'espacement d'avant 10.33, calé sur le pas des mémos (10.34 : 0.34rem ; 10.33 : 0.28rem) */
   --shadow: 0 1px 2px rgba(30,40,45,0.04), 0 8px 24px -12px rgba(30,40,45,0.12);
   --rose:#D98DA1; /* couleur fixe : un color-mix s'interpole mal dans l'animation */
@@ -1344,7 +1376,8 @@ header{
 /* ---------- case urgente ---------- */
 .urgent-banner{
   margin-top:1.5rem;
-  background:color-mix(in srgb, color-mix(in srgb, var(--urgent-soft) 50%, var(--accent-soft)) 70%, var(--surface));   /* 10.25 : fond pâli, tiré vers le bleu (--accent-soft) pour moins de rouge */
+  --ub-bg:color-mix(in srgb, color-mix(in srgb, var(--urgent-soft) 50%, var(--accent-soft)) 70%, var(--surface));   /* 10.25 : fond pâli, tiré vers le bleu (--accent-soft) pour moins de rouge */
+  background:var(--ub-bg);
   border-radius:14px;
   padding:1rem 1.25rem;
   box-shadow:0 6px 18px -10px color-mix(in srgb, var(--urgent) 55%, transparent);
@@ -1388,8 +1421,9 @@ header{
   transition:background .12s ease;
 }
 /* un seul survol par ligne (7.40) ; 14 % dès que le thème n'est pas forcé en clair */
-.urgent-list li:hover{ background:color-mix(in srgb, var(--urgent) 8%, transparent); }
-:root:not([data-theme="light"]) .urgent-list li:hover{ background:color-mix(in srgb, var(--urgent) 14%, transparent); }
+.urgent-list li{ --uhover:color-mix(in srgb, var(--urgent) 8%, var(--ub-bg)); }
+:root:not([data-theme="light"]) .urgent-list li{ --uhover:color-mix(in srgb, var(--urgent) 14%, var(--ub-bg)); }
+.urgent-list li:hover{ background:var(--uhover); }
 .urgent-list li.dragging{opacity:0.4;}
 .urgent-list .drag-handle{
   /* dans la ligne, comme dans les listes, visible au survol (8.30) */
@@ -1441,9 +1475,11 @@ header{
 }
 @media (prefers-reduced-motion:reduce){ .urgent-check:hover{ scale:none; } }
 .urgent-actions{
-  margin-left:auto;
-  flex:none;
-  align-self:center;
+  /* 10.39 : en surimpression, comme dans les listes : le texte prend toute la
+     largeur, les boutons se posent en bout de ligne sur un fondu */
+  position:absolute; right:0; top:50%; transform:translateY(-50%); z-index:2;
+  padding-left:1.4rem; border-radius:0 8px 8px 0;
+  background:linear-gradient(90deg, transparent, var(--uhover) 1.2rem);
   display:flex;
   align-items:center;
   gap:0.1rem;
@@ -1726,7 +1762,7 @@ header{
 }
 .category.courses > ul.items{
   flex:0 1 auto; min-height:0;
-  overflow-y:auto; overscroll-behavior:contain;
+  overflow-y:auto;   /* 10.39 : plus de contain : au bout du mémo, la page reprend le défilement */
   scrollbar-width:none;   /* 10.18 : barre maison .courses-scroll, toujours visible (iPhone compris) */
 }
 .category.courses > ul.items::-webkit-scrollbar{ display:none; }
@@ -1756,7 +1792,7 @@ header{
 .category.collapsed{ align-self:start; padding-bottom:1.5rem; }
 .category.collapsed > ul.items, .category.courses.collapsed .courses-actions{ display:none; }
 /* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
-.category.courses.collapsed .courses-foot{ cursor:auto; }
+.category.courses.collapsed .courses-entry{ cursor:auto; }
 .category.collapsed .cat-fold svg{ transform:rotate(180deg); }
 .category.courses.collapsed{ cursor:pointer; } /* 10.18 : toute la carte repliée se déplie d'un clic */
 .category.courses .cat-head{ cursor:pointer; } /* 10.19 : ouverte, un clic sur le bandeau (hors titre) la replie */
@@ -1790,6 +1826,13 @@ header{
   padding:3px; line-height:0; border-radius:6px; cursor:pointer;
 }
 .cat-full svg{ display:block; transition:scale .3s var(--pop-ease); }
+/* 10.39 : zones de toucher agrandies sans changer le dessin : rond des mémos
+   (≈ 35 px, comme les cases), pleine page et flèche d'ordre (≈ 40 px de haut,
+   un peu moins en largeur pour ne pas mordre sur le bouton voisin) */
+.strike-dot, .cat-full, .cat-order{ position:relative; z-index:1; }   /* z-index : la zone passe au-dessus de la ligne suivante */
+.strike-dot::after{ content:""; position:absolute; inset:-12px; }
+.cat-full::after, .cat-order::after{ content:""; position:absolute; inset:-10px -4px; }
+.haptic-wrap:has(> .strike-dot) > .haptic-tap{ inset:-12px; }   /* iPhone : la zone qui fait vibrer suit */
 .cat-full:hover{ background:var(--surface-2); color:var(--ink-soft); }
 .cat-full:hover svg{ scale:var(--pop-scale); }
 .cat-full:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
@@ -1814,19 +1857,6 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .category.fullpage .cat-full{ color:var(--ink-soft); }
 @media (max-width:820px){ .category.fullpage{ box-shadow:none; } }
 
-/* 10.37 : petites icônes de ligne en surimpression : plus de place réservée
-   à droite, le texte prend toute la largeur ; au survol (ou au toucher), les
-   icônes se posent sur un fondu de la couleur de survol, en bout de ligne. */
-.item .item-controls{
-  position:absolute; right:0.3rem; z-index:2;
-  top:calc(var(--row-pad) - 0.1rem);
-  padding-left:1.4rem;
-  background:linear-gradient(90deg, transparent, var(--ctl-bg, var(--surface-2)) 1.2rem);
-}
-#waitingSection .item .item-controls{ --ctl-bg:color-mix(in srgb, var(--wait) 8%, var(--wait-soft)); }
-.courses-item .item-controls{ --ctl-bg:color-mix(in srgb, var(--paper-rule) 30%, var(--surface)); top:auto; bottom:0.15rem; }
-/* au doigt, les icônes des mémos restent visibles en permanence (le toucher raye l'article) : elles gardent leur place */
-@media (hover:none){ .courses-item .item-controls{ position:static; background:none; padding-left:0; } }
 
 .cat-title{
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
@@ -1996,7 +2026,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .cat-order svg{ display:block; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 .cat-order.reversed svg{ transform:rotate(180deg); }
 .cat-order:hover{ background:var(--surface-2); color:var(--ink-soft); opacity:1; }
-.cat-order.reversed{ color:var(--cat-color, var(--accent)); }
+.cat-order.custom{ color:var(--cat-color, var(--accent)); }   /* 10.38 : colorée quand le sens n'est pas celui par défaut (listes : récentes en haut ; mémos : en bas) */
 .cat-grip{
   display:flex;
   align-items:center;
@@ -2084,6 +2114,19 @@ ul.items{
   cursor:pointer;
 }
 .item:hover{background:var(--surface-2);}
+/* 10.38 : petit espace avant les œufs (en couvaison) et avant les cochées */
+ul.items > .item.group-start{ margin-top:0.6rem; }
+/* une cochée qui vient de descendre apparaît en douceur à sa nouvelle place */
+.item.just-settled{ animation:settle .45s ease both; }
+@keyframes settle{ from{ opacity:0; } to{ opacity:1; } }
+@media (prefers-reduced-motion:reduce){ .item.just-settled{ animation:none; } }
+/* 10.38 : l'article qu'on vient d'ajouter à un mémo, surligné puis fondu */
+.courses-item.just-added{ animation:just-added 3s ease-out both; }
+@keyframes just-added{
+  0%, 45%{ background:color-mix(in srgb, var(--cat-color, var(--accent)) 16%, transparent); }
+  100%{ background:transparent; }
+}
+@media (prefers-reduced-motion:reduce){ .courses-item.just-added{ animation-duration:.01s; animation-delay:2.5s; } }
 /* 10.33 : dans « En cours », le survol part du fond de la case (le règlage sombre plus bas reste) */
 #waitingSection .item:not(.editing):hover{ background:color-mix(in srgb, var(--wait) 8%, transparent); }
 /* dévoilés au survol de la souris ou au focus clavier ; au toucher, par la
@@ -2171,6 +2214,8 @@ ul.items{
   background:var(--ink-faint);
   border-color:var(--ink-faint);
 }
+/* 10.38 : tant qu'elle n'est pas descendue, la case cochée reste bleu-vert */
+.item.lingering input[type="checkbox"]:checked{ background:var(--accent); border-color:var(--accent); }
 .item input[type="checkbox"]:checked::after{ opacity:1; }
 @media (hover:hover){
   .item input[type="checkbox"]:hover{ scale:var(--pop-scale); }
@@ -2240,6 +2285,17 @@ ul.items{
   opacity:0;               /* au repos : rien ; elles apparaissent au survol de la ligne (8.12) */
   transition:opacity .15s ease;
 }
+/* 10.37 : petites icônes de ligne en surimpression : plus de place réservée
+   à droite, le texte prend toute la largeur ; au survol (ou au toucher), les
+   icônes se posent sur un fondu de la couleur de survol, en bout de ligne. */
+.item .item-controls{
+  position:absolute; right:0.3rem; z-index:2;
+  top:calc(var(--row-pad) - 0.1rem);
+  padding-left:1.4rem;
+  background:linear-gradient(90deg, transparent, var(--ctl-bg, var(--surface-2)) 1.2rem);
+}
+#waitingSection .item .item-controls{ --ctl-bg:color-mix(in srgb, var(--wait) 8%, var(--wait-soft)); }
+.courses-item .item-controls{ --ctl-bg:color-mix(in srgb, var(--paper-rule) 30%, var(--surface)); top:auto; bottom:0.15rem; }
 .waiting-btn{
   appearance:none;
   border:none;
@@ -2379,10 +2435,9 @@ ul.items{
 .strike-dot:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 .item.is-checked .strike-dot{ border-color:var(--line); }
 /* 10.17 : chaque article posé sur une ligne de cahier */
-.courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:0.61rem 0.3rem 0; } /* 10.35 : 0.61rem (avant 0.76rem) : même pas de ligne que les tâches */ /* 10.18 : texte posé sur sa ligne (plus d'air au-dessus, moins en dessous) */
+.courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:calc(2 * var(--row-pad) + 0.15rem + 20px - 1.4 * var(--memo-size)) 0.3rem 0; } /* 10.18 : texte posé sur sa ligne (air au-dessus) ; 10.38 : même hauteur de ligne que les tâches, où c'est la case à cocher qui la donne (18px + 0.15rem + 3px) : 2 × row-pad + case − texte − filet 1px */
 .courses-item:hover{ background:color-mix(in srgb, var(--paper-rule) 30%, transparent); } /* voile léger : la marge rouge reste visible */
-.courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); }   /* 10.34 */
-.courses-item .item-text{ cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+.courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
 /* quantité : après le nom (en ligne, pour être barrée avec lui) ; 10.17 : à
    l'encre rose (le rouge reste aux urgences), bien visible, plus de badge gris */
 .courses-qty{
@@ -2401,9 +2456,8 @@ ul.items{
 .courses-item.editing{ align-items:center; }
 .courses-item.editing .drag-handle, .courses-item.editing .strike-dot{ visibility:hidden; }
 .courses-edit{ flex:1; min-width:0; display:flex; flex-wrap:wrap; align-items:center; gap:0.4rem; } /* 10.19 : le détail passe dessous */
-.courses-edit-name{ font-family:var(--font-memo) !important; }   /* 10.34 */
 .courses-edit input{
-  font-family:inherit; font-size:0.95rem; line-height:1.4; color:var(--ink);
+  font-family:var(--font-memo); font-size:0.95rem; line-height:1.4; color:var(--ink);
   background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
   padding:0.3rem 0.5rem; min-width:0;
 }
@@ -2419,13 +2473,15 @@ ul.items{
   display:inline-flex; align-items:center; justify-content:center;
 }
 .qty-step:hover{ background:var(--accent-soft); color:var(--accent-strong); border-color:var(--accent); }
-/* bas de la carte : saisie (alignée sur les articles), puis Trier / Vider les rayés */
-.courses-foot{ flex:none; display:flex; flex-direction:column; gap:0.55rem; }
+/* saisie en haut (alignée sur les articles), Vider les rayés en bas (10.38) */
+.courses-entry{ flex:none; padding-top:0.55rem; }   /* 10.38 : la saisie sur la ligne de la 1re tâche des cartes voisines */
+.courses-entry + ul.items{ margin-top:-0.7rem; }   /* 10.38 : le 1er article, une ligne sous la saisie */
+.courses-foot{ flex:none; display:flex; flex-direction:column; }
 .courses-add{ display:flex; align-items:flex-start; gap:0.65rem; padding:0 0.3rem; }
 .courses-add .drag-handle{ visibility:hidden; }
 .courses-plus{
   width:18px; height:18px; flex:none;
-  margin:0.15rem 3px 0 8px; /* 10.18 : +4 px, comme le rond */
+  margin:0.15rem 3px 0 4px; /* centré sur le rond des articles (10.38 : 4px, suit le rond recalé en 10.36) */
   display:flex; align-items:center; justify-content:center;
   color:var(--ink-faint); font-size:1.05rem; line-height:1;
 }
@@ -2433,10 +2489,10 @@ ul.items{
 .courses-input{
   flex:1; width:100%; margin:0;
   resize:none; overflow:hidden;
-  font-family:var(--font-memo); font-size:var(--memo-size); line-height:1.4; color:var(--ink);   /* 10.34 */
+  font-family:var(--font-memo); font-size:var(--memo-size); line-height:1.4; color:var(--ink);
   background:transparent;
   border:none; border-bottom:1px dashed var(--line); border-radius:0;
-  padding:0 0.1rem 0.15rem;
+  padding:0 0.1rem 0.15rem 0;   /* 10.38 : texte aligné sur celui des articles */
   transition:border-color .15s ease;
 }
 .courses-input::placeholder{ color:var(--ink-faint); opacity:.8; }
@@ -2579,9 +2635,8 @@ ul.items{
   width:100%;
   padding:0.3rem 0.2rem;
 }
-.edit-form .edit-title, .edit-form .edit-note{ font-family:var(--font-task) !important; }   /* 10.33 : même police que la tâche */
 .edit-form input[type="text"], .edit-form textarea{
-  font-family:inherit;
+  font-family:var(--font-task);   /* 10.33 : même police que la tâche */
   font-size:0.95rem;
   line-height:1.4;
   resize:none;
@@ -3348,10 +3403,6 @@ body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-sel
      ils ne réagissent pas */
   .item.revealed .item-controls{ opacity:1; }
   .item:not(.revealed) .item-controls{ pointer-events:none; }
-  /* 10.15 : article de courses — toucher la ligne le raye, crayon et croix
-     restent donc visibles (discrets) et actifs */
-  .courses-item .item-controls{ opacity:0.7; pointer-events:auto; }
-  .item.courses-item:not(.revealed) .item-controls{ pointer-events:auto; }
   /* 8.38 : case urgente — case et boutons apparaissent au toucher de la
      ligne ; cachés, ils ne réagissent pas */
   .urgent-list li.revealed .urgent-check{ opacity:1; }
@@ -3441,7 +3492,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.37</span>
+    <span class="version-tag">v10.39</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4843,10 +4894,11 @@ function runWeeklyPurge(){
 // l'affiche à l'envers et on retraduit au moment d'un glisser-déposer.
 // Les œufs restent en queue dans les deux sens.
 const CAT_REVERSE_KEY = "fauconnerie-v2-catreverse";
-// 10.15 : une liste de courses s'affiche toujours dans l'ordre enregistré
-// (nouveaux articles en bas) ; le réglage du sens est gardé pour le retour
-// en liste normale
-function isCatReversed(catId){ return !!loadJSONKey(CAT_REVERSE_KEY, {})[catId] && !isCoursesList(catId); }
+// 10.15 : dans un mémo, un nouvel article est enregistré en fin d'ordre (en
+// tête pour une liste normale). 10.38 : le réglage du sens vaut aussi pour les
+// mémos ; newestAtBottom dit où apparaissent les récentes, quel que soit le type.
+function isCatReversed(catId){ return !!loadJSONKey(CAT_REVERSE_KEY, {})[catId]; }
+function newestAtBottom(catId){ return isCoursesList(catId) ? !isCatReversed(catId) : isCatReversed(catId); }
 function toggleCatReversed(catId){
   const o = loadJSONKey(CAT_REVERSE_KEY, {});
   if(o[catId]) delete o[catId]; else o[catId] = true;
@@ -6158,6 +6210,7 @@ function writeStruck(key, on){
 }
 function setStruck(key, on){
   writeStruck(key, on);
+  lingerChecked(key, on);   // 10.38
   if(on){ haptic.tap(); justCheckedKey = key; }
   renderAll();
   justCheckedKey = null;
@@ -6229,18 +6282,6 @@ function addCoursesLines(cat, text){
   if(hist.length) coursesHistoryAdd(cat.id, hist);
   return res;
 }
-// « Trier » : les articles pas rayés remontent, chacun gardant son ordre
-function sortCourses(cat){
-  state = loadState(); overrides = loadOverrides(); customItems = loadCustom(); order = loadOrder();
-  const rows = coursesRows(cat);
-  const idxs = rows.filter(r => !state[r.key]).concat(rows.filter(r => state[r.key])).map(r => r.idx);
-  applyCatDisplayOrder(cat, idxs);
-  saveOrder(order);
-}
-function coursesSorted(cat){
-  let seenStruck = false;
-  return coursesRows(cat).every(r => { if(state[r.key]){ seenStruck = true; return true; } return !seenStruck; });
-}
 // « Vider les rayés » : tous les articles rayés sont retirés, qui que soit leur auteur
 function clearStruckCourses(cat){
   state = loadState(); overrides = loadOverrides(); customItems = loadCustom(); order = loadOrder();
@@ -6292,9 +6333,40 @@ function listPeople(catId){
 // coché/non-coché, sans jamais retrier par échéance — l'ordre manuel
 // (déjà appliqué en amont via getCatOrder/getWaitingOrder) est respecté tel quel.
 function sortByUrgencyThenChecked(rows){
-  const unchecked = rows.filter(r => !state[r.key]);
-  const checked = rows.filter(r => state[r.key]);
+  const unchecked = rows.filter(r => !isSettledDone(r.key));
+  const checked = rows.filter(r => isSettledDone(r.key));
   return unchecked.concat(checked);
+}
+// 10.38 : une tâche (ou un article de mémo) qu'on vient de cocher reste
+// CHECK_LINGER_MS à sa place, puis rejoint les cochées en bas. Rien n'est
+// enregistré : lingering ne vit qu'en mémoire (clé → fin du délai). Pas de
+// réarrangement sous les doigts : si on écrit ou glisse quelque chose à
+// l'échéance, on attend la fin du geste.
+const CHECK_LINGER_MS = 2500;
+const lingering = new Map();
+let lingerTimer = null;
+let settledKeys = new Set();   // tâches qui viennent de descendre (léger fondu au rendu)
+function isSettledDone(key){
+  if(!state[key]) return false;
+  const t = lingering.get(key);
+  return !(t && t > Date.now());
+}
+function lingerChecked(key, on){
+  if(on) lingering.set(key, Date.now() + CHECK_LINGER_MS); else lingering.delete(key);
+  clearTimeout(lingerTimer);
+  if(!lingering.size) return;
+  const next = Math.min(...lingering.values());
+  lingerTimer = setTimeout(endLinger, Math.max(0, next - Date.now()) + 30);
+}
+function endLinger(){
+  const a = document.activeElement;
+  const busy = dragState || editingKey || editingCoursesKey || editingCategoryTitle || addingCat || addingCategory
+    || (a && a.matches && a.matches("input[type=text], textarea"));
+  if(busy){ clearTimeout(lingerTimer); lingerTimer = setTimeout(endLinger, 800); return; }
+  const now = Date.now();
+  lingering.forEach((t, k)=>{ if(t <= now){ lingering.delete(k); settledKeys.add(k); } });
+  if(settledKeys.size){ renderAll(); settledKeys = new Set(); }
+  if(lingering.size) lingerChecked(lingering.keys().next().value, true);
 }
 
 function getTotalItems(){
@@ -6641,6 +6713,26 @@ function setFullpage(id){
 document.addEventListener("keydown", e=>{
   if(e.key === "Escape" && fullpageCat && !editingKey && !editingCoursesKey && !editingCategoryTitle) setFullpage(null);
 });
+
+// 10.39 : sur écran tactile, les icônes d'une ligne (classe « revealed »)
+// apparaissent au toucher de la ligne et s'effacent seules après REVEAL_MS,
+// au toucher suivant de la même ligne, ou au toucher d'ailleurs. Une seule
+// ligne à la fois. À la souris, la classe n'a pas d'effet visible.
+const REVEAL_MS = 4000;
+let revealTimer = null;
+function hideRevealed(except){
+  document.querySelectorAll(".revealed").forEach(o=>{ if(o !== except) o.classList.remove("revealed"); });
+}
+function revealRow(li, toggle){
+  const on = !(toggle && li.classList.contains("revealed"));
+  hideRevealed(li);
+  clearTimeout(revealTimer);
+  li.classList.toggle("revealed", on);
+  if(on) revealTimer = setTimeout(()=> li.classList.remove("revealed"), REVEAL_MS);
+}
+document.addEventListener("click", e=>{
+  if(!e.target.closest || !e.target.closest(".revealed")) hideRevealed(null);
+}, true);
 
 const TOUCH_HOLD_MS = 280;
 const TOUCH_HOLD_SLOP = 10;
@@ -7080,10 +7172,10 @@ function renderUrgentBanner(){
       renderAll();
     });
     // 8.38 : sur écran tactile, toucher une ligne fait apparaître sa case et
-    // ses boutons (une seule ligne à la fois) ; sans effet visible à la souris
-    li.addEventListener("click", ()=>{
-      ul.querySelectorAll("li.revealed").forEach(o=>{ if(o !== li) o.classList.remove("revealed"); });
-      li.classList.add("revealed");
+    // ses boutons (10.39 : retouche ou attente pour les refaire disparaître)
+    li.addEventListener("click", e=>{
+      if(e.target.closest(".urgent-actions, .urgent-check, .drag-handle")) return;
+      revealRow(li, true);
     });
     wireDragRow(li, entry.key, "urgent", null);
     ul.appendChild(li);
@@ -7820,17 +7912,20 @@ function buildItemLi(cat, idx, base, key, opts){
     const dot = li.querySelector(".strike-dot");
     dot.addEventListener("click", e=>{ e.stopPropagation(); setStruck(key, !struck); });
     haptic.attach(dot);
-    // pas de « dévoilement » au toucher ici : toucher la ligne raye l'article,
-    // crayon et croix restent donc visibles sur écran tactile (voir le CSS)
+    // 10.39 : on raye seulement par le rond (comme on coche par la case) ;
+    // toucher la ligne dévoile crayon et croix, comme dans les autres listes
     li.addEventListener("click", e=>{
-      if(e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap, .note-toggle")) return;
-      setStruck(key, !struck);
+      if(e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap")) return;
+      revealRow(li, true);
     });
-    // 10.19 : détail (comme dans les autres listes) — ici toucher la ligne
-    // raye l'article, seul le sigle déplie / replie le détail
+    // 10.19 : détail (comme dans les autres listes) ; 10.39 : un clic sur la
+    // ligne le déplie / replie aussi, comme ailleurs
     if(eff.note){
       markNoteHolder(li, key);
-      li.querySelector(".note-toggle").addEventListener("click", e=>{ e.stopPropagation(); toggleNoteOpen(key); });
+      li.addEventListener("click", e=>{
+        if(e.detail > 1 || e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap")) return;
+        toggleNoteOpen(key);
+      });
     }
     li.querySelector(".courses-edit-btn").addEventListener("click", e=>{
       e.stopPropagation();
@@ -7899,11 +7994,11 @@ function buildItemLi(cat, idx, base, key, opts){
   const checkbox = li.querySelector("input");
   if(checkbox) checkbox.addEventListener("change", ()=> setDone(key, checkbox.checked));
   haptic.attach(checkbox);
-  // 8.39 : sur écran tactile, toucher la ligne dévoile ses boutons (une
-  // ligne à la fois) ; sans effet visible à la souris
-  li.addEventListener("click", ()=>{
-    document.querySelectorAll(".item.revealed").forEach(o=>{ if(o !== li) o.classList.remove("revealed"); });
-    li.classList.add("revealed");
+  // 8.39 : sur écran tactile, toucher la ligne dévoile ses boutons (10.39 :
+  // retouche ou attente pour les refaire disparaître, voir revealRow)
+  li.addEventListener("click", e=>{
+    if(e.target.closest(".item-controls, input, .drag-handle")) return;
+    revealRow(li, true);
   });
   if(eff.note){
     // 8.31 : un clic sur la ligne (hors case, poignée et boutons de droite)
@@ -8057,7 +8152,7 @@ function renderAll(){
   try{ noteUndoPoint(); }catch(err){ console.error("[annuler]", err); }
 }
 
-// ---- 10.15 : bas d'une liste de courses (saisie, Trier, Vider les rayés) ----
+// ---- 10.15 : saisie et bas d'une liste de courses (10.38 : saisie en haut, plus de Trier) ----
 let editingCoursesKey = null;   // l'article en cours de modification (crayon)
 // Enregistre la modification d'un article (Entrée, ou clic ailleurs) : nom et
 // quantité, dans ses modifications comme pour une tâche. Un nom vide garde
@@ -8091,11 +8186,12 @@ function commitCoursesEdit(){
 }
 let refocusCoursesCat = null;   // la saisie garde le curseur après un ajout
 let coursesScrollTo = null;     // { catId, key } ou { catId, top } : à montrer au rendu suivant
-function buildCoursesFoot(cat){
-  const foot = document.createElement("div");
-  foot.className = "courses-foot";
-  const struckN = coursesRows(cat).filter(r => state[r.key]).length;
-  foot.innerHTML = `
+// 10.38 : la saisie (entry) va en haut de la carte, sous le titre, hors de la
+// zone des articles qui défile ; Vider les rayés (foot) reste en bas.
+function buildCoursesParts(cat){
+  const entry = document.createElement("div");
+  entry.className = "courses-entry";
+  entry.innerHTML = `
     <div class="courses-add">
       <span class="drag-handle" aria-hidden="true">&#8942;&#8942;</span>
       <span class="courses-plus" aria-hidden="true">+</span>
@@ -8103,14 +8199,18 @@ function buildCoursesFoot(cat){
         <textarea class="courses-input" rows="1" placeholder="Ajouter un article" aria-label="Ajouter un article à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></textarea>
         <span class="courses-suggest" role="listbox" hidden></span>
       </span>
-    </div>
+    </div>`;
+  entry.addEventListener("click", e => e.stopPropagation());   // ni repli ni dépli (10.19 : repliée, la saisie reste)
+  const foot = document.createElement("div");
+  foot.className = "courses-foot";
+  const struckN = coursesRows(cat).filter(r => state[r.key]).length;
+  foot.innerHTML = `
     <div class="courses-actions">
-      <button type="button" class="courses-btn courses-sort"${coursesSorted(cat) ? " disabled" : ""}>Trier</button>
       <button type="button" class="courses-btn courses-clear"${struckN ? "" : " disabled"}>Vider les rayés${struckN ? ` (${struckN})` : ""}</button>
     </div>`;
-  foot.addEventListener("click", e => e.stopPropagation());   // ni repli ni dépli (10.19 : repliée, la saisie reste)
-  const ta = foot.querySelector(".courses-input");
-  const box = foot.querySelector(".courses-suggest");
+  foot.addEventListener("click", e => e.stopPropagation());
+  const ta = entry.querySelector(".courses-input");
+  const box = entry.querySelector(".courses-suggest");
   let sugg = [], active = -1, typedQty = "";
   const grow = ()=>{ ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; };
   const close = ()=>{ sugg = []; active = -1; box.hidden = true; box.innerHTML = ""; };
@@ -8162,11 +8262,6 @@ function buildCoursesFoot(cat){
     const b = e.target.closest(".courses-sugg");
     if(b && sugg[+b.dataset.i]) submit(pickText(sugg[+b.dataset.i]));
   });
-  foot.querySelector(".courses-sort").addEventListener("click", ()=>{
-    try{ sortCourses(cat); }catch(err){ console.error("[courses] tri", err); }
-    coursesScrollTo = { catId: cat.id, top: true };
-    renderAll();
-  });
   foot.querySelector(".courses-clear").addEventListener("click", ()=>{
     let n = 0;
     try{ n = clearStruckCourses(cat); }catch(err){ console.error("[courses] vider", err); }
@@ -8174,7 +8269,7 @@ function buildCoursesFoot(cat){
     renderAll();
   });
   if(refocusCoursesCat === cat.id) requestAnimationFrame(()=> ta.focus());
-  return foot;
+  return { entry, foot };
 }
 // dans le renommage d'une liste (double-clic sur le titre) : la convertir
 // (seul son créateur ; une liste sans compte est à moi)
@@ -8251,9 +8346,8 @@ function fitCoursesCards(saved){
     c.style.setProperty("--courses-max", max + "px");
     const ul = c.querySelector(":scope > ul.items");
     if(!ul) return;
-    // 10.17 : la marge part du premier article, sous le titre (10.19 : repliée,
-    // de la saisie)
-    const first = ul.offsetParent ? ul : c.querySelector(":scope > .courses-foot");
+    // 10.17 : la marge part de la première ligne sous le titre (10.38 : la saisie)
+    const first = c.querySelector(":scope > .courses-entry") || ul;
     c.style.setProperty("--rule-top", (first ? first.offsetTop : c.offsetHeight) + "px");
     // 10.18 : barre de défilement maison, toujours visible
     let bar = c.querySelector(":scope > .courses-scroll");
@@ -8264,6 +8358,7 @@ function fitCoursesCards(saved){
       bar.innerHTML = "<span></span>";
       c.appendChild(bar);
       ul.addEventListener("scroll", ()=> placeCoursesScroll(c), { passive:true });
+      wireCoursesWheel(ul);
     }
     placeCoursesScroll(c);
     if(saved && saved[c.id] != null) ul.scrollTop = saved[c.id];
@@ -8272,6 +8367,7 @@ function fitCoursesCards(saved){
     if(go.top){ ul.scrollTop = 0; return; }
     const li = ul.querySelector(`[data-key="${CSS.escape(go.key)}"]`);
     if(!li) return;
+    li.classList.add("just-added");   // 10.38 : surligné quelques secondes
     const ur = ul.getBoundingClientRect(), lr = li.getBoundingClientRect();
     if(lr.bottom > ur.bottom) ul.scrollTop += lr.bottom - ur.bottom + 4;
     else if(lr.top < ur.top) ul.scrollTop -= ur.top - lr.top + 4;
@@ -8279,6 +8375,20 @@ function fitCoursesCards(saved){
   coursesScrollTo = null;
 }
 window.addEventListener("resize", ()=> fitCoursesCards());
+// 10.39 : on fait défiler la page et la molette passe sur un mémo : la page
+// garde la main tant que le geste continue (moins de PAGE_SCROLL_KEEP_MS
+// depuis le dernier défilement de la page) ; il faut une pause pour faire
+// défiler le mémo lui-même.
+const PAGE_SCROLL_KEEP_MS = 400;
+let lastPageScroll = 0;
+window.addEventListener("scroll", ()=>{ lastPageScroll = Date.now(); }, { passive:true });
+function wireCoursesWheel(ul){
+  ul.addEventListener("wheel", e=>{
+    if(Date.now() - lastPageScroll > PAGE_SCROLL_KEEP_MS || document.body.classList.contains("has-fullpage")) return;
+    e.preventDefault();
+    window.scrollBy(0, e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY);
+  }, { passive:false });
+}
 // 10.18 : barre de défilement d'une liste de courses — cachée si tout tient,
 // sinon à la hauteur de la zone des articles, curseur proportionnel
 function placeCoursesScroll(card){
@@ -8363,6 +8473,7 @@ function render(){
 
     const renamingThisCat = editingCategoryTitle === cat.id;
     const reversed = isCatReversed(cat.id);
+    const newBottom = newestAtBottom(cat.id);
     const head = document.createElement("div");
     head.className = "cat-head";
     head.innerHTML = `
@@ -8374,7 +8485,7 @@ function render(){
         ${renamingThisCat || courses ? "" : `<label class="cat-quick-wrap" title="Ajouter une tâche"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" placeholder="Nouvelle tâche…" aria-label="Ajouter une tâche à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
       </span>
       <span class="cat-head-right">
-        ${courses ? "" : `<button type="button" class="cat-order${reversed ? " reversed" : ""}" aria-label="${reversed ? "Mettre les récentes en haut" : "Mettre les récentes en bas"}" data-tip="${reversed ? "Récentes en haut ?" : "Récentes en bas ?"}"><svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true"><path d="M5 1.8 9 8.2H1z" fill="currentColor"/></svg></button>`}
+        <button type="button" class="cat-order${newBottom ? " reversed" : ""}${reversed ? " custom" : ""}" aria-label="${newBottom ? "Mettre les récentes en haut" : "Mettre les récentes en bas"}" data-tip="${newBottom ? "Récentes en haut ?" : "Récentes en bas ?"}"><svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true"><path d="M5 1.8 9 8.2H1z" fill="currentColor"/></svg></button>
         <button type="button" class="cat-full" aria-label="${fullpageCat === cat.id ? "Revenir aux listes" : "Ouvrir en pleine page"}" data-tip="${fullpageCat === cat.id ? "Réduire" : "Pleine page"}">${fullpageCat === cat.id ? FULL_OUT_SVG : FULL_IN_SVG}</button>
         <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
         ${canDeleteCat ? `<button type="button" class="cat-delete-btn" aria-label="Supprimer cette case vide" title="Supprimer cette case vide"><span class="g">&times;</span></button>` : ""}
@@ -8391,7 +8502,7 @@ function render(){
       if(e.target.closest("button, a, input, textarea, .cat-grip, .cat-title, .share-chips")) return;
       toggleFold(cat.id);
     });
-    if(!courses) head.querySelector(".cat-order").addEventListener("click", (e)=>{
+    head.querySelector(".cat-order").addEventListener("click", (e)=>{
       e.stopPropagation();
       toggleCatReversed(cat.id);
       renderAll();
@@ -8497,9 +8608,18 @@ function render(){
       .map(idx => ({cat, idx, base: items[idx], key: itemKey(cat.id, idx)}))
       .filter(r => !isDeleted(r.key))
       .filter(r => !getEffective(r.key, r.base).waiting);
-    // 10.15 : un article rayé reste à sa place (pas de tri coché / pas coché)
-    (courses ? rows : sortByUrgencyThenChecked(catDisplayRows(cat, rows))).forEach(r=>{
+    // 10.38 : comme les tâches, un article rayé descend en bas (après un
+    // instant, voir lingerChecked) ; petit espace avant le premier œuf et
+    // avant la première cochée
+    const rowGroup = r => isSettledDone(r.key) ? 2 : (!courses && isEggIdx(cat, r.idx) ? 1 : 0);
+    const seenGroup = new Set();
+    sortByUrgencyThenChecked(catDisplayRows(cat, rows)).forEach((r, i)=>{
       const built = buildItemLi(r.cat, r.idx, r.base, r.key, courses ? { courses:true } : undefined);
+      const g = rowGroup(r);
+      if(g && i && !seenGroup.has(g)) built.el.classList.add("group-start");
+      seenGroup.add(g);
+      if(settledKeys.has(r.key)) built.el.classList.add("just-settled");
+      else if(state[r.key] && g !== 2) built.el.classList.add("lingering");   // cochée, encore à sa place
       ul.appendChild(built.el);
       // Le focus() est reporté à la frame suivante : à cet instant, `ul` n'est
       // pas encore rattaché au document (card.appendChild(ul) n'a pas encore
@@ -8576,8 +8696,12 @@ function render(){
       requestAnimationFrame(()=> titleInput.focus());
     }
 
-    card.appendChild(ul);
-    if(courses) card.appendChild(buildCoursesFoot(cat));   // 10.15 : saisie, Trier, Vider les rayés
+    if(courses){   // 10.15 : saisie et Vider les rayés (10.38 : saisie en haut)
+      const parts = buildCoursesParts(cat);
+      card.appendChild(parts.entry);
+      card.appendChild(ul);
+      card.appendChild(parts.foot);
+    }else card.appendChild(ul);
     // 10.7 : la flèche du volet, en bas à droite
     const fold = document.createElement("button");
     fold.type = "button";
@@ -9066,6 +9190,7 @@ function setDone(key, checked){
   state[key] = checked;
   saveState(state);
   markChecked(key, checked);
+  lingerChecked(key, checked);   // 10.38
   // 10.2 : qui a coché (seulement avec un compte : sans compte, tout est à moi)
   const me = myUid();
   overrides = loadOverrides();
