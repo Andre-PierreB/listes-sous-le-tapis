@@ -2964,19 +2964,19 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 /* choix de la relance (7.3) */
 .relance-pop{
   position:absolute; z-index:80; width:min(270px, calc(100vw - 32px));
-  background:var(--wait-soft); border:1px solid color-mix(in srgb, var(--wait) 35%, var(--line)); border-radius:12px;
+  background:var(--wait-soft); border:1px solid color-mix(in srgb, var(--lucky-lemon) 55%, var(--line)); border-radius:12px;   /* 10.47 : bordée de citron pâle (avant : --wait) */
   box-shadow:0 2px 6px rgba(30,40,45,0.06), 0 18px 36px -14px rgba(30,40,45,0.35);
   padding:0.7rem 0.75rem 0.75rem; font-family:'Public Sans', system-ui, sans-serif;
   animation:rp-in .14s ease;
 }
 .rp-title{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:color-mix(in srgb, var(--wait) 65%, var(--ink)); margin:0 0 0.55rem; }
 .rp-opts{ display:flex; flex-wrap:wrap; gap:0.35rem; }
-.rp-opts button, .rp-ok{
+.rp-opts button{
   appearance:none; border:1px solid color-mix(in srgb, var(--wait) 30%, var(--line)); background:var(--surface); color:var(--ink);
   font-family:inherit; font-size:0.86rem; padding:0.3rem 0.65rem; border-radius:999px; cursor:pointer;
   transition:background .12s ease, border-color .12s ease, color .12s ease;
 }
-.rp-opts button:hover, .rp-ok:hover{ background:var(--wait); border-color:var(--wait); color:var(--surface); }
+.rp-opts button:hover{ background:var(--wait); border-color:var(--wait); color:var(--surface); }
 .rp-opts .rp-none{ color:var(--ink-soft); }
 .rp-skip{
   display:block; width:100%; margin:0 0 0.7rem;
@@ -2985,12 +2985,11 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   transition:background .12s ease, border-color .12s ease, color .12s ease;
 }
 .rp-skip:hover{ background:var(--wait); border-color:var(--wait); color:var(--surface); }
-.rp-date{ display:flex; gap:0.4rem; margin-top:0.55rem; }
-.rp-date input{ flex:1; min-width:0; font-family:inherit; font-size:0.86rem; padding:0.3rem 0.5rem; border:1px solid color-mix(in srgb, var(--wait) 30%, var(--line)); border-radius:8px; background:var(--surface); color:var(--ink); }
 /* 10.46 : rappel de relance — titre, « Aucune relance » en premier choix
    (bouton plein, sobre), puis une rangée de petits boutons abrégés et un
    calendrier en pictogramme, tous de même hauteur */
 .relance-ask{ width:auto; max-width:calc(100vw - 32px); padding:0.7rem 0.7rem 0.7rem; --rp-ink:var(--phrase); }
+
 .relance-ask .rp-title{ font-size:0.62rem; margin:0.25rem 0.15rem 0.55rem; color:color-mix(in srgb, var(--ub-title) 75%, var(--urgent-ink)); }   /* une touche de mauve, au seul titre */
 /* tous les boutons pareils : fond légèrement teinté, sans bordure, même
    graisse ; « Aucune relance » sur toute la largeur, un rien plus haut */
@@ -3018,23 +3017,27 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
    (16px : pas de zoom automatique sur iPhone) */
 .rp-custom input{ position:absolute; inset:0; width:100%; height:100%; opacity:0; font-size:16px; border:0; padding:0; margin:0; cursor:pointer; }
 /* 10.1 : fenêtre de la plume (connexion), même forme, aux couleurs de l'accent */
-.sync-pop{ width:min(290px, calc(100vw - 32px)); background:var(--surface); border-color:color-mix(in srgb, var(--accent) 30%, var(--line)); }
-.sync-pop .rp-title{ color:var(--accent); }
-.sync-pop .rp-opts button:hover{ background:var(--accent); border-color:var(--accent); }
-.sp-google{
-  display:block; width:100%; appearance:none; cursor:pointer; font-family:inherit; font-size:0.86rem; font-weight:600;
-  padding:0.45rem 0.65rem; border-radius:999px; border:1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
-  background:var(--surface); color:var(--ink); transition:background .12s ease, color .12s ease;
+/* 10.47 : boutons dans la forme des petites fenêtres (relance) : fond teinté
+   d'accent, sans bordure, coins doux, texte --phrase ; survol citron givré */
+.sync-pop{ width:min(290px, calc(100vw - 32px)); background:var(--surface); }
+.sync-pop .rp-title{ color:var(--accent); font-size:0.62rem; margin-top:0.2rem; }
+.sp-google, .sync-pop .rp-opts button{
+  display:flex; align-items:center; justify-content:center; width:100%; appearance:none; cursor:pointer;
+  font-family:inherit; font-size:0.8rem; font-weight:400; height:1.75rem; padding:0 0.6rem;
+  border-radius:6px; border:0; background:color-mix(in srgb, var(--accent) 12%, transparent); color:var(--phrase);
+  transition:background .12s ease, box-shadow .12s ease;
 }
-.sp-google:hover{ background:var(--accent); color:var(--surface); }
+.sp-google:hover, .sp-google:focus-visible, .sync-pop .rp-opts button:hover, .sync-pop .rp-opts button:focus-visible{
+  outline:none; background:var(--lucky-bg); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--lucky-lemon) 60%, transparent); color:var(--phrase);
+}
 .sp-or{ text-align:center; font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); margin:0.5rem 0; }
 .sp-email, .sp-pw{
-  display:block; width:100%; margin:0 0 0.4rem; font-family:inherit; font-size:0.86rem; padding:0.35rem 0.55rem;
-  border:1px solid color-mix(in srgb, var(--accent) 25%, var(--line)); border-radius:8px; background:var(--surface); color:var(--ink);
+  display:block; width:100%; margin:0 0 0.4rem; font-family:inherit; font-size:0.82rem; padding:0.32rem 0.55rem;
+  border:1px solid color-mix(in srgb, var(--accent) 22%, var(--line)); border-radius:6px; background:var(--surface); color:var(--ink);
 }
 .sp-email:focus, .sp-pw:focus{ outline:none; border-color:var(--accent); }
 /* 10.26 : 16 px sur tactile, sinon Safari iOS zoome au toucher du champ */
-@media (pointer:coarse){ .sp-email, .sp-pw, .rp-date input{ font-size:16px; } .rp-chip, .relance-ask .rp-skip{ height:1.85rem; } }
+@media (pointer:coarse){ .sp-email, .sp-pw{ font-size:16px; } .rp-chip, .relance-ask .rp-skip, .sp-google, .sync-pop .rp-opts button{ height:1.95rem; } }
 .sp-hint{ font-size:0.8rem; color:var(--ink-soft); margin:-0.15rem 0 0.45rem; }
 .sp-hint:empty{ display:none; }
 .sp-hint button, .sp-confirm .sp-fix{ appearance:none; border:0; background:none; padding:0; font:inherit; font-weight:600; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
@@ -3042,11 +3045,11 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 .sp-confirm[hidden]{ display:none; }
 .sp-confirm .sp-addr{ display:block; margin:0.25rem 0 0.5rem; font-size:1rem; font-weight:600; color:var(--ink); word-break:break-all; }
 .sp-confirm .rp-opts{ display:grid; grid-template-columns:1fr 1fr; }
-.sp-confirm .rp-opts button{ text-align:center; padding-inline:0.3rem; font-size:0.82rem; }
+.sp-confirm .rp-opts button{ padding-inline:0.3rem; }
 .sp-forgot{ appearance:none; border:0; background:none; padding:0; margin-top:0.55rem; font-family:inherit; font-size:0.78rem; color:var(--ink-soft); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
 .sync-pop .rp-title{ text-align:center; }
 .sync-pop .rp-opts:has(.sp-login){ display:grid; grid-template-columns:1fr 1fr; }
-.sync-pop .rp-opts:has(.sp-login) button{ text-align:center; white-space:nowrap; padding-inline:0.3rem; font-size:0.82rem; }
+.sync-pop .rp-opts:has(.sp-login) button{ white-space:nowrap; padding-inline:0.3rem; }
 .sync-pop .sp-forgot{ display:block; margin-inline:auto; }
 body.cloud #exportBtn, body.cloud #importBtn{ display:none; }
 .backup-nudge.as-link{ cursor:pointer; color:var(--accent); text-decoration:underline; text-decoration-color:color-mix(in srgb, var(--accent) 40%, transparent); text-underline-offset:3px; }
@@ -5238,6 +5241,7 @@ function sendToWaiting(key, relanceDue){
 }
 // Retour dans la liste : si la tâche avait une échéance, on demande quoi en
 // faire (garder / effacer / nouvelle date) ; sinon retour direct.
+const CAL_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>`;   // 10.46 : pictogramme calendrier des petites fenêtres
 function askBringBack(anchor, key){
   const eff = effByKey(key);
   if(!eff || !eff.due){ bringBackFromWaiting(key); return; }
@@ -5245,19 +5249,23 @@ function askBringBack(anchor, key){
   const today = todayISO();
   const d = splitDue(eff.due).date;
   const pop = document.createElement("div");
-  pop.className = "relance-pop";
+  // 10.47 : même forme que la relance — « La garder » en premier choix, puis
+  // « L'effacer » et une autre date (calendrier : prise directement, plus de OK)
+  pop.className = "relance-pop relance-ask";
   pop.setAttribute("role", "dialog");
+  pop.setAttribute("aria-label", "Échéance de la tâche");
   pop.innerHTML = `
     <div class="rp-title">L'échéance du ${shortDateFR(d)}${d < today ? " (dépassée)" : ""} ?</div>
-    <div class="rp-opts"><button type="button" data-a="keep">La garder</button><button type="button" data-a="erase" class="rp-none">L'effacer</button></div>
-    <div class="rp-date"><input type="date" min="${today}" aria-label="Nouvelle échéance"><button type="button" class="rp-ok">OK</button></div>
+    <button type="button" class="rp-skip" data-a="keep">La garder</button>
+    <div class="rp-chips"><button type="button" class="rp-chip" data-a="erase">L'effacer</button><label class="rp-chip rp-custom" title="Autre date">${CAL_SVG}<input type="date" min="${today}" aria-label="Nouvelle échéance"></label></div>
   `;
   const done = v => { closeRelancePop(); bringBackFromWaiting(key, v); };
   pop.querySelector('[data-a="keep"]').addEventListener("click", e => { e.stopPropagation(); done(undefined); });
   pop.querySelector('[data-a="erase"]').addEventListener("click", e => { e.stopPropagation(); done(""); });
-  const inp = pop.querySelector(".rp-date input");
-  pop.querySelector(".rp-ok").addEventListener("click", e => { e.stopPropagation(); if(inp.value) done(inp.value); });
+  const inp = pop.querySelector(".rp-custom input");
+  inp.addEventListener("change", ()=>{ if(inp.value && inp.value >= today) done(inp.value); });
   inp.addEventListener("keydown", e => { if(e.key === "Enter" && inp.value){ e.preventDefault(); done(inp.value); } });
+  inp.addEventListener("click", e => { e.stopPropagation(); try{ inp.showPicker(); }catch(err){} });
   openPopAt(pop, anchor);
 }
 // Pose une petite fenêtre (relance, retour) sous son bouton, ou au-dessus
@@ -5344,7 +5352,7 @@ function askRelance(anchor, key){
   pop.innerHTML = `
     <div class="rp-title">${postpone ? "Reporter la relance ?" : "Rappel de relance ?"}</div>
     <button type="button" class="rp-skip" data-v="">${postpone ? "Plus de relance" : "Aucune relance"}</button>
-    <div class="rp-chips">${opts.map(([v,l]) => `<button type="button" class="rp-chip" data-v="${v}" title="${shortDateFR(v)}">${l}</button>`).join("")}<label class="rp-chip rp-custom" title="Autre date"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><input type="date" min="${today}" aria-label="Autre date de relance"></label></div>
+    <div class="rp-chips">${opts.map(([v,l]) => `<button type="button" class="rp-chip" data-v="${v}" title="${shortDateFR(v)}">${l}</button>`).join("")}<label class="rp-chip rp-custom" title="Autre date">${CAL_SVG}<input type="date" min="${today}" aria-label="Autre date de relance"></label></div>
   `;
   const choose = v => { closeRelancePop(); sendToWaiting(key, v); };
   pop.querySelectorAll(".rp-skip, .rp-chip[data-v]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); choose(b.dataset.v); }));
