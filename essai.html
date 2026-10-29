@@ -3255,7 +3255,7 @@ body.no-list .add-category-row{
 .onboarding-restore:hover{ color:var(--ink-soft); }
 .onboarding-restore:hover span{ text-decoration-color:currentColor; }
 .onboarding-restore small{ display:block; margin-top:0.1rem; font-size:0.78em; color:var(--ink-faint); }   /* 10.31 */
-/* carte « nouvelle liste » : nom, première tâche, détail, échéance (7.22) */
+/* carte « nouvelle liste » : nom et type (7.22 ; 10.40 : plus de première tâche) */
 .new-list-card{
   width:min(440px, 100%);
   background:var(--surface); border-radius:14px; box-shadow:var(--shadow);
@@ -3264,10 +3264,8 @@ body.no-list .add-category-row{
   animation:nl-fade .3s ease;
 }
 .new-list-card .edit-form{ padding:0; gap:0.5rem; }
-.new-list-card .nl-step{ font-weight:600; }
-.new-list-card .nl-items{ overflow:hidden; }
-/* 10.15 : interrupteur « Liste de courses » ; allumé, il ne reste que le nom
-   et les premiers articles */
+/* 10.15 : interrupteur « Liste de courses » (10.40 : la fenêtre ne garde que
+   le nom et cet interrupteur) */
 .nl-courses{
   position:relative; align-self:flex-start;
   display:inline-flex; align-items:center; gap:0.5rem;
@@ -3285,10 +3283,6 @@ body.no-list .add-category-row{
 .nl-courses input:checked + .nl-switch::after{ transform:translateX(12px); }
 .nl-courses input:focus-visible + .nl-switch{ outline:2px solid var(--accent); outline-offset:2px; }
 .nl-courses:has(input:checked){ color:var(--ink); }
-.new-list-card.is-courses .nl-note,
-.new-list-card.is-courses .edit-label-row,
-.new-list-card.is-courses .edit-egg,
-.new-list-card.is-courses .edit-urgent{ display:none; }
 /* sur l'accueil : pointillés roses, champs jaunes */
 body.no-list .new-list-card{
   border:1.5px dashed var(--rose); border-radius:14px;
@@ -5672,91 +5666,33 @@ function renderAddCategoryRow(){
       <div class="edit-form">
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
         ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Mémo / shopping</label>` : ""}
-        <input type="text" class="nl-task" placeholder="Une première tâche ?" autocomplete="off">
-        <textarea class="nl-items" rows="1" placeholder="Premiers articles ? (un par ligne)" autocomplete="off" hidden></textarea>
-        <input type="text" class="nl-note" placeholder="Détail (optionnel)" autocomplete="off">
-        <div class="edit-label-row">
-          <label class="edit-label">Échéance
-            <input type="date" class="nl-due">
-          </label>
-          <label class="edit-label">Heure
-            <input type="time" class="nl-time">
-          </label>
-        </div>
         <div class="edit-actions">
-          ${formToggles(false, false)}
           <button type="button" class="add-cancel nl-cancel">Annuler</button>
           <button type="button" class="add-save nl-save">Créer</button>
         </div>
       </div>
     </div>
   `;
+  // 10.40 : le nom et le type seulement ; la carte créée s'ouvre sur son
+  // champ d'ajout (« Nouvelle tâche… » ou « Ajouter un article »), curseur dedans
   const card = el.querySelector(".new-list-card");
   const nameInput = card.querySelector(".nl-name");
-  const taskInput = card.querySelector(".nl-task");
-  const noteInput = card.querySelector(".nl-note");
-  const dueInput = card.querySelector(".nl-due");
-  const timeInput = card.querySelector(".nl-time");
-  linkTimeToDate(dueInput, timeInput);
-  // 10.15 : interrupteur « Liste de courses » : les premiers articles (un par
-  // ligne) remplacent la première tâche, son détail, sa date et ses boutons
   const coursesSwitch = card.querySelector(".nl-courses-switch");
-  const itemsInput = card.querySelector(".nl-items");
-  const isCourses = ()=> !!(coursesSwitch && coursesSwitch.checked);
-  const growItems = ()=>{ itemsInput.style.height = "auto"; itemsInput.style.height = itemsInput.scrollHeight + "px"; };
-  itemsInput.addEventListener("input", growItems);
-  // le champ à remplir est en gras : le nom, puis la première tâche
-  const step = ()=>{
-    const named = !!nameInput.value.trim();
-    nameInput.classList.toggle("nl-step", !named);
-    taskInput.classList.toggle("nl-step", named);
-    itemsInput.classList.toggle("nl-step", named);
-  };
-  nameInput.addEventListener("input", step);
-  step();
-  if(coursesSwitch) coursesSwitch.addEventListener("change", ()=>{
-    const on = isCourses();
-    card.classList.toggle("is-courses", on);
-    taskInput.hidden = on;
-    itemsInput.hidden = !on;
-    if(on && taskInput.value.trim() && !itemsInput.value.trim()){ itemsInput.value = taskInput.value.trim(); growItems(); }
-    if(nameInput.value.trim()) (on ? itemsInput : taskInput).focus(); else nameInput.focus();
-  });
-  const toggles = wireEditUrgent(card);
   const cancel = ()=>{ addingCategory = false; renderAll(); };
   const save = ()=>{
     if(!nameInput.value.trim()){ nameInput.focus(); return; }
-    if(isCourses()){
-      try{
-        const cat = addCategory(nameInput.value);
-        if(cat){
-          setCoursesList(cat.id, true);
-          if(itemsInput.value.trim()) addCoursesLines(cat, itemsInput.value);
-          actionToast("newCourses");
-        }
-      }catch(err){
-        console.error("[nouvelle liste de courses] échec de l'enregistrement", err);
-      }
-      addingCategory = false;
-      renderAll();
-      return;
-    }
     try{
-      // La liste d'abord, puis sa première tâche (si on en a écrit une) :
-      // même chemin que l'ajout d'une tâche dans une liste existante.
       const cat = addCategory(nameInput.value);
-      const t = taskInput.value.trim();
-      if(cat && t){
-        const item = { t };
-        const note = noteInput.value.trim();
-        const due = dueInput.value ? (timeInput.value ? dueInput.value + "T" + timeInput.value : dueInput.value) : "";
-        if(note) item.note = note;
-        if(due) item.due = due;
-        if(toggles.value()) item.urgent = true;
-        if(toggles.egg()) item.egg = true;
-        insertItem(cat, item);
+      if(cat){
+        if(coursesSwitch && coursesSwitch.checked){
+          setCoursesList(cat.id, true);
+          refocusCoursesCat = cat.id;
+          actionToast("newCourses");
+        }else{
+          refocusQuickCat = cat.id;
+          actionToast("newCat");
+        }
       }
-      if(cat) actionToast("newCat");
     }catch(err){
       console.error("[nouvelle liste] échec de l'enregistrement", err);
     }
@@ -5765,18 +5701,11 @@ function renderAddCategoryRow(){
   };
   card.querySelector(".nl-save").addEventListener("click", save);
   card.querySelector(".nl-cancel").addEventListener("click", cancel);
-  [nameInput, taskInput, itemsInput, noteInput, dueInput, timeInput].forEach(inp=>{
-    inp.addEventListener("keydown", e=>{
-      if(e.key === "Enter"){
-        if(inp === itemsInput && (e.shiftKey || e.isComposing)) return;   // Maj+Entrée : une ligne de plus
-        e.preventDefault();
-        const next = isCourses() ? itemsInput : taskInput;
-        if(inp === nameInput && nameInput.value.trim() && !next.value.trim()) next.focus();
-        else save();
-      }
-      if(e.key === "Escape") cancel();
-    });
+  nameInput.addEventListener("keydown", e=>{
+    if(e.key === "Enter"){ e.preventDefault(); save(); }
+    if(e.key === "Escape") cancel();
   });
+  if(coursesSwitch) coursesSwitch.addEventListener("change", ()=> nameInput.focus());
   nameInput.focus();
 }
 
