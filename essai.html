@@ -1647,7 +1647,7 @@ header{
   display:flex;
   flex-direction:row-reverse;   /* 10.45 : titre calé à droite, trèfle de ce côté ; ⟳ à gauche */
   align-items:center;
-  gap:0.9rem;               /* même écart icône/titre que la case urgente */
+  gap:calc(0.9rem + 16.5px);   /* 10.45 : trèfle sous la plume, titre qui finit où finit « Sous le tapis » */
   margin:0 0.35rem 0.6rem 0;
 }
 .lucky-clover{flex:none; width:18px; height:18px; color:var(--phrase);   /* 10.25 : bleu de la phrase (avant : --wait pâli) */ overflow:visible; transform-origin:50% 48%; transition:transform .45s cubic-bezier(.34,1.4,.64,1);}
