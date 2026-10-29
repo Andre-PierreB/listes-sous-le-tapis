@@ -2909,13 +2909,15 @@ body.cloud #exportBtn, body.cloud #importBtn{ display:none; }
   left:50%;
   bottom:1.75rem;
   transform:translate(-50%, 12px);
-  background:var(--ink);
-  color:var(--bg);
-  padding:0.7rem 1.15rem;
-  border-radius:22px;
+  /* 10.40 : aux couleurs de « Une petite en passant ? » (avant : pastille
+     noire), plus fin et plus carré */
+  background:var(--lucky-bg);
+  color:var(--phrase);
+  padding:0.45rem 0.95rem;
+  border-radius:8px;
   font-size:0.86rem;
   font-weight:500;
-  box-shadow:0 12px 32px -8px rgba(0,0,0,0.35);
+  box-shadow:0 8px 24px -8px rgba(0,0,0,0.28), var(--shadow);
   opacity:0;
   pointer-events:none;
   transition:opacity .3s ease, transform .3s ease;
@@ -2929,12 +2931,10 @@ body.cloud #exportBtn, body.cloud #importBtn{ display:none; }
   transform:translate(-50%, 0);
   pointer-events:auto; cursor:default;   /* 10.40 : survol = pause, clic = fermer */
 }
-#toast.milestone{
-  background:var(--accent-strong);
-  color:var(--surface);
+#toast.milestone{   /* message d'étape : même case, en gras */
   font-weight:700;
-  padding:0.85rem 1.4rem;
-  font-size:0.95rem;
+  padding:0.5rem 1.05rem;
+  font-size:0.9rem;
 }
 
 /* ---------- bas de page : corbeille, sauvegardes, version ---------- */
