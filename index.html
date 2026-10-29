@@ -2023,6 +2023,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
 }
 .item.is-new{ background:color-mix(in srgb, var(--cat-color, var(--accent)) 8%, var(--surface)); }   /* surlignée sur toute la largeur */
+.item.is-new > .item-text{ padding-right:5.4rem; }   /* 10.45 : le texte laisse la place à « modif – AP » (plus de chevauchement) */
 @media (hover:hover){ .item:hover .new-tag{ opacity:0; } }   /* laisse la place aux boutons de la ligne */
 .item.revealed .new-tag, .item.editing .new-tag{ opacity:0; }
 /* titre : le + suit le dernier mot ; le champ express reste à côté s'il
