@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.39 -->
+<!-- Sous le tapis — version AUTONOME 10.40 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1028,6 +1028,44 @@
     largeur), fond de survol --uhover opaque calculé sur --ub-bg. Zones de
     toucher agrandies (pseudo-élément ::after) : rond des mémos, pleine
     page, flèche d'ordre.
+  - 10.40 : entrée dans l'appli simplifiée.
+    Nouvelle liste : la fenêtre ne garde que le nom, l'interrupteur
+    Mémo / shopping et Annuler / Créer (Entrée crée) ; la carte créée s'ouvre
+    avec le curseur dans « Nouvelle tâche… » ou « Ajouter un article »
+    (refocusQuickCat / refocusCoursesCat). Champs nl-task, nl-note, nl-due,
+    nl-time, nl-items et leur logique retirés.
+    Accueil sans liste : plus de compteur tant qu'il n'y a rien à compter
+    (body.no-tasks : aucune tâche hors mémos, rien coché cette semaine) ; à
+    sa place, un cadre aux couleurs du bandeau urgent (--ub-bg, --ub-title,
+    désormais rangés avec les couleurs et partagés) avec « Ce qui dort sous
+    le tapis n'est pas perdu... » (une ligne si possible, sinon coupée entre
+    ses deux moitiés) ; tapis collé sous ce cadre (cardsRef) et bouton
+    remonté (aim 0.42 ordi, 0.32 téléphone). Lien sous le bouton : sans
+    compte « ou se connecter / pour retrouver ses listes » (ouvre la plume,
+    où Restaurer est aussi) ; connecté ou sans plume (mode de secours) :
+    « ou restaurer », comme avant — la restauration reste toujours à portée
+    (cloudState, refreshWelcome). Sous la plume, sur l'accueil et sans
+    compte : « Se connecter » en gris (#plumeLogin, body.signed-out) au lieu
+    de « Hors ligne ». Dans la plume, « Copie de secours » seulement s'il y a
+    une liste. Titre décalé (body.no-tasks / no-list header) pour que la
+    mention sous la plume ne touche jamais le cadre suivant.
+    Rappel du bas « Se connecter pour ne jamais perdre ses listes » : la
+    fenêtre s'ouvre sous le lien (openLoginAt) et non plus près de la plume,
+    hors de vue en haut de page.
+    Tapis qui se déroule : image SVG faite à la taille réelle en pixels
+    (jusqu'à ×3) — Safari l'agrandissait depuis 400 px, d'où le flou sur
+    téléphone (idem filigrane de l'accueil) ; en sombre, ni lustre ni
+    marbrures (taches) ; « Hors ligne » / « Se connecter » masqués tant que
+    le tapis est sorti (body.tapis-out).
+    Petits messages (#toast) : durée selon la longueur (3,5 à 7 s, avant
+    1,9 s), pause au survol, clic pour fermer, deux lignes sur téléphone ;
+    aux couleurs de « Une petite en passant ? » (--lucky-bg, --phrase), fins
+    et carrés ; étape = même case en gras. « Catégorie créée » devient
+    « Liste créée ». Flèche de « Une petite en passant ? » retirée.
+    Flèches pleine page discrètes comme leurs voisines (opacité 0.5, pleines
+    au survol de la carte ; en pleine page, bien visibles).
+    Sombre : « En cours » plus frais et effacé (--wait-soft #16292B, avant
+    #142C29) ; fond urgent un rien plus présent (--ub-bg propre au sombre).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1070,6 +1108,10 @@
   --urgent:#9558D0;
   --urgent-soft:#ECDFF8;
   --urgent-ink:#562F96;   /* 10.25 : un rien moins rouge et plus clair (avant #4A2580) */
+  /* 10.40 : fond et titre du bandeau urgent, repris par le cadre de l'accueil
+     (calculés sur les couleurs ci-dessus : suivent le mode sombre) */
+  --ub-bg:color-mix(in srgb, color-mix(in srgb, var(--urgent-soft) 50%, var(--accent-soft)) 70%, var(--surface));   /* 10.25 : fond pâli, tiré vers le bleu (--accent-soft) pour moins de rouge */
+  --ub-title:color-mix(in srgb, var(--urgent-ink) 50%, var(--urgent-soft));   /* 10.25 : titre pâli */
   --late:#A9472A; --late-soft:#FBE7DE;   /* 10.25 : « En retard » en terre cuite */
   --relance:#C24F6E;
   --relance-soft:#F6E3E8;
@@ -1120,12 +1162,13 @@
     --logo-green-strong:#C7E58A;
     --urgent:#B88AEB;
     --urgent-soft:#261D33;
+    --ub-bg:color-mix(in srgb, color-mix(in srgb, var(--urgent-soft) 90%, var(--accent-soft)) 95%, var(--surface));   /* 10.40 : en sombre, fond urgent un rien plus présent */
     --urgent-ink:#DDC6FA;
     --late:#F0A385; --late-soft:#3A2620;
     --relance:#E38DA4;
     --relance-soft:#372229;
     --wait:#94C4DA;
-    --wait-soft:#142C29;
+    --wait-soft:#16292B;   /* 10.40 : teinte plus fraîche et plus effacée (avant #142C29) */
     --eggshell:#28292E;
     --lucky-bg:#28292E;
     --lucky-lemon:#DCCB52;
@@ -1162,12 +1205,13 @@
   --logo-green-strong:#C7E58A;
   --urgent:#B88AEB;
   --urgent-soft:#261D33;
+  --ub-bg:color-mix(in srgb, color-mix(in srgb, var(--urgent-soft) 90%, var(--accent-soft)) 95%, var(--surface));   /* 10.40 : en sombre, fond urgent un rien plus présent */
   --urgent-ink:#DDC6FA;
   --late:#F0A385; --late-soft:#3A2620;
   --relance:#E38DA4;
   --relance-soft:#372229;
   --wait:#94C4DA;
-  --wait-soft:#142C29;
+  --wait-soft:#16292B;   /* 10.40 : teinte plus fraîche et plus effacée (avant #142C29) */
   --eggshell:#28292E;
   --lucky-bg:#28292E;
   --lucky-lemon:#DCCB52;
@@ -1376,7 +1420,6 @@ header{
 /* ---------- case urgente ---------- */
 .urgent-banner{
   margin-top:1.5rem;
-  --ub-bg:color-mix(in srgb, color-mix(in srgb, var(--urgent-soft) 50%, var(--accent-soft)) 70%, var(--surface));   /* 10.25 : fond pâli, tiré vers le bleu (--accent-soft) pour moins de rouge */
   background:var(--ub-bg);
   border-radius:14px;
   padding:1rem 1.25rem;
@@ -1392,7 +1435,7 @@ header{
   font-weight:700;
   letter-spacing:0.1em;
   text-transform:uppercase;
-  color:color-mix(in srgb, var(--urgent-ink) 50%, var(--urgent-soft));   /* 10.25 : titre pâli */
+  color:var(--ub-title);
   margin-bottom:0.55rem;   /* 10.35 : plus d'air sous le titre (avant 0.2rem) */
 }
 .urgent-banner-body{flex:1; min-width:0;}
@@ -1585,12 +1628,6 @@ header{
 }
 .lucky-line.closed:not(.rest):hover .lucky-clover, .lucky-line.closed:focus-visible .lucky-clover{ transform:rotate(-30deg); }
 .lucky-line.closed:active{ transform:translateY(0); }
-.lucky-crank{
-  margin-left:auto; flex:none; line-height:0; padding:4px;
-  color:color-mix(in srgb, var(--lucky-lemon) 55%, var(--ink)); opacity:.75;
-  transition:transform .3s ease, opacity .2s ease;
-}
-.lucky-line.closed:not(.rest):hover .lucky-crank{ opacity:1; transform:translateY(2px); }
 .lucky-clover-btn{
   appearance:none; border:none; background:transparent; padding:3px; margin:-3px;
   border-radius:50%; line-height:0; cursor:pointer; color:inherit; flex:none;
@@ -1824,7 +1861,10 @@ header{
 .cat-full{
   appearance:none; border:none; background:transparent; color:var(--ink-faint);
   padding:3px; line-height:0; border-radius:6px; cursor:pointer;
+  opacity:0.5;   /* 10.40 : discrète comme ses voisines (flèche d'ordre, poignée) ; pleine au survol de la carte */
+  transition:opacity .15s ease, background .15s ease, color .15s ease;
 }
+.category:hover .cat-full{ opacity:1; }
 .cat-full svg{ display:block; transition:scale .3s var(--pop-ease); }
 /* 10.39 : zones de toucher agrandies sans changer le dessin : rond des mémos
    (≈ 35 px, comme les cases), pleine page et flèche d'ordre (≈ 40 px de haut,
@@ -1833,7 +1873,7 @@ header{
 .strike-dot::after{ content:""; position:absolute; inset:-12px; }
 .cat-full::after, .cat-order::after{ content:""; position:absolute; inset:-10px -4px; }
 .haptic-wrap:has(> .strike-dot) > .haptic-tap{ inset:-12px; }   /* iPhone : la zone qui fait vibrer suit */
-.cat-full:hover{ background:var(--surface-2); color:var(--ink-soft); }
+.cat-full:hover{ background:var(--surface-2); color:var(--ink-soft); opacity:1; }
 .cat-full:hover svg{ scale:var(--pop-scale); }
 .cat-full:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 @media (prefers-reduced-motion:reduce){ .cat-full:hover svg{ scale:none; } }
@@ -1854,7 +1894,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 }
 .category.fullpage:not(.courses){ overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .category.fullpage .cat-grip{ display:none; }
-.category.fullpage .cat-full{ color:var(--ink-soft); }
+.category.fullpage .cat-full{ color:var(--ink-soft); opacity:1; }   /* en pleine page, c'est le bouton de retour : bien visible */
 @media (max-width:820px){ .category.fullpage{ box-shadow:none; } }
 
 
@@ -2907,29 +2947,32 @@ body.cloud #exportBtn, body.cloud #importBtn{ display:none; }
   left:50%;
   bottom:1.75rem;
   transform:translate(-50%, 12px);
-  background:var(--ink);
-  color:var(--bg);
-  padding:0.7rem 1.15rem;
-  border-radius:999px;
+  /* 10.40 : aux couleurs de « Une petite en passant ? » (avant : pastille
+     noire), plus fin et plus carré */
+  background:var(--lucky-bg);
+  color:var(--phrase);
+  padding:0.28rem 0.85rem;
+  border-radius:6px;
   font-size:0.86rem;
   font-weight:500;
-  box-shadow:0 12px 32px -8px rgba(0,0,0,0.35);
+  box-shadow:0 8px 24px -8px rgba(0,0,0,0.28), var(--shadow);
   opacity:0;
   pointer-events:none;
   transition:opacity .3s ease, transform .3s ease;
-  white-space:nowrap;
+  /* 10.40 : sur deux lignes si besoin (sur téléphone, la phrase débordait de l'écran) */
+  width:max-content; max-width:min(34rem, calc(100vw - 2rem)); box-sizing:border-box;
+  text-align:center; text-wrap:balance;
   z-index:20;
 }
 #toast.show{
   opacity:1;
   transform:translate(-50%, 0);
+  pointer-events:auto; cursor:default;   /* 10.40 : survol = pause, clic = fermer */
 }
-#toast.milestone{
-  background:var(--accent-strong);
-  color:var(--surface);
+#toast.milestone{   /* message d'étape : même case, en gras */
   font-weight:700;
-  padding:0.85rem 1.4rem;
-  font-size:0.95rem;
+  padding:0.32rem 0.95rem;
+  font-size:0.9rem;
 }
 
 /* ---------- bas de page : corbeille, sauvegardes, version ---------- */
@@ -3182,10 +3225,44 @@ footer:has(#shareLink:not([hidden])) #trashLink{ margin-right:0; }
 body.no-list #trashLink, body.no-list #shareLink, body.no-list .backup-bar, body.no-list #trashPanel, body.no-list #sharePanel{ display:none !important; }
 body.no-list footer{ border-top-color:transparent; }
 body.no-list .version-tag{ display:none; }
+/* 10.40 : pas de compteur tant qu'il n'y a rien à compter (body.no-tasks),
+   ni « Hors ligne » sur l'accueil vide quand le réseau est là : un nouveau
+   venu n'a encore jamais été connecté */
+body.no-tasks .progress-card{ display:none; }
+body.no-list .plume-tag.logged-out{ display:none; }
+/* 10.40 : sur l'accueil vide, une phrase dans un cadre de compteur (sans
+   compteur), et « Se connecter » sous la plume tant qu'on ne l'est pas ; le
+   titre garde la place de cette mention, qui ne touche donc pas le cadre */
+.welcome-card{ display:none; }
+body.no-list .welcome-card{
+  display:block;
+  background:var(--ub-bg); border-radius:16px; box-shadow:var(--shadow);   /* couleurs du bandeau urgent */
+  padding:1.05rem 2.2rem 1.1rem;
+}
+.welcome-msg{
+  margin:0; text-align:center;   /* une ligne si possible, sinon coupée entre ses deux moitiés */
+  font-family:'Public Sans', system-ui, sans-serif; font-size:0.95rem; font-weight:600;
+  line-height:1.4; color:color-mix(in srgb, var(--ub-title) 80%, var(--urgent-ink));   /* titre du bandeau urgent, un chouïa plus lisible */
+}
+.welcome-msg span{ white-space:nowrap; }
+body.no-tasks header{ margin-bottom:2.6rem; }   /* sans compteur : la mention sous la plume (~44px sous le haut du titre) ne touche pas la carte suivante */
+body.no-list header{ margin-bottom:1.9rem; }   /* accueil : mention remontée contre la plume */
+body.no-list .plume-tag{ top:25px; }
+.plume-login{ display:none; }
+body.cloud.no-list.signed-out .plume-login{
+  display:block; position:absolute; right:12px; top:25px;
+  appearance:none; border:none; background:transparent; padding:0; cursor:pointer;
+  font-family:'Courier Prime', 'Courier New', monospace; font-size:0.6rem; font-weight:700;
+  letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint);   /* gris, comme « Hors ligne » */
+  text-decoration:underline; text-decoration-color:transparent; text-underline-offset:3px;
+  transition:color .15s ease, text-decoration-color .15s ease;
+}
+body.cloud.no-list.signed-out .plume-login::before{ content:""; position:absolute; inset:-8px -6px; }   /* zone de toucher */
+.plume-login:hover, .plume-login:focus-visible{ outline:none; color:var(--ink-soft); text-decoration-color:currentColor; }
 body.no-list .add-category-row{
   flex-direction:column;
   align-items:center;
-  gap:1.15rem;
+  gap:0.55rem;   /* 10.40 : lien collé au bouton (avant 1.15rem) */
   transition:margin-top .55s cubic-bezier(.22,1,.36,1);
 }
 /* bouton d'accueil (7.9) — 10.30 : aux couleurs de « Une petite en passant ? » */
@@ -3255,7 +3332,7 @@ body.no-list .add-category-row{
 .onboarding-restore:hover{ color:var(--ink-soft); }
 .onboarding-restore:hover span{ text-decoration-color:currentColor; }
 .onboarding-restore small{ display:block; margin-top:0.1rem; font-size:0.78em; color:var(--ink-faint); }   /* 10.31 */
-/* carte « nouvelle liste » : nom, première tâche, détail, échéance (7.22) */
+/* carte « nouvelle liste » : nom et type (7.22 ; 10.40 : plus de première tâche) */
 .new-list-card{
   width:min(440px, 100%);
   background:var(--surface); border-radius:14px; box-shadow:var(--shadow);
@@ -3264,10 +3341,8 @@ body.no-list .add-category-row{
   animation:nl-fade .3s ease;
 }
 .new-list-card .edit-form{ padding:0; gap:0.5rem; }
-.new-list-card .nl-step{ font-weight:600; }
-.new-list-card .nl-items{ overflow:hidden; }
-/* 10.15 : interrupteur « Liste de courses » ; allumé, il ne reste que le nom
-   et les premiers articles */
+/* 10.15 : interrupteur « Liste de courses » (10.40 : la fenêtre ne garde que
+   le nom et cet interrupteur) */
 .nl-courses{
   position:relative; align-self:flex-start;
   display:inline-flex; align-items:center; gap:0.5rem;
@@ -3285,10 +3360,6 @@ body.no-list .add-category-row{
 .nl-courses input:checked + .nl-switch::after{ transform:translateX(12px); }
 .nl-courses input:focus-visible + .nl-switch{ outline:2px solid var(--accent); outline-offset:2px; }
 .nl-courses:has(input:checked){ color:var(--ink); }
-.new-list-card.is-courses .nl-note,
-.new-list-card.is-courses .edit-label-row,
-.new-list-card.is-courses .edit-egg,
-.new-list-card.is-courses .edit-urgent{ display:none; }
 /* sur l'accueil : pointillés roses, champs jaunes */
 body.no-list .new-list-card{
   border:1.5px dashed var(--rose); border-radius:14px;
@@ -3307,6 +3378,7 @@ body.no-list .new-list-card .add-save:hover{ background:var(--rose); border-colo
 }
 .tapis-watermark.leaving{ transition:opacity .7s ease, transform .7s ease; opacity:0 !important; transform:scale(1.015); }
 .tapis-box{ position:absolute; z-index:40; display:none; cursor:pointer; }
+body.tapis-out .plume-tag, body.tapis-out .plume-login{ visibility:hidden; }   /* 10.40 : « Hors ligne » ne se lit plus à travers le tapis */
 .tapis-box canvas{ display:block; }
 .tapis-roll{
   position:absolute; z-index:42; display:none; pointer-events:none; border-radius:999px;
@@ -3458,7 +3530,7 @@ body.arrive footer{ animation-delay:.52s; }
 <div class="wrap">
   <header>
     <span class="eyebrow">Sous le t<span class="ap-nod">ap</span>is</span>
-    <button type="button" class="plume" id="plume" hidden><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(4 24 24)"><path d="M23.7 35.8 C20.2 33.6 17.9 30.3 17.4 27.2 L21.9 29.3 L17.3 25.0 C17.3 21.2 18.2 17.6 19.6 14.6 L23.0 17.6 L20.4 13.0 C21.9 8.9 23.7 5.2 26 1.8 C28.2 5.6 30.2 9.6 30.9 13.6 L27.6 16.9 L31.1 15.9 C31.2 20.6 30.6 24.6 29.3 27.6 L26.0 30.6 L28.7 28.9 C27.6 31.6 26.3 33.8 24.7 35.8"/><path d="M24.15 44.6 C24 36.2 24.6 19.6 26 1.8"/><path stroke-width=".95" d="M24.4 32.6 L21.2 31.4 M25.2 12.6 L23.4 10.6 M24.8 22.4 L28.6 20.6"/><path stroke-width="1.05" d="M23.9 36.2 c-1.9 .3 -3.4 1.4 -4.2 3.1 M24.5 36.2 c1.8 .4 3.1 1.5 3.8 3.1 M24.1 38.3 c-1.2 .8 -1.9 1.9 -2.1 3.2"/></g></svg></button><span class="plume-tag" id="plumeTag" hidden></span>
+    <button type="button" class="plume" id="plume" hidden><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(4 24 24)"><path d="M23.7 35.8 C20.2 33.6 17.9 30.3 17.4 27.2 L21.9 29.3 L17.3 25.0 C17.3 21.2 18.2 17.6 19.6 14.6 L23.0 17.6 L20.4 13.0 C21.9 8.9 23.7 5.2 26 1.8 C28.2 5.6 30.2 9.6 30.9 13.6 L27.6 16.9 L31.1 15.9 C31.2 20.6 30.6 24.6 29.3 27.6 L26.0 30.6 L28.7 28.9 C27.6 31.6 26.3 33.8 24.7 35.8"/><path d="M24.15 44.6 C24 36.2 24.6 19.6 26 1.8"/><path stroke-width=".95" d="M24.4 32.6 L21.2 31.4 M25.2 12.6 L23.4 10.6 M24.8 22.4 L28.6 20.6"/><path stroke-width="1.05" d="M23.9 36.2 c-1.9 .3 -3.4 1.4 -4.2 3.1 M24.5 36.2 c1.8 .4 3.1 1.5 3.8 3.1 M24.1 38.3 c-1.2 .8 -1.9 1.9 -2.1 3.2"/></g></svg></button><span class="plume-tag" id="plumeTag" hidden></span><button type="button" class="plume-login" id="plumeLogin">Se connecter</button>
   </header>
 
   <div class="progress-card">
@@ -3469,6 +3541,7 @@ body.arrive footer{ animation-delay:.52s; }
     </div>
     <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
   </div>
+  <div class="welcome-card"><p class="welcome-msg"><span>Ce qui dort sous le tapis</span> <span>n'est pas perdu...</span></p></div>
 
   <div class="urgent-banner" id="urgentBanner" hidden></div>
   <div class="lucky-line" id="luckyLine" hidden></div>
@@ -3492,7 +3565,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.39</span>
+    <span class="version-tag">v10.40</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5258,14 +5331,23 @@ function backupNudgeText(){
   const days = Math.round((new Date(todayISO() + "T00:00:00") - new Date(last + "T00:00:00")) / 86400000);
   return "Dernière sauvegarde il y a " + days + " jours";
 }
+// 10.40 : peut-on se connecter (cloud), l'est-on (logged) ? Sync est déclaré
+// plus bas : au tout premier rendu il n'existe pas encore (tout à false).
+function cloudState(){
+  let cloud = false, logged = false;
+  try{ cloud = !!Sync.available; logged = !!(Sync.user && ((Sync.status && Sync.status.state) || "off") !== "off"); }catch(e){}
+  return { cloud, logged };
+}
+// 10.40 : ouvre la fenêtre de connexion sous l'élément cliqué (posé par la
+// plume, plus bas) ; le rappel du bas de page l'ouvrait près de la plume, en
+// haut de la page, hors de vue
+let openLoginAt = null;
 function renderBackupNudge(){
   const el = document.getElementById("backupNudge");
   if(!el) return;
   // 10.6 : quand on peut se connecter, le rappel invite à se connecter (et se
   // tait une fois connecté) ; la copie de secours est dans la plume
-  // (Sync est déclaré plus bas : au tout premier rendu il n'existe pas encore)
-  let cloud = false, logged = false;
-  try{ cloud = !!Sync.available; logged = !!(Sync.user && ((Sync.status && Sync.status.state) || "off") !== "off"); }catch(e){}
+  const { cloud, logged } = cloudState();
   let text;
   if(cloud){
     text = (hasAnyList() && !logged) ? "Se connecter pour ne jamais perdre ses listes" : "";
@@ -5277,7 +5359,7 @@ function renderBackupNudge(){
     el.dataset.wired = "1";
     el.setAttribute("role", "button");
     el.tabIndex = 0;
-    const go = e=>{ e.stopPropagation(); const p = document.getElementById("plume"); if(p && !p.hidden) p.click(); };
+    const go = e=>{ e.stopPropagation(); if(openLoginAt) openLoginAt(el); };
     el.addEventListener("click", go);
     el.addEventListener("keydown", e=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); go(e); } });
   }
@@ -5574,7 +5656,7 @@ function updateWatermark(show){
   try{
     const wrap = document.querySelector(".wrap");
     const row = document.getElementById("addCategoryRow");
-    const ref = document.querySelector(".progress-card");
+    const ref = cardsRef();
     if(!show || !wrap || !row || !ref || typeof TAPIS === "undefined"){
       if(row) row.style.marginTop = "";
       if(watermarkEl){
@@ -5584,12 +5666,13 @@ function updateWatermark(show){
       }
       return;
     }
-    // largeur des cases, de sous la case compteur jusqu'au bas de la fenêtre
+    // largeur des cases, de sous la case compteur (ou le titre) jusqu'au bas de la fenêtre
     const wr = wrap.getBoundingClientRect(), rr = ref.getBoundingClientRect();
     const width = rr.width;
     const VW = width >= 600 ? 560 : 400, scale = width / VW;
-    const top = rr.bottom - wr.top + 18;
-    const height = Math.max(240, window.innerHeight - rr.bottom - 18 - 12);
+    const gap = ref.classList.contains("welcome-card") ? 6 : 18;   // 10.40 : collé au cadre de l'accueil
+    const top = rr.bottom - wr.top + gap;
+    const height = Math.max(240, window.innerHeight - rr.bottom - gap - 12);
     const VH = Math.round(height / scale);
     // le bouton d'accueil se pose au centre du tapis (sur le médaillon)
     // … et le champ du nom, plus haut, comme un commencement
@@ -5597,11 +5680,11 @@ function updateWatermark(show){
     // même pendant le glissement en cours)
     const btn = row.querySelector(".onboarding") || row;
     const brr = btn.getBoundingClientRect();
-    const aim = 0.5; // bouton et champ du nom : même centre
+    const aim = width >= 600 ? 0.42 : 0.32; // 10.40 : bouton remonté (avant 0.5), surtout sur téléphone
     const baseM = 0.85 * parseFloat(getComputedStyle(document.documentElement).fontSize);
     const curM = parseFloat(getComputedStyle(row).marginTop) || baseM;
     const naturalCenter = brr.top - (curM - baseM) + brr.height / 2;
-    const shift = Math.max(0, (rr.bottom + 18 + height * aim) - naturalCenter);
+    const shift = Math.max(0, (rr.bottom + gap + height * aim) - naturalCenter);
     row.style.marginTop = Math.round(baseM + shift) + "px";
     if(!watermarkEl){
       watermarkEl = document.createElement("div");
@@ -5616,7 +5699,8 @@ function updateWatermark(show){
     const key = VW + "x" + VH;
     if(key !== watermarkKey){
       watermarkKey = key;
-      const svg = TAPIS.build(VW, VH);
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const svg = TAPIS.build(VW, VH, false, width*dpr, height*dpr);   // 10.40 : net sur téléphone
       const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
       const old = watermarkEl.dataset.url;
       watermarkEl.style.backgroundImage = `url("${url}")`;
@@ -5646,15 +5730,21 @@ function renderAddCategoryRow(){
   if(!addingCategory){
     if(noList){
       // App vierge : un appel à l'action clair plutôt qu'un petit bouton perdu.
+      // 10.40 : sans compte, le lien mène à la plume (connexion, et Restaurer
+      // dans la même fenêtre) ; connecté, ou sans plume (mode de secours), il
+      // restaure directement : la restauration reste toujours à portée.
+      const cs = cloudState(), askLogin = cs.cloud && !cs.logged;
       el.innerHTML = `<button type="button" class="add-category-btn onboarding">
         <span class="onboarding-plus" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 2.5v11M2.5 8h11"/></svg></span>
         <span class="onboarding-title">Go dépoussiérage</span>
         <span class="onboarding-sub">une petite liste ?</span>
       </button>
-      <button type="button" class="onboarding-restore">ou <span>restaurer</span><small>(à partir d'une sauvegarde)</small></button>`;
+      ${askLogin ? `<button type="button" class="onboarding-restore">ou <span>se connecter</span><small>pour retrouver ses listes</small></button>`
+                 : `<button type="button" class="onboarding-restore">ou <span>restaurer</span><small>(à partir d'une sauvegarde)</small></button>`}`;
       el.querySelector(".onboarding-restore").addEventListener("click", (e)=>{
         e.stopPropagation();
-        document.getElementById("importFile").click();
+        if(askLogin) document.getElementById("plume").click();   // connexion + Restaurer
+        else document.getElementById("importFile").click();
       });
     }else{
       el.innerHTML = `<button type="button" class="add-category-btn">+ Nouvelle liste</button>`;
@@ -5672,91 +5762,33 @@ function renderAddCategoryRow(){
       <div class="edit-form">
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
         ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Mémo / shopping</label>` : ""}
-        <input type="text" class="nl-task" placeholder="Une première tâche ?" autocomplete="off">
-        <textarea class="nl-items" rows="1" placeholder="Premiers articles ? (un par ligne)" autocomplete="off" hidden></textarea>
-        <input type="text" class="nl-note" placeholder="Détail (optionnel)" autocomplete="off">
-        <div class="edit-label-row">
-          <label class="edit-label">Échéance
-            <input type="date" class="nl-due">
-          </label>
-          <label class="edit-label">Heure
-            <input type="time" class="nl-time">
-          </label>
-        </div>
         <div class="edit-actions">
-          ${formToggles(false, false)}
           <button type="button" class="add-cancel nl-cancel">Annuler</button>
           <button type="button" class="add-save nl-save">Créer</button>
         </div>
       </div>
     </div>
   `;
+  // 10.40 : le nom et le type seulement ; la carte créée s'ouvre sur son
+  // champ d'ajout (« Nouvelle tâche… » ou « Ajouter un article »), curseur dedans
   const card = el.querySelector(".new-list-card");
   const nameInput = card.querySelector(".nl-name");
-  const taskInput = card.querySelector(".nl-task");
-  const noteInput = card.querySelector(".nl-note");
-  const dueInput = card.querySelector(".nl-due");
-  const timeInput = card.querySelector(".nl-time");
-  linkTimeToDate(dueInput, timeInput);
-  // 10.15 : interrupteur « Liste de courses » : les premiers articles (un par
-  // ligne) remplacent la première tâche, son détail, sa date et ses boutons
   const coursesSwitch = card.querySelector(".nl-courses-switch");
-  const itemsInput = card.querySelector(".nl-items");
-  const isCourses = ()=> !!(coursesSwitch && coursesSwitch.checked);
-  const growItems = ()=>{ itemsInput.style.height = "auto"; itemsInput.style.height = itemsInput.scrollHeight + "px"; };
-  itemsInput.addEventListener("input", growItems);
-  // le champ à remplir est en gras : le nom, puis la première tâche
-  const step = ()=>{
-    const named = !!nameInput.value.trim();
-    nameInput.classList.toggle("nl-step", !named);
-    taskInput.classList.toggle("nl-step", named);
-    itemsInput.classList.toggle("nl-step", named);
-  };
-  nameInput.addEventListener("input", step);
-  step();
-  if(coursesSwitch) coursesSwitch.addEventListener("change", ()=>{
-    const on = isCourses();
-    card.classList.toggle("is-courses", on);
-    taskInput.hidden = on;
-    itemsInput.hidden = !on;
-    if(on && taskInput.value.trim() && !itemsInput.value.trim()){ itemsInput.value = taskInput.value.trim(); growItems(); }
-    if(nameInput.value.trim()) (on ? itemsInput : taskInput).focus(); else nameInput.focus();
-  });
-  const toggles = wireEditUrgent(card);
   const cancel = ()=>{ addingCategory = false; renderAll(); };
   const save = ()=>{
     if(!nameInput.value.trim()){ nameInput.focus(); return; }
-    if(isCourses()){
-      try{
-        const cat = addCategory(nameInput.value);
-        if(cat){
-          setCoursesList(cat.id, true);
-          if(itemsInput.value.trim()) addCoursesLines(cat, itemsInput.value);
-          actionToast("newCourses");
-        }
-      }catch(err){
-        console.error("[nouvelle liste de courses] échec de l'enregistrement", err);
-      }
-      addingCategory = false;
-      renderAll();
-      return;
-    }
     try{
-      // La liste d'abord, puis sa première tâche (si on en a écrit une) :
-      // même chemin que l'ajout d'une tâche dans une liste existante.
       const cat = addCategory(nameInput.value);
-      const t = taskInput.value.trim();
-      if(cat && t){
-        const item = { t };
-        const note = noteInput.value.trim();
-        const due = dueInput.value ? (timeInput.value ? dueInput.value + "T" + timeInput.value : dueInput.value) : "";
-        if(note) item.note = note;
-        if(due) item.due = due;
-        if(toggles.value()) item.urgent = true;
-        if(toggles.egg()) item.egg = true;
-        insertItem(cat, item);
+      if(cat){
+        if(coursesSwitch && coursesSwitch.checked){
+          setCoursesList(cat.id, true);
+          refocusCoursesCat = cat.id;
+          actionToast("newCourses");
+        }else{
+          refocusQuickCat = cat.id;
+          actionToast("newCat");
+        }
       }
-      if(cat) actionToast("newCat");
     }catch(err){
       console.error("[nouvelle liste] échec de l'enregistrement", err);
     }
@@ -5765,18 +5797,11 @@ function renderAddCategoryRow(){
   };
   card.querySelector(".nl-save").addEventListener("click", save);
   card.querySelector(".nl-cancel").addEventListener("click", cancel);
-  [nameInput, taskInput, itemsInput, noteInput, dueInput, timeInput].forEach(inp=>{
-    inp.addEventListener("keydown", e=>{
-      if(e.key === "Enter"){
-        if(inp === itemsInput && (e.shiftKey || e.isComposing)) return;   // Maj+Entrée : une ligne de plus
-        e.preventDefault();
-        const next = isCourses() ? itemsInput : taskInput;
-        if(inp === nameInput && nameInput.value.trim() && !next.value.trim()) next.focus();
-        else save();
-      }
-      if(e.key === "Escape") cancel();
-    });
+  nameInput.addEventListener("keydown", e=>{
+    if(e.key === "Enter"){ e.preventDefault(); save(); }
+    if(e.key === "Escape") cancel();
   });
+  if(coursesSwitch) coursesSwitch.addEventListener("change", ()=> nameInput.focus());
   nameInput.focus();
 }
 
@@ -6446,6 +6471,25 @@ function getCatOrder(cat){
 
 function hasAnyList(){
   return getCategoryOrder().some(i => DATA[i] && !isCategoryDeleted(DATA[i].id));
+}
+// 10.40 : au moins une tâche (œufs compris) dans une liste normale ; les
+// articles des mémos ne comptent pas, comme pour le compteur
+function hasAnyTask(){
+  return getCategoryOrder().some(i=>{
+    const c = DATA[i];
+    if(!c || isCategoryDeleted(c.id) || isCoursesList(c.id)) return false;
+    return getEffectiveItems(c).some((base, j) => !isDeleted(itemKey(c.id, j)));
+  });
+}
+// 10.40 : la largeur des cartes (tapis de l'accueil, tapis qui se déroule),
+// prise sur le compteur, le cadre de l'accueil (le tapis se pose alors juste
+// dessous) ou la colonne des listes
+function cardsRef(){
+  for(const sel of [".progress-card", ".welcome-card"]){
+    const el = document.querySelector(sel);
+    if(el && el.offsetParent) return el;
+  }
+  return document.getElementById("categories");
 }
 
 function getCategoryOrder(){
@@ -7519,7 +7563,6 @@ function renderLuckyLine(){
   const winner = donePick ? donePick.key : (picks.some(p => p.key === chosenKey) ? chosenKey : null);
   el.innerHTML =
     `<div class="lucky-head">${closed ? clover : `<button type="button" class="lucky-clover-btn" aria-label="Refermer la case" title="Refermer">${clover}</button>`}<span class="lucky-lead">${done ? "Trèfle du jour fait !" : LUCKY_LEAD}</span>` +
-    (closed ? `<span class="lucky-crank" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>` : "") +
     ((closed || done) ? "" : `<button type="button" class="lucky-reroll" aria-label="Deux autres propositions"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg></button>`) +
     `</div>` +
     `<div class="lucky-opts">` +
@@ -9262,6 +9305,8 @@ function updateProgress(){
   // Compteur affiché : tâches cochées depuis lundi (repart de zéro chaque
   // semaine). La barre et les messages gardent le calcul faites / total.
   const weekDone = getWeekDoneCount();
+  // 10.40 : rien à compter (aucune tâche, rien coché cette semaine) : pas de compteur
+  document.body.classList.toggle("no-tasks", !weekDone && !hasAnyTask());
   document.getElementById("doneCount").textContent = weekDone;
   document.getElementById("doneWord").textContent = weekDone > 1 ? "accomplies" : "accomplie";
   fitCountBlock();
@@ -9303,7 +9348,7 @@ const ACTION_MESSAGES = {
   restore: ["Ressuscitée. Le chanoine n'en revient pas.", "Retour dans sa case, comme si de rien n'était."],
   trashDelete: ["Effacée des archives. Le clerc a passé le buvard.", "Rayée pour de bon."],
   moveCat: ["Déménagée dans une autre liste, cartons compris.", "Changement de case, acté par le notaire.", "Mutation acceptée, sans passer par l'échevin."],
-  newCat: ["Nouvelle case ouverte, comme un échevinat de plus.", "Catégorie créée. Le conseil communal a voté à main levée."],
+  newCat: ["Nouvelle case ouverte, comme un échevinat de plus.", "Liste créée. Le conseil communal a voté à main levée."],
   // 10.15 : listes de courses
   newCourses: ["Panier prêt. Direction le marché du dimanche.", "Mémo ouvert, comme l'épicerie du coin."],
   coursesErase: ["Retiré du panier.", "Reposé sur l'étal.", "Le crémier s'en remettra."],
@@ -9320,17 +9365,32 @@ function actionToast(kind){
 }
 
 let toastTimer;
+// 10.40 : le message reste le temps de le lire (selon sa longueur : 3,5 à
+// 7 s ; avant 1,9 s), s'arrête tant que la souris est dessus, se ferme au clic
+function hideToast(){
+  const toast = document.getElementById("toast");
+  clearTimeout(toastTimer);
+  toast.classList.remove("show");
+  toast.classList.remove("milestone");
+}
+function toastDelay(msg, milestone){
+  return Math.min(7000, Math.max(3500, 1500 + msg.length * 55)) + (milestone ? 1000 : 0);
+}
 function celebrate(forcedMsg, plain){
   const toast = document.getElementById("toast");
   const msg = forcedMsg || CELEBRATION_MESSAGES[Math.floor(Math.random()*CELEBRATION_MESSAGES.length)];
+  const milestone = !!forcedMsg && !plain;
   toast.textContent = msg;
-  toast.classList.toggle("milestone", !!forcedMsg && !plain);
+  toast.classList.toggle("milestone", milestone);
   toast.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=> {
-    toast.classList.remove("show");
-    toast.classList.remove("milestone");
-  }, (forcedMsg && !plain) ? 2600 : 1900);
+  toastTimer = setTimeout(hideToast, toastDelay(msg, milestone));
+  if(!toast.dataset.wired){
+    toast.dataset.wired = "1";
+    toast.addEventListener("mouseenter", ()=> clearTimeout(toastTimer));
+    toast.addEventListener("mouseleave", ()=>{ if(toast.classList.contains("show")) toastTimer = setTimeout(hideToast, 1500); });
+    toast.addEventListener("click", e=>{ e.stopPropagation(); hideToast(); });
+  }
 }
 
 // Écouteurs globaux pour tout le geste de glisser-déposer, posés une seule
@@ -9709,8 +9769,14 @@ const TAPIS = (()=>{
     return s;
   }
 
-  function build(VW, VH, dark){
+  // 10.40 : pxW / pxH = taille en pixels où l'image sera dessinée. Safari
+  // pixellise une image SVG à sa taille propre (width / height) avant de
+  // l'agrandir : le tapis était flou sur téléphone. Le dessin (viewBox) ne change pas.
+  function build(VW, VH, dark, pxW, pxH){
     C = dark ? DARK : LIGHT;
+    // 10.40 : en sombre, ni lustre (dégradé clair → foncé) ni marbrures
+    // d'usure : sur ces teintes foncées, elles faisaient de grosses taches
+    const age = dark ? 'slope="0" intercept="1"' : 'slope="0.1" intercept="0.92"';
     const id='tps';
     const X0=0, Y0=18, W=VW, H=VH-36, CX=VW/2;
     const bw=44, g1=6, g2=7;
@@ -9723,7 +9789,7 @@ const TAPIS = (()=>{
     const sM=Math.max(.5, Math.min(fw/262*0.95, (segH-110)/(2*215)));
     const centers=[]; for(let i=0;i<k;i++) centers.push(fy+segH*(i+.5));
 
-    let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${VW}" height="${VH}" viewBox="0 0 ${VW} ${VH}"><defs>
+    let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(pxW || VW)}" height="${Math.round(pxH || VH)}" viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="none"><defs>
     <filter id="${id}-wool" x="-2%" y="-2%" width="104%" height="104%" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="7" result="wob"/>
       <feDisplacementMap in="SourceGraphic" in2="wob" scale="1" xChannelSelector="R" yChannelSelector="G" result="base"/>
@@ -9737,7 +9803,7 @@ const TAPIS = (()=>{
       <feTurbulence type="fractalNoise" baseFrequency="0.004 0.045" numOctaves="2" seed="11" result="ab"/>
       <feColorMatrix in="ab" type="saturate" values="0" result="abg"/>
       <feComponentTransfer in="abg" result="abr">
-        <feFuncR type="linear" slope="0.1" intercept="0.92"/><feFuncG type="linear" slope="0.1" intercept="0.92"/><feFuncB type="linear" slope="0.1" intercept="0.92"/>
+        <feFuncR type="linear" ${age}/><feFuncG type="linear" ${age}/><feFuncB type="linear" ${age}/>
       </feComponentTransfer>
       <feBlend in="knotted" in2="abr" mode="multiply" result="aged"/>
       <feComponentTransfer in="aged" result="lift">
@@ -9814,7 +9880,8 @@ const TAPIS = (()=>{
     centers.forEach((cy,i)=>{
       s+=`<g transform="translate(${f1(CX)} ${f1(cy)}) scale(${f1(sM*1000)/1000}) translate(-200 -300)">${medallion(id+'-m'+i)}</g>`;
     });
-    s+=`<rect x="${X0}" y="${Y0}" width="${W}" height="${H}" fill="url(#${id}-sheen)"/></g></svg>`;
+    if(!dark) s+=`<rect x="${X0}" y="${Y0}" width="${W}" height="${H}" fill="url(#${id}-sheen)"/>`;
+    s+=`</g></svg>`;
     return s;
   }
   return { build };
@@ -9849,7 +9916,7 @@ const TAPIS = (()=>{
 
   // Emplacement : largeur des cases, du bas du titre jusqu'au-dessus de la version.
   function measure(){
-    const ref = document.querySelector(".progress-card") || wrap;
+    const ref = cardsRef() || wrap;
     const wr = wrap.getBoundingClientRect(), rr = ref.getBoundingClientRect();
     const hr = title.closest("header").getBoundingClientRect();
     const vr = version.getBoundingClientRect();
@@ -9868,13 +9935,14 @@ const TAPIS = (()=>{
     const key = [Math.round(m.width), Math.round(m.height), dark ? "d" : "l"].join("x");
     if(built && built.key === key) return Promise.resolve();
     if(building && building.key === key) return building.promise;
-    const svg = TAPIS.build(m.VW, m.VH, dark);
+    // 10.40 : jusqu'à 3 (iPhone ; avant 2), et l'image SVG faite à cette taille
+    let dpr = Math.min(window.devicePixelRatio || 1, 3);
+    while(dpr > 1 && m.width*m.height*dpr*dpr > 14e6) dpr -= 0.25;   // reste raisonnable en mémoire
+    const svg = TAPIS.build(m.VW, m.VH, dark, m.width*dpr, m.height*dpr);
     const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
     const img = new Image();
     const promise = new Promise((resolve) => {
       img.onload = () => {
-        let dpr = Math.min(window.devicePixelRatio || 1, 2);
-        while(dpr > 1 && m.width*m.height*dpr*dpr > 14e6) dpr -= 0.25;   // reste raisonnable en mémoire
         cv.width = Math.round(m.width*dpr);
         cv.height = Math.round(m.height*dpr);
         cv.style.width = m.width + "px";
@@ -9915,6 +9983,7 @@ const TAPIS = (()=>{
     }else roll.style.display = "none";
     title.setAttribute("aria-label", target ? "Enrouler le tapis" : "Dérouler le tapis");
     document.body.classList.toggle("tapis-down", target === 1);
+    document.body.classList.toggle("tapis-out", p > 0.0005);   // 10.40 : rien ne se lit à travers
   }
 
   // ---- son : un froissement de laine qui suit le mouvement, puis un « flop » feutré ----
@@ -10752,15 +10821,21 @@ const Sync = (()=>{
     if(tag){
       const txt = (st === "off" || offline) ? "Hors ligne" : st === "error" ? "Souci de synchro" : "";
       tag.textContent = txt; tag.hidden = !txt;
+      tag.classList.toggle("logged-out", st === "off" && !offline);   // 10.40 : masqué sur l'accueil vide
     }
     plume.classList.toggle("waiting", st === "pending" || st === "connecting");
+    document.body.classList.toggle("signed-out", st === "off" && !offline);   // 10.40 : « Se connecter » sous la plume (accueil vide)
     const who = Sync.status.email ? " (" + Sync.status.email + ")" : "";
     plume.setAttribute("aria-label", LABEL[st] || LABEL.off);
     plume.title = (LABEL[st] || LABEL.off) + (st === "ok" || st === "pending" ? who : "");
   }
-  Sync.onStatus = ()=>{ paint(); if(shareOpen) renderShare(); renderBackupNudge(); };   // 10.2 : le panneau Partage suit la connexion
+  // 10.40 : le lien de l'accueil vide dépend de la connexion (Sync n'existait
+  // pas encore au premier rendu) : refait ici, puis à chaque changement
+  const refreshWelcome = ()=>{ if(!hasAnyList() && !addingCategory) renderAddCategoryRow(); };
+  Sync.onStatus = ()=>{ paint(); if(shareOpen) renderShare(); renderBackupNudge(); refreshWelcome(); };   // 10.2 : le panneau Partage suit la connexion
   window.addEventListener("online", paint); window.addEventListener("offline", paint);   // 10.23
   paint();
+  refreshWelcome();
 
   // 10.26 : domaines courants ; une adresse à 1–2 lettres de l'un d'eux est
   // probablement une faute de frappe (gmial.com, hotmail.con…)
@@ -10797,7 +10872,7 @@ const Sync = (()=>{
   };
   const errText = e => ERR[e && e.code] || "Ça n'a pas marché (" + ((e && (e.code || e.message)) || "erreur inconnue") + ").";
 
-  function open(){
+  function open(anchor = plume){
     closeRelancePop();
     const st = Sync.status.state || "off";
     const pop = document.createElement("div");
@@ -10896,16 +10971,20 @@ const Sync = (()=>{
       });
       pw.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); pop.querySelector(".sp-login").click(); } });
     }
-    // 10.6 : copie de secours (fichier), discrète, dans les deux états
+    // 10.6 : copie de secours (fichier), discrète, dans les deux états ;
+    // 10.40 : sans liste, Restaurer seul (rien à copier)
     const bk = document.createElement("div");
     bk.className = "sp-backup";
-    bk.innerHTML = `<button type="button" class="sp-export">Copie de secours</button><span aria-hidden="true">·</span><button type="button" class="sp-import">Restaurer</button>`;
-    bk.querySelector(".sp-export").addEventListener("click", e=>{ e.stopPropagation(); closeRelancePop(); document.getElementById("exportBtn").click(); });
+    const canExport = hasAnyList();
+    bk.innerHTML = (canExport ? `<button type="button" class="sp-export">Copie de secours</button><span aria-hidden="true">·</span>` : "") + `<button type="button" class="sp-import">Restaurer</button>`;
+    if(canExport) bk.querySelector(".sp-export").addEventListener("click", e=>{ e.stopPropagation(); closeRelancePop(); document.getElementById("exportBtn").click(); });
     bk.querySelector(".sp-import").addEventListener("click", e=>{ e.stopPropagation(); closeRelancePop(); document.getElementById("importFile").click(); });
     pop.appendChild(bk);
-    openPopAt(pop, plume);
+    openPopAt(pop, anchor);
   }
+  openLoginAt = open;
   plume.addEventListener("click", e=>{ e.stopPropagation(); if(relancePop && relancePop.classList.contains("sync-pop")) closeRelancePop(); else open(); });
+  document.getElementById("plumeLogin").addEventListener("click", e=>{ e.stopPropagation(); open(); });   // 10.40
   // 10.2 : arrivé par un lien d'invitation sans être connecté : la fenêtre s'ouvre d'elle-même
   let invitePrompted = false;
   Sync.onAuthChange = u=>{
