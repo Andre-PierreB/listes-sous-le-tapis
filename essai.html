@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.44 -->
+<!-- Sous le tapis — version AUTONOME 10.45 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1096,6 +1096,22 @@
     (oubliées en 10.43). Bulle du nombre de tâches en Public Sans (les
     chiffres de Courier Prime ne se centraient pas pareil selon le
     navigateur). Phrase du jeudi : « L'autre prépare un coup fourré. »
+  - 10.45 : listes partagées — étiquette « new – AP » (initiales, avant le
+    prénom) et nouvelle « modif – H » : qui a changé le texte, le détail ou
+    l'échéance d'une tâche, ou un article de mémo (overrides editBy / editAt,
+    posés par markEdited, fusionnés et synchronisés avec les modifications ;
+    pas la coche ni l'urgence). Visible 24 h après la première vue (mémoire
+    locale sous-le-tapis-vu, champ m). Les étiquettes s'affichent aussi chez
+    l'auteur (newItems / editedItems) ; le message en bas seulement pour ce
+    que font les autres (« Hiske a modifié … dans … »). Le texte d'une ligne
+    marquée garde 5.4rem à droite pour l'étiquette. Règles Firestore
+    inchangées.
+    Picto du détail toujours dans sa pastille ronde jaune (même fond, ouvert
+    ou non ; plus foncée au survol). Liste repliée : flèche d'ordre masquée
+    (se confondait avec celle qui rouvre). « Une petite en passant ? » calée
+    à droite, trèfle à l'aplomb de la plume, titre qui finit où finit
+    « Sous le tapis » ; ⟳ passe à gauche. Bouton « + Nouvelle liste » en
+    citron givré, pointillés citron, petit zoom et halo au survol.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1625,8 +1641,8 @@ header{
   padding-top:0.1rem;
   line-height:1.4;
 }
-.urgent-list .note-toggle{ color:color-mix(in srgb, var(--urgent-ink) 45%, transparent); }
-.urgent-list .note-toggle:hover{ color:var(--urgent-ink); background:transparent; }   /* 10.43 : pas le jaune des listes dans la case urgente */
+.urgent-list .note-toggle{ color:color-mix(in srgb, var(--urgent-ink) 45%, transparent); background:transparent; }   /* 10.43 : pas le jaune des listes dans la case urgente */
+.urgent-list .note-toggle:hover{ color:var(--urgent-ink); background:transparent; }
 .urgent-list li.note-open .note-toggle{ color:var(--urgent-ink); background:var(--urgent-soft); }
 /* relance arrivée (tâche en cours dont la date est là) — 10.23 : dans la
    case urgente, plus de couleur à part (avant : framboise --relance) : elle
@@ -1645,9 +1661,10 @@ header{
 }
 .lucky-head{
   display:flex;
+  flex-direction:row-reverse;   /* 10.45 : titre calé à droite, trèfle de ce côté ; ⟳ à gauche */
   align-items:center;
-  gap:0.9rem;               /* même écart icône/titre que la case urgente */
-  margin:0 0 0.6rem 0.35rem; /* 0.9 + 0.35 = 1.25rem : trèfle à l'aplomb du « ! » */
+  gap:calc(0.9rem + 16.5px);   /* 10.45 : trèfle sous la plume, titre qui finit où finit « Sous le tapis » */
+  margin:0 0.35rem 0.6rem 0;
 }
 .lucky-clover{flex:none; width:18px; height:18px; color:var(--phrase);   /* 10.25 : bleu de la phrase (avant : --wait pâli) */ overflow:visible; transform-origin:50% 48%; transition:transform .45s cubic-bezier(.34,1.4,.64,1);}
 /* 8.25 : case fermée chaque matin — un gros bouton ; le trèfle sert de
@@ -1693,7 +1710,7 @@ header{
   letter-spacing:0.07em;
   text-transform:uppercase;
   color:var(--phrase);   /* 10.25 : bleu de la phrase, comme le trèfle (avant : olive citron + encre) */
-  margin-right:auto; /* pousse ⟳ à droite, même enveloppé (8.33) */
+  margin-left:auto; /* pousse ⟳ à l'autre bout, même enveloppé (8.33) */
 }
 .lucky-reroll{
   appearance:none;
@@ -1865,6 +1882,7 @@ header{
 /* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
 .category.courses.collapsed .courses-entry{ cursor:auto; }
 .category.collapsed .cat-fold svg{ transform:rotate(180deg); }
+.category.collapsed .cat-order{ display:none; }   /* 10.45 : repliée, la flèche d'ordre se confondait avec celle qui rouvre */
 .category.courses.collapsed{ cursor:pointer; } /* 10.18 : toute la carte repliée se déplie d'un clic */
 .category.courses .cat-head{ cursor:pointer; } /* 10.19 : ouverte, un clic sur le bandeau (hors titre) la replie */
 .category.courses .cat-title{ cursor:auto; }
@@ -1872,7 +1890,7 @@ header{
    liste (comme « nouveau ») ; avant : chiffre gris seul, peu clair */
 .cat-count{
   font-family:'Public Sans', system-ui, sans-serif; font-size:0.68rem; font-weight:700; flex:none;   /* 10.44 : chiffres bien centrés d'un navigateur à l'autre (ceux de Courier Prime variaient) */
-  min-width:1.3rem; height:1.1rem; box-sizing:border-box; padding:1.5px 0.45rem 0; border-radius:999px; line-height:1;   /* 1.5px : centre optique des chiffres */
+  min-width:1.3rem; height:1.1rem; box-sizing:border-box; padding:0 0.45rem; border-radius:999px; line-height:1;
   display:inline-flex; align-items:center; justify-content:center;
   background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface));
   color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
@@ -2021,6 +2039,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
 }
 .item.is-new{ background:color-mix(in srgb, var(--cat-color, var(--accent)) 8%, var(--surface)); }   /* surlignée sur toute la largeur */
+.item.is-new > .item-text{ padding-right:5.4rem; }   /* 10.45 : le texte laisse la place à « modif – AP » (plus de chevauchement) */
 @media (hover:hover){ .item:hover .new-tag{ opacity:0; } }   /* laisse la place aux boutons de la ligne */
 .item.revealed .new-tag, .item.editing .new-tag{ opacity:0; }
 /* titre : le + suit le dernier mot ; le champ express reste à côté s'il
@@ -2162,9 +2181,11 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 }
 .add-category-btn{
   appearance:none;
-  border:1px dashed var(--line);
-  background:var(--surface); /* fond blanc, pointillés gardés (9.0) */
-  color:var(--ink-faint);
+  /* 10.45 : citron givré du trèfle, pointillés citron, petit zoom au survol
+     (avant : blanc et gris, peu engageant) */
+  border:1px dashed color-mix(in srgb, var(--lucky-lemon) 70%, transparent);
+  background:var(--lucky-bg);
+  color:var(--phrase);
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.7rem;
   font-weight:600;
@@ -2176,11 +2197,14 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   display:inline-flex;
   align-items:center;
   gap:0.4rem;
+  transition:transform .2s var(--pop-ease), border-color .15s ease, box-shadow .2s ease;
 }
-.add-category-btn:hover{
-  color:var(--accent-strong);
-  border-color:var(--accent);
-  background:var(--accent-soft);
+.add-category-btn:hover, .add-category-btn:focus-visible{
+  outline:none;
+  border-style:solid;
+  border-color:var(--lucky-lemon);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--lucky-lemon) 30%, transparent);
+  transform:scale(1.06);
 }
 
 /* ---------- tâches ---------- */
@@ -2263,17 +2287,20 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
   align-items:center;
   vertical-align:-2px;
   margin-left:0.35rem;
-  padding:1px 4px;
-  border-radius:5px;
-  color:color-mix(in srgb, var(--lucky-lemon) 62%, var(--ink));   /* 10.43 : jaune du trèfle, foncé pour se lire (avant : gris pâle), et plus grand */
+  padding:3px;
+  border-radius:50%;
+  /* 10.43 : jaune du trèfle, foncé pour se lire, et plus grand ; 10.45 :
+     toujours dans sa pastille ronde (avant : seulement au survol ou ouvert,
+     d'où des fonds inégaux dans une même liste), un peu plus soutenue */
+  color:color-mix(in srgb, var(--lucky-lemon) 55%, var(--ink));
+  background:color-mix(in srgb, var(--lucky-lemon) 22%, var(--surface));
   cursor:pointer;
   transition:color .15s ease, background .15s ease;
 }
 .note-toggle svg{ display:block; }
 .note-tail{ white-space:nowrap; } /* dernier mot + sigle (8.39) */
 .item[data-note-key], .note-toggle{ -webkit-tap-highlight-color:transparent; }
-.note-toggle:hover{ color:color-mix(in srgb, var(--lucky-lemon) 45%, var(--ink)); background:var(--lucky-bg); }
-.note-open .note-toggle{ color:color-mix(in srgb, var(--lucky-lemon) 45%, var(--ink)); background:var(--lucky-bg); }
+.note-toggle:hover{ color:color-mix(in srgb, var(--lucky-lemon) 40%, var(--ink)); background:color-mix(in srgb, var(--lucky-lemon) 38%, var(--surface)); }   /* ouverte ou non, même pastille : seul le survol la fonce */
 .item.is-checked .note-toggle{ opacity:0.6; }
 .item input[type="checkbox"]{
   appearance:none;
@@ -3333,6 +3360,7 @@ body.no-list .add-category-row{
   transition:background .15s ease, border-color .15s ease, box-shadow .2s ease, transform .2s ease;
 }
 .add-category-btn.onboarding:hover, .add-category-btn.onboarding:focus-visible{
+  border-style:dashed;
   outline:none;
   background:var(--lucky-bg);
   border-color:var(--lucky-lemon);
@@ -3618,7 +3646,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.44</span>
+    <span class="version-tag">v10.45</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6070,10 +6098,12 @@ function personName(uid, catId){
 // d'autre reste « new » au moins 24 h après cette première vue.
 const SEEN_KEY = "sous-le-tapis-vu";
 const NEW_FOR_MS = 24 * 3600 * 1000;
-let seenMap = (()=>{ try{ const o = JSON.parse(localStorage.getItem(SEEN_KEY) || "{}"); return { c: (o && o.c) || {}, s: (o && o.s) || {} }; }catch(e){ return { c:{}, s:{} }; } })();
+// 10.45 : m = { cléTâche: { at: date de la modification, s: date où je l'ai vue } }
+let seenMap = (()=>{ try{ const o = JSON.parse(localStorage.getItem(SEEN_KEY) || "{}"); return { c: (o && o.c) || {}, s: (o && o.s) || {}, m: (o && o.m) || {} }; }catch(e){ return { c:{}, s:{}, m:{} }; } })();
 function saveSeen(){ try{ localStorage.setItem(SEEN_KEY, JSON.stringify(seenMap)); }catch(e){} }
-// index des tâches ajoutées par d'autres, encore « new » (ni effacées, ni cochées)
-function newFromOthers(cat){
+// index des tâches ajoutées dans une liste partagée, encore « new » (ni
+// effacées, ni cochées) ; 10.45 : chez tout le monde, auteur compris
+function newItems(cat){
   try{
     if(!isSharedList(cat.id)) return [];
     const me = myUid();
@@ -6083,7 +6113,7 @@ function newFromOthers(cat){
     const now = Date.now(), out = [];
     for(let i = seenMap.c[cat.id]; i < items.length; i++){
       const b = items[i], key = itemKey(cat.id, i);
-      if(!b || !b.by || b.by === me || isDeleted(key) || state[key]) continue;
+      if(!b || !b.by || isDeleted(key) || state[key]) continue;
       const t = seenMap.s[key];
       if(t && now - t >= NEW_FOR_MS) continue;
       out.push(i);
@@ -6099,29 +6129,72 @@ function noteShown(){
   let changed = false;
   DATA.forEach(c => {
     if(isCategoryDeleted(c.id) || typeof seenMap.c[c.id] !== "number") return;
-    newFromOthers(c).forEach(i => { const k = itemKey(c.id, i); if(!seenMap.s[k]){ seenMap.s[k] = now; changed = true; } });
+    newItems(c).forEach(i => { const k = itemKey(c.id, i); if(!seenMap.s[k]){ seenMap.s[k] = now; changed = true; } });
     // avance le seuil tant que les premières tâches ne peuvent plus être nouvelles
-    const items = getEffectiveItems(c), me = myUid();
+    editedItems(c).forEach(i => { const k = itemKey(c.id, i), at = editInfo(k).at; const m = seenMap.m[k]; if(!m || m.at !== at){ seenMap.m[k] = { at, s: now }; changed = true; } });
+    const items = getEffectiveItems(c);
     let i = seenMap.c[c.id];
     while(i < items.length){
       const b = items[i], k = itemKey(c.id, i), t = seenMap.s[k];
-      const stillNew = b && b.by && b.by !== me && !isDeleted(k) && !state[k] && !(t && now - t >= NEW_FOR_MS);
+      const stillNew = b && b.by && !isDeleted(k) && !state[k] && !(t && now - t >= NEW_FOR_MS);
       if(stillNew) break;
       delete seenMap.s[k]; i++;
     }
     if(i !== seenMap.c[c.id]){ seenMap.c[c.id] = i; changed = true; }
   });
+  // ménage : modifications vues depuis plus de 24 h
+  Object.keys(seenMap.m).forEach(k => { if(now - seenMap.m[k].s >= NEW_FOR_MS){ delete seenMap.m[k]; changed = true; } });
   if(changed) saveSeen();
 }
+// 10.45 : qui a modifié une tâche (texte, détail, échéance) et quand, dans une
+// liste partagée — gardé avec ses modifications (editBy / editAt), donc
+// fusionné et synchronisé comme elles
+function editInfo(key){
+  const o = overrides[key];
+  return { by: o && typeof o.editBy === "string" ? o.editBy : "", at: o && typeof o.editAt === "number" ? o.editAt : 0 };
+}
+function markEdited(key, catId){
+  const me = myUid();
+  if(!me || !isSharedList(catId)) return;
+  overrides[key] = Object.assign({}, overrides[key] || {}, { editBy: me, editAt: Date.now() });
+}
+// tâches modifiées, encore « modif » : 24 h après que je les ai vues (pas
+// celles déjà « new », ni effacées, ni cochées)
+function editedItems(cat){
+  try{
+    if(!isSharedList(cat.id)) return [];
+    const fresh = new Set(newItems(cat)), now = Date.now(), out = [];
+    getEffectiveItems(cat).forEach((b, i)=>{
+      const k = itemKey(cat.id, i), e = editInfo(k);
+      if(!e.at || !e.by || fresh.has(i) || isDeleted(k) || state[k]) return;
+      const m = seenMap.m[k];
+      if(m && m.at === e.at && now - m.s >= NEW_FOR_MS) return;
+      out.push(i);
+    });
+    return out;
+  }catch(e){ return []; }
+}
 document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState === "visible") noteShown(); });
-// message quand une tâche d'un autre arrive pendant qu'on regarde
-let prevNewKeys = null;
+// message quand une tâche d'un autre arrive ou change pendant qu'on regarde
+// (les miennes gardent leur étiquette, mais pas de message)
+let prevNewKeys = null, prevEditKeys = null;
 function renderNewNotice(){
-  const now = new Map();
+  const me = myUid();
+  const now = new Map(), edits = new Map();
   DATA.forEach(c => {
     if(isCategoryDeleted(c.id)) return;
-    newFromOthers(c).forEach(i => now.set(itemKey(c.id, i), { cat:c, idx:i }));
+    newItems(c).forEach(i => { const b = getEffectiveItems(c)[i]; if(b.by !== me) now.set(itemKey(c.id, i), { cat:c, idx:i }); });
+    editedItems(c).forEach(i => { const k = itemKey(c.id, i), e = editInfo(k); if(e.by !== me) edits.set(k + "@" + e.at, { cat:c, idx:i, by:e.by }); });
   });
+  if(prevEditKeys && document.visibilityState === "visible"){
+    const fresh = [...edits.keys()].filter(k => !prevEditKeys.has(k));
+    if(fresh.length){
+      const { cat, idx, by } = edits.get(fresh[0]);
+      const t = getEffective(itemKey(cat.id, idx), getEffectiveItems(cat)[idx]).t;
+      celebrate(`${personName(by, cat.id)} a modifié « ${t} » dans ${cat.title}` + (fresh.length > 1 ? ` (et ${fresh.length - 1} autre${fresh.length > 2 ? "s" : ""})` : ""), true);
+    }
+  }
+  prevEditKeys = new Set(edits.keys());
   if(prevNewKeys && document.visibilityState === "visible"){
     const fresh = [...now.keys()].filter(k => !prevNewKeys.has(k));
     if(fresh.length){
@@ -6135,9 +6208,14 @@ function renderNewNotice(){
   prevNewKeys = new Set(now.keys());
   noteShown();
 }
+// 10.45 : initiales de l'auteur (avant : prénom), et « modif » pour une modification
 function newTagHtml(cat, base){
   const who = personName(base.by, cat.id);
-  return `<span class="new-tag" aria-label="Nouvelle, ajoutée par ${escapeAttr(who)}">new ${escapeAttr(who)}</span>`;
+  return `<span class="new-tag" aria-label="Nouvelle, ajoutée par ${escapeAttr(who)}">new – ${escapeAttr(initialOf(who))}</span>`;
+}
+function editTagHtml(cat, key){
+  const who = personName(editInfo(key).by, cat.id);
+  return `<span class="new-tag" aria-label="Modifiée par ${escapeAttr(who)}">modif – ${escapeAttr(initialOf(who))}</span>`;
 }
 // « de André » → « d'André »
 function deName(name){ const n = String(name || "?"); return /^[aeiouyhàâäéèêëîïôöùûü]/i.test(n) ? "d'" + n : "de " + n; }
@@ -7917,6 +7995,7 @@ function buildItemLi(cat, idx, base, key, opts){
             overrides[key].due = newDue;
           }
           overrides[key].who = newWho;
+          if(newTitle !== eff.t || newNote !== (eff.note || "") || newDue !== (eff.waiting ? (eff.relance || "") : (eff.due || ""))) markEdited(key, cat.id);   // 10.45
           overrides[key].urgent = urgentToggle.value();
           const becameEgg = urgentToggle.egg() && !eff.egg;
           overrides[key].egg = urgentToggle.egg();
@@ -7992,8 +8071,9 @@ function buildItemLi(cat, idx, base, key, opts){
   }
   if(opts.courses){
     const struck = !!state[key];
-    const isNewCourse = !struck && newFromOthers(cat).includes(idx);   // 10.31
-    li.className = "item courses-item" + (isNewCourse ? " is-new" : "") + (struck ? " is-checked" : "") + (struck && key === justCheckedKey ? " just-checked" : "");
+    const isNewCourse = !struck && newItems(cat).includes(idx);   // 10.31
+    const isEditedCourse = !struck && !isNewCourse && editedItems(cat).includes(idx);   // 10.45
+    li.className = "item courses-item" + (isNewCourse || isEditedCourse ? " is-new" : "") + (struck ? " is-checked" : "") + (struck && key === justCheckedKey ? " just-checked" : "");
     li.dataset.key = key;
     const qtyTag = eff.q ? ` <span class="courses-qty">${escapeAttr(coursesQtyLabel(eff.q))}</span>` : "";
     let strikerTag = "";
@@ -8004,7 +8084,7 @@ function buildItemLi(cat, idx, base, key, opts){
     li.innerHTML = `
       <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
       <button type="button" class="strike-dot" role="checkbox" aria-checked="${struck}" aria-label="${escapeAttr((struck ? "Dé-rayer " : "Rayer ") + eff.t)}"></button>
-      ${isNewCourse ? newTagHtml(cat, base) : ""}<span class="item-text">${strikerTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${qtyTag}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
+      ${isNewCourse ? newTagHtml(cat, base) : isEditedCourse ? editTagHtml(cat, key) : ""}<span class="item-text">${strikerTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${qtyTag}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
       <span class="item-controls">
         <button type="button" class="courses-edit-btn" aria-label="Modifier l'article" data-tip="Modifier"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg></button>
         <button type="button" class="delete-btn" aria-label="Retirer l'article" data-tip="Retirer l'article"><span class="x">&times;</span></button>
@@ -8056,8 +8136,9 @@ function buildItemLi(cat, idx, base, key, opts){
   // N'anime que la tâche qu'on vient tout juste de cocher (voir justCheckedKey),
   // et une seule fois : les re-rendus suivants retombent sur le trait fixe.
   const justChecked = checked && key === justCheckedKey;
-  const isNewHere = !checked && newFromOthers(cat).includes(idx);   // 10.31
-  li.className = "item" + (isNewHere ? " is-new" : "") + (isRelance(eff) && !checked ? " item-relance" : "") + (isUrgent ? " item-urgent" : "") + (eff.egg && !checked ? " is-egg" : "") + (justChecked ? " just-checked" : "") + (checked ? " is-checked" : "");
+  const isNewHere = !checked && newItems(cat).includes(idx);   // 10.31
+  const isEditedHere = !checked && !isNewHere && editedItems(cat).includes(idx);   // 10.45
+  li.className = "item" + (isNewHere || isEditedHere ? " is-new" : "") + (isRelance(eff) && !checked ? " item-relance" : "") + (isUrgent ? " item-urgent" : "") + (eff.egg && !checked ? " is-egg" : "") + (justChecked ? " just-checked" : "") + (checked ? " is-checked" : "");
   li.dataset.key = key;
   const personTag = eff.person ? `<span class="person-tag${eff.tier ? " tier-" + escapeAttr(eff.tier) : ""}">${escapeAttr(eff.person)}</span>` : "";
   const originTag = showOrigin ? `<span class="urgent-jump-cat">${escapeAttr(cat.title)}</span>` : "";
@@ -8083,7 +8164,7 @@ function buildItemLi(cat, idx, base, key, opts){
   li.innerHTML = `
     ${dragHandleHtml}
     ${isEgg ? `<span class="egg-dot" title="En couvaison">${eggSvg(20)}</span>` : `<input type="checkbox" ${checked ? "checked" : ""} aria-label="${escapeAttr(eff.t)}">`}
-    ${isNewHere ? newTagHtml(cat, base) : ""}<span class="item-text">${checkerTag}${whoTag}${personTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
+    ${isNewHere ? newTagHtml(cat, base) : isEditedHere ? editTagHtml(cat, key) : ""}<span class="item-text">${checkerTag}${whoTag}${personTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
     <span class="item-controls">
       ${isEgg ? `<button type="button" class="hatch-btn" aria-label="Faire éclore" data-tip="Faire éclore"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="chick" cx="12" cy="8.2" r="3.6"/><path class="beak" d="M15.5 8.1l2 .7-2 .7"/><circle cx="13.1" cy="7.3" r=".55" fill="currentColor" stroke="none"/><path class="shell" d="M5.2 13.6c0 4.3 3 7.6 6.8 7.6s6.8-3.3 6.8-7.6l-2.3 1.5-2.2-1.7-2.3 1.7-2.3-1.7-2.2 1.7z"/></svg></button>` : `<button type="button" class="urgent-btn${eff.urgent ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}" data-tip="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}">${triangleSvg(15)}</button>`}
       <button type="button" class="waiting-btn${eff.waiting ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${waitingBtnTitle}" data-tip="${waitingBtnTitle}">${waitingBtnIcon}</button>
@@ -8277,6 +8358,7 @@ function commitCoursesEdit(){
         if(!t) t = eff.t;
         if(t !== eff.t || q !== eff.q || note !== (eff.note || "")){
           overrides[key] = Object.assign({}, overrides[key] || {}, { t, q, note });
+          markEdited(key, cat.id);   // 10.45
           saveOverrides(overrides);
           if(coursesNorm(t) !== coursesNorm(eff.t)) coursesHistoryAdd(cat.id, [capFirst(t)]);
         }
