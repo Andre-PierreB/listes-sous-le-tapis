@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.47 -->
+<!-- Sous le tapis — version AUTONOME 10.48 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1131,6 +1131,11 @@
     boutons sobres (fond teinté d'accent, sans bordure, coins doux, texte
     --phrase, survol un cran plus soutenu), champs un peu plus fins. Règles
     .rp-date / .rp-ok retirées (plus utilisées).
+  - 10.48 : fenêtre « Nouvelle liste » : interrupteur « Liste mémo –
+    shopping » ; un clic ou un toucher en dehors de la fenêtre annule
+    (écouteur pointerdown posé à l'ouverture, retiré à la fermeture). Titre
+    de « En cours » en mauve : nouvelle couleur --title-mauve (rangée avec
+    --ub-title), partagée avec le titre des petites fenêtres de tâche.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1177,6 +1182,7 @@
      (calculés sur les couleurs ci-dessus : suivent le mode sombre) */
   --ub-bg:color-mix(in srgb, color-mix(in srgb, var(--urgent-soft) 50%, var(--accent-soft)) 70%, var(--surface));   /* 10.25 : fond pâli, tiré vers le bleu (--accent-soft) pour moins de rouge */
   --ub-title:color-mix(in srgb, var(--urgent-ink) 50%, var(--urgent-soft));   /* 10.25 : titre pâli */
+  --title-mauve:color-mix(in srgb, var(--ub-title) 75%, var(--urgent-ink));   /* 10.48 : titres des petites fenêtres de tâche et de « En cours » */
   --late:#A9472A; --late-soft:#FBE7DE;   /* 10.25 : « En retard » en terre cuite */
   --relance:#C24F6E;
   --relance-soft:#F6E3E8;
@@ -2966,7 +2972,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   font-weight:600;
   letter-spacing:0.09em;
   text-transform:uppercase;
-  color:var(--ink-soft);
+  color:var(--title-mauve);   /* 10.48 : mauve, comme le titre de la fenêtre de relance (avant --ink-soft) */
   margin:0 0 1.1rem;
 }
 #waitingList .empty-note{ color:color-mix(in srgb, var(--ink-faint) 72%, var(--wait-soft)); }
@@ -3009,7 +3015,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 /* une touche de mauve, au seul titre, posé dans un petit onglet citron givré */
 .relance-ask .rp-title{
   display:inline-block; font-size:0.62rem; margin:0.1rem 0 0.5rem; padding:0.2rem 0.5rem; border-radius:5px;
-  background:var(--lucky-bg); color:color-mix(in srgb, var(--ub-title) 75%, var(--urgent-ink));
+  background:var(--lucky-bg); color:var(--title-mauve);
 }
 /* tous les boutons pareils : fond légèrement teinté, sans bordure, même
    graisse ; « Aucune relance » sur toute la largeur, un rien plus haut */
@@ -3706,7 +3712,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.47</span>
+    <span class="version-tag">v10.48</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5913,7 +5919,7 @@ function renderAddCategoryRow(){
     <div class="new-list-card">
       <div class="edit-form">
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
-        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Mémo / shopping</label>` : ""}
+        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste mémo – shopping</label>` : ""}
         <div class="edit-actions">
           <button type="button" class="add-cancel nl-cancel">Annuler</button>
           <button type="button" class="add-save nl-save">Créer</button>
@@ -5926,9 +5932,13 @@ function renderAddCategoryRow(){
   const card = el.querySelector(".new-list-card");
   const nameInput = card.querySelector(".nl-name");
   const coursesSwitch = card.querySelector(".nl-courses-switch");
-  const cancel = ()=>{ addingCategory = false; renderAll(); };
+  // 10.48 : un clic (ou toucher) en dehors de la fenêtre annule
+  const outside = e=>{ if(!card.isConnected || card.contains(e.target)) return; cancel(); };
+  const cancel = ()=>{ document.removeEventListener("pointerdown", outside, true); if(!addingCategory) return; addingCategory = false; renderAll(); };
+  setTimeout(()=> document.addEventListener("pointerdown", outside, true), 0);
   const save = ()=>{
     if(!nameInput.value.trim()){ nameInput.focus(); return; }
+    document.removeEventListener("pointerdown", outside, true);
     try{
       const cat = addCategory(nameInput.value);
       if(cat){
