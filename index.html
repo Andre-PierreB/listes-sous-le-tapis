@@ -1129,7 +1129,7 @@
     --relance:#E38DA4;
     --relance-soft:#372229;
     --wait:#94C4DA;
-    --wait-soft:#142C29;
+    --wait-soft:#0E3D33;   /* 10.40 : plus frais (avant #142C29) */
     --eggshell:#28292E;
     --lucky-bg:#28292E;
     --lucky-lemon:#DCCB52;
@@ -1171,7 +1171,7 @@
   --relance:#E38DA4;
   --relance-soft:#372229;
   --wait:#94C4DA;
-  --wait-soft:#142C29;
+  --wait-soft:#0E3D33;   /* 10.40 : plus frais (avant #142C29) */
   --eggshell:#28292E;
   --lucky-bg:#28292E;
   --lucky-lemon:#DCCB52;
@@ -3338,6 +3338,7 @@ body.no-list .new-list-card .add-save:hover{ background:var(--rose); border-colo
 }
 .tapis-watermark.leaving{ transition:opacity .7s ease, transform .7s ease; opacity:0 !important; transform:scale(1.015); }
 .tapis-box{ position:absolute; z-index:40; display:none; cursor:pointer; }
+body.tapis-out .plume-tag, body.tapis-out .plume-login{ visibility:hidden; }   /* 10.40 : « Hors ligne » ne se lit plus à travers le tapis */
 .tapis-box canvas{ display:block; }
 .tapis-roll{
   position:absolute; z-index:42; display:none; pointer-events:none; border-radius:999px;
@@ -5654,7 +5655,8 @@ function updateWatermark(show){
     const key = VW + "x" + VH;
     if(key !== watermarkKey){
       watermarkKey = key;
-      const svg = TAPIS.build(VW, VH);
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const svg = TAPIS.build(VW, VH, false, width*dpr, height*dpr);   // 10.40 : net sur téléphone
       const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
       const old = watermarkEl.dataset.url;
       watermarkEl.style.backgroundImage = `url("${url}")`;
@@ -9709,8 +9711,14 @@ const TAPIS = (()=>{
     return s;
   }
 
-  function build(VW, VH, dark){
+  // 10.40 : pxW / pxH = taille en pixels où l'image sera dessinée. Safari
+  // pixellise une image SVG à sa taille propre (width / height) avant de
+  // l'agrandir : le tapis était flou sur téléphone. Le dessin (viewBox) ne change pas.
+  function build(VW, VH, dark, pxW, pxH){
     C = dark ? DARK : LIGHT;
+    // 10.40 : en sombre, ni lustre (dégradé clair → foncé) ni marbrures
+    // d'usure : sur ces teintes foncées, elles faisaient de grosses taches
+    const age = dark ? 'slope="0" intercept="1"' : 'slope="0.1" intercept="0.92"';
     const id='tps';
     const X0=0, Y0=18, W=VW, H=VH-36, CX=VW/2;
     const bw=44, g1=6, g2=7;
@@ -9723,7 +9731,7 @@ const TAPIS = (()=>{
     const sM=Math.max(.5, Math.min(fw/262*0.95, (segH-110)/(2*215)));
     const centers=[]; for(let i=0;i<k;i++) centers.push(fy+segH*(i+.5));
 
-    let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${VW}" height="${VH}" viewBox="0 0 ${VW} ${VH}"><defs>
+    let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(pxW || VW)}" height="${Math.round(pxH || VH)}" viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="none"><defs>
     <filter id="${id}-wool" x="-2%" y="-2%" width="104%" height="104%" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="7" result="wob"/>
       <feDisplacementMap in="SourceGraphic" in2="wob" scale="1" xChannelSelector="R" yChannelSelector="G" result="base"/>
@@ -9737,7 +9745,7 @@ const TAPIS = (()=>{
       <feTurbulence type="fractalNoise" baseFrequency="0.004 0.045" numOctaves="2" seed="11" result="ab"/>
       <feColorMatrix in="ab" type="saturate" values="0" result="abg"/>
       <feComponentTransfer in="abg" result="abr">
-        <feFuncR type="linear" slope="0.1" intercept="0.92"/><feFuncG type="linear" slope="0.1" intercept="0.92"/><feFuncB type="linear" slope="0.1" intercept="0.92"/>
+        <feFuncR type="linear" ${age}/><feFuncG type="linear" ${age}/><feFuncB type="linear" ${age}/>
       </feComponentTransfer>
       <feBlend in="knotted" in2="abr" mode="multiply" result="aged"/>
       <feComponentTransfer in="aged" result="lift">
@@ -9814,7 +9822,8 @@ const TAPIS = (()=>{
     centers.forEach((cy,i)=>{
       s+=`<g transform="translate(${f1(CX)} ${f1(cy)}) scale(${f1(sM*1000)/1000}) translate(-200 -300)">${medallion(id+'-m'+i)}</g>`;
     });
-    s+=`<rect x="${X0}" y="${Y0}" width="${W}" height="${H}" fill="url(#${id}-sheen)"/></g></svg>`;
+    if(!dark) s+=`<rect x="${X0}" y="${Y0}" width="${W}" height="${H}" fill="url(#${id}-sheen)"/>`;
+    s+=`</g></svg>`;
     return s;
   }
   return { build };
@@ -9868,13 +9877,14 @@ const TAPIS = (()=>{
     const key = [Math.round(m.width), Math.round(m.height), dark ? "d" : "l"].join("x");
     if(built && built.key === key) return Promise.resolve();
     if(building && building.key === key) return building.promise;
-    const svg = TAPIS.build(m.VW, m.VH, dark);
+    // 10.40 : jusqu'à 3 (iPhone ; avant 2), et l'image SVG faite à cette taille
+    let dpr = Math.min(window.devicePixelRatio || 1, 3);
+    while(dpr > 1 && m.width*m.height*dpr*dpr > 14e6) dpr -= 0.25;   // reste raisonnable en mémoire
+    const svg = TAPIS.build(m.VW, m.VH, dark, m.width*dpr, m.height*dpr);
     const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
     const img = new Image();
     const promise = new Promise((resolve) => {
       img.onload = () => {
-        let dpr = Math.min(window.devicePixelRatio || 1, 2);
-        while(dpr > 1 && m.width*m.height*dpr*dpr > 14e6) dpr -= 0.25;   // reste raisonnable en mémoire
         cv.width = Math.round(m.width*dpr);
         cv.height = Math.round(m.height*dpr);
         cv.style.width = m.width + "px";
@@ -9915,6 +9925,7 @@ const TAPIS = (()=>{
     }else roll.style.display = "none";
     title.setAttribute("aria-label", target ? "Enrouler le tapis" : "Dérouler le tapis");
     document.body.classList.toggle("tapis-down", target === 1);
+    document.body.classList.toggle("tapis-out", p > 0.0005);   // 10.40 : rien ne se lit à travers
   }
 
   // ---- son : un froissement de laine qui suit le mouvement, puis un « flop » feutré ----
