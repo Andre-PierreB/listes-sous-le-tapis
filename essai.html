@@ -1645,9 +1645,10 @@ header{
 }
 .lucky-head{
   display:flex;
+  flex-direction:row-reverse;   /* 10.45 : titre calé à droite, trèfle de ce côté ; ⟳ à gauche */
   align-items:center;
   gap:0.9rem;               /* même écart icône/titre que la case urgente */
-  margin:0 0 0.6rem 0.35rem; /* 0.9 + 0.35 = 1.25rem : trèfle à l'aplomb du « ! » */
+  margin:0 0.35rem 0.6rem 0;
 }
 .lucky-clover{flex:none; width:18px; height:18px; color:var(--phrase);   /* 10.25 : bleu de la phrase (avant : --wait pâli) */ overflow:visible; transform-origin:50% 48%; transition:transform .45s cubic-bezier(.34,1.4,.64,1);}
 /* 8.25 : case fermée chaque matin — un gros bouton ; le trèfle sert de
@@ -1693,7 +1694,7 @@ header{
   letter-spacing:0.07em;
   text-transform:uppercase;
   color:var(--phrase);   /* 10.25 : bleu de la phrase, comme le trèfle (avant : olive citron + encre) */
-  margin-right:auto; /* pousse ⟳ à droite, même enveloppé (8.33) */
+  margin-left:auto; /* pousse ⟳ à l'autre bout, même enveloppé (8.33) */
 }
 .lucky-reroll{
   appearance:none;
@@ -2163,9 +2164,11 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 }
 .add-category-btn{
   appearance:none;
-  border:1px dashed var(--line);
-  background:var(--surface); /* fond blanc, pointillés gardés (9.0) */
-  color:var(--ink-faint);
+  /* 10.45 : citron givré du trèfle, pointillés citron, petit zoom au survol
+     (avant : blanc et gris, peu engageant) */
+  border:1px dashed color-mix(in srgb, var(--lucky-lemon) 70%, transparent);
+  background:var(--lucky-bg);
+  color:var(--phrase);
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.7rem;
   font-weight:600;
@@ -2177,11 +2180,14 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   display:inline-flex;
   align-items:center;
   gap:0.4rem;
+  transition:transform .2s var(--pop-ease), border-color .15s ease, box-shadow .2s ease;
 }
-.add-category-btn:hover{
-  color:var(--accent-strong);
-  border-color:var(--accent);
-  background:var(--accent-soft);
+.add-category-btn:hover, .add-category-btn:focus-visible{
+  outline:none;
+  border-style:solid;
+  border-color:var(--lucky-lemon);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--lucky-lemon) 30%, transparent);
+  transform:scale(1.06);
 }
 
 /* ---------- tâches ---------- */
@@ -3337,6 +3343,7 @@ body.no-list .add-category-row{
   transition:background .15s ease, border-color .15s ease, box-shadow .2s ease, transform .2s ease;
 }
 .add-category-btn.onboarding:hover, .add-category-btn.onboarding:focus-visible{
+  border-style:dashed;
   outline:none;
   background:var(--lucky-bg);
   border-color:var(--lucky-lemon);
@@ -6187,11 +6194,11 @@ function renderNewNotice(){
 // 10.45 : initiales de l'auteur (avant : prénom), et « modif » pour une modification
 function newTagHtml(cat, base){
   const who = personName(base.by, cat.id);
-  return `<span class="new-tag" aria-label="Nouvelle, ajoutée par ${escapeAttr(who)}">new · ${escapeAttr(initialOf(who))}</span>`;
+  return `<span class="new-tag" aria-label="Nouvelle, ajoutée par ${escapeAttr(who)}">new – ${escapeAttr(initialOf(who))}</span>`;
 }
 function editTagHtml(cat, key){
   const who = personName(editInfo(key).by, cat.id);
-  return `<span class="new-tag" aria-label="Modifiée par ${escapeAttr(who)}">modif · ${escapeAttr(initialOf(who))}</span>`;
+  return `<span class="new-tag" aria-label="Modifiée par ${escapeAttr(who)}">modif – ${escapeAttr(initialOf(who))}</span>`;
 }
 // « de André » → « d'André »
 function deName(name){ const n = String(name || "?"); return /^[aeiouyhàâäéèêëîïôöùûü]/i.test(n) ? "d'" + n : "de " + n; }
