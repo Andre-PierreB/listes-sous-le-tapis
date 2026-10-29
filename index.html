@@ -1842,7 +1842,7 @@ header{
 .cat-fold:hover, .cat-fold:focus-visible{ opacity:1; color:var(--cat-color, var(--accent)); background:color-mix(in srgb, var(--cat-color, var(--accent)) 10%, transparent); }
 .cat-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 .cat-fold svg{ display:block; transition:transform .25s ease; }
-.category.collapsed{ align-self:start; padding-bottom:1.5rem; }
+.category.collapsed{ align-self:start; padding-bottom:2.1rem; }   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
 .category.collapsed > ul.items, .category.courses.collapsed .courses-actions{ display:none; }
 /* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
 .category.courses.collapsed .courses-entry{ cursor:auto; }
@@ -1854,7 +1854,8 @@ header{
    liste (comme « nouveau ») ; avant : chiffre gris seul, peu clair */
 .cat-count{
   font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:700; flex:none;
-  min-width:1.3rem; box-sizing:border-box; padding:0.1rem 0.45rem; border-radius:999px; text-align:center; line-height:1.2;
+  min-width:1.3rem; height:1.1rem; box-sizing:border-box; padding:0.34rem 0.45rem 0; border-radius:999px; line-height:1;   /* padding-top : les chiffres de Courier Prime sont hauts, on les recentre dans la bulle */
+  display:inline-flex; align-items:center; justify-content:center;
   background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface));
   color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
 }
@@ -2511,7 +2512,7 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 /* 10.17 : chaque article posé sur une ligne de cahier */
 .courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:calc(2 * var(--row-pad) + 0.15rem + 20px - 1.4 * var(--memo-size)) 0.3rem 0; } /* 10.18 : texte posé sur sa ligne (air au-dessus) ; 10.38 : même hauteur de ligne que les tâches, où c'est la case à cocher qui la donne (18px + 0.15rem + 3px) : 2 × row-pad + case − texte − filet 1px */
 .courses-item:hover{ background:color-mix(in srgb, var(--paper-rule) 30%, transparent); } /* voile léger : la marge rouge reste visible */
-.courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+.courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); color:color-mix(in srgb, var(--ink) 78%, var(--surface)); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
 /* quantité : après le nom (en ligne, pour être barrée avec lui) ; 10.17 : à
    l'encre rose (le rouge reste aux urgences), bien visible, plus de badge gris */
 .courses-qty{
