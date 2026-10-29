@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.50 -->
+<!-- Sous le tapis — version AUTONOME 10.51 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1146,6 +1146,13 @@
     « modif » (elle gardait le surlignage sans l'étiquette). Essayés au banc
     et écartés : liseré de la couleur du survol sur les boutons des petites
     fenêtres, onglet citron autour des titres (« fait magasin de glace »).
+  - 10.51 : titre de « En cours » revenu en --ink-soft (mauve en 10.48-10.50) ;
+    --title-mauve retiré (plus utilisé). Petites fenêtres de tâche (relance,
+    retour d'« En cours ») : fond blanc, titre --ink-soft, boutons dans le
+    code du « + » des listes (.add-btn) sans sa bordure — papier --surface-2
+    et --ink-soft au repos, --accent-soft et --accent-strong au survol. Choisi
+    au banc parmi des codes existants (papier → citron, boutons du bas,
+    10.47), pour ne plus inventer de teinte.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -3722,7 +3729,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.50</span>
+    <span class="version-tag">v10.51</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
