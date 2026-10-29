@@ -1070,6 +1070,10 @@
   --urgent:#9558D0;
   --urgent-soft:#ECDFF8;
   --urgent-ink:#562F96;   /* 10.25 : un rien moins rouge et plus clair (avant #4A2580) */
+  /* 10.40 : fond et titre du bandeau urgent, repris par le cadre de l'accueil
+     (calculés sur les couleurs ci-dessus : suivent le mode sombre) */
+  --ub-bg:color-mix(in srgb, color-mix(in srgb, var(--urgent-soft) 50%, var(--accent-soft)) 70%, var(--surface));   /* 10.25 : fond pâli, tiré vers le bleu (--accent-soft) pour moins de rouge */
+  --ub-title:color-mix(in srgb, var(--urgent-ink) 50%, var(--urgent-soft));   /* 10.25 : titre pâli */
   --late:#A9472A; --late-soft:#FBE7DE;   /* 10.25 : « En retard » en terre cuite */
   --relance:#C24F6E;
   --relance-soft:#F6E3E8;
@@ -1376,7 +1380,6 @@ header{
 /* ---------- case urgente ---------- */
 .urgent-banner{
   margin-top:1.5rem;
-  --ub-bg:color-mix(in srgb, color-mix(in srgb, var(--urgent-soft) 50%, var(--accent-soft)) 70%, var(--surface));   /* 10.25 : fond pâli, tiré vers le bleu (--accent-soft) pour moins de rouge */
   background:var(--ub-bg);
   border-radius:14px;
   padding:1rem 1.25rem;
@@ -1392,7 +1395,7 @@ header{
   font-weight:700;
   letter-spacing:0.1em;
   text-transform:uppercase;
-  color:color-mix(in srgb, var(--urgent-ink) 50%, var(--urgent-soft));   /* 10.25 : titre pâli */
+  color:var(--ub-title);
   margin-bottom:0.55rem;   /* 10.35 : plus d'air sous le titre (avant 0.2rem) */
 }
 .urgent-banner-body{flex:1; min-width:0;}
@@ -3193,13 +3196,13 @@ body.no-list .plume-tag.logged-out{ display:none; }
 .welcome-card{ display:none; }
 body.no-list .welcome-card{
   display:block;
-  background:var(--surface); border-radius:16px; box-shadow:var(--shadow);
+  background:var(--ub-bg); border-radius:16px; box-shadow:var(--shadow);   /* couleurs du bandeau urgent */
   padding:1.05rem 2.2rem 1.1rem;
 }
 .welcome-msg{
   margin:0; text-align:center;   /* une ligne si possible, sinon coupée entre ses deux moitiés */
   font-family:'Public Sans', system-ui, sans-serif; font-size:0.95rem; font-weight:600;
-  line-height:1.4; color:var(--urgent);   /* améthyste, comme le chiffre du compteur */
+  line-height:1.4; color:var(--ub-title);
 }
 .welcome-msg span{ white-space:nowrap; }
 body.no-tasks header{ margin-bottom:2.6rem; }   /* sans compteur : la mention sous la plume (~44px sous le haut du titre) ne touche pas la carte suivante */
