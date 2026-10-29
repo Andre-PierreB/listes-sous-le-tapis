@@ -2918,19 +2918,22 @@ body.cloud #exportBtn, body.cloud #importBtn{ display:none; }
   background:var(--ink);
   color:var(--bg);
   padding:0.7rem 1.15rem;
-  border-radius:999px;
+  border-radius:22px;
   font-size:0.86rem;
   font-weight:500;
   box-shadow:0 12px 32px -8px rgba(0,0,0,0.35);
   opacity:0;
   pointer-events:none;
   transition:opacity .3s ease, transform .3s ease;
-  white-space:nowrap;
+  /* 10.40 : sur deux lignes si besoin (sur téléphone, la phrase débordait de l'écran) */
+  width:max-content; max-width:min(34rem, calc(100vw - 2rem)); box-sizing:border-box;
+  text-align:center; text-wrap:balance;
   z-index:20;
 }
 #toast.show{
   opacity:1;
   transform:translate(-50%, 0);
+  pointer-events:auto; cursor:default;   /* 10.40 : survol = pause, clic = fermer */
 }
 #toast.milestone{
   background:var(--accent-strong);
@@ -9327,17 +9330,32 @@ function actionToast(kind){
 }
 
 let toastTimer;
+// 10.40 : le message reste le temps de le lire (selon sa longueur : 3,5 à
+// 7 s ; avant 1,9 s), s'arrête tant que la souris est dessus, se ferme au clic
+function hideToast(){
+  const toast = document.getElementById("toast");
+  clearTimeout(toastTimer);
+  toast.classList.remove("show");
+  toast.classList.remove("milestone");
+}
+function toastDelay(msg, milestone){
+  return Math.min(7000, Math.max(3500, 1500 + msg.length * 55)) + (milestone ? 1000 : 0);
+}
 function celebrate(forcedMsg, plain){
   const toast = document.getElementById("toast");
   const msg = forcedMsg || CELEBRATION_MESSAGES[Math.floor(Math.random()*CELEBRATION_MESSAGES.length)];
+  const milestone = !!forcedMsg && !plain;
   toast.textContent = msg;
-  toast.classList.toggle("milestone", !!forcedMsg && !plain);
+  toast.classList.toggle("milestone", milestone);
   toast.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=> {
-    toast.classList.remove("show");
-    toast.classList.remove("milestone");
-  }, (forcedMsg && !plain) ? 2600 : 1900);
+  toastTimer = setTimeout(hideToast, toastDelay(msg, milestone));
+  if(!toast.dataset.wired){
+    toast.dataset.wired = "1";
+    toast.addEventListener("mouseenter", ()=> clearTimeout(toastTimer));
+    toast.addEventListener("mouseleave", ()=>{ if(toast.classList.contains("show")) toastTimer = setTimeout(hideToast, 1500); });
+    toast.addEventListener("click", e=>{ e.stopPropagation(); hideToast(); });
+  }
 }
 
 // Écouteurs globaux pour tout le geste de glisser-déposer, posés une seule
