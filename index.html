@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.42 -->
+<!-- Sous le tapis — version AUTONOME 10.43 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1082,6 +1082,16 @@
     (rotate 90°), pendant de la flèche du volet en bas à droite, visible en
     permanence comme elle ; la place à gauche du titre (10.41) marchait mal.
     Titres revenus comme en 10.40 (plus de décalage de .cat-head).
+  - 10.43 : poignées des tâches (.item .drag-handle) calées sur la 1re ligne
+    (line-height 18px + 0.15rem en haut : même centre que la case, l'œuf et
+    le rond des mémos), au lieu du milieu d'une tâche sur plusieurs lignes.
+    Picto du détail plus grand (16 px) et dans le jaune du trèfle foncé ;
+    survol / ouvert sur --lucky-bg ; reste mauve dans la case urgente.
+    Liste repliée : tâches restantes dans une bulle à la couleur de la liste
+    (chiffre recentré : ceux de Courier Prime sont hauts) ; carte repliée un
+    peu plus haute (2.1rem en bas) pour saisir la poignée sans attraper le
+    titre. Texte des mémos un peu adouci (encre à 78 %). « En cours » :
+    marge droite vérifiée, déjà comme ailleurs.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1608,7 +1618,7 @@ header{
   line-height:1.4;
 }
 .urgent-list .note-toggle{ color:color-mix(in srgb, var(--urgent-ink) 45%, transparent); }
-.urgent-list .note-toggle:hover{ color:var(--urgent-ink); }
+.urgent-list .note-toggle:hover{ color:var(--urgent-ink); background:transparent; }   /* 10.43 : pas le jaune des listes dans la case urgente */
 .urgent-list li.note-open .note-toggle{ color:var(--urgent-ink); background:var(--urgent-soft); }
 /* relance arrivée (tâche en cours dont la date est là) — 10.23 : dans la
    case urgente, plus de couleur à part (avant : framboise --relance) : elle
@@ -1842,7 +1852,7 @@ header{
 .cat-fold:hover, .cat-fold:focus-visible{ opacity:1; color:var(--cat-color, var(--accent)); background:color-mix(in srgb, var(--cat-color, var(--accent)) 10%, transparent); }
 .cat-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 .cat-fold svg{ display:block; transition:transform .25s ease; }
-.category.collapsed{ align-self:start; padding-bottom:1.5rem; }
+.category.collapsed{ align-self:start; padding-bottom:2.1rem; }   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
 .category.collapsed > ul.items, .category.courses.collapsed .courses-actions{ display:none; }
 /* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
 .category.courses.collapsed .courses-entry{ cursor:auto; }
@@ -1850,7 +1860,15 @@ header{
 .category.courses.collapsed{ cursor:pointer; } /* 10.18 : toute la carte repliée se déplie d'un clic */
 .category.courses .cat-head{ cursor:pointer; } /* 10.19 : ouverte, un clic sur le bandeau (hors titre) la replie */
 .category.courses .cat-title{ cursor:auto; }
-.cat-count{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:700; color:var(--ink-faint); flex:none; }
+/* 10.43 : liste repliée, tâches restantes dans une bulle à la couleur de la
+   liste (comme « nouveau ») ; avant : chiffre gris seul, peu clair */
+.cat-count{
+  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.7rem; font-weight:700; flex:none;
+  min-width:1.3rem; height:1.1rem; box-sizing:border-box; padding:0.34rem 0.45rem 0; border-radius:999px; line-height:1;   /* padding-top : les chiffres de Courier Prime sont hauts, on les recentre dans la bulle */
+  display:inline-flex; align-items:center; justify-content:center;
+  background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface));
+  color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
+}
 @media (prefers-reduced-motion: reduce){ .cat-fold svg{ transition:none; } }
 .cat-head{
   display:flex;
@@ -2194,7 +2212,13 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
    classe « revealed » (8.39, voir la section des écrans tactiles) */
 @media (hover:hover){ .item:hover .item-controls{opacity:1;} }
 .item:has(:focus-visible) .item-controls{opacity:1;}
-.item .drag-handle{ opacity:0; transition:opacity .15s ease; }
+.item .drag-handle{
+  opacity:0; transition:opacity .15s ease;
+  /* 10.43 : calée sur la 1re ligne, comme la case, l'œuf ou le rond des mémos
+     (centre à 0.15rem + 9px) : ne descend plus au milieu d'une tâche sur
+     plusieurs lignes */
+  align-self:flex-start; align-items:flex-start; line-height:18px; padding-top:0.15rem;
+}
 .item:hover .drag-handle{ opacity:1; }
 .item.dragging{opacity:0.4;}
 .item-text{
@@ -2233,15 +2257,15 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
   margin-left:0.35rem;
   padding:1px 4px;
   border-radius:5px;
-  color:var(--ink-faint);
+  color:color-mix(in srgb, var(--lucky-lemon) 62%, var(--ink));   /* 10.43 : jaune du trèfle, foncé pour se lire (avant : gris pâle), et plus grand */
   cursor:pointer;
   transition:color .15s ease, background .15s ease;
 }
 .note-toggle svg{ display:block; }
 .note-tail{ white-space:nowrap; } /* dernier mot + sigle (8.39) */
 .item[data-note-key], .note-toggle{ -webkit-tap-highlight-color:transparent; }
-.note-toggle:hover{ color:var(--ink-soft); }
-.note-open .note-toggle{ color:var(--accent-strong); background:var(--accent-soft); }
+.note-toggle:hover{ color:color-mix(in srgb, var(--lucky-lemon) 45%, var(--ink)); background:var(--lucky-bg); }
+.note-open .note-toggle{ color:color-mix(in srgb, var(--lucky-lemon) 45%, var(--ink)); background:var(--lucky-bg); }
 .item.is-checked .note-toggle{ opacity:0.6; }
 .item input[type="checkbox"]{
   appearance:none;
@@ -2498,7 +2522,7 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 /* 10.17 : chaque article posé sur une ligne de cahier */
 .courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:calc(2 * var(--row-pad) + 0.15rem + 20px - 1.4 * var(--memo-size)) 0.3rem 0; } /* 10.18 : texte posé sur sa ligne (air au-dessus) ; 10.38 : même hauteur de ligne que les tâches, où c'est la case à cocher qui la donne (18px + 0.15rem + 3px) : 2 × row-pad + case − texte − filet 1px */
 .courses-item:hover{ background:color-mix(in srgb, var(--paper-rule) 30%, transparent); } /* voile léger : la marge rouge reste visible */
-.courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+.courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); color:color-mix(in srgb, var(--ink) 78%, var(--surface)); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
 /* quantité : après le nom (en ligne, pour être barrée avec lui) ; 10.17 : à
    l'encre rose (le rouge reste aux urgences), bien visible, plus de badge gris */
 .courses-qty{
@@ -3586,7 +3610,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.42</span>
+    <span class="version-tag">v10.43</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -7740,8 +7764,8 @@ function toggleNoteOpen(key){
 // entièrement cliquable) et le détail enveloppé dans son pli animé.
 function noteToggleHtml(asButton, open){
   return asButton
-    ? `<button type="button" class="note-toggle" aria-expanded="${open ? "true" : "false"}" aria-label="Détail">${noteSvg(14)}</button>`
-    : `<span class="note-toggle" aria-hidden="true">${noteSvg(13)}</span>`;
+    ? `<button type="button" class="note-toggle" aria-expanded="${open ? "true" : "false"}" aria-label="Détail">${noteSvg(16)}</button>`
+    : `<span class="note-toggle" aria-hidden="true">${noteSvg(15)}</span>`;
 }
 // 8.39 : le sigle suit directement le titre, collé à son dernier mot (les
 // deux dans un même bloc insécable : ils passent à la ligne ensemble).
