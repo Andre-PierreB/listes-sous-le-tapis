@@ -1186,8 +1186,8 @@
     dans le panneau Partage.
     Case urgente : double-clic sur une tâche = sa fenêtre de modification,
     ouverte à sa place dans sa liste (rouverte si repliée) ou dans « En
-    cours » (editUrgentEntry). Papier des mémos : blanc chaud #FCFBF7, uni (choisi au banc). Banc du
-    bord des listes : essai.html?bord.
+    cours » (editUrgentEntry). Papier des mémos : blanc chaud #FCFBF7, uni (choisi au banc). Bord des
+    listes : barre franche détachée, du titre à deux lignes du bas.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1889,8 +1889,9 @@ header{
 /* liste : fond blanc, seul le liseré coloré à gauche */
 .category{
   background:var(--surface);
-  /* liseré à la couleur de la liste, adouci (8.14) */
-  border-left:3px solid color-mix(in srgb, var(--cat-color, var(--accent)) 40%, var(--surface));
+  /* liseré à la couleur de la liste, adouci (8.14) ; 10.53 : remplacé par la
+     barre ci-dessous — le bord de 3px reste, transparent, pour que rien ne bouge */
+  border-left:3px solid transparent;
   border-radius:14px;
   padding:1.15rem 1.25rem 1.3rem;
   box-shadow:var(--shadow);
@@ -1899,6 +1900,15 @@ header{
   gap:0.65rem;
   min-width:0;   /* 10.20 : un contenu large ne pousse plus la carte */
 }
+/* 10.53 : barre franche à la couleur de la liste, détachée des coins : elle
+   part du titre et s'arrête deux lignes avant le bas (choisie au banc parmi
+   bord plein, bande en haut, sans bord, arc du coin…). Pas sur les mémos,
+   qui ont leur marge de cahier. */
+.category:not(.courses)::before{
+  content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:3px;
+  background:var(--cat-color, var(--accent));
+}
+.category.collapsed:not(.courses)::before{ bottom:1.05rem; }   /* repliée : la barre longe le titre */
 .category.done{ opacity:0.62; }
 /* 10.15 : liste de courses — hauteur bornée (--courses-max, posé par
    fitCoursesCards) ; au-delà, seule la zone des articles défile, le titre,
@@ -3788,38 +3798,7 @@ body.ios-gate-on{ overflow:hidden; }
   background:var(--accent-soft); color:var(--ink-soft); font-size:0.84rem; text-align:center; }
 .ib-btns{ display:inline-flex; gap:0.4rem; }
 
-/* 10.53 : banc d'essai du papier des mémos (essai.html?papier) */
-.papier-bench{ position:fixed; right:1rem; bottom:1rem; z-index:8000; width:15rem; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:0.8rem; box-shadow:0 10px 30px rgba(40,50,60,.15); font-size:0.85rem; color:var(--ink); }
-.pb-title{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; font-size:0.75rem; color:var(--ink-soft); margin-bottom:0.5rem; }
-.pb-opt{ display:flex; align-items:center; gap:0.5rem; width:100%; font:inherit; text-align:left; background:none; border:1px solid transparent; border-radius:8px; padding:0.3rem 0.4rem; cursor:pointer; color:var(--ink); }
-.pb-opt:hover{ background:var(--surface-2); }
-.pb-opt.on{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--surface)); }
-.pb-sw{ width:1.6rem; height:1.1rem; border-radius:4px; border:1px solid rgba(0,0,0,.12); flex:none; }
-.pb-sw-row{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; cursor:pointer; }
 
-/* 10.53 : banc du bord des listes (essai.html?bord) — rien ne bouge : le
-   bord de 3px reste, transparent, et la variante est dessinée par-dessus */
-body[class*="bord-"]:not(.bord-actuel):not(.bord-plein) .category:not(.courses){ border-left-color:transparent; }
-body[class*="bord-"] .category:not(.courses){ --bord-c:color-mix(in srgb, var(--cat-color, var(--accent)) 40%, var(--surface)); --bord-w:3px; }
-body.bord-pleine .category:not(.courses){ --bord-c:var(--cat-color, var(--accent)); }
-body.bord-epais .category:not(.courses){ --bord-w:5px; }
-body.bord-actuel .category:not(.courses){ border-left-color:var(--bord-c); border-left-width:var(--bord-w); }
-body.bord-droit .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.1rem; bottom:1.1rem; width:var(--bord-w); background:var(--bord-c); }
-body.bord-plein .category:not(.courses){ border-top-left-radius:3px; border-bottom-left-radius:3px; border-left-color:var(--bord-c); border-left-width:var(--bord-w); }
-/* 2e tour : un repère court à hauteur du titre (rien à voir avec une barre de
-   défilement), et une barre détachée qui commence au titre, plus courte en bas */
-body.bord-titre .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; height:1.5rem; width:var(--bord-w); background:var(--bord-c); border-radius:0 2px 2px 0; }
-body.bord-mi .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; height:calc(50% - 1.05rem); width:var(--bord-w); background:var(--bord-c); }
-body.bord-tiers .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; height:calc(33% - 1.05rem); min-height:1.5rem; width:var(--bord-w); background:var(--bord-c); }
-body.bord-fondu .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; bottom:1.4rem; width:var(--bord-w); background:linear-gradient(var(--bord-c) 40%, transparent); }
-body.bord-coin .category:not(.courses)::before{ content:""; position:absolute; left:0; top:0.9rem; bottom:2.2rem; width:var(--bord-w); background:var(--bord-c); }
-body.bord-ronds .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:var(--bord-w); background:var(--bord-c); border-radius:999px; }
-/* l'arc reprend la courbe du coin de la carte (bord gauche arrondi qui s'effile), puis s'arrête avant le bas */
-body.bord-arc .category:not(.courses)::before{ content:""; position:absolute; left:calc(-1 * var(--bord-w)); top:0; bottom:2.2rem; width:14px; border-left:var(--bord-w) solid var(--bord-c); border-top-left-radius:14px; box-sizing:border-box; }
-body.bord-crochet .category:not(.courses)::before{ content:""; position:absolute; left:calc(-1 * var(--bord-w)); top:0; bottom:2.2rem; width:12px; border-left:var(--bord-w) solid var(--bord-c); border-bottom:var(--bord-w) solid var(--bord-c); border-top-left-radius:14px; border-bottom-left-radius:10px; box-sizing:border-box; }
-body.bord-flotte .category:not(.courses)::before{ content:""; position:absolute; left:5px; top:1.05rem; bottom:2.2rem; width:var(--bord-w); background:var(--bord-c); border-radius:999px; }
-body.bord-longtitre .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:var(--bord-w); background:var(--bord-c); }
-body.bord-haut .category:not(.courses)::before{ content:""; position:absolute; left:1.25rem; right:1.25rem; top:0; height:var(--bord-w); background:var(--bord-c); }
 </style>
 
 <div class="wrap">
@@ -11791,44 +11770,5 @@ if(Store.mode === "doc" && !isStandaloneApp()){
   setTimeout(()=>{ if(!Sync.user && openLoginAt && !(relancePop && relancePop.classList.contains("sync-pop"))) openLoginAt(); }, 500);
 }
 
-// ---- 10.53 : banc d'essai du bord des listes (essai.html?bord) ----
-// Le liseré de couleur à gauche des listes : quelques variantes plus
-// franches, appliquées en direct (classe sur <body>). Rien en ligne ; le
-// choix est gardé dans ce navigateur. (Le banc du papier a servi : blanc chaud.)
-if(ESSAI && /[?&](bord|papier)/.test(location.search)) (()=>{
-  // 4e tour : base retenue (du titre, s'arrête 2 lignes avant le bas) ;
-  // couleur franche ou non, et des fins qui rappellent les coins ronds
-  const P = [
-    ["actuel",    "Référence : l'actuel"],
-    ["longtitre", "Retenue, bouts droits"],
-    ["ronds",     "Retenue, bouts arrondis"],
-    ["arc",       "Suit l'arrondi du coin haut, s'arrête avant le bas"],
-    ["crochet",   "Arrondi en haut et petit retour arrondi en bas"],
-    ["flotte",    "Trait flottant, décollé du bord, bouts ronds"],
-  ];
-  const K = "sltapis-essai-bord-4";
-  let st = { v:"arc", full:true, thick:false };
-  try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
-  st.thick = false;
-  const box = document.createElement("div");
-  box.className = "papier-bench";
-  document.body.appendChild(box);
-  const apply = ()=>{
-    P.forEach(([v]) => document.body.classList.toggle("bord-" + v, st.v === v));
-    document.body.classList.toggle("bord-pleine", st.full);
-    document.body.classList.toggle("bord-epais", st.thick);
-    try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){}
-    paint();
-  };
-  function paint(){
-    box.innerHTML = `<div class="pb-title">Bord des listes</div>`
-      + P.map(([v, l]) => `<button type="button" class="pb-opt${v === st.v ? " on" : ""}" data-v="${v}">${l}</button>`).join("")
-      + `<label class="pb-sw-row"><input type="checkbox" data-k="full"${st.full ? " checked" : ""}> Couleur franche</label>`;
-    box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", e=>{ e.stopPropagation(); st.v = b.dataset.v; apply(); }));
-    box.querySelectorAll("input").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; apply(); }));
-  }
-  box.addEventListener("click", e => e.stopPropagation());
-  apply();
-})();
 Sync.start();
 </script>
