@@ -1176,6 +1176,11 @@
     discrète, rien de bloqué. Icône, première ouverture : la connexion
     s'ouvre seule. Ordinateur / Android inchangés. Voir « 10.53 : sur
     iPhone / iPad » en bas du code.
+    Modifications uniformisées : Annuler / Enregistrer aussi dans la
+    modification d'une liste (Annuler et Échap remettent couleur et partage
+    d'avant, catEditSnap ; clic à côté = Enregistrer) et d'un article de
+    mémo ; double-clic sur un article de mémo pour le modifier ; + à côté du
+    titre d'un mémo : article, quantité et détail.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2898,6 +2903,8 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
   color:var(--urgent-ink);
   border-color:var(--urgent);
 }
+.cat-edit-actions{ margin:0.5rem 0 0.2rem; justify-content:flex-end; }   /* 10.53 : bas de la modification d'une liste */
+.courses-edit .edit-actions{ flex-basis:100%; margin-top:0.1rem; }
 .edit-actions{
   display:flex;
   gap:0.5rem;
@@ -2988,7 +2995,7 @@ body.has-editing .add-category-row.active{
 body.has-editing .category:has(.item.editing) ul.items > li.item:not(.editing),
 body.has-editing .category:has(.add-form-row) ul.items > li.item:not(.add-form-row),
 body.has-editing .section-block:has(.item.editing) ul.items > li.item:not(.editing),
-body.has-editing .category:has(.cat-title-input) > *:not(.cat-head):not(.cat-swatches):not(.cat-share):not(.cat-convert),   /* 10.21 : « Convertir » reste cliquable */
+body.has-editing .category:has(.cat-title-input) > *:not(.cat-head):not(.cat-swatches):not(.cat-share):not(.cat-convert):not(.cat-edit-actions),   /* 10.21 : « Convertir » reste cliquable */
 body.has-editing .category:has(.cat-title-input) .cat-head .add-btn,
 body.has-editing .category:has(.cat-title-input) .cat-head-right{
   opacity:0.32;
@@ -5911,6 +5918,23 @@ let editingKey = null;
 let addingCat = null;
 let addingCategory = false;
 let editingCategoryTitle = null; // id de la case dont le titre est en cours de renommage
+// 10.53 : Annuler la modification d'une liste : couleur et partage reviennent
+let catEditSnap = null;
+function cancelCatEdit(){
+  const snap = catEditSnap;
+  catEditSnap = null;
+  editingCategoryTitle = null;
+  if(!snap) return;
+  try{
+    const cat = DATA.find(c => c.id === snap.id);
+    if(cat && snap.color && cat.color !== snap.color) recolorCategory(cat.id, snap.color);
+    const now = ((listInfo(snap.id) || { members:[] }).members || []).slice();
+    if(iOwnList(snap.id)){
+      now.filter(u => !snap.members.includes(u) && u !== myUid()).forEach(u => setListSharedWith(snap.id, u, false));
+      snap.members.filter(u => !now.includes(u) && u !== myUid()).forEach(u => setListSharedWith(snap.id, u, true));
+    }
+  }catch(err){ console.error("[liste] annuler", err); }
+}
 // Clé de la tâche qu'on vient de cocher, le temps d'un seul passage de rendu :
 // sert à déclencher l'animation "coup de crayon" une seule fois (voir
 // buildItemLi et l'animation CSS .just-checked), puis remise à null juste
@@ -8233,8 +8257,15 @@ function buildItemLi(cat, idx, base, key, opts){
           <button type="button" class="qty-step" data-d="1" aria-label="Un de plus">+</button>
         </span>
         <input type="text" class="courses-edit-note" value="${escapeAttr(eff.note || "")}" placeholder="Détail (optionnel)" aria-label="Détail" autocomplete="off" enterkeyhint="done">
+        <span class="edit-actions">
+          <button type="button" class="edit-cancel">Annuler</button>
+          <button type="button" class="edit-save">Enregistrer</button>
+        </span>
       </span>
     `;
+    // 10.53 : boutons comme dans la modification d'une tâche
+    li.querySelector(".edit-cancel").addEventListener("click", e=>{ e.stopPropagation(); editingCoursesKey = null; renderAll(); });
+    li.querySelector(".edit-save").addEventListener("click", e=>{ e.stopPropagation(); commitCoursesEdit(); });
     const nameInp = li.querySelector(".courses-edit-name"), qtyInp = li.querySelector(".courses-edit-qty");
     const noteInp = li.querySelector(".courses-edit-note");
     li.querySelectorAll(".qty-step").forEach(b=>{
@@ -8297,6 +8328,13 @@ function buildItemLi(cat, idx, base, key, opts){
     }
     li.querySelector(".courses-edit-btn").addEventListener("click", e=>{
       e.stopPropagation();
+      editingCoursesKey = key;
+      renderAll();
+    });
+    // 10.53 : double-clic pour modifier, comme une tâche
+    li.querySelector(".item-text").addEventListener("dblclick", e=>{
+      e.stopPropagation();
+      if(eff.note) toggleNoteOpen(key);   // rend l'état d'avant le 1er clic du double-clic
       editingCoursesKey = key;
       renderAll();
     });
@@ -8847,6 +8885,9 @@ function render(){
     }
 
     const renamingThisCat = editingCategoryTitle === cat.id;
+    // 10.53 : état de la liste à l'ouverture de la modification (pour Annuler)
+    if(renamingThisCat && (!catEditSnap || catEditSnap.id !== cat.id))
+      catEditSnap = { id: cat.id, color: cat.color, members: ((listInfo(cat.id) || { members:[] }).members || []).slice() };
     const reversed = isCatReversed(cat.id);
     const newBottom = newestAtBottom(cat.id);
     const head = document.createElement("div");
@@ -8856,7 +8897,7 @@ function render(){
       <span class="cat-title-group">
         ${renamingThisCat
           ? `<input type="text" class="cat-title-input" value="${escapeAttr(cat.title)}">`
-          : `${courses ? BASKET_SVG : ""}<span class="cat-title-line"><span class="cat-title">${escapeAttr(cat.title)}</span>${courses ? "" : `<button type="button" class="add-btn" aria-label="Ajouter une tâche"><span class="g">+</span></button>`}</span>${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} ${courses ? "à prendre" : "à faire"}">${leftCount}</span>` : ""}`}
+          : `${courses ? BASKET_SVG : ""}<span class="cat-title-line"><span class="cat-title">${escapeAttr(cat.title)}</span><button type="button" class="add-btn" aria-label="${courses ? "Ajouter un article avec détail" : "Ajouter une tâche"}"><span class="g">+</span></button></span>${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} ${courses ? "à prendre" : "à faire"}">${leftCount}</span>` : ""}`}
         ${renamingThisCat && !courses ? `<button type="button" class="add-btn" aria-label="Ajouter une tâche"><span class="g">+</span></button>` : ""}
         ${renamingThisCat || courses ? "" : `<label class="cat-quick-wrap" title="Ajouter une tâche"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" placeholder="Nouvelle tâche…" aria-label="Ajouter une tâche à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
       </span>
@@ -8911,7 +8952,8 @@ function render(){
       });
       if(refocusQuickCat === cat.id) requestAnimationFrame(()=> quickInp.focus());
     }
-    if(!courses) head.querySelector(".add-btn").addEventListener("click", (e)=>{
+    const addBtnEl = head.querySelector(".add-btn");   // 10.53 : aussi sur les mémos
+    if(addBtnEl) addBtnEl.addEventListener("click", (e)=>{
       e.stopPropagation();
       addingCat = addingCat === cat.id ? null : cat.id;
       const typed = quickInp ? quickInp.value.trim() : "";
@@ -8936,7 +8978,7 @@ function render(){
       titleInput.addEventListener("click", e=> e.stopPropagation());
       titleInput.addEventListener("keydown", e=>{
         if(e.key === "Enter"){ e.preventDefault(); saveTitle(); }
-        if(e.key === "Escape"){ editingCategoryTitle = null; renderAll(); }
+        if(e.key === "Escape"){ cancelCatEdit(); renderAll(); }
       });
       titleInput.focus();
       titleInput.select();
@@ -8976,6 +9018,21 @@ function render(){
       const convRow = buildCatConvertRow(cat, head);
       if(convRow) card.appendChild(convRow);
       card.appendChild(buildCatCopyRow(cat));   // 10.27
+      // 10.53 : Annuler / Enregistrer, comme dans la modification d'une tâche.
+      // Annuler remet aussi la couleur et le partage d'avant.
+      const act = document.createElement("div");
+      act.className = "edit-actions cat-edit-actions";
+      act.innerHTML = `<button type="button" class="edit-cancel">Annuler</button><button type="button" class="edit-save">Enregistrer</button>`;
+      act.addEventListener("mousedown", e => e.preventDefault());   // le titre garde ce qu'on a tapé
+      act.addEventListener("click", e => e.stopPropagation());
+      act.querySelector(".edit-save").addEventListener("click", ()=>{
+        const ti = head.querySelector(".cat-title-input");
+        if(ti) renameCategory(cat.id, ti.value);
+        editingCategoryTitle = null; catEditSnap = null;
+        renderAll();
+      });
+      act.querySelector(".edit-cancel").addEventListener("click", ()=>{ cancelCatEdit(); renderAll(); });
+      card.appendChild(act);
     }
 
     const ul = document.createElement("ul");
@@ -9005,6 +9062,49 @@ function render(){
       if(built.focus) requestAnimationFrame(built.focus);
     });
 
+    // 10.53 : + d'un mémo : article, quantité et détail, comme le + des listes
+    if(addingCat === cat.id && courses){
+      const li = document.createElement("li");
+      li.className = "item add-form-row";
+      li.innerHTML = `
+        <div class="edit-form">
+          <input type="text" class="add-title" placeholder="Nouvel article" autocomplete="off">
+          <input type="text" class="add-qty" placeholder="Quantité (optionnel)" autocomplete="off">
+          <input type="text" class="add-note" placeholder="Détail (optionnel)" autocomplete="off">
+          <div class="edit-actions">
+            <button type="button" class="add-cancel">Annuler</button>
+            <button type="button" class="add-save">Ajouter</button>
+          </div>
+        </div>`;
+      const tIn = li.querySelector(".add-title"), qIn = li.querySelector(".add-qty"), nIn = li.querySelector(".add-note");
+      const save = ()=>{
+        const t = coursesCleanLine(tIn.value);
+        if(!t){ tIn.focus(); return; }
+        try{
+          const item = { t: capFirst(t) };
+          const q = normCoursesQty(qIn.value);
+          if(q) item.q = q;
+          const note = nIn.value.trim();
+          if(note) item.note = note;
+          const idx = insertItem(cat, item);
+          coursesHistoryAdd(cat.id, [item.t]);
+          coursesScrollTo = { catId: cat.id, key: itemKey(cat.id, idx) };
+          actionToast("add");
+        }catch(err){ console.error("[courses] ajout avec détail", err); }
+        addingCat = null;
+        renderAll();
+      };
+      li.querySelector(".add-save").addEventListener("click", save);
+      li.querySelector(".add-cancel").addEventListener("click", ()=>{ addingCat = null; renderAll(); });
+      li.addEventListener("click", e => e.stopPropagation());
+      [tIn, qIn, nIn].forEach(inp => inp.addEventListener("keydown", e=>{
+        if(e.isComposing) return;
+        if(e.key === "Enter"){ e.preventDefault(); save(); }
+        if(e.key === "Escape"){ addingCat = null; renderAll(); }
+      }));
+      ul.insertBefore(li, ul.firstChild);
+      requestAnimationFrame(()=> tIn.focus());
+    }
     if(addingCat === cat.id && !courses){
       const li = document.createElement("li");
       li.className = "item add-form-row";
@@ -9846,7 +9946,10 @@ document.addEventListener("click", (e)=>{
     if(titleInputEl && titleInputEl.contains(e.target)) return;
     if(e.target.closest(".cat-swatches")) return; // choisir une couleur garde le renommage ouvert
     if(e.target.closest(".cat-share")) return;    // 10.2 : cocher un nom aussi
-    editingCategoryTitle = null;
+    // 10.53 : clic à côté = Enregistrer (ce qu'on voit reste) ; Échap = Annuler
+    const ti = document.querySelector(".cat-title-input");
+    if(ti && editingCategoryTitle) renameCategory(editingCategoryTitle, ti.value);
+    editingCategoryTitle = null; catEditSnap = null;
     renderAll();
   }
 });
@@ -9856,7 +9959,7 @@ document.addEventListener("click", (e)=>{
 // titre en cours de frappe n'est pas enregistré, comme avant.
 document.addEventListener("keydown", (e)=>{
   if(e.key !== "Escape" || !editingCategoryTitle || relancePop) return;
-  editingCategoryTitle = null;
+  cancelCatEdit();   // 10.53 : Échap = Annuler (couleur et partage d'avant)
   renderAll();
 });
 
