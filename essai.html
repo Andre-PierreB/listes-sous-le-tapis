@@ -1186,7 +1186,8 @@
     dans le panneau Partage.
     Case urgente : double-clic sur une tâche = sa fenêtre de modification,
     ouverte à sa place dans sa liste (rouverte si repliée) ou dans « En
-    cours » (editUrgentEntry). Banc du papier des mémos : essai.html?papier.
+    cours » (editUrgentEntry). Papier des mémos : blanc chaud #FCFBF7, uni (choisi au banc). Banc du
+    bord des listes : essai.html?bord.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1217,9 +1218,12 @@
   --btn-ink:#4A5E6E;  /* boutons du bas : ardoise, famille de l'icône (8.41) */
   --accent-soft:#E4ECF3;
   --plume-off:var(--ink-faint);   /* 10.23 : gris (avant : tomate #E5675A) */
-  --gloss:rgba(255,255,255,1);   /* 10.23 : reflet « papier glacé » des mémos ; 10.25 : plein blanc */
-  --memo-a:#FFFFFF; --memo-b:#F4F7FC; --memo-c:#F9F5FC;   /* 10.25 : papier nacré léger (version « plus discret ») */
-  --memo-line:rgba(150,160,200,.28);
+  /* 10.53 : papier des mémos « blanc chaud », uni, sans reflet ni liseré
+     (choisi au banc ; avant : nacre #FFFFFF / #F4F7FC / #F9F5FC, reflet
+     blanc plein, liseré rgba(150,160,200,.28)) */
+  --gloss:rgba(255,255,255,0);
+  --memo-a:#FCFBF7; --memo-b:#FCFBF7; --memo-c:#FCFBF7;
+  --memo-line:rgba(0,0,0,0);
   /* 10.19 : vert du logo (le faisan) pour le titre et la plume connectée ;
      --logo-green-strong au survol du titre */
   --logo-green:#7DB536;   /* un cran sous le vert du logo #8DC63F, trop pâle pour un petit titre */
@@ -3792,6 +3796,17 @@ body.ios-gate-on{ overflow:hidden; }
 .pb-opt.on{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--surface)); }
 .pb-sw{ width:1.6rem; height:1.1rem; border-radius:4px; border:1px solid rgba(0,0,0,.12); flex:none; }
 .pb-sw-row{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; cursor:pointer; }
+
+/* 10.53 : banc du bord des listes (essai.html?bord) — rien ne bouge : le
+   bord de 3px reste, transparent, et la variante est dessinée par-dessus */
+body[class*="bord-"]:not(.bord-actuel):not(.bord-plein) .category:not(.courses){ border-left-color:transparent; }
+body[class*="bord-"] .category:not(.courses){ --bord-c:color-mix(in srgb, var(--cat-color, var(--accent)) 40%, var(--surface)); --bord-w:3px; }
+body.bord-pleine .category:not(.courses){ --bord-c:var(--cat-color, var(--accent)); }
+body.bord-epais .category:not(.courses){ --bord-w:5px; }
+body.bord-actuel .category:not(.courses){ border-left-color:var(--bord-c); border-left-width:var(--bord-w); }
+body.bord-droit .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.1rem; bottom:1.1rem; width:var(--bord-w); background:var(--bord-c); }
+body.bord-plein .category:not(.courses){ border-top-left-radius:3px; border-bottom-left-radius:3px; border-left-color:var(--bord-c); border-left-width:var(--bord-w); }
+body.bord-haut .category:not(.courses)::before{ content:""; position:absolute; left:1.25rem; right:1.25rem; top:0; height:var(--bord-w); background:var(--bord-c); }
 </style>
 
 <div class="wrap">
@@ -11763,45 +11778,37 @@ if(Store.mode === "doc" && !isStandaloneApp()){
   setTimeout(()=>{ if(!Sync.user && openLoginAt && !(relancePop && relancePop.classList.contains("sync-pop"))) openLoginAt(); }, 500);
 }
 
-// ---- 10.53 : banc d'essai du papier des mémos (essai.html?papier seulement) ----
-// Un petit panneau en bas à droite : propositions de papier et interrupteurs,
-// appliqués en direct aux vrais mémos, à côté des autres listes. Rien n'est
-// enregistré en ligne ; le choix est gardé dans ce navigateur pour comparer.
-if(ESSAI && /[?&]papier/.test(location.search)) (()=>{
-  // 2e tour : autour du « recyclé clair », plus clair et plus net, un peu chaud
+// ---- 10.53 : banc d'essai du bord des listes (essai.html?bord) ----
+// Le liseré de couleur à gauche des listes : quelques variantes plus
+// franches, appliquées en direct (classe sur <body>). Rien en ligne ; le
+// choix est gardé dans ce navigateur. (Le banc du papier a servi : blanc chaud.)
+if(ESSAI && /[?&](bord|papier)/.test(location.search)) (()=>{
   const P = [
-    ["Actuel (nacre)",            "#FFFFFF", "#F4F7FC", "#F9F5FC"],
-    ["Recyclé clair (1er tour)",  "#F8F6F0", "#F3F1EA", "#EFECE4"],
-    ["Recyclé plus clair",        "#F6F4EE", "#F6F4EE", "#F6F4EE"],
-    ["Recyclé très clair",        "#F8F7F2", "#F8F7F2", "#F8F7F2"],
-    ["Ivoire frais",              "#FAF9F4", "#FAF9F4", "#FAF9F4"],
-    ["Crème légère",              "#FBF8F0", "#FBF8F0", "#FBF8F0"],
-    ["Coquille d'œuf",            "#FAF7F1", "#FAF7F1", "#FAF7F1"],
-    ["Papier blanc chaud",        "#FCFBF7", "#FCFBF7", "#FCFBF7"],
+    ["actuel", "Actuel (fin, arrondi, adouci)"],
+    ["droit",  "Barre droite, détachée des coins"],
+    ["plein",  "Bord plein, coins gauches droits"],
+    ["haut",   "Bande en haut"],
+    ["aucun",  "Sans bord (titre en couleur)"],
   ];
-  const K = "sltapis-essai-papier-2";
-  let st = { i:3, gloss:false, grad:false, line:false };
+  const K = "sltapis-essai-bord";
+  let st = { v:"droit", full:true, thick:false };
   try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
-  const root = document.documentElement.style;
-  const apply = ()=>{
-    const [, a, b, c] = P[st.i] || P[0];
-    root.setProperty("--memo-a", st.grad ? a : b);
-    root.setProperty("--memo-b", b);
-    root.setProperty("--memo-c", st.grad ? c : b);
-    root.setProperty("--gloss", st.gloss ? "rgba(255,255,255,1)" : "rgba(255,255,255,0)");
-    root.setProperty("--memo-line", st.line ? "rgba(150,160,200,.28)" : "rgba(0,0,0,0)");
-    try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){}
-    paint();
-  };
   const box = document.createElement("div");
   box.className = "papier-bench";
   document.body.appendChild(box);
+  const apply = ()=>{
+    P.forEach(([v]) => document.body.classList.toggle("bord-" + v, st.v === v));
+    document.body.classList.toggle("bord-pleine", st.full);
+    document.body.classList.toggle("bord-epais", st.thick);
+    try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){}
+    paint();
+  };
   function paint(){
-    box.innerHTML = `<div class="pb-title">Papier des mémos</div>`
-      + P.map((p, i) => `<button type="button" class="pb-opt${i === st.i ? " on" : ""}" data-i="${i}"><span class="pb-sw" style="background:linear-gradient(160deg,${p[1]},${p[2]} 60%,${p[3]})"></span>${p[0]}</button>`).join("")
-      + [["gloss", "Reflet glacé"], ["grad", "Dégradé"], ["line", "Liseré"]].map(([k, l]) =>
+    box.innerHTML = `<div class="pb-title">Bord des listes</div>`
+      + P.map(([v, l]) => `<button type="button" class="pb-opt${v === st.v ? " on" : ""}" data-v="${v}">${l}</button>`).join("")
+      + [["full", "Couleur franche"], ["thick", "Plus épais"]].map(([k, l]) =>
         `<label class="pb-sw-row"><input type="checkbox" data-k="${k}"${st[k] ? " checked" : ""}> ${l}</label>`).join("");
-    box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", e=>{ e.stopPropagation(); st.i = +b.dataset.i; apply(); }));
+    box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", e=>{ e.stopPropagation(); st.v = b.dataset.v; apply(); }));
     box.querySelectorAll("input").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; apply(); }));
   }
   box.addEventListener("click", e => e.stopPropagation());
