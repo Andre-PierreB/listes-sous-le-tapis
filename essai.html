@@ -11456,7 +11456,11 @@ Sync.onInviteUsed = inv=>{
   if(shareNewLink && shareNewLink.code === inv.code) shareNewLink = null;   // le lien affiché a servi
   if(noteInviteUsed(inv)) renderAll();
 };
-Sync.onLinked = ()=>{ acceptPendingInvite(); renderAll(); };
+Sync.onLinked = ()=>{
+  acceptPendingInvite(); renderAll();
+  // 10.53 : connecté depuis l'étape 1 de « Comment installer » : la suite revient d'elle-même
+  if(window.resumeInstallHelp){ window.resumeInstallHelp = false; openIosHelp(); }
+};
 // ---- 10.53 : installer l'appli sur l'appareil (iPhone / iPad surtout) ----
 // Sur iPhone / iPad, Safari et l'icône d'écran d'accueil ne partagent rien
 // (ni connexion, ni listes, ni invitation en attente) ; le Mac avec Safari
@@ -11489,7 +11493,7 @@ function installKind(){
 // comment se connecter dans l'appli installée : comme ici, en clair
 function loginHint(){
   const u = Sync.user;
-  if(!u) return "connectez-vous avec le même compte qu'à l'étape 1.";
+  if(!u) return "connectez-vous avec le compte de l'étape 1.";
   const google = (u.providerData || []).some(p => p && p.providerId === "google.com");
   return google ? "connectez-vous avec Google."
                 : `connectez-vous avec l'adresse <b>${escapeAttr(u.email || "")}</b>.`;
@@ -11499,7 +11503,7 @@ function installSteps(move){
   const pad = /iPad/.test(navigator.userAgent) || navigator.platform === "MacIntel";
   const code = pendingInvite();
   const s = [];
-  if(move && !Sync.user) s.push(`D'abord, connectez-vous ici pour mettre vos listes à l'abri : <button type="button" class="ig-login">Se connecter</button>`);
+  if(move && !Sync.user) s.push(`D'abord, ici même, connectez-vous ou créez un compte pour mettre vos listes à l'abri : <button type="button" class="ig-login">Se connecter ou créer un compte</button>`);
   if(k === "ios"){
     s.push(`Cliquez sur <b>Partager</b> <span class="ig-ico">${SHARE_SVG}</span> (parfois rangé sous <b>⋯</b>, ${pad ? "en haut" : "en bas"} à droite).`);
     s.push(`Cliquez sur <b>« Sur l'écran d'accueil »</b>, puis sur <b>Ajouter</b>.`);
@@ -11541,7 +11545,7 @@ function wireInstall(box){
     cp.textContent = (await copyText(fmtInviteCode(pendingInvite()))) ? "Code copié ✓" : "Copie impossible : le recopier à la main";
   });
   const lg = box.querySelector(".ig-login");
-  if(lg) lg.addEventListener("click", e=>{ e.stopPropagation(); closeIosHelp(); if(openLoginAt) openLoginAt(); });
+  if(lg) lg.addEventListener("click", e=>{ e.stopPropagation(); closeIosHelp(); window.resumeInstallHelp = true; if(openLoginAt) openLoginAt(); });
   const ins = box.querySelector(".ig-install");
   if(ins) ins.addEventListener("click", async e=>{
     e.stopPropagation();
