@@ -1918,6 +1918,7 @@ header{
 .category:not(.courses)::before{
   content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:3px;
   background:var(--cat-color, var(--accent));
+  border-radius:999px;   /* 10.55 : bouts arrondis */
 }
 .category.collapsed:not(.courses)::before{ bottom:1.05rem; }   /* repliée : la barre longe le titre */
 .category.done{ opacity:0.62; }
@@ -3336,10 +3337,10 @@ footer:has(#shareLink:not([hidden])) #trashLink{ margin-right:0; }
 .sh-edit:hover{ color:var(--accent); background:var(--surface-2); }
 .sh-editing{ flex-wrap:wrap; gap:0.45rem; }
 .sh-ini-in, .sh-name-in{ font:inherit; font-size:0.9rem; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); color:var(--ink); padding:0.3rem 0.5rem; }
-.sh-ini-in{ width:3.6rem; text-align:center; text-transform:uppercase; font-family:'Courier Prime', 'Courier New', Courier, monospace; font-weight:700; }
-.sh-name-in{ flex:1; min-width:8rem; }
+.sh-ini-in{ width:2.9rem; text-align:center; text-transform:uppercase; font-family:'Courier Prime', 'Courier New', Courier, monospace; font-weight:700; }
+.sh-name-in{ flex:0 1 12rem; min-width:7rem; }   /* 10.55 : à la taille d'un prénom */
 .sh-ini-in:focus, .sh-name-in:focus{ outline:none; border-color:var(--accent); }
-.sh-editing .edit-actions{ flex-basis:100%; justify-content:flex-end; }
+.sh-editing .edit-actions{ margin-left:auto; }
 @media (pointer:coarse){ .sh-ini-in, .sh-name-in{ font-size:16px; } }
 .sh-code{ font-size:0.86rem; color:var(--ink-soft); margin:-0.15rem 0 0.6rem; }
 .sh-code b{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:1.05rem; color:var(--ink); letter-spacing:0.06em; }
