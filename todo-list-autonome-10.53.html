@@ -1183,7 +1183,10 @@
     titre d'un mémo : article, quantité et détail. Copier une liste suit
     l'ordre affiché (flèche comprise). « Convertir en liste de shopping ou
     mémo ». Plus d'air avant « Nouvelle liste » ; une phrase sur le partage
-    dans le panneau Partage. Banc du papier des mémos : essai.html?papier.
+    dans le panneau Partage.
+    Case urgente : double-clic sur une tâche = sa fenêtre de modification,
+    ouverte à sa place dans sa liste (rouverte si repliée) ou dans « En
+    cours » (editUrgentEntry). Banc du papier des mémos : essai.html?papier.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -7508,6 +7511,20 @@ function commitDragOrder(){
   renderAll();
 }
 
+// 10.53 : depuis la case urgente, ouvrir la modification de la tâche là où
+// elle vit (sa liste, rouverte au besoin, ou « En cours ») et y aller
+function editUrgentEntry(entry){
+  const sep = entry.key.lastIndexOf(":");
+  const catId = entry.key.slice(0, sep);
+  if(fullpageCat && fullpageCat !== catId && !entry.relance) setFullpage(null);
+  if(!entry.relance && isFolded(catId)) setFolded(catId, false);
+  editingKey = entry.key;
+  renderAll();
+  requestAnimationFrame(()=>{
+    const el = document.querySelector(".item.editing");
+    if(el) el.scrollIntoView({ behavior:"smooth", block:"center" });
+  });
+}
 function renderUrgentBanner(){
   const el = document.getElementById("urgentBanner");
   const list = collectUrgentItems();
@@ -7550,7 +7567,13 @@ function renderUrgentBanner(){
     `;
     if(entry.note) markNoteHolder(li, entry.key);
     // 8.34 : un clic déplie le détail ; une tâche sans détail ne réagit pas
-    if(entry.note) li.querySelector(".urgent-jump").addEventListener("click", ()=> toggleNoteOpen(entry.key));
+    if(entry.note) li.querySelector(".urgent-jump").addEventListener("click", e=>{ if(e.detail > 1) return; toggleNoteOpen(entry.key); });
+    // 10.53 : double-clic = modifier la tâche, comme dans sa liste : la
+    // fenêtre de modification s'ouvre à sa place (liste ou « En cours »)
+    li.querySelector(".urgent-jump").addEventListener("dblclick", e=>{
+      e.preventDefault(); e.stopPropagation();
+      editUrgentEntry(entry);
+    });
     const urgentCheck = li.querySelector(".urgent-check");
     urgentCheck.addEventListener("click", (e)=>{
       e.stopPropagation();
