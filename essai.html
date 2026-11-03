@@ -13,7 +13,7 @@
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
 </script>
-<!-- Sous le tapis — version AUTONOME 10.52 -->
+<!-- Sous le tapis — version AUTONOME 10.53 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1158,6 +1158,20 @@
     --phrase), titre centré en --ink-soft (le gris de « Mot de passe
     oublié ? » ; bleu et mauve essayés au banc). Survol comme la case à
     cocher d'une tâche : plein --accent, écriture blanche comme sa coche.
+  - 10.53 : une tâche « en cours » effacée (croix) ne compte plus comme
+    accomplie si son envoi date de cette semaine (unlogWaitingThisWeek).
+    Synchro : le carnet de contacts se fusionne personne par personne (avant,
+    en bloc : un appareil pouvait écraser le contact ajouté par l'autre).
+    Invitations : code court de 8 caractères (XXXX-XXXX, sans I L O 0 1),
+    affiché avec le lien et joint au message ; case « Code d'invitation »
+    dans la fenêtre de connexion (bouton Coller) et « On m'a donné un code »
+    dans le partage ; le code, le code avec tiret ou le lien entier marchent
+    (parseInviteInput). Anciens liens de 20 caractères toujours valables.
+    iPhone / iPad dans Safari : nouveau venu → écran d'installation seul
+    (avec le code à recopier) ; déjà des listes → bande « Installer »
+    discrète, rien de bloqué. Icône, première ouverture : la connexion
+    s'ouvre seule. Ordinateur / Android inchangés. Voir « 10.53 : sur
+    iPhone / iPad » en bas du code.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -3081,9 +3095,25 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   border:1px solid color-mix(in srgb, var(--accent) 22%, var(--line)); border-radius:6px; background:var(--surface); color:var(--ink);
 }
 .sp-email:focus, .sp-pw:focus{ outline:none; border-color:var(--accent); }
+/* 10.53 : code d'invitation, en bas de la fenêtre de connexion */
+.sp-code{ margin-top:0.55rem; font-size:0.8rem; color:var(--ink-soft); text-align:center; }
+.sp-code summary{ cursor:pointer; width:max-content; margin:0 auto; }
+.sp-code[open] summary{ margin-bottom:0.35rem; }
+.sp-code-top{ margin:0 0 0.8rem; padding-bottom:0.7rem; border-bottom:1px solid var(--line); }
+.sp-codein{ font-family:'Courier Prime', 'Courier New', Courier, monospace; letter-spacing:0.05em; text-align:center; width:11rem; box-sizing:border-box; padding:0.3rem 0.4rem; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); color:var(--ink); font-size:0.9rem; }
+.sp-codein:focus{ outline:none; border-color:var(--accent); }
+.sp-paste{ margin-left:0.3rem; font:inherit; font-size:0.78rem; background:none; border:none; color:var(--accent); cursor:pointer; padding:0.2rem; }
+.sp-codein::placeholder{ font-family:'Public Sans', system-ui, sans-serif; letter-spacing:0; font-size:0.85rem; }
+@media (pointer:coarse){ .sp-codein{ font-size:16px; } }
 /* 10.26 : 16 px sur tactile, sinon Safari iOS zoome au toucher du champ */
 @media (pointer:coarse){ .sp-email, .sp-pw{ font-size:16px; } .rp-chip, .relance-ask .rp-skip, .sp-google, .sync-pop .rp-opts button{ height:1.95rem; } }
 .sp-hint{ font-size:0.8rem; color:var(--ink-soft); margin:-0.15rem 0 0.45rem; }
+/* 10.53 : afficher / masquer le mot de passe ; rappel d'adresse à confirmer */
+.sp-pwwrap{ position:relative; }
+.sp-pwwrap .sp-pw{ padding-right:4.6rem; }
+.sp-eye{ position:absolute; right:0.35rem; top:50%; transform:translateY(calc(-50% - 0.2rem)); appearance:none; border:0; background:none; padding:0.15rem 0.3rem; font:inherit; font-size:0.75rem; color:var(--accent); cursor:pointer; }
+.sp-verify{ font-size:0.8rem; color:var(--ink-soft); margin:0.2rem 0 0.5rem; }
+.sp-verify button{ appearance:none; border:0; background:none; padding:0; font:inherit; font-weight:600; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
 .sp-hint:empty{ display:none; }
 .sp-hint button, .sp-confirm .sp-fix{ appearance:none; border:0; background:none; padding:0; font:inherit; font-weight:600; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
 .sp-confirm{ margin-top:0.55rem; padding:0.55rem 0.6rem; border:1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius:10px; font-size:0.8rem; color:var(--ink-soft); text-align:center; }
@@ -3259,6 +3289,14 @@ footer:has(#shareLink:not([hidden])) #trashLink{ margin-right:0; }
 .sh-btn-primary{ background:color-mix(in srgb, var(--accent) 15%, var(--surface)); }
 .sh-btn:hover{ background:var(--accent); color:var(--surface); }
 .sh-btn:disabled{ opacity:.55; cursor:default; }
+.sh-code{ font-size:0.86rem; color:var(--ink-soft); margin:-0.15rem 0 0.6rem; }
+.sh-code b{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:1.05rem; color:var(--ink); letter-spacing:0.06em; }
+.sh-code span{ font-size:0.78rem; }
+.sh-gotcode{ margin-top:0.9rem; font-size:0.86rem; color:var(--ink-soft); }
+.sh-gotcode summary{ cursor:pointer; width:max-content; }
+.sh-gotcode .sh-actions{ margin-top:0.5rem; align-items:center; }
+.sh-codein{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.95rem; letter-spacing:0.05em; color:var(--ink); background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:0.35rem 0.55rem; width:11rem; }
+@media (pointer:coarse){ .sh-codein{ font-size:16px; } }
 .sh-newlink{ margin-top:0.8rem; padding:0.75rem; border:1px dashed color-mix(in srgb, var(--accent) 40%, var(--line)); border-radius:12px; }
 .sh-url{ width:100%; box-sizing:border-box; font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.78rem; color:var(--ink); background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:0.4rem 0.55rem; margin-bottom:0.55rem; }
 .sh-msg{ font-size:0.8rem; color:var(--ink-soft); margin-top:0.6rem; }
@@ -3694,6 +3732,39 @@ body.arrive footer{ animation-delay:.52s; }
   body.arrive *{ animation:none !important; }
   .tapis-watermark.leaving{ transition:none; }
 }
+
+/* ---------- 10.53 : iPhone / iPad — écran d'installation, bande, aide ---------- */
+.ios-gate{ position:fixed; inset:0; z-index:9000; background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch;
+  display:flex; align-items:flex-start; justify-content:center; padding:max(2.2rem, env(safe-area-inset-top)) 1.2rem 2rem; box-sizing:border-box; }
+body.ios-gate-on{ overflow:hidden; }
+.ios-help{ background:color-mix(in srgb, var(--bg) 92%, transparent); }
+.ig-card{ max-width:26rem; width:100%; background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:1.4rem 1.3rem 1.2rem; box-shadow:0 10px 30px rgba(40,50,60,.08); }
+.ig-icon{ display:block; width:72px; height:72px; border-radius:16px; margin:0 auto 0.8rem; }
+.ig-title{ font-family:'Public Sans', system-ui, sans-serif; font-size:1.15rem; font-weight:600; color:var(--ink); text-align:center; margin:0 0 0.6rem; line-height:1.35; }
+/* le nom de l'appli comme son titre (.eyebrow) : on voit que c'est un nom */
+.ig-brand{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.8rem; font-weight:700; letter-spacing:0.11em; text-transform:uppercase; color:var(--logo-green); white-space:nowrap; display:block; margin-top:0.25rem; }   /* 10.53 : à la taille du titre de l'appli : un nom, pas une phrase */
+.ig-lead{ font-size:0.92rem; color:var(--ink-soft); text-align:center; margin:0 0 1rem; }
+.ig-steps{ margin:0; padding-left:1.35rem; font-size:0.95rem; color:var(--ink); line-height:1.45; }
+.ig-steps li{ margin-bottom:0.65rem; }
+.ig-steps li::marker{ color:var(--accent); font-weight:600; }
+.ig-ico{ display:inline-flex; vertical-align:-3px; color:var(--accent); }
+.ig-mini{ width:30px; height:30px; border-radius:7px; vertical-align:middle; margin-left:0.15rem; }
+.ig-steps b{ font-weight:600; }
+.ig-install{ font:inherit; font-size:0.95rem; font-weight:500; border:none; border-radius:999px; padding:0.5rem 1.2rem; cursor:pointer; background:var(--accent); color:#fff; margin:0.1rem 0 0.3rem; }
+.ig-install:disabled{ opacity:.45; cursor:default; }
+.ig-noprompt{ display:block; }
+.ig-skip{ font:inherit; font-size:0.85rem; background:none; border:none; color:var(--ink-soft); text-decoration:underline; cursor:pointer; }
+.ig-code{ margin:0.9rem 0 0.2rem; padding:0.75rem; border:1px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:12px; text-align:center; font-size:0.88rem; color:var(--ink-soft); }
+.ig-code b{ display:block; font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:1.55rem; letter-spacing:0.08em; color:var(--ink); margin:0.3rem 0 0.45rem; }
+.ig-copy, .ig-login, .ig-close, .ib-btns button{ font:inherit; font-size:0.85rem; border:none; border-radius:999px; padding:0.35rem 0.85rem; cursor:pointer;
+  background:color-mix(in srgb, var(--accent) 12%, var(--surface)); color:var(--phrase, var(--ink)); }
+.ig-copy:hover, .ig-login:hover, .ig-close:hover, .ib-btns button:hover{ background:var(--accent); color:#fff; }
+.ig-login{ margin-top:0.3rem; display:inline-block; }
+.ig-note{ font-size:0.78rem; color:var(--ink-faint); margin:0.8rem 0 0; text-align:center; }
+.ig-actions{ text-align:center; margin-top:0.9rem; }
+.ios-band{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:0.4rem 0.8rem; padding:0.55rem 0.9rem; padding-top:max(0.55rem, env(safe-area-inset-top));
+  background:var(--accent-soft); color:var(--ink-soft); font-size:0.84rem; text-align:center; }
+.ib-btns{ display:inline-flex; gap:0.4rem; }
 </style>
 
 <div class="wrap">
@@ -3734,7 +3805,7 @@ body.arrive footer{ animation-delay:.52s; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.52</span>
+    <span class="version-tag">v10.53</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5033,6 +5104,18 @@ const LAST_PURGE_KEY = "fauconnerie-v2-lastpurge";
 // report d'une relance (tâche déjà en cours) ne compte pas.
 const WAIT_LOG_KEY = "fauconnerie-v2-waitlog";
 function waitLog(){ const l = loadJSONKey(WAIT_LOG_KEY, []); return Array.isArray(l) ? l : []; }
+// 10.53 : retire le dernier envoi « en cours » de cette tâche s'il date de
+// cette semaine (il ne compte alors plus dans le compteur ni le graphique)
+function unlogWaitingThisWeek(key){
+  const l = waitLog(), monday = mondayOf(todayISO());
+  for(let i = l.length - 1; i >= 0; i--){
+    const e = l[i];
+    if(e && e.key === key){
+      if((e.on || "") >= monday){ l.splice(i, 1); saveJSONKey(WAIT_LOG_KEY, l); }
+      return;
+    }
+  }
+}
 function loadJSONKey(k, fallback){
   try{
     const raw = Store.get(k);
@@ -8344,6 +8427,10 @@ function buildItemLi(cat, idx, base, key, opts){
       key, // 10.0 : la tâche d'origine (rangée par son identifiant stable)
     });
     if(wasDone) saveJSONKey(TRASH_KEY, trash);
+    // 10.53 : effacée (croix) alors qu'elle est « en cours » : son envoi de
+    // cette semaine ne compte plus (envoyée par erreur). Les semaines passées
+    // ne bougent pas.
+    if(!wasDone && eff.waiting) unlogWaitingThisWeek(key);
     if(checkedAt[key]){ delete checkedAt[key]; saveJSONKey(CHECKED_AT_KEY, checkedAt); }
     overrides = loadOverrides();
     overrides[key] = overrides[key] || {};
@@ -9273,6 +9360,14 @@ let shareOpen = false;
 let shareNewLink = null;   // { code, url } : le dernier lien créé, affiché sous le bouton
 let shareMsg = "";
 function inviteUrl(code){ return location.origin + location.pathname + "?invitation=" + encodeURIComponent(code); }
+// 10.53 : le message envoyé à la personne invitée : le lien, et le code pour
+// l'iPhone (l'icône d'écran d'accueil ne voit pas les liens ouverts dans Safari)
+function inviteMessage(l){
+  const c = fmtInviteCode(l.code);
+  return myName() + " vous invite à partager des listes sur Sous le tapis.\n"
+    + "Ouvrez ce lien, l'appli vous guidera : " + l.url
+    + (c !== l.code ? "\nCode d'invitation, si l'appli le demande : " + c : "");
+}
 function openSharePanel(){
   shareOpen = true;
   trashOpen = false;
@@ -9344,8 +9439,12 @@ function renderShare(){
       <div class="sh-actions"><button type="button" class="sh-btn sh-btn-primary sh-invite">Créer un lien d'invitation</button></div>
       ${shareNewLink ? `<div class="sh-newlink">
         <input type="text" class="sh-url" readonly value="${escapeAttr(shareNewLink.url)}" aria-label="Lien d'invitation">
-        <div class="sh-actions"><button type="button" class="sh-btn sh-copy">Copier le lien</button><a class="sh-btn sh-wa" href="https://wa.me/?text=${encodeURIComponent(myName() + " t'invite à partager des listes sur Sous le tapis : " + shareNewLink.url)}" target="_blank" rel="noopener">Envoyer par WhatsApp</a></div>
+        ${fmtInviteCode(shareNewLink.code) !== shareNewLink.code ? `<div class="sh-code">Code : <b>${escapeAttr(fmtInviteCode(shareNewLink.code))}</b> <span>(si l'appli le demande)</span></div>` : ""}
+        <div class="sh-actions"><button type="button" class="sh-btn sh-copy">Copier le message</button><a class="sh-btn sh-wa" href="https://wa.me/?text=${encodeURIComponent(inviteMessage(shareNewLink))}" target="_blank" rel="noopener">Envoyer par WhatsApp</a></div>
       </div>` : ""}
+      <details class="sh-gotcode"><summary>On m'a donné un code d'invitation</summary>
+        <div class="sh-actions"><input type="text" class="sh-codein" placeholder="Code ou lien reçu" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Code d'invitation reçu"><button type="button" class="sh-btn sh-btn-primary sh-codeok">Valider</button></div>
+      </details>
       <div class="sh-msg" role="status">${escapeAttr(shareMsg)}</div>`;
     const nameInp = panel.querySelector(".sh-name");
     const saveName = ()=>{
@@ -9393,11 +9492,26 @@ function renderShare(){
     const copyBtn = panel.querySelector(".sh-copy");
     if(copyBtn) copyBtn.addEventListener("click", async e=>{
       e.stopPropagation();
-      shareMsg = (await copyText(shareNewLink.url, panel.querySelector(".sh-url"))) ? "Lien copié : colle-le dans un message." : "Copie impossible ici : sélectionne le lien à la main.";
+      shareMsg = (await copyText(inviteMessage(shareNewLink))) ? "Message copié (lien et code) : à coller dans un SMS ou un e-mail." : "Copie impossible ici : sélectionner le lien à la main.";
       renderAll();
     });
     const url = panel.querySelector(".sh-url");
     if(url) url.addEventListener("focus", ()=> url.select());
+    // 10.53 : code reçu, tapé ici quand on est déjà connecté
+    const codeIn = panel.querySelector(".sh-codein"), codeOk = panel.querySelector(".sh-codeok");
+    if(codeIn && codeOk){
+      const go = async ()=>{
+        const code = parseInviteInput(codeIn.value);
+        if(!code){ shareMsg = "Ce code ne ressemble pas à un code d'invitation (8 caractères, du genre K7M4-QX9P)."; renderAll(); return; }
+        codeOk.disabled = true;
+        setPendingInvite(code);
+        shareMsg = "";
+        await acceptPendingInvite();
+        renderAll();
+      };
+      codeOk.addEventListener("click", e=>{ e.stopPropagation(); go(); });
+      codeIn.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); go(); } });
+    }
   }
   panel.querySelector(".trash-close").addEventListener("click", e=>{ e.stopPropagation(); closeSharePanel(); });
 }
@@ -9426,6 +9540,24 @@ const PENDING_INVITE_KEY = Store.ns + "invitation";
   }catch(e){ console.error("[partage] lien d'invitation", e); }
 })();
 function pendingInvite(){ try{ return localStorage.getItem(PENDING_INVITE_KEY); }catch(e){ return null; } }
+// 10.53 : code d'invitation tapé ou collé (code seul, avec ou sans tiret, ou
+// lien entier) → le code tel qu'il est rangé en ligne, ou "" si illisible
+function parseInviteInput(s){
+  s = String(s || "").trim();
+  if(!s) return "";
+  const m = s.match(/[?&]invitation=([^&#\s]+)/);
+  if(m){ try{ s = decodeURIComponent(m[1]); }catch(e){ s = m[1]; } }
+  else s = s.replace(/[\s-]/g, "");
+  if(s.length === 8) s = s.toUpperCase();
+  return /^[A-Za-z0-9_-]{6,40}$/.test(s) ? s : "";
+}
+// 10.53 : iPhone / iPad (l'iPad se présente comme un Mac tactile) ; icône d'écran d'accueil
+function isIOSDevice(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); }
+function isStandaloneApp(){ return navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches); }
+function fmtInviteCode(c){ return /^[A-Z2-9]{8}$/.test(c || "") ? c.slice(0, 4) + "-" + c.slice(4) : (c || ""); }
+function setPendingInvite(code){
+  try{ if(code) localStorage.setItem(PENDING_INVITE_KEY, code); else localStorage.removeItem(PENDING_INVITE_KEY); }catch(e){}
+}
 async function acceptPendingInvite(){
   const code = pendingInvite();
   const S = syncApi();
@@ -9440,15 +9572,15 @@ async function acceptPendingInvite(){
       renderAll();
       celebrate("Ajouté au carnet de " + (r.fromName || "?") + ". Les listes partagées apparaîtront ici.", true);
     }else if(r.status === "self"){
-      celebrate("C'est le lien d'invitation de ce compte : il est à envoyer à quelqu'un d'autre.", true);
+      celebrate("Cette invitation a été créée par ce compte : elle est à envoyer à quelqu'un d'autre.", true);
     }else{
-      celebrate("Ce lien d'invitation a déjà servi ou a été annulé : il faut en demander un nouveau.", true);
+      celebrate("Invitation introuvable : code mal tapé, déjà utilisé ou annulé. Vérifier le code, ou en demander un nouveau.", true);
     }
   }catch(err){
     console.error("[partage] acceptation", err);
     if(err && err.code === "permission-denied"){
       localStorage.removeItem(PENDING_INVITE_KEY);
-      celebrate("Cette invitation n'a pas pu être acceptée : il faut demander un nouveau lien.", true);
+      celebrate("Cette invitation n'a pas pu être acceptée : il faut en demander une nouvelle.", true);
     }
     // sinon (réseau) : on réessaiera à la prochaine connexion
   }
@@ -10520,7 +10652,17 @@ const SyncMerge = (()=>{
   }
   function user(b, l, r){
     b = isObj(b) ? b : {};
-    const out = fields(b, l, r, ["trash", "waitLog", "lastPurge"]);
+    const out = fields(b, l, r, ["trash", "waitLog", "lastPurge", "contacts"]);
+    // 10.53 : le carnet se fusionne personne par personne (avant : en bloc,
+    // et un appareil pouvait effacer le contact ajouté par l'autre)
+    l = isObj(l) ? l : {}; r = isObj(r) ? r : {};
+    if(isObj(l.contacts) && isObj(r.contacts)){
+      const c = fields(isObj(b.contacts) ? b.contacts : {}, l.contacts, r.contacts);
+      if(Object.keys(c).length) out.contacts = c;
+    }else{
+      const c = pick(b.contacts, l.contacts, r.contacts);
+      if(c !== undefined) out.contacts = c;
+    }
     ["trash", "waitLog"].forEach(k=>{
       const v = multiset(b[k], l[k], r[k]);
       if(v !== undefined) out[k] = v;
@@ -10760,8 +10902,11 @@ const Sync = (()=>{
     }catch(err){ console.error("[Sync] prénom", err); }
   }
   function inviteCode(){
-    const A = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    const a = new Uint8Array(20);
+    // 10.53 : 8 caractères, majuscules et chiffres sans ceux qu'on confond
+    // (I, L, O, 0, 1) : assez court pour être tapé ou dicté (affiché XXXX-XXXX).
+    // Les anciens codes de 20 caractères restent valables.
+    const A = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    const a = new Uint8Array(8);
     crypto.getRandomValues(a);
     return Array.from(a, b => A[b % A.length]).join("");
   }
@@ -11040,7 +11185,17 @@ const Sync = (()=>{
       return fb.signInWithPopup(auth, provider);
     },
     async signInEmail(email, pw){ await loadFirebase(); return fb.signInWithEmailAndPassword(auth, email, pw); },
-    async createEmail(email, pw){ await loadFirebase(); return fb.createUserWithEmailAndPassword(auth, email, pw); },
+    async createEmail(email, pw){
+      await loadFirebase();
+      const c = await fb.createUserWithEmailAndPassword(auth, email, pw);
+      // 10.53 : e-mail de confirmation (un lien à cliquer) ; rien n'est bloqué en attendant
+      try{ await fb.sendEmailVerification(c.user); }catch(err){ console.error("[Sync] confirmation", err); }
+      return c;
+    },
+    // 10.53 : compte e-mail pas encore confirmé (Google l'est d'office)
+    get needsVerify(){ return !!user && !user.emailVerified && (user.providerData || []).some(p => p && p.providerId === "password"); },
+    async resendVerify(){ await loadFirebase(); if(user) return fb.sendEmailVerification(user); },
+    async refreshUser(){ if(!user || !fb) return; try{ await fb.reload(user); }catch(err){} },
     async resetPassword(email){ await loadFirebase(); return fb.sendPasswordResetEmail(auth, email); },
     async signOut(){ await loadFirebase(); stopListening(); linked = false; return fb.signOut(auth); },
     get available(){ return Store.mode === "doc"; },
@@ -11135,8 +11290,18 @@ const Sync = (()=>{
         <div class="rp-title">Connecté</div>
         <div class="sp-who">${escapeAttr(Sync.user.email || "")}</div>
         <div class="sp-state">${escapeAttr(stateText)}</div>
+        ${Sync.needsVerify ? `<div class="sp-verify">Adresse pas encore confirmée : cliquez sur le lien de l'e-mail reçu. <button type="button" class="sp-resend">Renvoyer l'e-mail</button></div>` : ""}
         <div class="rp-opts"><button type="button" class="sp-logout rp-none">Se déconnecter</button></div>
         ${(()=>{ const d = Sync.diag; return `<div class="sp-diag">compte ·${escapeAttr(d.acct)} · appareil ·${escapeAttr(d.device)} · ${d.linked ? "branché" : (d.leader ? "chef, pas branché" : "en attente")}${d.locks ? "" : " · sans verrou"} · ${d.online} liste${d.online > 1 ? "s" : ""} en ligne dont ${d.others} d'autres${d.err ? " · " + escapeAttr(d.err) : ""}</div>`; })()}`;
+      const rs = pop.querySelector(".sp-resend");
+      if(rs) rs.addEventListener("click", async e=>{
+        e.stopPropagation();
+        rs.disabled = true;
+        try{ await Sync.resendVerify(); rs.replaceWith("E-mail renvoyé ✓"); }
+        catch(err){ rs.disabled = false; rs.textContent = err && err.code === "auth/too-many-requests" ? "Déjà envoyé, patience…" : "Échec, réessayer"; }
+      });
+      // l'adresse vient peut-être d'être confirmée (lien cliqué ailleurs) : on rafraîchit en silence
+      if(Sync.needsVerify) Sync.refreshUser().then(()=>{ const v = pop.querySelector(".sp-verify"); if(v && !Sync.needsVerify) v.remove(); });
       pop.querySelector(".sp-logout").addEventListener("click", async e=>{
         e.stopPropagation();
         closeRelancePop();
@@ -11150,16 +11315,52 @@ const Sync = (()=>{
         <div class="sp-or">ou</div>
         <input type="email" class="sp-email" placeholder="Adresse e-mail" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
         <div class="sp-hint" role="status"></div>
-        <input type="password" class="sp-pw" placeholder="Mot de passe" autocomplete="current-password">
+        <div class="sp-pwwrap"><input type="password" class="sp-pw" placeholder="Mot de passe" autocomplete="current-password"><button type="button" class="sp-eye" aria-label="Afficher le mot de passe">Afficher</button></div>
         <div class="rp-opts"><button type="button" class="sp-login">Se connecter</button><button type="button" class="sp-create rp-none">Créer un compte</button></div>
         <div class="sp-confirm" hidden></div>
         <button type="button" class="sp-forgot">Mot de passe oublié ?</button>
+        <details class="sp-code"${pendingInvite() || isStandaloneApp() ? " open" : ""}><summary>Vous avez reçu un code d'invitation ?</summary>
+          <input type="text" class="sp-codein" placeholder="Collez le code ici" value="${escapeAttr(fmtInviteCode(pendingInvite() || ""))}" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Code d'invitation">
+          ${navigator.clipboard && navigator.clipboard.readText ? `<button type="button" class="sp-paste">Coller</button>` : ""}
+        </details>
         <div class="sp-msg" role="status"></div>`;
       const msg = pop.querySelector(".sp-msg");
       const email = pop.querySelector(".sp-email"), pw = pop.querySelector(".sp-pw");
+      const eye = pop.querySelector(".sp-eye");
+      eye.addEventListener("click", e=>{
+        e.stopPropagation();
+        const show = pw.type === "password";
+        pw.type = show ? "text" : "password";
+        eye.textContent = show ? "Masquer" : "Afficher";
+        eye.setAttribute("aria-label", show ? "Masquer le mot de passe" : "Afficher le mot de passe");
+      });
+      // 10.53 : invitation en attente ou icône d'écran d'accueil : le code passe
+      // en haut, avant les boutons (sinon on se connecte sans l'avoir vu)
+      const codeBox = pop.querySelector(".sp-code");
+      if(codeBox.open){
+        codeBox.classList.add("sp-code-top");
+        pop.querySelector(".sp-google").before(codeBox);
+      }
+      // 10.53 : le code tapé ici est gardé de côté, puis accepté dès la connexion
+      const codeIn = pop.querySelector(".sp-codein");
+      const keepCode = ()=>{
+        const v = codeIn.value.trim();
+        if(!v){ setPendingInvite(""); return; }
+        const c = parseInviteInput(v);
+        if(c){ setPendingInvite(c); codeIn.value = fmtInviteCode(c); }
+      };
+      codeIn.addEventListener("change", keepCode);
+      codeIn.addEventListener("click", e => e.stopPropagation());
+      const paste = pop.querySelector(".sp-paste");
+      if(paste) paste.addEventListener("click", async e=>{
+        e.stopPropagation();
+        try{ codeIn.value = (await navigator.clipboard.readText()).trim(); keepCode(); }catch(err){ codeIn.focus(); }
+      });
       const busy = on => pop.querySelectorAll("button, input").forEach(b => { b.disabled = on; });
       const run = async (fn, okText)=>{
-        msg.textContent = ""; busy(true);
+        msg.textContent = "";
+        if(codeIn.value.trim() && !parseInviteInput(codeIn.value)){ msg.textContent = "Le code d'invitation ne semble pas complet (8 caractères, du genre K7M4-QX9P)."; codeIn.focus(); return; }
+        keepCode(); busy(true);
         try{ await fn(); if(okText) msg.textContent = okText; else closeRelancePop(); }
         catch(err){ if(!(err && (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request"))) msg.textContent = errText(err); }
         finally{ busy(false); }
@@ -11212,7 +11413,7 @@ const Sync = (()=>{
         if(document.activeElement) document.activeElement.blur();
         const fix = confirmBox.querySelector(".sp-fix");
         if(fix) fix.addEventListener("click", ev=>{ ev.stopPropagation(); email.value = sug; hint.textContent = ""; pop.querySelector(".sp-create").click(); });
-        confirmBox.querySelector(".sp-yes").addEventListener("click", ev=>{ ev.stopPropagation(); hideConfirm(); run(()=> Sync.createEmail(addr, pw.value)); });
+        confirmBox.querySelector(".sp-yes").addEventListener("click", ev=>{ ev.stopPropagation(); hideConfirm(); run(()=> Sync.createEmail(addr, pw.value).then(()=> celebrate("Compte créé. Un e-mail vient de partir à " + addr + " : cliquez sur le lien qu'il contient pour confirmer l'adresse (regardez aussi dans les indésirables).", true))); });
         confirmBox.querySelector(".sp-no").addEventListener("click", ev=>{ ev.stopPropagation(); hideConfirm(); email.focus(); });
       });
       pop.querySelector(".sp-forgot").addEventListener("click", e=>{
@@ -11239,7 +11440,7 @@ const Sync = (()=>{
   // 10.2 : arrivé par un lien d'invitation sans être connecté : la fenêtre s'ouvre d'elle-même
   let invitePrompted = false;
   Sync.onAuthChange = u=>{
-    if(u || invitePrompted || !pendingInvite()) return;
+    if(u || invitePrompted || !pendingInvite() || iosGateOn) return;   // 10.53 : pas derrière l'écran d'installation
     invitePrompted = true;
     setTimeout(()=>{ if(!Sync.user && !(relancePop && relancePop.classList.contains("sync-pop"))) open(); }, 300);
   };
@@ -11252,5 +11453,162 @@ Sync.onInviteUsed = inv=>{
   if(noteInviteUsed(inv)) renderAll();
 };
 Sync.onLinked = ()=>{ acceptPendingInvite(); renderAll(); };
+// ---- 10.53 : installer l'appli sur l'appareil (iPhone / iPad surtout) ----
+// Sur iPhone / iPad, Safari et l'icône d'écran d'accueil ne partagent rien
+// (ni connexion, ni listes, ni invitation en attente) ; le Mac avec Safari
+// « Ajouter au Dock » ne garde que les cookies. Chrome / Edge (Android ou
+// ordinateur) et leur appli installée partagent tout. Donc :
+//  - iPhone / iPad dans Safari, nouveau venu : écran d'installation seul ;
+//  - iPhone / iPad dans Safari, déjà des listes : bande « Installer » discrète
+//    (« Plus tard » : 14 jours), rien de bloqué ;
+//  - ailleurs, arrivé par une invitation sans rien encore : même écran, avec
+//    « Continuer sans installer » ;
+//  - icône, première ouverture : la connexion s'ouvre seule, avec le code.
+// Les gestes affichés dépendent de l'appareil (installKind) ; l'écran ne
+// nomme pas l'appareil. Libellés d'Apple tirés des guides iOS 26 : à vérifier.
+const IOS_LATER_KEY = Store.ns + "ios-plus-tard";
+let iosGateOn = false;
+let deferredInstall = null;   // Chrome / Edge : la fenêtre d'installation du navigateur
+window.addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); deferredInstall = e; refreshInstallBtn(); });
+window.addEventListener("appinstalled", ()=>{ deferredInstall = null; });
+const SHARE_SVG = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6.5 10.5H5.5a1.5 1.5 0 0 0-1.5 1.5v7.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V12a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg>`;
+const ICON_IMG = `<img class="ig-mini" src="icon-faisan-v2-180.png" alt="icône de Sous le tapis" width="30" height="30">`;
+function neverHereBefore(){ return !hasAnyList() && Sync.diag.device === "—"; }
+function installKind(){
+  const ua = navigator.userAgent;
+  if(isIOSDevice()) return /CriOS|FxiOS|EdgiOS/.test(ua) ? "ios-other" : "ios";
+  if(/Android/i.test(ua)) return /SamsungBrowser|Firefox/i.test(ua) ? "android-other" : "chrome";
+  if(/Edg\/|Chrome\//.test(ua)) return "chrome";
+  if(/Macintosh/.test(ua) && /Safari\//.test(ua)) return "mac-safari";
+  return "none";
+}
+// comment se connecter dans l'appli installée : comme ici, en clair
+function loginHint(){
+  const u = Sync.user;
+  if(!u) return "connectez-vous avec le même compte qu'à l'étape 1.";
+  const google = (u.providerData || []).some(p => p && p.providerId === "google.com");
+  return google ? "connectez-vous avec Google."
+                : `connectez-vous avec l'adresse <b>${escapeAttr(u.email || "")}</b>.`;
+}
+function installSteps(move){
+  const k = installKind();
+  const pad = /iPad/.test(navigator.userAgent) || navigator.platform === "MacIntel";
+  const code = pendingInvite();
+  const s = [];
+  if(move && !Sync.user) s.push(`D'abord, connectez-vous ici pour mettre vos listes à l'abri : <button type="button" class="ig-login">Se connecter</button>`);
+  if(k === "ios"){
+    s.push(`Cliquez sur <b>Partager</b> <span class="ig-ico">${SHARE_SVG}</span> (parfois rangé sous <b>⋯</b>, ${pad ? "en haut" : "en bas"} à droite).`);
+    s.push(`Cliquez sur <b>« Sur l'écran d'accueil »</b>, puis sur <b>Ajouter</b>.`);
+    s.push(`Fermez Safari et ouvrez l'application via son icône sur l'écran d'accueil.`);
+  }else if(k === "ios-other"){
+    s.push(`Cette page est ouverte dans un autre navigateur : copiez son adresse et ouvrez-la dans <b>Safari</b>.`);
+  }else if(k === "chrome"){
+    s.push(`<button type="button" class="ig-install">Installer l'appli</button><span class="ig-noprompt">${/Android/i.test(navigator.userAgent)
+      ? "Cliquez sur <b>⋮</b> en haut à droite, puis sur <b>« Installer l'application »</b> (ou « Ajouter à l'écran d'accueil »), et confirmez."
+      : "Ouvrez le menu <b>⋮</b> en haut à droite et choisissez <b>Installer</b> (parfois rangé sous « Caster, enregistrer et partager »)."}</span>`);
+    s.push(`Ouvrez l'application via son icône${/Android/i.test(navigator.userAgent) ? " sur l'écran d'accueil" : ""}.`);
+  }else if(k === "mac-safari"){
+    s.push(`Dans le menu <b>Fichier</b>, choisissez <b>« Ajouter au Dock… »</b>, puis cliquez sur <b>Ajouter</b>.`);
+    s.push(`Ouvrez l'application via son icône dans le Dock.`);
+  }else if(k === "android-other"){
+    s.push(`Dans le menu du navigateur, choisissez <b>« Ajouter à l'écran d'accueil »</b> (ou « Installer »).`);
+    s.push(`Ouvrez l'application via son icône sur l'écran d'accueil.`);
+  }
+  const needLogin = k === "ios" || k === "mac-safari" || k === "android-other" || (k === "chrome" && !Sync.user);
+  const paste = !!code && k !== "chrome";   // Chrome et son appli partagent tout : l'invitation suit seule
+  if(needLogin) s.push(move ? "Dans l'application, " + loginHint()
+    : `Dans l'application, connectez-vous avec Google, ou créez un compte avec votre adresse e-mail et un mot de passe${paste ? ", puis collez le code" : ""}.`);
+  if(k === "none") return `<p class="ig-lead">Ce navigateur ne permet pas d'installer l'application : gardez simplement cet onglet.</p>`;
+  // guillemets collés à leur mot (espace insécable) : « Installer l'application » ne se coupe plus après «
+  return `<ol class="ig-steps">${s.map(x => `<li>${x.replace(/« /g, "«&nbsp;").replace(/ »/g, "&nbsp;»")}</li>`).join("")}</ol>
+  ${paste && needLogin ? `<div class="ig-code">Votre code d'invitation :<b>${escapeAttr(fmtInviteCode(code))}</b><button type="button" class="ig-copy">Copier le code</button></div>` : ""}`;
+}
+function refreshInstallBtn(){
+  document.querySelectorAll(".ig-install").forEach(b=>{
+    b.hidden = !deferredInstall;   // pas de fenêtre d'installation : les gestes du menu à la place
+    const n = b.parentNode.querySelector(".ig-noprompt");
+    if(n) n.hidden = !!deferredInstall;
+  });
+}
+function wireInstall(box){
+  const cp = box.querySelector(".ig-copy");
+  if(cp) cp.addEventListener("click", async e=>{
+    e.stopPropagation();
+    cp.textContent = (await copyText(fmtInviteCode(pendingInvite()))) ? "Code copié ✓" : "Copie impossible : le recopier à la main";
+  });
+  const lg = box.querySelector(".ig-login");
+  if(lg) lg.addEventListener("click", e=>{ e.stopPropagation(); closeIosHelp(); if(openLoginAt) openLoginAt(); });
+  const ins = box.querySelector(".ig-install");
+  if(ins) ins.addEventListener("click", async e=>{
+    e.stopPropagation();
+    if(!deferredInstall) return;
+    deferredInstall.prompt();
+    try{ await deferredInstall.userChoice; }catch(err){}
+    deferredInstall = null; refreshInstallBtn();
+  });
+  const skip = box.querySelector(".ig-skip");
+  if(skip) skip.addEventListener("click", e=>{
+    e.stopPropagation();
+    box.remove(); iosGateOn = false; document.body.classList.remove("ios-gate-on");
+    if(pendingInvite() && !Sync.user && openLoginAt) openLoginAt();
+  });
+  refreshInstallBtn();
+}
+function installCard(move, canSkip){
+  return `<div class="ig-card">
+    <img class="ig-icon" src="icon-faisan-v2-180.png" alt="" width="72" height="72">
+    <h1 class="ig-title">Comment installer <span class="ig-brand">Sous le t<span class="ap-nod">ap</span>is</span></h1>
+    <p class="ig-lead">${move ? "Vos listes ne se perdent pas." : (pendingInvite() ? "Une invitation vous attend. " : "") + "Quelques gestes, une seule fois :"}</p>
+    ${installSteps(move)}
+    ${installKind() === "ios" ? `<p class="ig-note">Pas de bouton Partager ? Ouvrez cette page dans Safari.</p>` : ""}
+    ${canSkip ? `<div class="ig-actions"><button type="button" class="ig-skip">Continuer sans installer</button></div>` : ""}
+    ${move ? `<div class="ig-actions"><button type="button" class="ig-close">Fermer</button></div>` : ""}
+  </div>`;
+}
+function showIosGate(canSkip){
+  iosGateOn = true;
+  document.body.classList.add("ios-gate-on");
+  const g = document.createElement("div");
+  g.className = "ios-gate"; g.id = "iosGate";
+  g.setAttribute("role", "dialog"); g.setAttribute("aria-modal", "true");
+  g.innerHTML = installCard(false, canSkip);
+  document.body.appendChild(g);
+  wireInstall(g);
+}
+function closeIosHelp(){ const h = document.getElementById("iosHelp"); if(h) h.remove(); }
+function openIosHelp(){
+  closeIosHelp();
+  const g = document.createElement("div");
+  g.className = "ios-gate ios-help"; g.id = "iosHelp";
+  g.setAttribute("role", "dialog");
+  g.innerHTML = installCard(true, false);
+  document.body.appendChild(g);
+  wireInstall(g);
+  g.querySelector(".ig-close").addEventListener("click", e=>{ e.stopPropagation(); closeIosHelp(); });
+  g.addEventListener("click", e=>{ if(e.target === g) closeIosHelp(); });
+}
+function showIosBand(){
+  let later = null;
+  try{ later = localStorage.getItem(IOS_LATER_KEY); }catch(e){}
+  if(later && later > todayISO()) return;
+  const b = document.createElement("div");
+  b.className = "ios-band"; b.id = "iosBand";
+  b.innerHTML = `<span>Installez l'appli sur cet appareil : plus pratique au quotidien. Vos listes restent là.</span>
+    <span class="ib-btns"><button type="button" class="ib-how">Installer</button><button type="button" class="ib-later">Plus tard</button></span>`;
+  document.body.prepend(b);
+  b.querySelector(".ib-how").addEventListener("click", e=>{ e.stopPropagation(); openIosHelp(); });
+  b.querySelector(".ib-later").addEventListener("click", e=>{
+    e.stopPropagation();
+    try{ localStorage.setItem(IOS_LATER_KEY, addDaysISO(todayISO(), 14)); }catch(err){}
+    b.remove();
+  });
+}
+if(Store.mode === "doc" && !isStandaloneApp()){
+  if(isIOSDevice()){ if(neverHereBefore()) showIosGate(false); else showIosBand(); }
+  else if(neverHereBefore() && pendingInvite() && installKind() !== "none") showIosGate(true);
+}else if(Store.mode === "doc" && isStandaloneApp() && neverHereBefore() && !pendingInvite()){
+  // première ouverture de l'icône : directement la connexion (avec la case du code)
+  setTimeout(()=>{ if(!Sync.user && openLoginAt && !(relancePop && relancePop.classList.contains("sync-pop"))) openLoginAt(); }, 500);
+}
 Sync.start();
 </script>
