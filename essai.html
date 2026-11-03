@@ -1189,7 +1189,8 @@
     cours » (editUrgentEntry).
   - 10.54 : tâches cochées : elles descendent ensemble, 2,5 s après la
     dernière coche ; souris posée sur la liste, rien ne bouge tant qu'elle
-    y reste ; la descente glisse (FLIP, glideRows). Clic à côté d'une
+    y reste ; la descente glisse doucement (FLIP, glideRows : 0,8 s, la
+    cochée s'estompe un peu en route). Clic à côté d'une
     fenêtre de modification (liste, article de mémo) = Annuler, comme pour
     une tâche. Papier des mémos : blanc chaud #FCFBF7, uni (choisi au banc). Bord des
     listes : barre franche détachée, du titre à deux lignes du bas.
@@ -6812,7 +6813,13 @@ function glideRows(before){
     if(top0 === undefined || !el.animate) return;
     const dy = top0 - el.getBoundingClientRect().top;
     if(Math.abs(dy) < 1) return;
-    el.animate([{ transform:`translateY(${dy}px)` }, { transform:"none" }], { duration:420, easing:"cubic-bezier(.2,.75,.25,1)" });
+    // 10.54 : plus doux — plus lent, départ et arrivée en douceur ; la cochée
+    // qui descend s'estompe un peu en route, pour qu'on la voie moins passer
+    const settling = settledKeys.has(el.dataset.key);
+    el.animate(settling
+      ? [{ transform:`translateY(${dy}px)`, opacity:1 }, { opacity:0.35, offset:0.45 }, { transform:"none", opacity:1 }]
+      : [{ transform:`translateY(${dy}px)` }, { transform:"none" }],
+      { duration:800, easing:"cubic-bezier(.45,0,.25,1)" });
   });
 }
 
