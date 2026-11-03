@@ -1180,7 +1180,10 @@
     modification d'une liste (Annuler et Échap remettent couleur et partage
     d'avant, catEditSnap ; clic à côté = Enregistrer) et d'un article de
     mémo ; double-clic sur un article de mémo pour le modifier ; + à côté du
-    titre d'un mémo : article, quantité et détail.
+    titre d'un mémo : article, quantité et détail. Copier une liste suit
+    l'ordre affiché (flèche comprise). « Convertir en liste de shopping ou
+    mémo ». Plus d'air avant « Nouvelle liste », et une ligne sur le partage
+    dans sa fenêtre. Banc du papier des mémos : essai.html?papier.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2244,10 +2247,11 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   border-color:var(--urgent);
 }
 .add-category-row{
-  margin-top:0.85rem;
+  margin-top:1.9rem;   /* 10.53 : plus d'air avant « Nouvelle liste » (avant 0.85rem) */
   display:flex;
   justify-content:center;
 }
+.nl-hint{ font-size:0.8rem; color:var(--ink-soft); margin:0.1rem 0 0.2rem; }   /* 10.53 */
 .add-category-btn{
   appearance:none;
   /* 10.45 : citron givré du trèfle, pointillés citron, petit zoom au survol
@@ -3776,6 +3780,15 @@ body.ios-gate-on{ overflow:hidden; }
 .ios-band{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:0.4rem 0.8rem; padding:0.55rem 0.9rem; padding-top:max(0.55rem, env(safe-area-inset-top));
   background:var(--accent-soft); color:var(--ink-soft); font-size:0.84rem; text-align:center; }
 .ib-btns{ display:inline-flex; gap:0.4rem; }
+
+/* 10.53 : banc d'essai du papier des mémos (essai.html?papier) */
+.papier-bench{ position:fixed; right:1rem; bottom:1rem; z-index:8000; width:15rem; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:0.8rem; box-shadow:0 10px 30px rgba(40,50,60,.15); font-size:0.85rem; color:var(--ink); }
+.pb-title{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; font-size:0.75rem; color:var(--ink-soft); margin-bottom:0.5rem; }
+.pb-opt{ display:flex; align-items:center; gap:0.5rem; width:100%; font:inherit; text-align:left; background:none; border:1px solid transparent; border-radius:8px; padding:0.3rem 0.4rem; cursor:pointer; color:var(--ink); }
+.pb-opt:hover{ background:var(--surface-2); }
+.pb-opt.on{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.pb-sw{ width:1.6rem; height:1.1rem; border-radius:4px; border:1px solid rgba(0,0,0,.12); flex:none; }
+.pb-sw-row{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; cursor:pointer; }
 </style>
 
 <div class="wrap">
@@ -6052,7 +6065,8 @@ function renderAddCategoryRow(){
     <div class="new-list-card">
       <div class="edit-form">
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
-        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste mémo – shopping</label>` : ""}
+        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de shopping ou mémo</label>
+        <p class="nl-hint">Une liste peut ensuite être partagée avec votre entourage : double-clic sur son titre.</p>` : ""}
         <div class="edit-actions">
           <button type="button" class="add-cancel nl-cancel">Annuler</button>
           <button type="button" class="add-save nl-save">Créer</button>
@@ -8691,7 +8705,7 @@ function buildCatConvertRow(cat, head){
   const courses = isCoursesList(cat.id);
   const row = document.createElement("div");
   row.className = "cat-convert";
-  row.innerHTML = `<button type="button" class="cat-share-link">${courses ? "Convertir en liste normale" : "Convertir en mémo / shopping"}</button>`;
+  row.innerHTML = `<button type="button" class="cat-share-link">${courses ? "Convertir en liste normale" : "Convertir en liste de shopping ou mémo"}</button>`;
   row.addEventListener("mousedown", e => { if(e.target.closest("button")) e.preventDefault(); }); // le curseur reste dans le titre
   row.addEventListener("click", e => e.stopPropagation());
   row.querySelector("button").addEventListener("click", ()=>{
@@ -8709,9 +8723,14 @@ function catTasksText(cat){
   state = loadState();
   const items = getEffectiveItems(cat);
   const courses = isCoursesList(cat.id);
-  return getCatOrder(cat)
-    .map(idx => ({ key: itemKey(cat.id, idx), base: items[idx] }))
-    .filter(r => r.base && !isDeleted(r.key) && !state[r.key])
+  // 10.53 : dans l'ordre affiché (flèche « récentes en bas », urgences en
+  // tête, comme à l'écran), puis les tâches « en cours » de la liste
+  const all = getCatOrder(cat)
+    .map(idx => ({ cat, idx, key: itemKey(cat.id, idx), base: items[idx] }))
+    .filter(r => r.base && !isDeleted(r.key) && !state[r.key]);
+  const shown = all.filter(r => !getEffective(r.key, r.base).waiting);
+  const waiting = all.filter(r => getEffective(r.key, r.base).waiting);
+  return sortByUrgencyThenChecked(catDisplayRows(cat, shown)).concat(waiting)
     .map(r => {
       const e = getEffective(r.key, r.base);
       let line = "- " + (e.t || "").trim();
@@ -11721,5 +11740,47 @@ if(Store.mode === "doc" && !isStandaloneApp()){
   // première ouverture de l'icône : directement la connexion (avec la case du code)
   setTimeout(()=>{ if(!Sync.user && openLoginAt && !(relancePop && relancePop.classList.contains("sync-pop"))) openLoginAt(); }, 500);
 }
+
+// ---- 10.53 : banc d'essai du papier des mémos (essai.html?papier seulement) ----
+// Un petit panneau en bas à droite : propositions de papier et interrupteurs,
+// appliqués en direct aux vrais mémos, à côté des autres listes. Rien n'est
+// enregistré en ligne ; le choix est gardé dans ce navigateur pour comparer.
+if(ESSAI && /[?&]papier/.test(location.search)) (()=>{
+  const P = [
+    ["Actuel (nacre)",        "#FFFFFF", "#F4F7FC", "#F9F5FC"],
+    ["Recyclé clair",         "#F8F6F0", "#F3F1EA", "#EFECE4"],
+    ["Recyclé gris frais",    "#F5F6F3", "#F0F2EE", "#EBEEEA"],
+    ["Kraft très pâle",       "#F7F2E8", "#F2ECDF", "#EDE6D7"],
+    ["Vert d'eau",            "#F3F7F4", "#EDF3EF", "#E8F0EA"],
+    ["Bleu glacier",          "#F4F6F8", "#EEF2F5", "#E9EEF2"],
+  ];
+  const K = "sltapis-essai-papier";
+  let st = { i:0, gloss:true, grad:true, line:true };
+  try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
+  const root = document.documentElement.style;
+  const apply = ()=>{
+    const [, a, b, c] = P[st.i] || P[0];
+    root.setProperty("--memo-a", st.grad ? a : b);
+    root.setProperty("--memo-b", b);
+    root.setProperty("--memo-c", st.grad ? c : b);
+    root.setProperty("--gloss", st.gloss ? "rgba(255,255,255,1)" : "rgba(255,255,255,0)");
+    root.setProperty("--memo-line", st.line ? "rgba(150,160,200,.28)" : "rgba(0,0,0,0)");
+    try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){}
+    paint();
+  };
+  const box = document.createElement("div");
+  box.className = "papier-bench";
+  document.body.appendChild(box);
+  function paint(){
+    box.innerHTML = `<div class="pb-title">Papier des mémos</div>`
+      + P.map((p, i) => `<button type="button" class="pb-opt${i === st.i ? " on" : ""}" data-i="${i}"><span class="pb-sw" style="background:linear-gradient(160deg,${p[1]},${p[2]} 60%,${p[3]})"></span>${p[0]}</button>`).join("")
+      + [["gloss", "Reflet glacé"], ["grad", "Dégradé"], ["line", "Liseré"]].map(([k, l]) =>
+        `<label class="pb-sw-row"><input type="checkbox" data-k="${k}"${st[k] ? " checked" : ""}> ${l}</label>`).join("");
+    box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", e=>{ e.stopPropagation(); st.i = +b.dataset.i; apply(); }));
+    box.querySelectorAll("input").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; apply(); }));
+  }
+  box.addEventListener("click", e => e.stopPropagation());
+  apply();
+})();
 Sync.start();
 </script>
