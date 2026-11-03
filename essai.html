@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.53 -->
+<!-- Sous le tapis — version AUTONOME 10.54 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1178,7 +1178,7 @@
     iPhone / iPad » en bas du code.
     Modifications uniformisées : Annuler / Enregistrer aussi dans la
     modification d'une liste (Annuler et Échap remettent couleur et partage
-    d'avant, catEditSnap ; clic à côté = Enregistrer) et d'un article de
+    d'avant, catEditSnap ; clic à côté = Annuler partout) et d'un article de
     mémo ; double-clic sur un article de mémo pour le modifier ; + à côté du
     titre d'un mémo : article, quantité et détail. Copier une liste suit
     l'ordre affiché (flèche comprise). « Convertir en liste de shopping ou
@@ -1186,7 +1186,12 @@
     dans le panneau Partage.
     Case urgente : double-clic sur une tâche = sa fenêtre de modification,
     ouverte à sa place dans sa liste (rouverte si repliée) ou dans « En
-    cours » (editUrgentEntry). Papier des mémos : blanc chaud #FCFBF7, uni (choisi au banc). Bord des
+    cours » (editUrgentEntry).
+  - 10.54 : tâches cochées : elles descendent ensemble, 2,5 s après la
+    dernière coche ; souris posée sur la liste, rien ne bouge tant qu'elle
+    y reste ; la descente glisse (FLIP, glideRows). Clic à côté d'une
+    fenêtre de modification (liste, article de mémo) = Annuler, comme pour
+    une tâche. Papier des mémos : blanc chaud #FCFBF7, uni (choisi au banc). Bord des
     listes : barre franche détachée, du titre à deux lignes du bas.
 -->
 <title>Sous le tapis</title>
@@ -2318,7 +2323,7 @@ ul.items{
 /* 10.38 : petit espace avant les œufs (en couvaison) et avant les cochées */
 ul.items > .item.group-start{ margin-top:0.6rem; }
 /* une cochée qui vient de descendre apparaît en douceur à sa nouvelle place */
-.item.just-settled{ animation:settle .45s ease both; }
+.item.just-settled{ animation:none; }   /* 10.53 : la ligne glisse à sa place (glideRows) au lieu d'apparaître en fondu */
 @keyframes settle{ from{ opacity:0; } to{ opacity:1; } }
 @media (prefers-reduced-motion:reduce){ .item.just-settled{ animation:none; } }
 /* 10.38 : l'article qu'on vient d'ajouter à un mémo, surligné puis fondu */
@@ -3839,7 +3844,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.53</span>
+    <span class="version-tag">v10.54</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6741,13 +6746,34 @@ const CHECK_LINGER_MS = 2500;
 const lingering = new Map();
 let lingerTimer = null;
 let settledKeys = new Set();   // tâches qui viennent de descendre (léger fondu au rendu)
+// 10.53 : plus de ballet quand on en coche plusieurs :
+//  - chaque coche relance le délai de TOUTES les cochées en attente : elles
+//    descendent ensemble, CHECK_LINGER_MS après la dernière coche ;
+//  - souris posée sur la liste : rien ne bouge tant qu'elle y reste (les
+//    cochées descendent peu après qu'elle en sort) ;
+//  - la descente glisse (chaque ligne part de son ancienne place, FLIP)
+//    au lieu de sauter.
+// Une cochée reste à sa place tant qu'elle est dans lingering (même si un
+// rendu arrive entre-temps, par la synchro par exemple).
 function isSettledDone(key){
   if(!state[key]) return false;
-  const t = lingering.get(key);
-  return !(t && t > Date.now());
+  return !lingering.has(key);
 }
+let hoverCatId = null;   // la liste sous la souris (souris seulement, pas le doigt)
+document.addEventListener("pointerover", e=>{
+  if(e.pointerType !== "mouse") return;
+  const c = e.target && e.target.closest ? e.target.closest(".category") : null;
+  const id = c && c.id && c.id.indexOf("cat-") === 0 ? c.id.slice(4) : null;
+  if(hoverCatId && id !== hoverCatId && lingering.size){ clearTimeout(lingerTimer); lingerTimer = setTimeout(endLinger, 600); }
+  hoverCatId = id;
+});
+document.documentElement.addEventListener("mouseleave", ()=>{ hoverCatId = null; });
 function lingerChecked(key, on){
-  if(on) lingering.set(key, Date.now() + CHECK_LINGER_MS); else lingering.delete(key);
+  if(on){
+    const until = Date.now() + CHECK_LINGER_MS;
+    lingering.forEach((t, k) => lingering.set(k, until));   // toutes ensemble
+    lingering.set(key, until);
+  }else lingering.delete(key);
   clearTimeout(lingerTimer);
   if(!lingering.size) return;
   const next = Math.min(...lingering.values());
@@ -6755,13 +6781,39 @@ function lingerChecked(key, on){
 }
 function endLinger(){
   const a = document.activeElement;
-  const busy = dragState || editingKey || editingCoursesKey || editingCategoryTitle || addingCat || addingCategory
+  const held = hoverCatId && Array.from(lingering.keys()).some(k => k.lastIndexOf(":") > 0 && k.slice(0, k.lastIndexOf(":")) === hoverCatId);
+  const busy = held || dragState || editingKey || editingCoursesKey || editingCategoryTitle || addingCat || addingCategory
     || (a && a.matches && a.matches("input[type=text], textarea"));
-  if(busy){ clearTimeout(lingerTimer); lingerTimer = setTimeout(endLinger, 800); return; }
+  if(busy){ clearTimeout(lingerTimer); lingerTimer = setTimeout(endLinger, held ? 400 : 800); return; }
   const now = Date.now();
   lingering.forEach((t, k)=>{ if(t <= now){ lingering.delete(k); settledKeys.add(k); } });
-  if(settledKeys.size){ renderAll(); settledKeys = new Set(); }
-  if(lingering.size) lingerChecked(lingering.keys().next().value, true);
+  if(settledKeys.size){
+    const before = rowPositions();
+    renderAll();
+    glideRows(before);
+    settledKeys = new Set();
+  }
+  if(lingering.size){
+    clearTimeout(lingerTimer);
+    lingerTimer = setTimeout(endLinger, Math.max(0, Math.min(...lingering.values()) - Date.now()) + 30);
+  }
+}
+// FLIP : positions avant le rendu, puis chaque ligne glisse de là vers sa
+// nouvelle place (transform seulement : rien d'autre ne bouge)
+function rowPositions(){
+  const m = new Map();
+  document.querySelectorAll("ul.items > li.item[data-key]").forEach(el => m.set(el.dataset.key, el.getBoundingClientRect().top));
+  return m;
+}
+function glideRows(before){
+  if(!before.size || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+  document.querySelectorAll("ul.items > li.item[data-key]").forEach(el=>{
+    const top0 = before.get(el.dataset.key);
+    if(top0 === undefined || !el.animate) return;
+    const dy = top0 - el.getBoundingClientRect().top;
+    if(Math.abs(dy) < 1) return;
+    el.animate([{ transform:`translateY(${dy}px)` }, { transform:"none" }], { duration:420, easing:"cubic-bezier(.2,.75,.25,1)" });
+  });
 }
 
 function getTotalItems(){
@@ -9957,7 +10009,8 @@ document.addEventListener("click", (e)=>{
   if(editingCoursesKey){
     const el = document.querySelector(".courses-item.editing");
     if(el && el.contains(e.target)) return;
-    commitCoursesEdit();
+    editingCoursesKey = null;   // 10.53 : clic à côté = Annuler, comme pour une tâche
+    renderAll();
     return;
   }
   if(editingKey){
@@ -9994,10 +10047,9 @@ document.addEventListener("click", (e)=>{
     if(titleInputEl && titleInputEl.contains(e.target)) return;
     if(e.target.closest(".cat-swatches")) return; // choisir une couleur garde le renommage ouvert
     if(e.target.closest(".cat-share")) return;    // 10.2 : cocher un nom aussi
-    // 10.53 : clic à côté = Enregistrer (ce qu'on voit reste) ; Échap = Annuler
-    const ti = document.querySelector(".cat-title-input");
-    if(ti && editingCategoryTitle) renameCategory(editingCategoryTitle, ti.value);
-    editingCategoryTitle = null; catEditSnap = null;
+    // 10.53 : clic à côté = Annuler (couleur et partage d'avant), comme Échap
+    // et comme pour une tâche ; on enregistre avec le bouton ou Entrée
+    cancelCatEdit();
     renderAll();
   }
 });
