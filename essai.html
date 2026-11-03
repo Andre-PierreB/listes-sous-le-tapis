@@ -1182,8 +1182,8 @@
     mémo ; double-clic sur un article de mémo pour le modifier ; + à côté du
     titre d'un mémo : article, quantité et détail. Copier une liste suit
     l'ordre affiché (flèche comprise). « Convertir en liste de shopping ou
-    mémo ». Plus d'air avant « Nouvelle liste », et une ligne sur le partage
-    dans sa fenêtre. Banc du papier des mémos : essai.html?papier.
+    mémo ». Plus d'air avant « Nouvelle liste » ; une phrase sur le partage
+    dans le panneau Partage. Banc du papier des mémos : essai.html?papier.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -6065,8 +6065,7 @@ function renderAddCategoryRow(){
     <div class="new-list-card">
       <div class="edit-form">
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
-        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de shopping ou mémo</label>
-        <p class="nl-hint">Une liste peut ensuite être partagée avec votre entourage : double-clic sur son titre.</p>` : ""}
+        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de shopping ou mémo</label>` : ""}
         <div class="edit-actions">
           <button type="button" class="add-cancel nl-cancel">Annuler</button>
           <button type="button" class="add-save nl-save">Créer</button>
@@ -9540,7 +9539,7 @@ function renderShare(){
   const head = `<div class="share-head"><div class="share-title">Partage</div><button type="button" class="trash-close">Fermer</button></div>`;
   if(!S || !S.user){
     panel.innerHTML = head + `
-      <p class="share-help">Pour partager des listes, il faut d'abord se connecter (la plume, à droite du titre).</p>
+      <p class="share-help">Certaines listes peuvent être partagées avec votre entourage. Pour cela, il faut d'abord se connecter (la plume, à droite du titre).</p>
       <div class="sh-actions"><button type="button" class="sh-btn sh-btn-primary sh-login">Se connecter</button></div>`;
     panel.querySelector(".sh-login").addEventListener("click", e=>{ e.stopPropagation(); const p = document.getElementById("plume"); if(p) p.click(); });
   }else{
@@ -9555,7 +9554,7 @@ function renderShare(){
       return `<li class="sh-person sh-pending"><span class="share-chip">?</span><span class="sh-pname">Invitation${when ? " du " + when : ""}</span><span class="sh-state">pas encore ouverte</span><button type="button" class="sh-copy-old" data-code="${escapeAttr(inv.code)}">Copier le lien</button><button type="button" class="sh-x" data-code="${escapeAttr(inv.code)}" aria-label="Annuler cette invitation" data-tip="Annuler l'invitation">&times;</button></li>`;
     }).join("");
     panel.innerHTML = head + `
-      <p class="share-help">Une invitation par personne. Elle ouvre le lien, se connecte, et rejoint le carnet de contacts. Ensuite, double-clic sur le titre d'une liste : cocher son nom, et la liste apparaît chez elle.</p>
+      <p class="share-help">Certaines listes peuvent être partagées avec votre entourage. Une invitation par personne : elle ouvre le lien, se connecte, et rejoint le carnet. Ensuite, double-clic sur le titre d'une liste et cocher son nom : la liste apparaît chez elle.</p>
       <label class="sh-me"><span>Prénom affiché pour les autres</span><input type="text" class="sh-name" maxlength="30" value="${escapeAttr(myName())}" autocomplete="off"></label>
       <div class="sh-sub">Carnet</div>
       ${peopleHtml ? `<ul class="sh-people">${peopleHtml}</ul>` : `<p class="share-help sh-empty">Personne pour l'instant.</p>`}
