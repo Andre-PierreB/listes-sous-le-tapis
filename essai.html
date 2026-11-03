@@ -3806,6 +3806,10 @@ body.bord-epais .category:not(.courses){ --bord-w:5px; }
 body.bord-actuel .category:not(.courses){ border-left-color:var(--bord-c); border-left-width:var(--bord-w); }
 body.bord-droit .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.1rem; bottom:1.1rem; width:var(--bord-w); background:var(--bord-c); }
 body.bord-plein .category:not(.courses){ border-top-left-radius:3px; border-bottom-left-radius:3px; border-left-color:var(--bord-c); border-left-width:var(--bord-w); }
+/* 2e tour : un repère court à hauteur du titre (rien à voir avec une barre de
+   défilement), et une barre détachée qui commence au titre, plus courte en bas */
+body.bord-titre .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; height:1.5rem; width:var(--bord-w); background:var(--bord-c); border-radius:0 2px 2px 0; }
+body.bord-longtitre .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:var(--bord-w); background:var(--bord-c); }
 body.bord-haut .category:not(.courses)::before{ content:""; position:absolute; left:1.25rem; right:1.25rem; top:0; height:var(--bord-w); background:var(--bord-c); }
 </style>
 
@@ -11789,9 +11793,11 @@ if(ESSAI && /[?&](bord|papier)/.test(location.search)) (()=>{
     ["plein",  "Bord plein, coins gauches droits"],
     ["haut",   "Bande en haut"],
     ["aucun",  "Sans bord (titre en couleur)"],
+    ["titre",  "Repère court, à hauteur du titre"],
+    ["longtitre", "Détachée, du titre à la dernière tâche"],
   ];
-  const K = "sltapis-essai-bord";
-  let st = { v:"droit", full:true, thick:false };
+  const K = "sltapis-essai-bord-2";
+  let st = { v:"titre", full:true, thick:false };
   try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
   const box = document.createElement("div");
   box.className = "papier-bench";
