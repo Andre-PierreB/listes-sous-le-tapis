@@ -11768,16 +11768,19 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 // appliqués en direct aux vrais mémos, à côté des autres listes. Rien n'est
 // enregistré en ligne ; le choix est gardé dans ce navigateur pour comparer.
 if(ESSAI && /[?&]papier/.test(location.search)) (()=>{
+  // 2e tour : autour du « recyclé clair », plus clair et plus net, un peu chaud
   const P = [
-    ["Actuel (nacre)",        "#FFFFFF", "#F4F7FC", "#F9F5FC"],
-    ["Recyclé clair",         "#F8F6F0", "#F3F1EA", "#EFECE4"],
-    ["Recyclé gris frais",    "#F5F6F3", "#F0F2EE", "#EBEEEA"],
-    ["Kraft très pâle",       "#F7F2E8", "#F2ECDF", "#EDE6D7"],
-    ["Vert d'eau",            "#F3F7F4", "#EDF3EF", "#E8F0EA"],
-    ["Bleu glacier",          "#F4F6F8", "#EEF2F5", "#E9EEF2"],
+    ["Actuel (nacre)",            "#FFFFFF", "#F4F7FC", "#F9F5FC"],
+    ["Recyclé clair (1er tour)",  "#F8F6F0", "#F3F1EA", "#EFECE4"],
+    ["Recyclé plus clair",        "#F6F4EE", "#F6F4EE", "#F6F4EE"],
+    ["Recyclé très clair",        "#F8F7F2", "#F8F7F2", "#F8F7F2"],
+    ["Ivoire frais",              "#FAF9F4", "#FAF9F4", "#FAF9F4"],
+    ["Crème légère",              "#FBF8F0", "#FBF8F0", "#FBF8F0"],
+    ["Coquille d'œuf",            "#FAF7F1", "#FAF7F1", "#FAF7F1"],
+    ["Papier blanc chaud",        "#FCFBF7", "#FCFBF7", "#FCFBF7"],
   ];
-  const K = "sltapis-essai-papier";
-  let st = { i:0, gloss:true, grad:true, line:true };
+  const K = "sltapis-essai-papier-2";
+  let st = { i:3, gloss:false, grad:false, line:false };
   try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
   const root = document.documentElement.style;
   const apply = ()=>{
