@@ -3813,6 +3813,11 @@ body.bord-mi .category:not(.courses)::before{ content:""; position:absolute; lef
 body.bord-tiers .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; height:calc(33% - 1.05rem); min-height:1.5rem; width:var(--bord-w); background:var(--bord-c); }
 body.bord-fondu .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; bottom:1.4rem; width:var(--bord-w); background:linear-gradient(var(--bord-c) 40%, transparent); }
 body.bord-coin .category:not(.courses)::before{ content:""; position:absolute; left:0; top:0.9rem; bottom:2.2rem; width:var(--bord-w); background:var(--bord-c); }
+body.bord-ronds .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:var(--bord-w); background:var(--bord-c); border-radius:999px; }
+/* l'arc reprend la courbe du coin de la carte (bord gauche arrondi qui s'effile), puis s'arrête avant le bas */
+body.bord-arc .category:not(.courses)::before{ content:""; position:absolute; left:calc(-1 * var(--bord-w)); top:0; bottom:2.2rem; width:14px; border-left:var(--bord-w) solid var(--bord-c); border-top-left-radius:14px; box-sizing:border-box; }
+body.bord-crochet .category:not(.courses)::before{ content:""; position:absolute; left:calc(-1 * var(--bord-w)); top:0; bottom:2.2rem; width:12px; border-left:var(--bord-w) solid var(--bord-c); border-bottom:var(--bord-w) solid var(--bord-c); border-top-left-radius:14px; border-bottom-left-radius:10px; box-sizing:border-box; }
+body.bord-flotte .category:not(.courses)::before{ content:""; position:absolute; left:5px; top:1.05rem; bottom:2.2rem; width:var(--bord-w); background:var(--bord-c); border-radius:999px; }
 body.bord-longtitre .category:not(.courses)::before{ content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:var(--bord-w); background:var(--bord-c); }
 body.bord-haut .category:not(.courses)::before{ content:""; position:absolute; left:1.25rem; right:1.25rem; top:0; height:var(--bord-w); background:var(--bord-c); }
 </style>
@@ -11791,20 +11796,20 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 // franches, appliquées en direct (classe sur <body>). Rien en ligne ; le
 // choix est gardé dans ce navigateur. (Le banc du papier a servi : blanc chaud.)
 if(ESSAI && /[?&](bord|papier)/.test(location.search)) (()=>{
-  // 3e tour : on garde la barre détachée qui part du titre et s'arrête plus
-  // haut ; couleur franche, épaisseur normale. Variantes de longueur et de fin.
+  // 4e tour : base retenue (du titre, s'arrête 2 lignes avant le bas) ;
+  // couleur franche ou non, et des fins qui rappellent les coins ronds
   const P = [
-    ["actuel",    "Référence : l'actuel, couleur franche"],
-    ["longtitre", "Retenue : du titre, s'arrête 2 lignes avant le bas"],
-    ["mi",        "Du titre jusqu'à mi-hauteur"],
-    ["tiers",     "Du titre, sur le premier tiers"],
-    ["fondu",     "Du titre, s'efface en fondu vers le bas"],
-    ["coin",      "Du coin haut, s'arrête 2 lignes avant le bas"],
+    ["actuel",    "Référence : l'actuel"],
+    ["longtitre", "Retenue, bouts droits"],
+    ["ronds",     "Retenue, bouts arrondis"],
+    ["arc",       "Suit l'arrondi du coin haut, s'arrête avant le bas"],
+    ["crochet",   "Arrondi en haut et petit retour arrondi en bas"],
+    ["flotte",    "Trait flottant, décollé du bord, bouts ronds"],
   ];
-  const K = "sltapis-essai-bord-3";
-  let st = { v:"longtitre", full:true, thick:false };
+  const K = "sltapis-essai-bord-4";
+  let st = { v:"arc", full:true, thick:false };
   try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
-  st.full = true; st.thick = false;
+  st.thick = false;
   const box = document.createElement("div");
   box.className = "papier-bench";
   document.body.appendChild(box);
@@ -11817,7 +11822,8 @@ if(ESSAI && /[?&](bord|papier)/.test(location.search)) (()=>{
   };
   function paint(){
     box.innerHTML = `<div class="pb-title">Bord des listes</div>`
-      + P.map(([v, l]) => `<button type="button" class="pb-opt${v === st.v ? " on" : ""}" data-v="${v}">${l}</button>`).join("");
+      + P.map(([v, l]) => `<button type="button" class="pb-opt${v === st.v ? " on" : ""}" data-v="${v}">${l}</button>`).join("")
+      + `<label class="pb-sw-row"><input type="checkbox" data-k="full"${st.full ? " checked" : ""}> Couleur franche</label>`;
     box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", e=>{ e.stopPropagation(); st.v = b.dataset.v; apply(); }));
     box.querySelectorAll("input").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; apply(); }));
   }
