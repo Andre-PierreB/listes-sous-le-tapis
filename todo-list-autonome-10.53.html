@@ -3,6 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sous le tapis">
+<script>if(/essai/i.test(location.pathname)) document.querySelector('meta[name="apple-mobile-web-app-title"]').content = "Essai tapis";</script>
 <link rel="apple-touch-icon" href="icon-faisan-v2-180.png">
 <link rel="icon" href="icon-faisan-v2-180.png">
 <link rel="manifest" href="manifest.webmanifest" id="manifestLink">
@@ -12,6 +13,9 @@
   if(/Android/i.test(navigator.userAgent)){
     document.getElementById("manifestLink").href = "manifest-android.webmanifest";
   }
+  // 10.53 : le banc d'essai s'installe comme sa propre icône (sinon l'icône
+  // ouvrirait la vraie appli)
+  if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
 <!-- Sous le tapis — version AUTONOME 10.53 -->
 <!--
