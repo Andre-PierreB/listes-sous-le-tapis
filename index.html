@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.54 -->
+<!-- Sous le tapis — version AUTONOME 10.55 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1192,7 +1192,12 @@
     y reste ; la descente glisse doucement (FLIP, glideRows : 0,8 s, la
     cochée s'estompe un peu en route). Clic à côté d'une
     fenêtre de modification (liste, article de mémo) = Annuler, comme pour
-    une tâche. Papier des mémos : blanc chaud #FCFBF7, uni (choisi au banc). Bord des
+    une tâche.
+  - 10.55 : carnet : nom et initiales de chaque contact modifiables (crayon
+    ou double-clic dans le panneau Partage ; champ « ini » du contact,
+    personInitials) ; le nom du carnet passe avant celui que la personne
+    s'est choisi. Mode sombre : papier des mémos uni #23231F, sans reflet
+    ni liseré, comme en clair. Papier des mémos : blanc chaud #FCFBF7, uni (choisi au banc). Bord des
     listes : barre franche détachée, du titre à deux lignes du bas.
 -->
 <title>Sous le tapis</title>
@@ -1286,9 +1291,9 @@
     --btn-ink:#AFC0CC;
     --accent-soft:#1C2B30;
     --plume-off:var(--ink-faint);
-    --gloss:rgba(255,255,255,.045);
-    --memo-a:#1F2328; --memo-b:#1F2530; --memo-c:#252231;
-    --memo-line:rgba(160,170,210,.18);
+    --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
+    --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
+    --memo-line:rgba(0,0,0,0);
     --logo-green:#A9D65A;
     --logo-green-strong:#C7E58A;
     --urgent:#B88AEB;
@@ -1329,9 +1334,9 @@
   --btn-ink:#AFC0CC;
   --accent-soft:#1C2B30;
   --plume-off:var(--ink-faint);
-  --gloss:rgba(255,255,255,.045);
-  --memo-a:#1F2328; --memo-b:#1F2530; --memo-c:#252231;
-  --memo-line:rgba(160,170,210,.18);
+  --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
+  --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
+  --memo-line:rgba(0,0,0,0);
   --logo-green:#A9D65A;
   --logo-green-strong:#C7E58A;
   --urgent:#B88AEB;
@@ -1912,7 +1917,7 @@ header{
    qui ont leur marge de cahier. */
 .category:not(.courses)::before{
   content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:3px;
-  background:var(--cat-color, var(--accent));
+  background:var(--cat-color, var(--accent));   /* bouts droits : arrondis, elle rappelait la barre de défilement des mémos */
 }
 .category.collapsed:not(.courses)::before{ bottom:1.05rem; }   /* repliée : la barre longe le titre */
 .category.done{ opacity:0.62; }
@@ -3327,6 +3332,15 @@ footer:has(#shareLink:not([hidden])) #trashLink{ margin-right:0; }
 .sh-btn-primary{ background:color-mix(in srgb, var(--accent) 15%, var(--surface)); }
 .sh-btn:hover{ background:var(--accent); color:var(--surface); }
 .sh-btn:disabled{ opacity:.55; cursor:default; }
+.sh-edit{ appearance:none; border:0; background:none; padding:0.2rem; color:var(--ink-faint); cursor:pointer; border-radius:6px; display:inline-grid; place-items:center; }
+.sh-edit:hover{ color:var(--accent); background:var(--surface-2); }
+.sh-editing{ flex-wrap:wrap; gap:0.45rem; }
+.sh-ini-in, .sh-name-in{ font:inherit; font-size:0.9rem; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); color:var(--ink); padding:0.3rem 0.5rem; }
+.sh-ini-in{ width:2.9rem; text-align:center; text-transform:uppercase; font-family:'Courier Prime', 'Courier New', Courier, monospace; font-weight:700; }
+.sh-name-in{ flex:0 1 12rem; min-width:7rem; }   /* 10.55 : à la taille d'un prénom */
+.sh-ini-in:focus, .sh-name-in:focus{ outline:none; border-color:var(--accent); }
+.sh-editing .edit-actions{ margin-left:auto; }
+@media (pointer:coarse){ .sh-ini-in, .sh-name-in{ font-size:16px; } }
 .sh-code{ font-size:0.86rem; color:var(--ink-soft); margin:-0.15rem 0 0.6rem; }
 .sh-code b{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:1.05rem; color:var(--ink); letter-spacing:0.06em; }
 .sh-code span{ font-size:0.78rem; }
@@ -3845,7 +3859,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.54</span>
+    <span class="version-tag">v10.55</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6325,11 +6339,19 @@ function personName(uid, catId){
   if(!uid) return "?";
   if(uid === myUid()) return myName();
   const i = catId ? listInfo(catId) : null;
-  if(i && i.owner === uid && i.names[uid]) return i.names[uid];   // le prénom que le créateur s'est choisi
+  // 10.55 : le nom donné dans mon carnet passe en premier (on peut le changer
+  // dans le panneau Partage) ; sinon le prénom que la personne s'est choisi
   const c = contactsMap()[uid];
   if(c && c.name) return c.name;
   if(i && i.names[uid]) return i.names[uid];
   return "?";
+}
+// 10.55 : initiales d'une personne : celles choisies dans le carnet, sinon
+// tirées de son nom
+function personInitials(uid, catId){
+  const c = uid && uid !== myUid() ? contactsMap()[uid] : null;
+  if(c && c.ini) return c.ini;
+  return initialOf(personName(uid, catId));
 }
 // ---- 10.31 : nouveautés dans les listes partagées (voir NOTE, 10.31) ----
 // Mémoire locale (propre à l'appareil) : { c: { idListe: index à partir
@@ -6451,11 +6473,11 @@ function renderNewNotice(){
 // 10.45 : initiales de l'auteur (avant : prénom), et « modif » pour une modification
 function newTagHtml(cat, base){
   const who = personName(base.by, cat.id);
-  return `<span class="new-tag" aria-label="Nouvelle, ajoutée par ${escapeAttr(who)}">new – ${escapeAttr(initialOf(who))}</span>`;
+  return `<span class="new-tag" aria-label="Nouvelle, ajoutée par ${escapeAttr(who)}">new – ${escapeAttr(personInitials(base.by, cat.id))}</span>`;
 }
 function editTagHtml(cat, key){
   const who = personName(editInfo(key).by, cat.id);
-  return `<span class="new-tag" aria-label="Modifiée par ${escapeAttr(who)}">modif – ${escapeAttr(initialOf(who))}</span>`;
+  return `<span class="new-tag" aria-label="Modifiée par ${escapeAttr(who)}">modif – ${escapeAttr(personInitials(editInfo(key).by, cat.id))}</span>`;
 }
 // « de André » → « d'André »
 function deName(name){ const n = String(name || "?"); return /^[aeiouyhàâäéèêëîïôöùûü]/i.test(n) ? "d'" + n : "de " + n; }
@@ -8399,7 +8421,7 @@ function buildItemLi(cat, idx, base, key, opts){
     let strikerTag = "";
     if(struck && isSharedList(cat.id)){
       const who = personName(checkerOf(cat.id, key), cat.id);
-      strikerTag = `<span class="checker-tag" data-tip="Rayé par ${escapeAttr(who)}" aria-label="Rayé par ${escapeAttr(who)}">${escapeAttr(initialOf(who))}</span>`;
+      strikerTag = `<span class="checker-tag" data-tip="Rayé par ${escapeAttr(who)}" aria-label="Rayé par ${escapeAttr(who)}">${escapeAttr(personInitials(checkerOf(cat.id, key), cat.id))}</span>`;
     }
     li.innerHTML = `
       <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
@@ -8487,7 +8509,7 @@ function buildItemLi(cat, idx, base, key, opts){
   let checkerTag = "";
   if(checked && isSharedList(cat.id)){
     const who = personName(checkerOf(cat.id, key), cat.id);
-    checkerTag = `<span class="checker-tag" data-tip="Cochée par ${escapeAttr(who)}" aria-label="Cochée par ${escapeAttr(who)}">${escapeAttr(initialOf(who))}</span>`;
+    checkerTag = `<span class="checker-tag" data-tip="Cochée par ${escapeAttr(who)}" aria-label="Cochée par ${escapeAttr(who)}">${escapeAttr(personInitials(checkerOf(cat.id, key), cat.id))}</span>`;
   }
   li.innerHTML = `
     ${dragHandleHtml}
@@ -8987,7 +9009,7 @@ function render(){
         ? "Partagée avec " + names.join(", ")
         : "Liste " + deName(personName(ownerUid, cat.id)) + ", en partage";
       shareChips = `<span class="share-chips" data-tip="${escapeAttr(tip)}" aria-label="${escapeAttr(tip)}">` +
-        names.slice(0, 3).map(n => `<span class="share-chip">${escapeAttr(initialOf(n))}</span>`).join("") +
+        people.slice(0, 3).map(u => `<span class="share-chip">${escapeAttr(personInitials(u, cat.id))}</span>`).join("") +
         (names.length > 3 ? `<span class="share-chip share-more">+${names.length - 3}</span>` : "") + `</span>`;
     }
 
@@ -9570,6 +9592,7 @@ function renderTrash(){
 let shareOpen = false;
 let shareNewLink = null;   // { code, url } : le dernier lien créé, affiché sous le bouton
 let shareMsg = "";
+let shareEditUid = null;   // 10.55 : le contact en cours de modification (nom, initiales)
 function inviteUrl(code){ return location.origin + location.pathname + "?invitation=" + encodeURIComponent(code); }
 // 10.53 : le message envoyé à la personne invitée : le lien, et le code pour
 // l'iPhone (l'icône d'écran d'accueil ne voit pas les liens ouverts dans Safari)
@@ -9588,7 +9611,7 @@ function openSharePanel(){
 }
 function closeSharePanel(){
   if(!shareOpen) return;
-  shareOpen = false; shareNewLink = null; shareMsg = "";
+  shareOpen = false; shareNewLink = null; shareMsg = ""; shareEditUid = null;
   renderAll();
 }
 async function copyText(text, input){
@@ -9636,7 +9659,11 @@ function renderShare(){
     const uids = Object.keys(cm).sort((a, b) => String(cm[a].name || "").localeCompare(String(cm[b].name || ""), "fr"));
     const peopleHtml = uids.map(u=>{
       const k = myListsSharedWith(u);
-      return `<li class="sh-person"><span class="share-chip">${escapeAttr(initialOf(cm[u].name))}</span><span class="sh-pname">${escapeAttr(cm[u].name || "?")}</span><span class="sh-state">${k ? k + (k > 1 ? " listes partagées" : " liste partagée") : "aucune liste partagée"}</span><button type="button" class="sh-x" data-uid="${escapeAttr(u)}" aria-label="Retirer ${escapeAttr(cm[u].name || "")} du carnet" data-tip="Retirer du carnet">&times;</button></li>`;
+      if(shareEditUid === u) return `<li class="sh-person sh-editing" data-uid="${escapeAttr(u)}">
+        <input type="text" class="sh-ini-in" maxlength="3" value="${escapeAttr(personInitials(u))}" aria-label="Initiales" autocomplete="off" autocapitalize="characters">
+        <input type="text" class="sh-name-in" maxlength="30" value="${escapeAttr(cm[u].name || "")}" aria-label="Nom" autocomplete="off">
+        <span class="edit-actions"><button type="button" class="edit-cancel">Annuler</button><button type="button" class="edit-save">Enregistrer</button></span></li>`;
+      return `<li class="sh-person"><span class="share-chip">${escapeAttr(personInitials(u))}</span><span class="sh-pname" data-uid="${escapeAttr(u)}" title="Double-clic pour modifier">${escapeAttr(cm[u].name || "?")}</span><button type="button" class="sh-edit" data-uid="${escapeAttr(u)}" aria-label="Modifier le nom et les initiales" data-tip="Modifier"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg></button><span class="sh-state">${k ? k + (k > 1 ? " listes partagées" : " liste partagée") : "aucune liste partagée"}</span><button type="button" class="sh-x" data-uid="${escapeAttr(u)}" aria-label="Retirer ${escapeAttr(cm[u].name || "")} du carnet" data-tip="Retirer du carnet">&times;</button></li>`;
     }).join("") + invites.map(inv=>{
       const d = inv.createdAt ? new Date(inv.createdAt) : null;
       const when = d ? shortDateFR(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0")) : "";
@@ -9673,6 +9700,37 @@ function renderShare(){
     nameInp.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); nameInp.blur(); } if(e.key === "Escape"){ e.stopPropagation(); nameInp.value = myName(); nameInp.blur(); } });
     nameInp.addEventListener("change", saveName);
     panel.querySelectorAll(".sh-x[data-uid]").forEach(b => b.addEventListener("click", e=>{ e.stopPropagation(); removeContact(b.dataset.uid); }));
+    // 10.55 : modifier le nom et les initiales d'un contact (crayon ou double-clic)
+    panel.querySelectorAll(".sh-edit, .sh-pname[data-uid]").forEach(b => b.addEventListener(b.classList.contains("sh-edit") ? "click" : "dblclick", e=>{
+      e.stopPropagation(); shareEditUid = b.dataset.uid; renderAll();
+      requestAnimationFrame(()=>{ const i = panel.querySelector(".sh-name-in"); if(i){ i.focus(); i.select(); } });
+    }));
+    const ed = panel.querySelector(".sh-editing");
+    if(ed){
+      const uid = ed.dataset.uid, nIn = ed.querySelector(".sh-name-in"), iIn = ed.querySelector(".sh-ini-in");
+      const autoIni = ()=> initialOf(nIn.value.trim() || "?");
+      let iniTouched = !!(contactsMap()[uid] || {}).ini;
+      iIn.addEventListener("input", ()=>{ iniTouched = true; });
+      nIn.addEventListener("input", ()=>{ if(!iniTouched) iIn.value = autoIni(); });
+      const save = ()=>{
+        const c = contactsMap();
+        if(c[uid]){
+          const n = nIn.value.trim().slice(0, 30);
+          if(n) c[uid].name = n;
+          const ini = iIn.value.trim().toLocaleUpperCase("fr").slice(0, 3);
+          if(ini && ini !== initialOf(c[uid].name)) c[uid].ini = ini; else delete c[uid].ini;
+          Store.setUserField("contacts", c);
+        }
+        shareEditUid = null; shareMsg = ""; renderAll();
+      };
+      ed.querySelector(".edit-save").addEventListener("click", e=>{ e.stopPropagation(); save(); });
+      ed.querySelector(".edit-cancel").addEventListener("click", e=>{ e.stopPropagation(); shareEditUid = null; renderAll(); });
+      [nIn, iIn].forEach(inp => inp.addEventListener("keydown", e=>{
+        if(e.key === "Enter"){ e.preventDefault(); save(); }
+        if(e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); shareEditUid = null; renderAll(); }
+      }));
+      ed.addEventListener("click", e => e.stopPropagation());
+    }
     panel.querySelectorAll(".sh-x[data-code]").forEach(b => b.addEventListener("click", async e=>{
       e.stopPropagation();
       try{ await S.deleteInvite(b.dataset.code); if(shareNewLink && shareNewLink.code === b.dataset.code) shareNewLink = null; shareMsg = "Invitation annulée : le lien ne marche plus."; }

@@ -1917,8 +1917,7 @@ header{
    qui ont leur marge de cahier. */
 .category:not(.courses)::before{
   content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:3px;
-  background:var(--cat-color, var(--accent));
-  border-radius:999px;   /* 10.55 : bouts arrondis */
+  background:var(--cat-color, var(--accent));   /* bouts droits : arrondis, elle rappelait la barre de défilement des mémos */
 }
 .category.collapsed:not(.courses)::before{ bottom:1.05rem; }   /* repliée : la barre longe le titre */
 .category.done{ opacity:0.62; }
