@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.55 -->
+<!-- Sous le tapis — version AUTONOME 10.57 (banc d'essai) -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1199,6 +1199,8 @@
     s'est choisi. Mode sombre : papier des mémos uni #23231F, sans reflet
     ni liseré, comme en clair. Papier des mémos : blanc chaud #FCFBF7, uni (choisi au banc). Bord des
     listes : barre franche détachée, du titre à deux lignes du bas.
+  - 10.56 : texte des articles de mémo à l'encre pleine (var(--ink), comme
+    les tâches) au lieu de 78 % : plus lisible sur le papier blanc chaud.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2658,7 +2660,7 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 /* 10.17 : chaque article posé sur une ligne de cahier */
 .courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:calc(2 * var(--row-pad) + 0.15rem + 20px - 1.4 * var(--memo-size)) 0.3rem 0; } /* 10.18 : texte posé sur sa ligne (air au-dessus) ; 10.38 : même hauteur de ligne que les tâches, où c'est la case à cocher qui la donne (18px + 0.15rem + 3px) : 2 × row-pad + case − texte − filet 1px */
 .courses-item:hover{ background:color-mix(in srgb, var(--paper-rule) 30%, transparent); } /* voile léger : la marge rouge reste visible */
-.courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); color:color-mix(in srgb, var(--ink) 78%, var(--surface)); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+.courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); color:var(--ink); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
 /* quantité : après le nom (en ligne, pour être barrée avec lui) ; 10.17 : à
    l'encre rose (le rouge reste aux urgences), bien visible, plus de badge gris */
 .courses-qty{
@@ -3819,6 +3821,52 @@ body.ios-gate-on{ overflow:hidden; }
 .ib-btns{ display:inline-flex; gap:0.4rem; }
 
 
+/* 10.57 : banc d'essai du mini-chat « Entre nous » (essai.html?chat) — rien
+   en ligne : maquette posée parmi les listes, messages gardés en mémoire */
+.papier-bench{ position:fixed; right:1rem; bottom:1rem; z-index:8000; width:15rem; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:0.8rem; box-shadow:0 10px 30px rgba(40,50,60,.15); font-size:0.85rem; color:var(--ink); }
+.pb-title{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; font-size:0.75rem; color:var(--ink-soft); margin-bottom:0.5rem; }
+.pb-opt{ display:flex; align-items:center; gap:0.5rem; width:100%; font:inherit; text-align:left; background:none; border:1px solid transparent; border-radius:8px; padding:0.3rem 0.4rem; cursor:pointer; color:var(--ink); }
+.pb-opt:hover{ background:var(--surface-2); }
+.pb-opt.on{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.pb-sw-row{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; cursor:pointer; }
+.papier-bench.chat-bench{ max-height:calc(100vh - 2rem); overflow-y:auto; width:16rem; }
+.pb-sub{ font-size:0.72rem; color:var(--ink-faint); margin:0.6rem 0 0.15rem; text-transform:uppercase; letter-spacing:0.06em; }
+.chat-card{ position:relative; min-width:0; border-radius:14px; --chat-d:0.14; --chat-me:var(--btn-ink); --chat-them:var(--logo-green-strong); }
+.chat-card.wide{ grid-column:1 / -1; }
+.chat-screen{
+  position:relative; border-radius:10px; padding:2.1rem 1.1rem 0.8rem;
+  background:color-mix(in srgb, var(--ink) 5%, var(--bg));
+  box-shadow:inset 0 2px 5px rgba(42,39,37,var(--chat-d)), inset 0 0 0 1px rgba(42,39,37,0.06);
+  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.9rem; line-height:1.55;
+  cursor:text;
+}
+body.chat-profond .chat-card{ --chat-d:0.28; }
+/* écran enfoncé : la carte fait le cadre (surélevée comme les listes), l'écran est creusé dedans */
+body.chat-ecran .chat-card, body.chat-bo .chat-card{ background:var(--surface); box-shadow:var(--shadow); padding:0.7rem; }
+body.chat-bo .chat-card{ background:var(--surface-2); padding:1.6rem 0.8rem 0.8rem; }
+body.chat-bo .chat-card::before{ content:""; position:absolute; left:1rem; top:0.65rem; width:6px; height:6px; border-radius:50%; background:var(--logo-green); box-shadow:0 0 4px var(--logo-green); }
+body.chat-bo .chat-card::after{ content:"sous le tapis · coulisses"; position:absolute; left:1.65rem; top:0.38rem; font:600 0.62rem 'Public Sans', sans-serif; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); }
+body.chat-bo .chat-screen{ background-image:repeating-linear-gradient(transparent 0 3px, rgba(42,39,37,0.025) 3px 4px); }
+.chat-tag{
+  position:absolute; top:0.55rem; right:0.7rem; transform:rotate(var(--tag-r, 2deg));
+  font:600 0.66rem 'Public Sans', sans-serif; letter-spacing:0.08em; text-transform:uppercase;
+  color:color-mix(in srgb, var(--btn-ink) 55%, transparent);
+  background:rgba(255,255,255,0.45); border:1px solid color-mix(in srgb, var(--btn-ink) 18%, transparent);
+  border-radius:4px; padding:2px 7px; pointer-events:none;
+}
+body.chat-tagdroit .chat-tag{ --tag-r:0deg; }
+.chat-log{ max-height:18rem; overflow-y:auto; scrollbar-width:none; }
+.chat-l{ margin:0.12rem 0; overflow-wrap:anywhere; }
+.chat-l.me{ text-align:right; padding-left:18%; color:var(--chat-me); }
+.chat-l.them{ text-align:left; padding-right:18%; color:var(--chat-them); }
+.chat-m{ font-size:0.7rem; color:var(--ink-faint); white-space:nowrap; }
+.chat-sig{ display:block; font-size:0.7rem; color:var(--ink-faint); margin:-0.1rem 0 0.35rem; }
+.chat-pr{ font-weight:700; }
+.chat-in{ display:flex; justify-content:flex-end; align-items:center; min-height:1.6rem; border-top:1px dashed rgba(42,39,37,0.15); margin-top:0.6rem; padding-top:0.45rem; color:var(--chat-me); }
+.chat-in.them{ justify-content:flex-start; color:var(--chat-them); }
+.chat-cur{ display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:2px; animation:chat-blink 1.05s steps(1) infinite; }
+@keyframes chat-blink{ 50%{ opacity:0; } }
+.chat-field{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
 </style>
 
 <div class="wrap">
@@ -3859,7 +3907,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.55</span>
+    <span class="version-tag">v10.57 essai</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -11887,5 +11935,86 @@ if(Store.mode === "doc" && !isStandaloneApp()){
   setTimeout(()=>{ if(!Sync.user && openLoginAt && !(relancePop && relancePop.classList.contains("sync-pop"))) openLoginAt(); }, 500);
 }
 
+// ---- 10.57 : banc d'essai du mini-chat « Entre nous » (essai.html?chat) ----
+// Maquette seulement : rien n'est synchronisé, les messages tapés restent en
+// mémoire le temps de la page. Les réglages sont gardés dans ce navigateur.
+if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
+  const K = "sltapis-essai-chat-1";
+  let st = { cadre:"ecran", profond:false, sig:"cote", voix:"vert", tagdroit:false, wide:true, haut:true, hiske:false };
+  try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
+  const MSG = [
+    { me:true,  t:"17:41", x:"j'ai augmenté le contraste des mémos" },
+    { me:false, t:"17:52", x:"beaucoup mieux, merci" },
+    { me:false, t:"17:52", x:"bisou" },
+    { me:true,  t:"17:58", x:"le faisan approuve" },
+  ];
+  const VOIX = { vert:["var(--btn-ink)", "var(--logo-green-strong)"], bleu:["var(--accent)", "var(--logo-green-strong)"], encre:["var(--btn-ink)", "var(--ink)"] };
+  const card = document.createElement("div");
+  card.className = "chat-card";
+  card.innerHTML = `<div class="chat-screen"><span class="chat-tag">Entre nous</span><div class="chat-log"></div><div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div><input class="chat-field" autocomplete="off" aria-label="Écrire un mot"></div>`;
+  const log = card.querySelector(".chat-log"), field = card.querySelector(".chat-field"), typed = card.querySelector(".chat-typed"), inRow = card.querySelector(".chat-in");
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; };
+  function paintLog(){
+    log.innerHTML = "";
+    MSG.forEach(m=>{
+      const who = m.me ? "AP" : "H";
+      const l = el("div", "chat-l " + (m.me ? "me" : "them"));
+      if(st.sig === "prompt"){
+        l.append(el("span", "chat-pr", who + "> "), document.createTextNode(m.x + " "), el("span", "chat-m", m.t));
+      }else if(st.sig === "dessous"){
+        l.append(document.createTextNode(m.x), el("span", "chat-sig", "— " + who + ", " + m.t));
+      }else{
+        l.append(document.createTextNode(m.x + "  "), el("span", "chat-m", m.t + " · " + who));
+      }
+      log.appendChild(l);
+    });
+    log.scrollTop = log.scrollHeight;
+  }
+  const meNow = () => !st.hiske;
+  card.addEventListener("click", e=>{ e.stopPropagation(); field.focus({ preventScroll:true }); });
+  field.addEventListener("input", ()=>{ typed.textContent = field.value; });
+  field.addEventListener("keydown", e=>{
+    if(e.key !== "Enter" || !field.value.trim()) return;
+    e.preventDefault();
+    const n = new Date();
+    MSG.push({ me:meNow(), t:String(n.getHours()).padStart(2, "0") + ":" + String(n.getMinutes()).padStart(2, "0"), x:field.value.trim() });
+    field.value = ""; typed.textContent = "";
+    paintLog();
+  });
+  const cats = document.getElementById("categories");
+  const place = ()=>{
+    if(card.parentElement === cats && (st.haut ? cats.firstElementChild === card : cats.lastElementChild === card)) return;
+    if(st.haut) cats.prepend(card); else cats.appendChild(card);
+  };
+  new MutationObserver(place).observe(cats, { childList:true });
+  const box = document.createElement("div");
+  box.className = "papier-bench chat-bench";
+  document.body.appendChild(box);
+  box.addEventListener("click", e => e.stopPropagation());
+  const apply = ()=>{
+    ["pur", "ecran", "bo"].forEach(v => document.body.classList.toggle("chat-" + v, st.cadre === v));
+    document.body.classList.toggle("chat-profond", st.profond);
+    document.body.classList.toggle("chat-tagdroit", st.tagdroit);
+    card.classList.toggle("wide", st.wide);
+    const v = VOIX[st.voix] || VOIX.vert;
+    card.style.setProperty("--chat-me", v[0]); card.style.setProperty("--chat-them", v[1]);
+    inRow.classList.toggle("them", st.hiske);
+    try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){}
+    paintLog(); place(); paint();
+  };
+  const opt = (k, v, l) => `<button type="button" class="pb-opt${st[k] === v ? " on" : ""}" data-k="${k}" data-v="${v}">${l}</button>`;
+  const sw = (k, l) => `<label class="pb-sw-row"><input type="checkbox" data-k="${k}"${st[k] ? " checked" : ""}> ${l}</label>`;
+  function paint(){
+    box.innerHTML = `<div class="pb-title">Entre nous</div>`
+      + `<div class="pb-sub">Cadre</div>` + opt("cadre", "pur", "Pur : creusé dans le fond") + opt("cadre", "ecran", "Écran enfoncé dans une carte") + opt("cadre", "bo", "Back-office (cadre, voyant, lignes)")
+      + sw("profond", "Renfoncement plus marqué")
+      + `<div class="pb-sub">Initiales</div>` + opt("sig", "cote", "À côté de l'heure") + opt("sig", "dessous", "Signature dessous") + opt("sig", "prompt", "En invite, façon C:\\")
+      + `<div class="pb-sub">Voix</div>` + opt("voix", "vert", "Ardoise / vert du faisan") + opt("voix", "bleu", "Bleu-vert / vert du faisan") + opt("voix", "encre", "Ardoise / encre")
+      + `<div class="pb-sub">Divers</div>` + sw("tagdroit", "Sticker droit (pas penché)") + sw("wide", "Pleine largeur") + sw("haut", "En haut des listes") + sw("hiske", "Écrire en tant que Hiske");
+    box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", ()=>{ st[b.dataset.k] = b.dataset.v; apply(); }));
+    box.querySelectorAll("input").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; apply(); }));
+  }
+  apply();
+})();
 Sync.start();
 </script>
