@@ -17,24 +17,31 @@
     le même écran ; « Tour par tour » simule le passage de l'un à l'autre
     (voile « Au tour de … », puis le coup de l'autre est rejoué).
   - Partie = { seed, regles, shots:[{ p, a, v, o, at }], objets } : tout le
-    reste (ville, vent, trous, scores) se recalcule en rejouant les coups
-    (worldAfter). Ville et collisions sont calculées (rectangles, triangles,
+    reste (ville, vent, trous, vainqueur) se recalcule en rejouant les coups
+    (worldAfter). Découvrir le coup de l'autre : en arrivant, son dernier
+    coup est rejoué (voile du tour par tour), et « Revoir le coup de … » le
+    rejoue à tout moment (replayLast). Ville et collisions sont calculées (rectangles, triangles,
     cercles des trous), jamais lues dans les pixels : le même coup donne le
     même résultat sur tous les appareils. C'est ce qui permettra de ranger
     une partie dans une liste partagée comme les messages de l'écran de chat
     (10.57) : un coup = une tâche { t:"45 60 orval", by, at }.
-  - Réglages du banc dans l'adresse (?g=…&vent=…&trou=…&manches=…&decor=…
+  - Réglages du banc dans l'adresse (?g=…&vent=…&trou=…&decor=…
     &trace=…&son=…&tpt=…) ; bouton « Copier le lien des réglages ».
     Changer une règle recommence la partie (même graine).
   - Faisans : commun pour AP, doré pour H (PLUMES). Fin de partie : cri
     « kôk-kôk », petite fanfare originale et danse du vainqueur, une aile en
-    haut / une en bas, inversées à chaque temps (DANCE_BEAT, DANCE_BEATS).
+    haut / une en bas, inversées à chaque temps, de face (drawPheasantFront),
+    petits bonds et plumes qui volent (DANCE_BEAT, DANCE_BEATS).
     Explosion : boule de feu, onde de choc, morceaux de façade, fumée,
     secousse de l'écran, bord du trou roussi. Coups précédents des deux
     joueurs affichés d'office ; résultat de chaque coup dans le panneau.
   - Couleurs : celles de l'appli (variables reprises de index.html, clair et
-    sombre), façades tirées de NEW_CATEGORY_PALETTE ; joueurs aux couleurs
-    de l'écran de chat (--chat-me, --chat-them).
+    sombre). Décor sobre : façades aux teintes des blocs (--facades : surface,
+    papier…) posées avec l'ombre des cartes, ciel = fond de page ; joueurs aux
+    couleurs de l'écran de chat (--chat-me, --chat-them).
+  - Une partie = une touche (pas de manches ni de score) ; bouton « Nouvelle
+    partie ». Objets : Bic, bouteille d'Orval (silhouette en quilles, sans
+    logo), cœur.
 -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Courier+Prime:wght@400;700&family=Work+Sans:wght@400;500;600&display=swap');
@@ -54,10 +61,12 @@
   --line:#EDE7DC;
   --shadow: 0 1px 2px rgba(30,40,45,0.04), 0 8px 24px -12px rgba(30,40,45,0.12);
   /* propres au jeu */
-  --sky-top:#E4ECF3; --sky-bottom:#F7FAF9;
-  --cloud:rgba(255,255,255,0.85);
-  --win-lit:#FCEFB4; --win-off:rgba(40,50,60,0.13);
-  --facade-mix:#FFFFFF; --facade-amount:30;
+  /* décor sobre : façades = blocs de l'appli (surface, papier), ciel = fond de page */
+  --sky-top:#F7FAF9; --sky-bottom:#E6EAEA;
+  --cloud:rgba(255,255,255,0.9);
+  --facades:#FFFFFF,#FBF9F3,#F5F7F6,#FDFDFA,#F6F3ED;
+  --facade-shadow:rgba(30,40,45,0.10);
+  --win-lit:rgba(230,214,60,0.20); --win-off:rgba(42,39,37,0.05);
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -70,10 +79,11 @@
     --chat-me:#7FC0CC; --chat-them:var(--logo-green);
     --line:#2A3238;
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
-    --sky-top:#16222A; --sky-bottom:#1F2B31;
-    --cloud:rgba(255,255,255,0.06);
-    --win-lit:#E2C866; --win-off:rgba(0,0,0,0.28);
-    --facade-mix:#1C2125; --facade-amount:45;
+    --sky-top:#1B252B; --sky-bottom:#101315;
+    --cloud:rgba(255,255,255,0.05);
+    --facades:#1C2125,#20262A,#232A2F,#1E2428,#22282C;
+    --facade-shadow:rgba(0,0,0,0.45);
+    --win-lit:rgba(226,200,102,0.22); --win-off:rgba(255,255,255,0.035);
   }
 }
 
@@ -134,9 +144,30 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
   background:var(--surface); border:1px solid var(--line); border-radius:10px;
   padding:0.45rem 1.1rem; cursor:pointer; transition:background .15s, color .15s, border-color .15s;
 }
-.btn:hover{ background:color-mix(in srgb, var(--logo-green) 16%, var(--surface)); border-color:color-mix(in srgb, var(--logo-green) 40%, var(--line)); }
+@media (hover:hover){ .btn:hover{ background:color-mix(in srgb, var(--logo-green) 16%, var(--surface)); border-color:color-mix(in srgb, var(--logo-green) 40%, var(--line)); } }
 .btn:disabled{ opacity:0.45; cursor:default; background:var(--surface); }
-.coup .btn{ margin-left:auto; }
+.coup #revoir{ margin-left:auto; }
+.btn.ghost{ background:transparent; border-color:transparent; color:var(--ink-soft); }
+.btn.ghost:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); border-color:transparent; }
+/* tailles de boutons : souris (compact) / doigt (44 px au moins, iPhone) */
+@media (pointer:fine){
+  .objets button{ width:38px; height:38px; }
+}
+@media (pointer:coarse){
+  .objets button{ width:46px; height:46px; border-radius:12px; }
+  .objets canvas{ width:34px; height:34px; }
+  .btn{ min-height:46px; padding:0 1.4rem; font-size:1rem; }
+  .coup input{ min-height:42px; width:3.6em; }
+  .banc .btn{ min-height:44px; }
+  .sw{ min-height:40px; }
+}
+@media (max-width:560px){
+  .coup{ display:grid; grid-template-columns:auto 1fr 1fr; gap:0.7rem 0.8rem; padding:0.8rem 0.3rem 0.4rem; }
+  .coup .objets{ grid-column:1 / 3; }
+  .coup #lancer{ grid-column:3; justify-self:end; }
+  .coup #revoir{ grid-column:1 / -1; justify-self:start; margin-left:0; grid-row:3; white-space:nowrap; padding:0 0.4rem; }
+  .coup label{ justify-content:flex-start; }
+}
 .statut{ min-height:1.3em; padding:0 0.5rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); }
 
 /* ---------- panneau du banc ---------- */
@@ -180,6 +211,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
         <label>angle <input id="angle" type="number" min="0" max="90" step="1" inputmode="numeric">°</label>
         <label>vitesse <input id="vitesse" type="number" min="1" max="200" step="1" inputmode="numeric"></label>
         <div class="objets" id="objets"></div>
+        <button type="button" class="btn ghost" id="revoir">Revoir</button>
         <button type="button" class="btn" id="lancer">Lancer</button>
       </div>
       <div class="statut" id="statut"></div>
@@ -190,7 +222,6 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
       <div class="reg"><div class="lab">Gravité <b data-v="g"></b></div><input type="range" data-k="g" min="200" max="600" step="20"></div>
       <div class="reg"><div class="lab">Vent maximal <b data-v="vent"></b></div><input type="range" data-k="vent" min="0" max="15" step="1"></div>
       <div class="reg"><div class="lab">Taille des trous <b data-v="trou"></b></div><input type="range" data-k="trou" min="10" max="44" step="2"></div>
-      <div class="reg"><div class="lab">Manches pour gagner <b data-v="manches"></b></div><input type="range" data-k="manches" min="1" max="5" step="1"></div>
       <div class="reg"><div class="lab">Décor</div>
         <select data-k="decor">
           <option value="mixte">Pignons, pointes et toits plats</option>
@@ -219,23 +250,17 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 //  Réglages (adresse) et constantes
 // =====================================================================
 const W = 960, H = 540;
-const DEF = { g:360, vent:10, trou:22, manches:3, decor:"mixte", trace:1, son:1, tpt:1 };
-const RULE_KEYS = ["g","vent","trou","manches","decor"];
+const DEF = { g:360, vent:10, trou:22, decor:"mixte", trace:1, son:1, tpt:1 };
+const RULE_KEYS = ["g","vent","trou","decor"];
 const S = (()=>{
   const q = new URLSearchParams(location.search), s = { ...DEF };
   for(const k in DEF) if(q.has(k)) s[k] = typeof DEF[k] === "number" ? Number(q.get(k)) : q.get(k);
   return s;
 })();
 const PLAYERS = [ { ini:"AP", color:"--chat-me" }, { ini:"H", color:"--chat-them" } ];
-const PALETTE = ["#4993A2","#D9A63A","#5E9C86","#C24F6E","#D9774A","#6A9FB9","#B06A92","#8A7DB8","#8C9A4C","#6B728E"];
-const OBJETS = {
-  orval:"Orval", coeur:"Cœur", pistolet:"Pistolet garni",
-  frites:"Cornet de frites", chou:"Chou de Bruxelles", gaufre:"Gaufre"
-};
-const OBJETS_ART = {
-  orval:"une Orval", coeur:"un cœur", pistolet:"un pistolet garni",
-  frites:"un cornet de frites", chou:"un chou de Bruxelles", gaufre:"une gaufre"
-};
+const OBJETS = { bic:"Bic", orval:"Bouteille d'Orval", coeur:"Cœur" };
+const OBJ_SIZE = { bic: 1, orval: 1.1, coeur: 1.05 };   // taille en vol
+const OBJETS_ART = { bic:"un Bic", orval:"une Orval", coeur:"un cœur" };
 const DANCE_BEAT = 0.32, DANCE_BEATS = 14;   // danse du vainqueur : 14 temps, ailes inversées à chaque temps
 const STORE_KEY = "sltapis-essai-jeu";
 const DT = 1/240;                 // pas de calcul fixe : même résultat partout
@@ -266,7 +291,9 @@ function newGame(seed){
 }
 function load(){
   try{ const g = JSON.parse(localStorage.getItem(STORE_KEY));
-    if(g && RULE_KEYS.every(k => g.regles[k] === S[k])) return g; }catch(e){}
+    if(g && RULE_KEYS.every(k => g.regles[k] === S[k])){
+      g.objets = (g.objets || []).map((o, i) => o in OBJETS ? o : ["orval", "coeur"][i]);
+      if(g.shots.every(s => s.o in OBJETS)) return g; } }catch(e){}
   return null;
 }
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(game)); }catch(e){} renderEtat(); }
@@ -279,7 +306,7 @@ function makeCity(seed, round){
     let w = Math.round(58 + r() * 52);
     if(W - x < 120) w = W - x;
     const h = Math.round(130 + r() * 230);
-    let c; do c = Math.floor(r() * PALETTE.length); while(c === lastC); lastC = c;
+    let c; do c = Math.floor(r() * 5); while(c === lastC); lastC = c;   // 5 teintes de façade (--facades)
     const d = R().decor, t = r();
     const roof = d === "plats" ? "flat" : d === "pignons" ? (t < 0.85 ? "steps" : "flat")
                : (t < 0.4 ? "steps" : t < 0.65 ? "point" : "flat");
@@ -304,11 +331,11 @@ function makeCity(seed, round){
   }
   return { bs, ph, shapes };
 }
-function freshWorld(round, scores){
-  const city = makeCity(game.seed, round);
-  const r = rng(game.seed * 31 + round * 104729 + 17);
+function freshWorld(){
+  const city = makeCity(game.seed, 0);
+  const r = rng(game.seed * 31 + 17);
   const wind = Math.round((r() * 2 - 1) * R().vent);
-  return { round, scores, city, ph: city.ph, craters: [], wind, over: false, lastPath: [null, null] };
+  return { city, ph: city.ph, craters: [], wind, over: false, lastPath: [null, null] };
 }
 function solid(w, x, y){
   let inside = false;
@@ -346,17 +373,13 @@ function applyResult(w, shot, res){
   w.lastPath[shot.p] = res.path;
   if(res.end.kind === "city") w.craters.push({ x:res.end.x, y:res.end.y, r:R().trou });
   if(res.end.kind !== "hit") return w;
-  const winner = res.end.victim === shot.p ? 1 - shot.p : shot.p;
-  const sc = [...w.scores]; sc[winner]++;
-  if(sc[winner] >= R().manches){
-    w.scores = sc; w.over = true; w.winner = winner; w.fallen = res.end.victim;
-    w.craters.push({ x:res.end.x, y:res.end.y, r:R().trou * 1.6 });
-    return w;
-  }
-  return freshWorld(w.round + 1, sc);
+  // une partie = une touche : celui qui touche l'autre gagne (se toucher soi-même fait gagner l'autre)
+  w.over = true; w.winner = res.end.victim === shot.p ? 1 - shot.p : shot.p; w.fallen = res.end.victim;
+  w.craters.push({ x:res.end.x, y:res.end.y, r:R().trou * 1.6 });
+  return w;
 }
 function worldAfter(n){
-  let w = freshWorld(0, [0, 0]);
+  let w = freshWorld();
   for(let i = 0; i < n; i++) w = applyResult(w, game.shots[i], simulate(w, game.shots[i]));
   return w;
 }
@@ -374,32 +397,32 @@ function sizeCanvas(){
   for(const c of [cv, city]){ c.width = W * DPR; c.height = H * DPR; }
 }
 
-function mixHex(a, b, t){
-  const p = h => [1,3,5].map(i => parseInt(h.slice(i, i + 2), 16));
-  const A = p(a), B = p(b.length === 4 ? "#" + [...b.slice(1)].map(c => c + c).join("") : b);
-  return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("");
-}
+function facade(i){ const f = css("--facades").split(","); return f[i % f.length].trim(); }
 
 function renderCity(w){
   cctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   cctx.globalCompositeOperation = "source-over";
   cctx.clearRect(0, 0, W, H);
-  const mix = css("--facade-mix"), amt = Number(css("--facade-amount")) / 100;
   const lit = css("--win-lit"), off = css("--win-off");
   for(const b of w.city.bs){
-    const col = mixHex(PALETTE[b.c], mix, amt);
-    cctx.fillStyle = col;
-    cctx.fillRect(b.x, b.top, b.w, H - b.top);
+    // silhouette (façade + toit), posée comme une carte de l'appli : ombre douce
+    cctx.beginPath();
     if(b.roof === "steps"){
-      const n = 3, sh = 13;
-      for(let s = 1; s <= n; s++){ const ww = b.w * (1 - s / (n + 1.4));
-        cctx.fillRect(b.x + (b.w - ww) / 2, b.top - s * sh, ww, sh + 0.5); }
+      const n = 3, sh = 13; cctx.moveTo(b.x, H); cctx.lineTo(b.x, b.top);
+      for(let s = 1; s <= n; s++){ const ww = b.w * (1 - s / (n + 1.4)), x0 = b.x + (b.w - ww) / 2;
+        cctx.lineTo(x0, b.top - (s - 1) * sh); cctx.lineTo(x0, b.top - s * sh); }
+      for(let s = n; s >= 1; s--){ const ww = b.w * (1 - s / (n + 1.4)), x1 = b.x + (b.w + ww) / 2;
+        cctx.lineTo(x1, b.top - s * sh); cctx.lineTo(x1, b.top - (s - 1) * sh); }
+      cctx.lineTo(b.x + b.w, b.top); cctx.lineTo(b.x + b.w, H);
     }else if(b.roof === "point"){
-      cctx.beginPath(); cctx.moveTo(b.x, b.top + 0.5); cctx.lineTo(b.x + b.w / 2, b.top - b.w * 0.42);
-      cctx.lineTo(b.x + b.w, b.top + 0.5); cctx.fill();
-    }
-    // léger filet d'ombre entre deux façades
-    cctx.fillStyle = "rgba(0,0,0,0.05)"; cctx.fillRect(b.x + b.w - 1.5, b.top, 1.5, H - b.top);
+      cctx.moveTo(b.x, H); cctx.lineTo(b.x, b.top); cctx.lineTo(b.x + b.w / 2, b.top - b.w * 0.42);
+      cctx.lineTo(b.x + b.w, b.top); cctx.lineTo(b.x + b.w, H);
+    }else cctx.rect(b.x, b.top, b.w, H - b.top);
+    cctx.closePath();
+    cctx.save();
+    cctx.shadowColor = css("--facade-shadow"); cctx.shadowBlur = 14; cctx.shadowOffsetY = 2;
+    cctx.fillStyle = facade(b.c); cctx.fill();
+    cctx.restore();
     // fenêtres
     const r = rng(b.wseed);
     const cols = Math.max(1, Math.floor((b.w - 14) / 15)), rows = Math.floor((H - b.top - 20) / 21);
@@ -482,49 +505,114 @@ function drawPheasant(c, x, y, dir, o = {}){
   c.restore();
 }
 
+// faisan de face (danse du vainqueur), pieds en (0, 0) ; wingL / wingR : 1 = levée, -1 = baissée
+function drawPheasantFront(c, x, y, o = {}){
+  const P = PLUMES[o.kind || 0];
+  c.save(); c.translate(x, y); c.scale(1.15, 1.15);
+  // ailes (derrière le corps quand elles sont baissées, bien visibles levées)
+  const wing = (side, val) => {
+    c.save(); c.translate(side * 8.5, -24); c.scale(side, 1); c.rotate(val > 0 ? -0.15 - val * 1.25 : 0.25 - val * 0.85);   // levée : presque à la verticale ; baissée : le long du corps
+    c.fillStyle = P.wing; c.beginPath(); c.ellipse(7, 0, 9.5, 4.2, 0, 0, 7); c.fill();
+    c.strokeStyle = "rgba(40,25,10,0.3)"; c.lineWidth = 0.8;
+    c.beginPath(); c.moveTo(3, 1.2); c.lineTo(15, 1.6); c.moveTo(4, -1); c.lineTo(14, -0.6); c.stroke();
+    c.restore();
+  };
+  wing(-1, o.wingL ?? -1); wing(1, o.wingR ?? -1);
+  // pattes
+  c.strokeStyle = "#8C8178"; c.lineWidth = 1.6;
+  c.beginPath(); c.moveTo(-4, -9); c.lineTo(-5, 0); c.moveTo(4, -9); c.lineTo(5, 0);
+  c.moveTo(-5, 0); c.lineTo(-8, 0.5); c.moveTo(5, 0); c.lineTo(8, 0.5); c.stroke();
+  // corps et poitrine
+  c.fillStyle = P.body; c.beginPath(); c.ellipse(0, -19, 10.5, 12.5, 0, 0, 7); c.fill();
+  c.fillStyle = P.dots;
+  for(const [a, b] of [[-4,-21],[3,-23],[0,-16],[-5,-14],[5,-15],[1,-27]]){ c.beginPath(); c.arc(a, b, 1, 0, 7); c.fill(); }
+  // cou
+  c.fillStyle = P.neck; c.beginPath(); c.ellipse(0, -32, 5, 6.5, 0, 0, 7); c.fill();
+  if(P.ring){ c.strokeStyle = P.ring; c.lineWidth = 1.6; c.beginPath(); c.ellipse(0, -28.5, 4.6, 1.5, 0, 0, 7); c.stroke(); }
+  else{ c.strokeStyle = "rgba(40,20,10,0.5)"; c.lineWidth = 0.9;
+    for(const yy of [-34, -31, -28]){ c.beginPath(); c.moveTo(-4, yy); c.quadraticCurveTo(0, yy + 1.6, 4, yy); c.stroke(); } }
+  // tête
+  c.fillStyle = P.head;
+  if(P.ring){ c.beginPath(); c.moveTo(-4, -42); c.lineTo(-6.5, -47.5); c.lineTo(-1.5, -44); c.moveTo(4, -42); c.lineTo(6.5, -47.5); c.lineTo(1.5, -44); c.fill(); }
+  else{ c.beginPath(); c.moveTo(-4.5, -42); c.quadraticCurveTo(0, -51, 4.5, -42); c.fill(); }   // huppe
+  c.beginPath(); c.arc(0, -39.5, 6, 0, 7); c.fill();
+  c.fillStyle = P.face;
+  for(const sx of [-1, 1]){ c.beginPath(); c.ellipse(sx * 3.3, -39.5, P.ring ? 2.6 : 2, P.ring ? 3.4 : 2.4, 0, 0, 7); c.fill(); }
+  for(const sx of [-1, 1]){
+    c.fillStyle = "#FFFFFF"; c.beginPath(); c.arc(sx * 3.1, -40.5, 1.2, 0, 7); c.fill();
+    c.fillStyle = "#1A1A1A"; c.beginPath(); c.arc(sx * 3.1, -40.3, 0.6, 0, 7); c.fill();
+  }
+  c.fillStyle = "#E8D7A8"; c.beginPath(); c.moveTo(-1.6, -38.6); c.lineTo(1.6, -38.6); c.lineTo(0, -34.8); c.closePath(); c.fill();
+  c.restore();
+}
+
+// objets lancés, dessinés autour de (0, 0), à peu près 30 px de long
+// bouteille : silhouette en quilles (panse, taille fine, petite épaule, long col), verre ambré, étiquette sans logo
+const BOTTLE_R = [   // demi-profil droit, de la base au goulot : [x, y] puis courbes [c1x, c1y, c2x, c2y, x, y]
+  [0, 12.5], [3.6, 12.5],
+  [6.4, 12.3, 7.4, 6.5, 6.1, 2.2],      // panse
+  [5.1, -0.8, 2.6, -1.6, 2.5, -3.6],    // taille
+  [2.3, -5.0, 4.2, -5.4, 3.7, -7.8],    // épaule (deuxième renflement de la quille)
+  [3.0, -9.0, 1.8, -9.4, 1.8, -10.8],   // naissance du col
+  [1.8, -15.5],                         // col
+];
+function bottlePath(c){
+  const R = BOTTLE_R;
+  c.beginPath(); c.moveTo(R[0][0], R[0][1]);
+  for(let i = 1; i < R.length; i++){ const s = R[i]; s.length === 2 ? c.lineTo(s[0], s[1]) : c.bezierCurveTo(...s); }
+  // côté gauche : même chemin en miroir, parcouru à l'envers
+  c.lineTo(-1.8, -15.5);
+  for(let i = R.length - 1; i >= 1; i--){
+    const s = R[i], prev = R[i - 1], end = prev.length === 2 ? prev : prev.slice(4);
+    if(s.length === 2) c.lineTo(-end[0], end[1]);
+    else c.bezierCurveTo(-s[2], s[3], -s[0], s[1], -end[0], end[1]);
+  }
+  c.closePath();
+}
 function drawObjet(c, type, x, y, rot = 0, sc = 1){
   c.save(); c.translate(x, y); c.rotate(rot); c.scale(sc, sc);
   c.lineJoin = "round"; c.lineCap = "round";
   if(type === "orval"){
-    c.fillStyle = "#5E4A1C";
-    c.beginPath(); c.ellipse(0, 5, 6, 6.8, 0, 0, 7); c.fill();
-    c.beginPath(); c.ellipse(0, -3.6, 3.7, 3.4, 0, 0, 7); c.fill();
-    c.fillRect(-1.6, -11.5, 3.2, 7);
-    c.fillStyle = "#C9A646"; c.fillRect(-2, -13.2, 4, 2);
-    c.fillStyle = "#EDE3C8"; c.fillRect(-4.4, 3.2, 8.8, 4);
-    c.strokeStyle = "rgba(255,255,255,0.38)"; c.lineWidth = 1.2;
-    c.beginPath(); c.arc(0, 5, 4.3, 2.6, 3.6); c.stroke();
+    // verre : ambré foncé, plus clair au centre
+    const g = c.createLinearGradient(-7, 0, 7, 0);
+    g.addColorStop(0, "#2E200B"); g.addColorStop(0.38, "#7A5A22"); g.addColorStop(0.55, "#8C6A2C"); g.addColorStop(1, "#2A1D0A");
+    c.fillStyle = g; bottlePath(c); c.fill();
+    c.save(); bottlePath(c); c.clip();
+    // étiquette sur la panse (unie, deux filets)
+    c.fillStyle = "#EDE3C8"; c.fillRect(-8, 2.2, 16, 6.2);
+    c.strokeStyle = "#B8963C"; c.lineWidth = 0.6;
+    c.beginPath(); c.moveTo(-8, 3.1); c.lineTo(8, 3.1); c.moveTo(-8, 7.5); c.lineTo(8, 7.5); c.stroke();
+    c.fillStyle = "rgba(60,40,10,0.18)"; c.fillRect(3.5, 2.2, 5, 6.2);          // ombre de l'arrondi
+    // petite collerette au col
+    c.fillStyle = "#EDE3C8"; c.fillRect(-3, -9.6, 6, 1.6);
+    // reflets
+    c.strokeStyle = "rgba(255,255,255,0.5)"; c.lineWidth = 1.1;
+    c.beginPath(); c.moveTo(-3.6, 9.8); c.quadraticCurveTo(-5.4, 5.5, -4.2, 1.6); c.stroke();
+    c.beginPath(); c.moveTo(-1.9, -6.6); c.lineTo(-1.6, -4.6); c.moveTo(-0.9, -11); c.lineTo(-0.9, -14.6); c.stroke();
+    c.restore();
+    // capsule
+    c.fillStyle = "#C9A646"; c.beginPath(); c.moveTo(-2.4, -15.3); c.lineTo(2.4, -15.3); c.lineTo(2.1, -17.4); c.lineTo(-2.1, -17.4); c.closePath(); c.fill();
+    c.strokeStyle = "#8F7426"; c.lineWidth = 0.5;
+    c.beginPath(); for(const xx of [-1.3, 0, 1.3]){ c.moveTo(xx, -15.4); c.lineTo(xx, -17.2); } c.stroke();
   }else if(type === "coeur"){
-    c.fillStyle = css("--rose") || "#D98DA1";
-    c.beginPath(); c.moveTo(0, 6); c.bezierCurveTo(-10, -1, -6.5, -10, 0, -4.5);
-    c.bezierCurveTo(6.5, -10, 10, -1, 0, 6); c.fill();
-    c.fillStyle = "rgba(255,255,255,0.45)"; c.beginPath(); c.ellipse(-3.6, -4, 1.6, 1, -0.7, 0, 7); c.fill();
-  }else if(type === "pistolet"){
-    c.fillStyle = "#D7A055"; c.beginPath(); c.ellipse(0, 0, 9, 5.6, 0, 0, 7); c.fill();
-    c.strokeStyle = "#7DB536"; c.lineWidth = 2.2;
-    c.beginPath(); c.moveTo(-8.5, 0); for(let i = -8; i <= 8; i += 2) c.lineTo(i, i % 4 ? 1.3 : -0.6); c.stroke();
-    c.fillStyle = "#D8463C"; c.beginPath(); c.arc(2.5, 0.3, 1.8, 0, 7); c.fill();
-    c.strokeStyle = "rgba(120,70,20,0.45)"; c.lineWidth = 0.9;
-    c.beginPath(); c.moveTo(-4, -4); c.lineTo(-2, -2.5); c.moveTo(1, -4.6); c.lineTo(3, -3); c.stroke();
-  }else if(type === "frites"){
-    c.fillStyle = "#F2C94C"; c.strokeStyle = "#C79A2A"; c.lineWidth = 0.7;
-    for(const [fx, a] of [[-4,-0.2],[-1.5,0.05],[1,-0.08],[3.6,0.22],[0,0.3]]){
-      c.save(); c.translate(fx, -1); c.rotate(a); c.fillRect(-1, -9, 2, 9); c.strokeRect(-1, -9, 2, 9); c.restore(); }
-    c.fillStyle = "#FFFFFF"; c.beginPath(); c.moveTo(-6.5, -1.5); c.lineTo(6.5, -1.5); c.lineTo(0, 10); c.closePath(); c.fill();
-    c.strokeStyle = "#C24F6E"; c.lineWidth = 1.4;
-    c.beginPath(); c.moveTo(-3, -1.5); c.lineTo(-0.6, 8); c.moveTo(2, -1.5); c.lineTo(0.8, 7); c.stroke();
-  }else if(type === "chou"){
-    c.fillStyle = "#8DBF4A"; c.beginPath(); c.arc(0, 0, 6.5, 0, 7); c.fill();
-    c.strokeStyle = "#557F28"; c.lineWidth = 1;
-    c.beginPath(); c.arc(-2.5, 1, 5, -1.2, 1.1); c.stroke();
-    c.beginPath(); c.arc(3, 0.5, 5, 1.9, 4.2); c.stroke();
-    c.fillStyle = "#C7DE8F"; c.fillRect(-1, 5.5, 2, 2);
-  }else if(type === "gaufre"){
-    c.fillStyle = "#E3AE57"; roundRect(c, -8, -6, 16, 12, 3); c.fill();
-    c.strokeStyle = "#B9822F"; c.lineWidth = 0.9;
-    c.beginPath(); for(const gx of [-4, 0, 4]){ c.moveTo(gx, -6); c.lineTo(gx, 6); }
-    for(const gy of [-2, 2]){ c.moveTo(-8, gy); c.lineTo(8, gy); } c.stroke();
-    c.fillStyle = "#FFFFFF"; for(const [a, b] of [[-6,-4],[2,-1],[5,3],[-2,4],[6,-5]]) c.fillRect(a, b, 1.2, 1.2);
+    const g = c.createLinearGradient(0, -11, 0, 10);
+    g.addColorStop(0, "#EBA5B7"); g.addColorStop(1, "#C9667F");
+    c.fillStyle = g;
+    c.beginPath(); c.moveTo(0, 10); c.bezierCurveTo(-16, -1, -11, -16, 0, -7.5);
+    c.bezierCurveTo(11, -16, 16, -1, 0, 10); c.fill();
+    c.fillStyle = "rgba(255,255,255,0.5)"; c.beginPath(); c.ellipse(-5.6, -6.4, 2.6, 1.5, -0.7, 0, 7); c.fill();
+  }else if(type === "bic"){
+    // stylo à bille : corps transparent à six pans, tube d'encre, capuchon bleu à agrafe, pointe
+    c.rotate(-0.7);
+    c.fillStyle = "rgba(225,235,240,0.92)"; c.strokeStyle = "rgba(90,110,125,0.6)"; c.lineWidth = 0.6;
+    c.beginPath(); c.moveTo(-13, -2.3); c.lineTo(9, -2.3); c.lineTo(9, 2.3); c.lineTo(-13, 2.3); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = "rgba(90,110,125,0.35)"; c.beginPath(); c.moveTo(-13, -0.8); c.lineTo(9, -0.8); c.moveTo(-13, 0.8); c.lineTo(9, 0.8); c.stroke();
+    c.strokeStyle = "#2F5DA8"; c.lineWidth = 1; c.beginPath(); c.moveTo(-12, 0); c.lineTo(9, 0); c.stroke();     // encre
+    c.fillStyle = "#2F5DA8"; c.fillRect(-15, -1.7, 2.2, 3.4);                                                    // bouchon du bout
+    c.fillStyle = "#C9CED2"; c.beginPath(); c.moveTo(9, -2.3); c.lineTo(13, -0.8); c.lineTo(13, 0.8); c.lineTo(9, 2.3); c.closePath(); c.fill();   // cône
+    c.fillStyle = "#6E767C"; c.beginPath(); c.moveTo(13, -0.8); c.lineTo(15.5, 0); c.lineTo(13, 0.8); c.closePath(); c.fill();                   // pointe
+    c.fillStyle = "#2F5DA8"; roundRect(c, -14.8, -2.8, 9, 5.6, 1.4); c.fill();                                   // capuchon (posé au bout)
+    c.fillRect(-12.5, -4.6, 7.5, 1.4);                                                                             // agrafe
   }
   c.restore();
 }
@@ -538,9 +626,8 @@ const clouds = Array.from({ length: 5 }, (_, i) => ({ x: i * 220 + Math.random()
 
 function burst(type, x, y, big){
   const n = big ? 34 : 20, palette = {
-    orval:["#5E4A1C","#8A6A2A","#FFFFFF","#F4E9C8"], coeur:[css("--rose"), "#F2C3CF"],
-    pistolet:["#D7A055","#7DB536","#D8463C"], frites:["#F2C94C","#FFFFFF"],
-    chou:["#8DBF4A","#557F28"], gaufre:["#E3AE57","#FFFFFF"] }[type];
+    orval:["#5E4A1C","#8A6A2A","#FFFFFF","#F4E9C8"], coeur:["#E59AAE","#F2C3CF","#C9667F"],
+    bic:["#DCE6EB","#2F5DA8","#DCE6EB"] }[type];
   for(let i = 0; i < n; i++){
     const a = Math.random() * Math.PI * 2, sp = 60 + Math.random() * (big ? 260 : 170);
     particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 80, life: 1, decay: 0.6 + Math.random() * 0.6,
@@ -549,7 +636,7 @@ function burst(type, x, y, big){
   // morceaux de façade (couleur de la maison touchée) et fenêtres
   const b = world.city.bs.find(b => x >= b.x && x <= b.x + b.w);
   if(b && y > b.top - 50){
-    const fac = mixHex(PALETTE[b.c], css("--facade-mix"), Number(css("--facade-amount")) / 100), lit = css("--win-lit");
+    const fac = facade(b.c), lit = "#E6D63C";
     for(let i = 0; i < (big ? 26 : 18); i++){
       const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.6, sp = 110 + Math.random() * 230;
       particles.push({ x: x + (Math.random() - 0.5) * 10, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.4, decay: 0.55 + Math.random() * 0.4,
@@ -570,6 +657,12 @@ function feathers(x, y, kind){
     particles.push({ x, y: y - 18, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, life: 1, decay: 0.35 + Math.random() * 0.3,
       kind: "feather", color: [P.body, P.tail, P.neck, P.wing][i % 4], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 5, s: 1, sway: Math.random() * 6 }); }
 }
+function puffFeathers(x, y, kind, n){
+  const P = PLUMES[kind || 0];
+  for(let i = 0; i < n; i++){ const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.4, sp = 50 + Math.random() * 70;
+    particles.push({ x: x + (Math.random() - 0.5) * 14, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, decay: 0.45 + Math.random() * 0.3,
+      kind: "feather", color: [P.body, P.tail, P.neck, P.wing][Math.floor(Math.random() * 4)], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 5, s: 0.8, sway: Math.random() * 6 }); }
+}
 function drawParticle(p){
   ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, p.life)); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(p.s, p.s);
   ctx.fillStyle = p.color;
@@ -579,8 +672,9 @@ function drawParticle(p){
     case "orval": if(p.color === "#FFFFFF"){ ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, 7); ctx.stroke(); }
                   else { ctx.beginPath(); ctx.moveTo(-3, -1); ctx.lineTo(3, -2); ctx.lineTo(0, 3); ctx.fill(); } break;
     case "coeur": ctx.beginPath(); ctx.moveTo(0, 2.4); ctx.bezierCurveTo(-4, -0.4, -2.6, -4, 0, -1.8); ctx.bezierCurveTo(2.6, -4, 4, -0.4, 0, 2.4); ctx.fill(); break;
-    case "frites": ctx.fillRect(-0.9, -4, 1.8, 8); break;
-    case "chou": case "feather": ctx.beginPath(); ctx.ellipse(0, 0, p.kind === "feather" ? 5 : 3.2, 1.6, 0, 0, 7); ctx.fill(); break;
+    case "bic": if(p.color === "#2F5DA8"){ ctx.beginPath(); ctx.arc(0, 0, 1.4, 0, 7); ctx.fill(); }
+                else { ctx.globalAlpha *= 0.85; ctx.beginPath(); ctx.moveTo(-3, -1); ctx.lineTo(3, -1.6); ctx.lineTo(0.5, 2.4); ctx.fill(); } break;
+    case "feather": ctx.beginPath(); ctx.ellipse(0, 0, p.kind === "feather" ? 5 : 3.2, 1.6, 0, 0, 7); ctx.fill(); break;
     default: ctx.fillRect(-1.3, -1.3, 2.6, 2.6);
   }
   ctx.restore();
@@ -618,19 +712,26 @@ function frame(){
     if(tumble && tumble.k === k) continue;
     if(world.over && world.fallen === k && !tumble) continue;
     wingT[k] = Math.max(0, wingT[k] - dt * 2.5);
-    let o = { kind: k, wing: Math.sin(Math.min(1, wingT[k]) * Math.PI) }, hop = 0;
-    if(dance && dance.k === k){
-      // une aile en haut, l'autre en bas, puis l'inverse, à chaque temps
-      dance.t += dt;
-      const beat = Math.floor(dance.t / DANCE_BEAT);
-      if(beat < DANCE_BEATS){ const up = beat % 2 === 0; o.wing = up ? 1.05 : -0.1; o.wingFar = up ? -0.1 : 1.05; hop = up ? 3 : 0; }
-      else o.wingFar = null;
-    }
-    drawPheasant(ctx, world.ph[k].x, world.ph[k].y - hop, k === 0 ? 1 : -1, o);
+    let hop = 0;
+    if(world.over && world.winner === k){
+      // le vainqueur se met de face et danse : une aile en haut, l'autre en bas,
+      // inversées à chaque temps, petits bonds, plumes qui volent
+      const f = { kind: k, wingL: -1, wingR: -1 };
+      if(dance){
+        dance.t += dt;
+        const beat = Math.floor(dance.t / DANCE_BEAT), ph = dance.t / DANCE_BEAT - beat;
+        if(dance.t >= 0 && beat < DANCE_BEATS){
+          const up = beat % 2 === 0; f.wingL = up ? 1 : -0.7; f.wingR = up ? -0.7 : 1;
+          hop = Math.sin(ph * Math.PI) * 8;
+          if(beat !== dance.beat){ dance.beat = beat; puffFeathers(world.ph[k].x, world.ph[k].y - 26, k, 3); }
+        }
+      }
+      drawPheasantFront(ctx, world.ph[k].x, world.ph[k].y - hop, f);
+    }else drawPheasant(ctx, world.ph[k].x, world.ph[k].y, k === 0 ? 1 : -1, { kind: k, wing: Math.sin(Math.min(1, wingT[k]) * Math.PI) });
     // initiales au-dessus, couleurs de l'écran de chat
-    ctx.font = "700 13px 'Courier Prime', monospace"; ctx.textAlign = "center";
+    ctx.font = `700 ${F(13)}px 'Courier Prime', monospace`; ctx.textAlign = "center";
     ctx.fillStyle = css(PLAYERS[k].color); ctx.globalAlpha = turn() === k && !world.over ? 1 : 0.55;
-    ctx.fillText(PLAYERS[k].ini, world.ph[k].x, world.ph[k].y - 58 - hop); ctx.globalAlpha = 1;
+    ctx.fillText(PLAYERS[k].ini, world.ph[k].x, world.ph[k].y - 64 - hop); ctx.globalAlpha = 1;
   }
   if(tumble){
     tumble.t += dt; tumble.vy += 500 * dt; tumble.x += tumble.vx * dt; tumble.y += tumble.vy * dt; tumble.rot += tumble.vr * dt;
@@ -652,7 +753,7 @@ function frame(){
       if(y < -8){   // au-dessus de l'écran : petit repère
         ctx.fillStyle = css(PLAYERS[anim.shot.p].color);
         ctx.beginPath(); ctx.moveTo(x, 4); ctx.lineTo(x - 5, 12); ctx.lineTo(x + 5, 12); ctx.fill();
-      }else drawObjet(ctx, anim.shot.o, x, y, anim.i * 0.09 * (anim.shot.p ? -1 : 1), 1.1);
+      }else drawObjet(ctx, anim.shot.o, x, y, anim.i * 0.09 * (anim.shot.p ? -1 : 1), OBJ_SIZE[anim.shot.o]);
     }
   }
   // éclats
@@ -682,39 +783,36 @@ function frame(){
   requestAnimationFrame(frame);
 }
 
+const F = px => Math.round(px * Math.max(1, 700 / (cv.clientWidth || W)));   // texte du canevas lisible sur téléphone
 function hud(){
   ctx.textBaseline = "alphabetic";
-  // scores
+  // dernier coup de chacun (pas de score : une partie = une touche)
   for(let k = 0; k < 2; k++){
-    const x = k ? W - 22 : 22; ctx.textAlign = k ? "right" : "left";
-    ctx.font = "700 20px 'Courier Prime', monospace"; ctx.fillStyle = css(PLAYERS[k].color);
-    ctx.fillText(`${PLAYERS[k].ini} ${world.scores[k]}`, x, 34);
-    const ls = lastShotOf(k);
-    if(ls){ ctx.font = "13px 'Courier Prime', monospace"; ctx.fillStyle = css("--ink-soft");
-      ctx.fillText(`${ls.a}° · ${ls.v}`, x, 52); }
+    const x = k ? W - 22 : 22, ls = lastShotOf(k); ctx.textAlign = k ? "right" : "left";
+    ctx.font = `700 ${F(15)}px 'Courier Prime', monospace`; ctx.fillStyle = css(PLAYERS[k].color);
+    ctx.fillText(ls ? `${PLAYERS[k].ini}> ${ls.a}° · ${ls.v}` : `${PLAYERS[k].ini}>`, x, 14 + F(18));
   }
   // vent
-  ctx.textAlign = "center"; ctx.font = "700 12px 'Courier Prime', monospace"; ctx.fillStyle = css("--ink-soft");
-  ctx.fillText(world.wind ? `vent ${Math.abs(world.wind)}` : "pas de vent", W / 2, 26);
+  ctx.textAlign = "center"; ctx.font = `700 ${F(12)}px 'Courier Prime', monospace`; ctx.fillStyle = css("--ink-soft");
+  ctx.fillText(world.wind ? `vent ${Math.abs(world.wind)}` : "pas de vent", W / 2, 12 + F(14));
   if(world.wind){
-    const len = 10 + Math.abs(world.wind) * 6, d = Math.sign(world.wind);
+    const len = (10 + Math.abs(world.wind) * 6) * F(10) / 10, d = Math.sign(world.wind), ay = 24 + F(14);
     ctx.strokeStyle = css("--accent"); ctx.fillStyle = css("--accent"); ctx.lineWidth = 2.5; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(W / 2 - d * len / 2, 38); ctx.lineTo(W / 2 + d * len / 2, 38); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(W / 2 + d * (len / 2 + 6), 38); ctx.lineTo(W / 2 + d * len / 2 - d, 33); ctx.lineTo(W / 2 + d * len / 2 - d, 43); ctx.fill();
+    ctx.lineWidth = 2.5 * F(10) / 10;
+    ctx.beginPath(); ctx.moveTo(W / 2 - d * len / 2, ay); ctx.lineTo(W / 2 + d * len / 2, ay); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W / 2 + d * (len / 2 + 6), ay); ctx.lineTo(W / 2 + d * len / 2 - d, ay - 5); ctx.lineTo(W / 2 + d * len / 2 - d, ay + 5); ctx.fill();
   }
-  ctx.font = "12px 'Courier Prime', monospace"; ctx.fillStyle = css("--ink-faint");
-  ctx.fillText(`manche ${world.round + 1} · en ${R().manches}`, W / 2, 60);
-  // bandeau (nouvelle manche, fin)
+  // bandeau de fin
   if(banner){
     banner.t += 1 / 60; const a = Math.min(1, banner.t * 3, (banner.d - banner.t) * 2);
     if(a <= 0 && banner.t > banner.d) banner = null;
-    else{ ctx.globalAlpha = Math.max(0, a); ctx.font = "700 30px 'Courier Prime', monospace";
+    else{ ctx.globalAlpha = Math.max(0, a); ctx.font = `700 ${F(30)}px 'Courier Prime', monospace`;
       ctx.lineJoin = "round"; ctx.strokeStyle = css("--surface"); ctx.lineWidth = 6;
       ctx.strokeText(banner.text, W / 2, H * 0.38);
       ctx.fillStyle = banner.color || css("--ink"); ctx.fillText(banner.text, W / 2, H * 0.38);
-      if(banner.sub){ ctx.font = "15px 'Courier Prime', monospace"; ctx.lineWidth = 4;
-        ctx.strokeText(banner.sub, W / 2, H * 0.38 + 26);
-        ctx.fillStyle = css("--ink-soft"); ctx.fillText(banner.sub, W / 2, H * 0.38 + 26); }
+      if(banner.sub){ ctx.font = `${F(15)}px 'Courier Prime', monospace`; ctx.lineWidth = 4;
+        ctx.strokeText(banner.sub, W / 2, H * 0.38 + F(26));
+        ctx.fillStyle = css("--ink-soft"); ctx.fillText(banner.sub, W / 2, H * 0.38 + F(26)); }
       ctx.globalAlpha = 1; }
   }
 }
@@ -756,11 +854,8 @@ function endShot(){
     world = applyResult(before, shot, res);
     renderCity(world);
     if(world.over){
-      dance = { k: winner, t: -0.3 }; sound("cri"); setTimeout(()=> sound("musique"), 650);
-      banner = { text: `${PLAYERS[winner].ini} gagne la partie`, sub: `${world.scores[0]} – ${world.scores[1]}`, color: css(PLAYERS[winner].color), t: 0, d: 6 };
-    }else{
-      banner = { text: v === shot.p ? `${PLAYERS[v].ini} s'est eu tout seul` : `Touché ! Point pour ${PLAYERS[winner].ini}`,
-                 sub: `manche ${world.round + 1} · ${world.wind ? "vent " + Math.abs(world.wind) + (world.wind > 0 ? " →" : " ←") : "pas de vent"}`, t: 0, d: 2.6 };
+      dance = { k: winner, t: -0.25, beat: -1 }; sound("cri"); setTimeout(()=> sound("musique"), 650);
+      banner = { text: `${PLAYERS[winner].ini} gagne !`, sub: v === shot.p ? `${PLAYERS[v].ini} s'est eu tout seul` : "", color: css(PLAYERS[winner].color), t: 0, d: 5 };
     }
     finish(done);
   }, 1500);
@@ -792,14 +887,17 @@ function showVeil(){
   $("#veilGo").textContent = last ? `C'est ${PLAYERS[p].ini} — voir le coup de ${PLAYERS[last.p].ini}` : `C'est ${PLAYERS[p].ini}`;
   $("#veil").classList.add("on"); refreshUI();
 }
-$("#veilGo").addEventListener("click", ()=>{
-  $("#veil").classList.remove("on");
+// rejouer le dernier coup : le monde revient d'un cran, le coup repart, tout se retrouve à l'identique
+function replayLast(){
   const n = game.shots.length;
-  if(!n){ refreshUI(); return; }
+  if(!n || busy) return;
+  dance = null; banner = null;
   world = worldAfter(n - 1); renderCity(world);
   const shot = game.shots[n - 1];
   play(shot, simulate(world, shot), null);
-});
+}
+$("#veilGo").addEventListener("click", ()=>{ $("#veil").classList.remove("on"); if(game.shots.length) replayLast(); else refreshUI(); });
+$("#revoir").addEventListener("click", replayLast);
 
 // =====================================================================
 //  Interface
@@ -809,7 +907,7 @@ function buildObjets(){
   for(const k in OBJETS){
     const b = document.createElement("button"); b.type = "button"; b.dataset.o = k; b.title = OBJETS[k];
     const c = document.createElement("canvas"); c.width = c.height = 60;
-    const x = c.getContext("2d"); x.scale(2, 2); drawObjet(x, k, 15, 15, k === "orval" ? 0.35 : 0, 1.15);
+    const x = c.getContext("2d"); x.scale(2, 2); drawObjet(x, k, 15, 15, k === "orval" ? 0.3 : 0, OBJ_SIZE[k] * 0.78);
     b.appendChild(c); box.appendChild(b);
     b.addEventListener("click", ()=>{ game.objets[turn()] = k; save(); refreshUI(); });
   }
@@ -824,13 +922,17 @@ function refreshUI(){
   const lock = busy || veil;
   $("#angle").disabled = $("#vitesse").disabled = lock || world.over;
   if(world.over){
-    $("#lancer").textContent = "Revanche"; $("#lancer").disabled = busy;
-    $("#statut").textContent = `${PLAYERS[world.winner].ini} gagne ${world.scores[world.winner]} à ${world.scores[1 - world.winner]}.`;
+    $("#lancer").textContent = "Nouvelle partie"; $("#lancer").disabled = busy;
+    $("#statut").textContent = `${PLAYERS[world.winner].ini} gagne.`;
   }else{
     $("#lancer").textContent = "Lancer"; $("#lancer").disabled = lock;
     $("#statut").textContent = busy ? "" : veil ? "" : `À ${PLAYERS[p].ini} de lancer ${OBJETS_ART[game.objets[p]]}.`;
   }
   $("#annuler").disabled = busy || !game.shots.length;
+  const last = game.shots[game.shots.length - 1];
+  $("#revoir").hidden = !last || veil;
+  $("#revoir").disabled = busy;
+  if(last) $("#revoir").textContent = `Revoir le coup de ${PLAYERS[last.p].ini}`;
   if(!busy && !veil && !world.over){
     const ls = lastShotOf(p);
     $("#angle").value = ls ? ls.a : 45; $("#vitesse").value = ls ? ls.v : 60;
@@ -838,7 +940,7 @@ function refreshUI(){
 }
 function renderEtat(){
   const lines = [`graine ${game.seed} · règles ${RULE_KEYS.map(k => k + "=" + game.regles[k]).join(" ")}`];
-  let w = freshWorld(0, [0, 0]);
+  let w = freshWorld();
   const LAB = { city: "trou", miss: "raté", hit: "touché" };
   game.shots.forEach((s, i) => {
     const res = simulate(w, s); w = applyResult(w, s, res);
