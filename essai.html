@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.57 (banc d'essai) -->
+<!-- Sous le tapis — version AUTONOME 10.57 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -174,6 +174,33 @@
     comptes (invitation, partage, coches, effacement, purge, règles, retrait
     du partage, hors ligne, 2e appareil, prénom), et comparaison 10.1 / 10.2
     sans compte (écran et clés identiques, sauf la ligne « Partagée avec »).
+
+  ÉCRAN ENTRE NOUS (depuis la 10.57)
+  - Une liste dont la fiche porte type: "chat" (nom interne « Entre nous »,
+    jamais affiché). Création : bouton discret « écran » dans la fenêtre
+    « + Nouvelle liste » (pas d'interrupteur : rien à convertir).
+  - Un message = une tâche ordinaire de la fiche { t, by, at } (at = date
+    d'envoi), ajoutée en bas, jamais cochée. Corriger : double-clic sur une
+    de ses lignes, ou ↑ dans la saisie vide (Entrée garde, Échap annule) ;
+    texte vidé = message effacé (removeCoursesItem, jamais à la corbeille).
+    Seul l'auteur corrige ou efface ses messages (chatMine).
+  - Hors compteur, urgences, trèfle, graphique et purge, comme les mémos :
+    isSideList(id) = mémo ou écran, à utiliser pour toute nouvelle exclusion.
+  - Affichage : buildChatCard (appelée par render à la place d'une carte de
+    liste) ; écran creusé dans le fond, discret au repos (--chat-dim), net
+    au survol et quand on écrit ; moi à droite (--chat-me), les autres à
+    gauche (--chat-them), invite « initiales> ». Texte en cours, curseur et
+    correction survivent aux rendus (chatDraft, chatFocus, chatFix, chatEdit).
+    Pas d'écran sur l'accueil : il n'existe qu'avec les listes.
+  - Sous l'écran : poignée (wireDragCard, comme une liste), « … » (Inviter /
+    Retirer = la ligne « Partagée avec » des listes, avec Annuler /
+    Enregistrer ; Supprimer cet écran = deux clics, messages effacés puis
+    liste supprimée) et initiales des personnes de l'écran.
+  - Partage, synchro, fusion et règles en ligne : ceux des listes, sans
+    changement (firestore.rules inchangé). Un nouveau message d'un autre
+    s'annonce par le petit message flottant « H : « … » » (renderNewNotice).
+  - Réglages de l'écran choisis au banc d'essai le 5/11/2026 (tôle percée,
+    trame LCD, Courier Prime, bleu-vert foncé / vert du faisan).
 
   LISTES DE COURSES (depuis la 10.15)
   - Une liste dont la fiche porte type: "courses" (en ligne aussi : champ
@@ -1201,6 +1228,8 @@
     listes : barre franche détachée, du titre à deux lignes du bas.
   - 10.56 : texte des articles de mémo à l'encre pleine (var(--ink), comme
     les tâches) au lieu de 78 % : plus lisible sur le papier blanc chaud.
+  - 10.57 : écran « Entre nous » (voir ÉCRAN ENTRE NOUS) : petit chat
+    partagé, posé parmi les listes ; isSideList pour les exclusions.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -1237,6 +1266,7 @@
   --gloss:rgba(255,255,255,0);
   --memo-a:#FCFBF7; --memo-b:#FCFBF7; --memo-c:#FCFBF7;
   --memo-line:rgba(0,0,0,0);
+  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong); --chat-lip:#FFFFFF;   /* 10.57 : écran Entre nous */
   /* 10.19 : vert du logo (le faisan) pour le titre et la plume connectée ;
      --logo-green-strong au survol du titre */
   --logo-green:#7DB536;   /* un cran sous le vert du logo #8DC63F, trop pâle pour un petit titre */
@@ -1295,6 +1325,7 @@
     --plume-off:var(--ink-faint);
     --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
     --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
+    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07);   /* 10.57 */
     --memo-line:rgba(0,0,0,0);
     --logo-green:#A9D65A;
     --logo-green-strong:#C7E58A;
@@ -1338,6 +1369,7 @@
   --plume-off:var(--ink-faint);
   --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
   --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
+    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07);   /* 10.57 */
   --memo-line:rgba(0,0,0,0);
   --logo-green:#A9D65A;
   --logo-green-strong:#C7E58A;
@@ -2309,6 +2341,75 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   box-shadow:0 0 0 3px color-mix(in srgb, var(--lucky-lemon) 30%, transparent);
   transform:scale(1.06);
 }
+
+/* ---------- 10.57 : écran « Entre nous » (petit chat partagé) ----------
+   Une liste de type "chat", posée dans la grille comme une liste, mais
+   dessinée comme un écran creusé dans le fond (tôle percée : tranche
+   arrondie --chat-rim, écran au fond à --chat-bev), Courier Prime, invite
+   « AP> » ; moi à droite (--chat-me), les autres à gauche (--chat-them).
+   Discret au repos (--chat-dim), net au survol et quand on écrit.
+   Réglages choisis au banc d'essai le 5/11/2026. */
+.chat-card{
+  position:relative; min-width:0; border-radius:14px;
+  display:flex; align-items:flex-end; justify-content:center;   /* en bas, au milieu de la place d'une liste */
+  --chat-rim:2px; --chat-bev:6px; --chat-d:0.42; --chat-pix:0.017; --chat-sh:0.14; --chat-dim:0.34;
+  --chat-scr:color-mix(in srgb, var(--ink) 5%, var(--bg));
+}
+.chat-box{ width:min(100%, 25rem); opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
+.chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
+.chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
+.chat-card.dragging-card > *{ visibility:hidden; }
+.chat-hole{ padding:var(--chat-rim); border-radius:calc(18px + var(--chat-rim));
+  background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--bg)) 0%, color-mix(in srgb, var(--ink) 6%, var(--bg)) 35%, var(--bg) 60%, var(--chat-lip) 100%);
+  box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px var(--chat-lip); }
+.chat-screen{
+  position:relative; border-radius:18px; padding:1.1rem 1.1rem 0.8rem;
+  background-color:var(--chat-scr);
+  background-image:repeating-linear-gradient(0deg, rgba(40,50,40,var(--chat-pix)) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(40,50,40,var(--chat-pix)) 0 1px, transparent 1px 3px);
+  box-shadow:
+    inset 0 calc(var(--chat-bev) * 1.1) calc(var(--chat-bev) * 1.6) calc(var(--chat-bev) * -0.6) rgba(42,39,37,var(--chat-d)),
+    inset 0 2px 3px rgba(42,39,37,0.18),
+    inset calc(var(--chat-bev) * 0.9) 0 calc(var(--chat-bev) * 1.3) calc(var(--chat-bev) * -0.7) rgba(42,39,37,0.16),
+    inset calc(var(--chat-bev) * -0.9) 0 calc(var(--chat-bev) * 1.3) calc(var(--chat-bev) * -0.7) rgba(42,39,37,0.10),
+    inset 0 calc(var(--chat-bev) * -0.9) calc(var(--chat-bev) * 1.2) calc(var(--chat-bev) * -0.6) var(--chat-lip);
+  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.9rem; line-height:1.55;
+  cursor:text;
+}
+.chat-log{ max-height:18rem; overflow-y:auto; scrollbar-width:none; }
+.chat-log::-webkit-scrollbar{ display:none; }
+.chat-empty{ color:var(--ink-faint); font-size:0.8rem; }
+.chat-l, .chat-in{ text-shadow:1px 1px 0 rgba(30,40,30,var(--chat-sh)); }
+.chat-l{ margin:0.12rem 0; overflow-wrap:anywhere; border-radius:3px; }
+.chat-l.me{ text-align:right; padding-left:18%; color:var(--chat-me); }
+.chat-l.them{ text-align:left; padding-right:18%; color:var(--chat-them); }
+.chat-l.mine{ cursor:pointer; }
+.chat-l.mine:hover{ background:color-mix(in srgb, var(--chat-me) 6%, transparent); }
+.chat-l.editing{ display:flex; align-items:baseline; justify-content:flex-end; }
+.chat-m{ font-size:0.7rem; color:var(--ink-faint); white-space:nowrap; }
+.chat-pr{ font-weight:700; }
+.chat-edit{ font:inherit; color:inherit; flex:1; min-width:0; background:color-mix(in srgb, currentColor 7%, transparent); border:0; border-radius:3px; padding:0 0.2rem; outline:none; text-align:inherit; }
+.chat-in{ display:flex; justify-content:flex-end; align-items:center; min-height:1.6rem; border-top:1px dashed rgba(42,39,37,0.15); margin-top:0.6rem; padding-top:0.45rem; color:var(--chat-me); overflow-wrap:anywhere; }
+.chat-in.fixing::before{ content:"corriger> "; font-size:0.75rem; color:var(--ink-faint); margin-right:0.3rem; white-space:nowrap; }
+.chat-cur{ flex:none; display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:2px; opacity:0.35; }   /* au repos : fixe et pâle */
+.chat-screen:focus-within .chat-cur{ opacity:1; animation:chat-blink 1.05s steps(1) infinite; }   /* on écrit : il clignote */
+@keyframes chat-blink{ 50%{ opacity:0; } }
+.chat-field{ position:absolute; left:0; bottom:0; opacity:0; width:1px; height:1px; border:0; padding:0; font-size:16px; pointer-events:none; }   /* 16px : pas de zoom sur iPhone */
+/* sous l'écran, posés sur le fond : poignée des listes ; « … » et initiales */
+.chat-foot{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; padding:0 0.2rem; position:relative; }
+.chat-foot .cat-grip svg{ transform:rotate(90deg); }
+.chat-more{ margin-left:auto; appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
+.chat-more:hover, .chat-more[aria-expanded="true"]{ background:var(--surface-2); color:var(--ink-soft); }
+.chat-who{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; color:var(--ink-faint); opacity:0.7; }
+.chat-menu{ position:absolute; right:0; top:calc(100% + 4px); z-index:60; min-width:12rem; background:var(--surface); border-radius:10px; box-shadow:0 8px 24px rgba(40,50,60,.16); padding:0.3rem; font-size:0.85rem; }
+.chat-menu[hidden]{ display:none; }
+.chat-menu button{ display:flex; align-items:center; gap:0.55rem; width:100%; appearance:none; border:0; background:none; font:inherit; color:var(--ink); text-align:left; padding:0.4rem 0.55rem; border-radius:6px; cursor:pointer; }
+.chat-menu button:hover{ background:var(--surface-2); }
+.chat-menu .ic{ width:1rem; text-align:center; color:var(--ink-soft); font-weight:600; }
+.chat-menu .danger, .chat-menu .danger .ic{ color:var(--late); }
+.chat-menu-note{ font-size:0.78rem; color:var(--ink-faint); padding:0.35rem 0.55rem; }
+/* partage (Inviter / Retirer) : la ligne « Partagée avec » des listes, sous l'écran */
+.chat-share{ margin-top:0.5rem; background:var(--surface); border-radius:12px; box-shadow:var(--shadow); padding:0.7rem 0.8rem; display:flex; flex-direction:column; gap:0.5rem; }
+.chat-share .cat-share{ margin:0; }
 
 /* ---------- tâches ---------- */
 ul.items{
@@ -3619,6 +3720,8 @@ body.no-list .add-category-row{
 }
 .nl-courses input:checked + .nl-switch{ background:var(--accent); }
 .nl-courses input:checked + .nl-switch::after{ transform:translateX(12px); }
+.new-list-card .edit-actions .nl-chat{ margin-right:auto; appearance:none; border:0; background:none; box-shadow:none; min-width:0; height:auto; padding:0.2rem 0.3rem; font:700 0.72rem 'Courier Prime', 'Courier New', Courier, monospace; letter-spacing:0.06em; color:var(--ink-faint); cursor:pointer; border-radius:6px; }   /* 10.57 : discret, à gauche */
+.new-list-card .edit-actions .nl-chat:hover{ color:var(--ink-soft); background:var(--surface-2); }
 .nl-courses input:focus-visible + .nl-switch{ outline:2px solid var(--accent); outline-offset:2px; }
 .nl-courses:has(input:checked){ color:var(--ink); }
 /* sur l'accueil : pointillés roses, champs jaunes */
@@ -3821,99 +3924,6 @@ body.ios-gate-on{ overflow:hidden; }
 .ib-btns{ display:inline-flex; gap:0.4rem; }
 
 
-/* 10.57 : banc d'essai du mini-chat « Entre nous » (essai.html?chat) — rien
-   en ligne : maquette posée parmi les listes, messages gardés en mémoire.
-   Réglages retenus au banc (5 tours) : creusé dans le fond comme une tôle
-   percée (tranche arrondie --rim, écran à --bev au fond), fond de l'appli
-   avec trame LCD et ombre du texte, Courier Prime, invite « AP> », moi en
-   bleu-vert foncé à droite, l'autre en vert du faisan à gauche. */
-.papier-bench{ position:fixed; right:1rem; bottom:1rem; z-index:8000; width:15rem; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:0.8rem; box-shadow:0 10px 30px rgba(40,50,60,.15); font-size:0.85rem; color:var(--ink); }
-.pb-title{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; font-size:0.75rem; color:var(--ink-soft); margin-bottom:0.5rem; }
-.pb-sw-row{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; cursor:pointer; }
-.pb-rg{ display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-top:0.4rem; font-size:0.82rem; color:var(--ink-soft); }
-.pb-rg input{ width:8rem; }
-.pb-sub{ font-size:0.72rem; color:var(--ink-faint); margin:0.6rem 0 0.15rem; text-transform:uppercase; letter-spacing:0.06em; }
-.pb-opt{ display:flex; align-items:center; width:100%; font:inherit; text-align:left; background:none; border:1px solid transparent; border-radius:8px; padding:0.3rem 0.4rem; cursor:pointer; color:var(--ink); }
-.pb-opt:hover{ background:var(--surface-2); }
-.pb-opt.on{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--surface)); }
-.pb-row{ display:flex; gap:0.25rem; } .pb-row .pb-opt{ justify-content:center; }
-.pb-link{ display:block; width:100%; margin-top:0.8rem; font:inherit; font-size:0.82rem; padding:0.4rem; border:0; border-radius:8px; cursor:pointer; background:color-mix(in srgb, var(--accent) 12%, var(--surface)); color:var(--btn-ink); }
-.pb-linkmsg{ font-size:0.72rem; color:var(--ink-faint); margin-top:0.3rem; overflow-wrap:anywhere; user-select:all; }
-.pb-note{ font-size:0.75rem; color:var(--ink-faint); margin-top:0.5rem; line-height:1.4; }
-.chat-card{
-  position:relative; min-width:0; border-radius:14px;
-  display:flex; align-items:center; justify-content:center;   /* l'écran au milieu de la place d'une liste */
-  --rim:2px; --bev:6px; --chat-d:0.42; --pix-a:0.017; --sh-a:0.14;
-  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong);
-  --scr:color-mix(in srgb, var(--ink) 5%, var(--bg));
-}
-.chat-box{ width:min(100%, var(--chat-w, 22rem)); opacity:calc(1 - var(--dim, 0)); transition:opacity .35s ease; }
-/* discrétion : l'écran s'efface un peu au repos pour ne pas capter toute
-   l'attention ; il revient au survol et pendant qu'on écrit */
-.chat-card.wake:hover .chat-box, .chat-card.wake:focus-within .chat-box{ opacity:1; }
-/* déplacé exactement comme une liste (wireDragCard) : emplacement en pointillés, fantôme */
-body.no-list .chat-card{ display:none; }   /* pas sur l'accueil (aucune liste) */
-.chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
-.chat-card.dragging-card > *{ visibility:hidden; }
-.chat-hole{ padding:var(--rim); border-radius:calc(18px + var(--rim));
-  background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--bg)) 0%, color-mix(in srgb, var(--ink) 6%, var(--bg)) 35%, var(--bg) 60%, #fff 100%);
-  box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px rgba(255,255,255,0.95), inset 0 1px 0 rgba(255,255,255,0.6); }
-.chat-screen{
-  position:relative; border-radius:18px; padding:1.1rem 1.1rem 0.8rem;
-  background-color:var(--scr);
-  background-image:repeating-linear-gradient(0deg, rgba(40,50,40,var(--pix-a)) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(40,50,40,var(--pix-a)) 0 1px, transparent 1px 3px);
-  box-shadow:
-    inset 0 calc(var(--bev) * 1.1) calc(var(--bev) * 1.6) calc(var(--bev) * -0.6) rgba(42,39,37,var(--chat-d)),
-    inset 0 2px 3px rgba(42,39,37,0.18),
-    inset calc(var(--bev) * 0.9) 0 calc(var(--bev) * 1.3) calc(var(--bev) * -0.7) rgba(42,39,37,0.16),
-    inset calc(var(--bev) * -0.9) 0 calc(var(--bev) * 1.3) calc(var(--bev) * -0.7) rgba(42,39,37,0.10),
-    inset 0 calc(var(--bev) * -0.9) calc(var(--bev) * 1.2) calc(var(--bev) * -0.6) rgba(255,255,255,0.95);
-  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.9rem; line-height:1.55;
-  cursor:text;
-}
-.chat-log{ max-height:18rem; overflow-y:auto; scrollbar-width:none; }
-/* banc : alignement dans la place d'une liste, ou bande pleine largeur en haut */
-.chat-card.v-haut{ align-items:flex-start; } .chat-card.v-bas{ align-items:flex-end; }
-.chat-card.h-gauche{ justify-content:flex-start; } .chat-card.h-droite{ justify-content:flex-end; }
-.chat-card.band{ grid-column:1 / -1; align-items:stretch; }
-.chat-card.band .chat-box{ width:100%; }
-.chat-card.band .chat-log{ max-height:calc(var(--band-lines, 3) * 1.55em + 0.3rem); }
-.chat-card.band .chat-screen{ padding-top:0.7rem; padding-bottom:0.55rem; }
-.chat-card.band .chat-in{ margin-top:0.35rem; padding-top:0.3rem; }
-.chat-card.band .cat-grip{ visibility:hidden; }
-.chat-l, .chat-in{ text-shadow:1px 1px 0 rgba(30,40,30,var(--sh-a)); }
-.chat-l{ margin:0.12rem 0; overflow-wrap:anywhere; border-radius:3px; }
-.chat-l.me{ text-align:right; padding-left:18%; color:var(--chat-me); }
-.chat-l.them{ text-align:left; padding-right:18%; color:var(--chat-them); }
-.chat-l.mine{ cursor:pointer; }
-.chat-l.mine:hover{ background:color-mix(in srgb, var(--chat-me) 6%, transparent); }
-.chat-l.them.mine:hover{ background:color-mix(in srgb, var(--chat-them) 6%, transparent); }
-.chat-m{ font-size:0.7rem; color:var(--ink-faint); white-space:nowrap; }
-.chat-pr{ font-weight:700; }
-.chat-edit{ font:inherit; color:inherit; width:100%; background:color-mix(in srgb, currentColor 7%, transparent); border:0; border-radius:3px; padding:0 0.2rem; outline:none; text-align:inherit; }
-.chat-in{ display:flex; justify-content:flex-end; align-items:center; min-height:1.6rem; border-top:1px dashed rgba(42,39,37,0.15); margin-top:0.6rem; padding-top:0.45rem; color:var(--chat-me); }
-.chat-in.them{ justify-content:flex-start; color:var(--chat-them); }
-.chat-in.fixing::before{ content:"corriger> "; font-size:0.75rem; color:var(--ink-faint); margin-right:0.3rem; }
-.chat-cur{ display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:2px; opacity:0.35; }   /* au repos : fixe et pâle */
-.chat-screen:focus-within .chat-cur{ opacity:1; animation:chat-blink 1.05s steps(1) infinite; }   /* on écrit : il clignote */
-@keyframes chat-blink{ 50%{ opacity:0; } }
-.chat-field{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
-/* sous l'écran, posés sur le fond : poignée des listes à gauche ; « … » et
-   initiales à droite */
-.chat-foot{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; padding:0 0.2rem; position:relative; }
-.chat-foot .cat-grip svg{ transform:rotate(90deg); }
-.chat-who{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-faint); opacity:0.7; }   /* initiales discrètes */
-.chat-who b{ font-weight:700; }
-.chat-more{ margin-left:auto; appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
-.chat-more:hover, .chat-more[aria-expanded="true"]{ background:var(--surface-2); color:var(--ink-soft); }
-.chat-menu{ position:absolute; right:0; top:calc(100% + 4px); z-index:60; min-width:12rem; background:var(--surface); border-radius:10px; box-shadow:0 8px 24px rgba(40,50,60,.16); padding:0.3rem; font-size:0.85rem; }
-.chat-menu[hidden]{ display:none; }
-.chat-menu button{ display:flex; align-items:center; gap:0.55rem; width:100%; appearance:none; border:0; background:none; font:inherit; color:var(--ink); text-align:left; padding:0.4rem 0.55rem; border-radius:6px; cursor:pointer; }
-.chat-menu button:hover{ background:var(--surface-2); }
-.chat-menu .ic{ width:1rem; text-align:center; color:var(--ink-soft); font-weight:600; }
-.chat-menu .danger{ color:var(--late); }
-.chat-menu .danger .ic{ color:var(--late); }
-.chat-menu-note{ font-size:0.72rem; color:var(--ink-faint); padding:0.25rem 0.55rem 0.2rem; }
 </style>
 
 <div class="wrap">
@@ -3954,7 +3964,7 @@ body.no-list .chat-card{ display:none; }   /* pas sur l'accueil (aucune liste) *
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.57 essai</span>
+    <span class="version-tag">v10.57</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5300,7 +5310,7 @@ function purgeCheckedBefore(thisMonday, onlyWaiting){
   const today = todayISO();
   const purgedKeys = [];
   DATA.forEach(cat=>{
-    if(isCoursesList(cat.id)) return;   // 10.15 : les articles rayés restent dans leur liste de courses
+    if(isSideList(cat.id)) return;   // 10.15 : les articles rayés restent dans leur liste de courses
     getEffectiveItems(cat).forEach((base, i)=>{
       const key = itemKey(cat.id, i);
       if(isDeleted(key) || !state[key]) return;
@@ -5418,7 +5428,7 @@ function insertItem(cat, item){
   const ord = getCatOrder(cat);
   const pos = ord.indexOf(newIdx);
   if(pos > -1) ord.splice(pos, 1);
-  if(item.egg || isCoursesList(cat.id)) ord.push(newIdx); else ord.unshift(newIdx);   // 10.15 : un article arrive en bas
+  if(item.egg || isSideList(cat.id)) ord.push(newIdx); else ord.unshift(newIdx);   // 10.15 : un article arrive en bas
   saveOrder(order);
   return newIdx;
 }
@@ -6192,6 +6202,7 @@ function renderAddCategoryRow(){
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
         ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de shopping ou mémo</label>` : ""}
         <div class="edit-actions">
+          ${Store.mode === "doc" ? `<button type="button" class="nl-chat" data-tip="Petit écran pour s'écrire" aria-label="Créer un écran Entre nous">écran</button>` : ""}
           <button type="button" class="add-cancel nl-cancel">Annuler</button>
           <button type="button" class="add-save nl-save">Créer</button>
         </div>
@@ -6229,6 +6240,17 @@ function renderAddCategoryRow(){
     renderAll();
   };
   card.querySelector(".nl-save").addEventListener("click", save);
+  // 10.57 : un écran « Entre nous » se crée directement, sans nom
+  const chatBtn = card.querySelector(".nl-chat");
+  if(chatBtn) chatBtn.addEventListener("click", ()=>{
+    document.removeEventListener("pointerdown", outside, true);
+    try{
+      const cat = addCategory("Entre nous");
+      if(cat && Store.setListField(cat.id, "type", "chat")){ chatFocus = cat.id; actionToast("newChat"); }
+    }catch(err){ console.error("[nouvel écran] échec", err); }
+    addingCategory = false;
+    renderAll();
+  });
   card.querySelector(".nl-cancel").addEventListener("click", cancel);
   nameInput.addEventListener("keydown", e=>{
     if(e.key === "Enter"){ e.preventDefault(); save(); }
@@ -6548,7 +6570,7 @@ function renderNewNotice(){
     if(fresh.length){
       const { cat, idx, by } = edits.get(fresh[0]);
       const t = getEffective(itemKey(cat.id, idx), getEffectiveItems(cat)[idx]).t;
-      celebrate(`${personName(by, cat.id)} a modifié « ${t} » dans ${cat.title}` + (fresh.length > 1 ? ` (et ${fresh.length - 1} autre${fresh.length > 2 ? "s" : ""})` : ""), true);
+      if(!isChatList(cat.id)) celebrate(`${personName(by, cat.id)} a modifié « ${t} » dans ${cat.title}` + (fresh.length > 1 ? ` (et ${fresh.length - 1} autre${fresh.length > 2 ? "s" : ""})` : ""), true);
     }
   }
   prevEditKeys = new Set(edits.keys());
@@ -6559,7 +6581,8 @@ function renderNewNotice(){
       const b = getEffectiveItems(cat)[idx];
       const who = personName(b.by, cat.id);
       const t = getEffective(itemKey(cat.id, idx), b).t;
-      celebrate(`${who} a ajouté « ${t} » à ${cat.title}` + (fresh.length > 1 ? ` (et ${fresh.length - 1} autre${fresh.length > 2 ? "s" : ""})` : ""), true);
+      if(isChatList(cat.id)) celebrate(`${who} : « ${chatText(itemKey(cat.id, idx), b)} »`, true);   // 10.57 : un mot sur l'écran
+      else celebrate(`${who} a ajouté « ${t} » à ${cat.title}` + (fresh.length > 1 ? ` (et ${fresh.length - 1} autre${fresh.length > 2 ? "s" : ""})` : ""), true);
     }
   }
   prevNewKeys = new Set(now.keys());
@@ -6607,7 +6630,7 @@ function buildCatShareRow(cat){
   row.addEventListener("click", e => e.stopPropagation());
   if(!iOwnList(cat.id)){
     const i = listInfo(cat.id) || {};
-    row.innerHTML = `<span>Liste ${escapeAttr(deName(personName(i.owner, cat.id)))}, en partage. ${isCoursesList(cat.id) ? "On peut rayer et retirer tous les articles." : "On peut tout cocher, et effacer les tâches qu'on a ajoutées."}</span>`;
+    row.innerHTML = isChatList(cat.id) ? `<span>Écran ${escapeAttr(deName(personName(i.owner, cat.id)))}, en partage.</span>` : `<span>Liste ${escapeAttr(deName(personName(i.owner, cat.id)))}, en partage. ${isCoursesList(cat.id) ? "On peut rayer et retirer tous les articles." : "On peut tout cocher, et effacer les tâches qu'on a ajoutées."}</span>`;
     return row;
   }
   const label = `<span class="cat-share-label">Partagée avec</span>`;
@@ -6641,7 +6664,8 @@ function buildCatShareRow(cat){
       const fresh = buildCatShareRow(cat);
       if(fresh) row.replaceWith(fresh);
       const who = cm[b.dataset.uid].name || "?";
-      celebrate(on ? "Liste partagée : elle apparaît chez " + who + "." : "Liste retirée de chez " + who + ".", true);
+      const chat = isChatList(cat.id);   // 10.57
+      celebrate(on ? (chat ? "Écran partagé avec " + who + "." : "Liste partagée : elle apparaît chez " + who + ".") : (chat ? "Écran retiré de chez " + who + "." : "Liste retirée de chez " + who + "."), true);
     });
   });
   return row;
@@ -6654,6 +6678,9 @@ function buildCatShareRow(cat){
 // du graphique, de la purge du lundi, de la corbeille, de la case urgente et
 // du trèfle : rayer le lait ne fait jamais tourner le compteur.
 function isCoursesList(catId){ try{ return Store.listField(catId, "type") === "courses"; }catch(e){ return false; } }
+// 10.57 : écran « Entre nous » ; mémos et écrans restent hors compteur, urgences, trèfle et purge
+function isChatList(catId){ try{ return Store.listField(catId, "type") === "chat"; }catch(e){ return false; } }
+function isSideList(catId){ return isCoursesList(catId) || isChatList(catId); }
 // passer une liste en liste de courses (on) ou la rendre normale (off) : seul
 // le champ type change, aucune tâche n'est touchée (retour possible à l'identique)
 function setCoursesList(catId, on){
@@ -6945,7 +6972,7 @@ function getTotalItems(){
   // et comptent comme faites (voir getDoneCount). Envoyer une tâche "dans leur
   // camp", c'est avoir fait sa part — elle ne disparaît donc plus du compteur.
   return DATA.reduce((n,c)=>{
-    if(isCoursesList(c.id)) return n;   // 10.15 : hors compteur
+    if(isSideList(c.id)) return n;   // 10.15 : hors compteur
     const items = getEffectiveItems(c);
     let count = 0;
     items.forEach((base,i)=>{
@@ -6963,7 +6990,7 @@ function getWeekDoneCount(){
   checkedAt = loadJSONKey(CHECKED_AT_KEY, {});
   let n = 0;
   DATA.forEach(cat=>{
-    if(isCoursesList(cat.id)) return;   // 10.15
+    if(isSideList(cat.id)) return;   // 10.15 ; 10.57 : écrans
     getEffectiveItems(cat).forEach((base,i)=>{
       const key = itemKey(cat.id,i);
       if(isDeleted(key) || !state[key]) return;
@@ -6986,7 +7013,7 @@ function getDoneCount(){
   // décompte — c'est automatiquement réversible.
   let count = 0;
   DATA.forEach(cat=>{
-    if(isCoursesList(cat.id)) return;   // 10.15
+    if(isSideList(cat.id)) return;   // 10.15 ; 10.57 : écrans
     const items = getEffectiveItems(cat);
     items.forEach((base,i)=>{
       const key = itemKey(cat.id,i);
@@ -7023,7 +7050,7 @@ function hasAnyList(){
 function hasAnyTask(){
   return getCategoryOrder().some(i=>{
     const c = DATA[i];
-    if(!c || isCategoryDeleted(c.id) || isCoursesList(c.id)) return false;
+    if(!c || isCategoryDeleted(c.id) || isSideList(c.id)) return false;
     return getEffectiveItems(c).some((base, j) => !isDeleted(itemKey(c.id, j)));
   });
 }
@@ -7146,7 +7173,7 @@ function getWaitingOrder(rows){
 function collectUrgentItems(){
   const out = [];
   DATA.forEach(cat=>{
-    if(isCoursesList(cat.id)) return;   // 10.15 : un article n'est jamais urgent
+    if(isSideList(cat.id)) return;   // 10.15 : un article n'est jamais urgent
     const items = getEffectiveItems(cat);
     items.forEach((base,i)=>{
       const key = itemKey(cat.id, i);
@@ -7651,9 +7678,8 @@ function commitDragOrder(){
   if(dragMode === "lists"){
     // Ordre visible des cartes, reporté dans l'ordre complet (les listes
     // supprimées gardent leur place, on n'y touche pas).
-    if(window.chatNoteOrder) window.chatNoteOrder(el.parentElement);   // banc du chat : l'écran retient sa place
     const domOrder = Array.from(el.parentElement.children)
-      .filter(node => node.dataset && node.dataset.dragMode === "lists" && node.dataset.dragId !== "chat")
+      .filter(node => node.dataset && node.dataset.dragMode === "lists")
       .map(node => parseInt(node.dataset.dragId, 10));
     const visible = new Set(domOrder);
     const full = getCategoryOrder().slice();
@@ -7817,7 +7843,7 @@ function drawLuckyKeys(reroll, exclude){
   const pool = [];
   getCategoryOrder().forEach(catIdx=>{
     const cat = DATA[catIdx];
-    if(!cat || isCategoryDeleted(cat.id) || isCoursesList(cat.id)) return;   // 10.15 : pas d'article au trèfle
+    if(!cat || isCategoryDeleted(cat.id) || isSideList(cat.id)) return;   // 10.15 : pas d'article au trèfle
     const items = getEffectiveItems(cat);
     const n = items.length;
     items.forEach((base, i)=>{
@@ -7853,7 +7879,7 @@ function luckyEntry(key){
   const sep = key.lastIndexOf(":");
   const cat = DATA.find(c => c.id === key.slice(0, sep));
   const idx = parseInt(key.slice(sep + 1), 10);
-  if(!cat || isCategoryDeleted(cat.id) || isDeleted(key) || isCoursesList(cat.id)) return null;
+  if(!cat || isCategoryDeleted(cat.id) || isDeleted(key) || isSideList(cat.id)) return null;
   const base = getEffectiveItems(cat)[idx];
   if(!base) return null;
   const eff = getEffective(key, base);
@@ -9045,6 +9071,207 @@ function placeCoursesScroll(card){
   thumb.style.top = top + "px";
 }
 
+// ---- 10.57 : écran « Entre nous » (voir NOTE, ÉCRAN ENTRE NOUS) ----
+// Une liste de type "chat" : chaque message est une tâche ordinaire de la
+// fiche ({ t, by, at }), jamais cochée ; corriger = modifier son texte,
+// effacer = marquer effacé (comme un article de mémo). Partage, synchro,
+// fusion, ordre des listes et glisser : ceux des listes, sans rien de plus.
+let chatDraft = {};        // texte en cours de frappe, par écran (gardé d'un rendu à l'autre)
+let chatFocus = null;      // écran dont la saisie avait le curseur
+let chatFix = null;        // { catId, idx } : message repris par ↑ dans la saisie
+let chatEdit = null;       // { catId, idx, v } : message corrigé sur place (double-clic)
+let chatMenuOpen = null;   // écran dont le menu « … » est ouvert
+function chatTime(at){
+  if(typeof at !== "number") return "";
+  const d = new Date(at), p = n => String(n).padStart(2, "0");
+  const hm = p(d.getHours()) + ":" + p(d.getMinutes());
+  return d.toDateString() === new Date().toDateString() ? hm : d.getDate() + "/" + (d.getMonth() + 1) + " " + hm;
+}
+// à moi ? (sans compte, tout est à moi ; sinon l'auteur, ou le créateur de l'écran)
+function chatMine(cat, base){
+  const me = myUid();
+  return !me || taskCreator(cat, base) === me;
+}
+// texte tel qu'écrit (getEffective met une majuscule, pas ici : on écrit comme on parle)
+function chatText(key, base){ const o = overrides[key] || {}; return String(o.t !== undefined ? o.t : base.t || ""); }
+function addChatMessage(cat, text){
+  const t = String(text || "").trim().slice(0, 1000);
+  if(!t) return false;
+  insertItem(cat, { t, at: Date.now() });
+  return true;
+}
+function editChatMessage(cat, idx, text){
+  const key = itemKey(cat.id, idx), base = getEffectiveItems(cat)[idx];
+  if(!base || !chatMine(cat, base) || isDeleted(key)) return;
+  const t = String(text || "").trim().slice(0, 1000);
+  if(!t){ removeCoursesItem(key); return; }   // vidé = effacé
+  overrides = loadOverrides();
+  if(chatText(key, base) === t) return;
+  overrides[key] = Object.assign({}, overrides[key] || {}, { t });
+  markEdited(key, cat.id);
+  saveOverrides(overrides);
+}
+// supprimer l'écran : ses messages sont effacés, puis la liste (vide) supprimée
+function deleteChat(cat){
+  if(!iOwnList(cat.id)) return;
+  getEffectiveItems(cat).forEach((b, i)=>{ const k = itemKey(cat.id, i); if(!isDeleted(k)) removeCoursesItem(k); });
+  deleteCategory(cat.id);
+}
+function buildChatCard(cat, catIdx){
+  const me = myUid(), own = iOwnList(cat.id);
+  const card = document.createElement("div");
+  card.className = "chat-card";
+  card.id = "cat-" + cat.id;
+  const items = getEffectiveItems(cat);
+  const msgs = [];
+  items.forEach((base, i)=>{ const k = itemKey(cat.id, i); if(base && !isDeleted(k)) msgs.push({ i, k, base, t: chatText(k, base) }); });
+  const people = [listOwnerUid(cat.id)].concat(listPeople(cat.id)).filter((u, j, a) => u && a.indexOf(u) === j);
+  const ini = u => u ? personInitials(u, cat.id) : initialOf(myName());   // sans compte : mes initiales
+  const sharing = editingCategoryTitle === cat.id;
+  if(sharing && (!catEditSnap || catEditSnap.id !== cat.id))
+    catEditSnap = { id: cat.id, color: cat.color, members: ((listInfo(cat.id) || { members:[] }).members || []).slice() };
+  if(sharing || chatMenuOpen === cat.id) card.classList.add("chat-open");
+  card.innerHTML = `<div class="chat-box"><div class="chat-hole"><div class="chat-screen">
+      <div class="chat-log" role="log" aria-label="Messages"></div>
+      <div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div>
+      <input type="text" class="chat-field" aria-label="Écrire un mot" autocomplete="off" enterkeyhint="send">
+    </div></div>
+    <div class="chat-foot">
+      <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
+      <button type="button" class="chat-more" aria-label="Options de l'écran" aria-expanded="${chatMenuOpen === cat.id}">…</button>
+      <span class="chat-who">${(people.length ? people : [null]).map(u => escapeAttr(ini(u))).join(" ")}</span>
+      <div class="chat-menu"${chatMenuOpen === cat.id ? "" : " hidden"}>${own
+        ? `<button type="button" data-a="share"><span class="ic">+</span>Inviter</button><button type="button" data-a="share"><span class="ic">−</span>Retirer</button><button type="button" class="danger" data-a="del"><span class="ic">×</span>Supprimer cet écran</button>`
+        : `<div class="chat-menu-note">Écran ${escapeAttr(deName(personName(listOwnerUid(cat.id), cat.id)))}, en partage.</div>`}</div>
+    </div></div>`;
+  const log = card.querySelector(".chat-log"), field = card.querySelector(".chat-field"),
+        typed = card.querySelector(".chat-typed"), inRow = card.querySelector(".chat-in");
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; };
+  if(!msgs.length) log.appendChild(el("div", "chat-empty", people.length > 1 ? "Un mot ?" : "Un mot ? (Inviter quelqu'un avec « … »)"));
+  msgs.forEach(m=>{
+    const mine = chatMine(cat, m.base), who = taskCreator(cat, m.base);
+    const l = el("div", "chat-l " + (mine ? "me mine" : "them"));
+    l.dataset.i = m.i;
+    const pr = el("span", "chat-pr", ini(who) + "> ");
+    const meta = el("span", "chat-m", chatTime(m.base.at) + (editInfo(m.k).at ? " · modifié" : ""));
+    if(mine) l.title = "Double-clic pour corriger";
+    if(chatEdit && chatEdit.catId === cat.id && chatEdit.idx === m.i && mine){
+      // la ligne normale reste dessous, cachée : un clic à côté la remet sans
+      // tout redessiner (voir le pointerdown plus bas)
+      l.classList.add("editing");
+      const norm = el("span", "chat-norm");
+      norm.append(document.createTextNode(m.t + " "), meta);
+      norm.hidden = true;
+      const inp = el("input", "chat-edit");
+      inp.value = chatEdit.v != null ? chatEdit.v : m.t;
+      l.append(pr, inp, norm);
+      const end = keep=>{
+        if(!chatEdit) return;
+        const v = inp.value;
+        chatEdit = null;
+        if(keep) editChatMessage(cat, m.i, v);
+        renderAll();
+      };
+      inp.addEventListener("input", ()=>{ if(chatEdit) chatEdit.v = inp.value; });
+      inp.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); end(true); } else if(e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); end(false); } });
+      inp.addEventListener("click", e => e.stopPropagation());
+      requestAnimationFrame(()=>{ if(inp.isConnected) inp.focus(); });
+    }else{
+      l.append(pr, document.createTextNode(m.t + " "), meta);
+    }
+    log.appendChild(l);
+  });
+  requestAnimationFrame(()=>{ log.scrollTop = log.scrollHeight; });
+  // saisie : le texte tapé s'affiche dans l'écran, le gros curseur derrière
+  const fixing = chatFix && chatFix.catId === cat.id;
+  inRow.classList.toggle("fixing", !!fixing);
+  field.value = chatDraft[cat.id] || "";
+  typed.textContent = field.value;
+  const clearDraft = ()=>{ delete chatDraft[cat.id]; field.value = ""; typed.textContent = ""; };
+  field.addEventListener("input", ()=>{ chatDraft[cat.id] = field.value; typed.textContent = field.value; });
+  field.addEventListener("focus", ()=>{ chatFocus = cat.id; });
+  // un rendu qui remplace l'écran (synchro…) garde le curseur ; un vrai clic ailleurs le rend
+  field.addEventListener("blur", ()=> setTimeout(()=>{ if(field.isConnected && document.activeElement !== field && chatFocus === cat.id) chatFocus = null; }, 0));
+  field.addEventListener("keydown", e=>{
+    if(e.isComposing) return;
+    if(e.key === "ArrowUp" && !field.value){   // ↑ : reprendre son dernier message pour le corriger
+      const last = msgs.slice().reverse().find(m => chatMine(cat, m.base));
+      if(last){ chatFix = { catId: cat.id, idx: last.i }; field.value = chatDraft[cat.id] = last.t; typed.textContent = field.value; inRow.classList.add("fixing"); }
+      e.preventDefault(); return;
+    }
+    if(e.key === "Escape"){ if(fixing || chatFix){ chatFix = null; inRow.classList.remove("fixing"); } clearDraft(); field.blur(); return; }
+    if(e.key !== "Enter") return;
+    e.preventDefault();
+    const v = field.value;
+    try{
+      if(chatFix && chatFix.catId === cat.id) editChatMessage(cat, chatFix.idx, v);
+      else if(!addChatMessage(cat, v)) return;
+    }catch(err){ console.error("[entre nous] échec de l'envoi", err); return; }
+    chatFix = null;
+    clearDraft();
+    chatFocus = cat.id;
+    renderAll();
+  });
+  if(chatFocus === cat.id && !(chatEdit && chatEdit.catId === cat.id)) requestAnimationFrame(()=>{ if(field.isConnected) field.focus({ preventScroll:true }); });
+  card.querySelector(".chat-screen").addEventListener("click", e=>{ if(!e.target.closest(".chat-edit")) field.focus({ preventScroll:true }); });
+  log.addEventListener("dblclick", e=>{
+    const l = e.target.closest(".chat-l.mine"); if(!l || l.classList.contains("editing")) return;
+    e.stopPropagation();
+    chatEdit = { catId: cat.id, idx: +l.dataset.i, v: null };
+    chatFix = null; chatFocus = null;
+    renderAll();
+  });
+  // menu « … »
+  const more = card.querySelector(".chat-more"), menu = card.querySelector(".chat-menu");
+  more.addEventListener("click", e=>{ e.stopPropagation(); chatMenuOpen = chatMenuOpen === cat.id ? null : cat.id; renderAll(); });
+  menu.addEventListener("click", e => e.stopPropagation());
+  menu.querySelectorAll("button").forEach(b => b.addEventListener("click", ()=>{
+    if(b.dataset.a === "share"){ chatMenuOpen = null; editingCategoryTitle = cat.id; renderAll(); return; }
+    if(b.dataset.a === "del"){
+      if(!b.classList.contains("sure")){ b.classList.add("sure"); b.lastChild.textContent = "Vraiment ? Tout sera effacé"; return; }
+      chatMenuOpen = null;
+      deleteChat(cat);
+      renderAll();
+    }
+  }));
+  // partage : la ligne « Partagée avec » des listes, avec Annuler / Enregistrer
+  if(sharing){
+    const box = el("div", "chat-share");
+    box.addEventListener("click", e => e.stopPropagation());
+    const row = buildCatShareRow(cat);
+    if(row) box.appendChild(row);
+    const act = el("div", "edit-actions cat-edit-actions");
+    act.innerHTML = `<button type="button" class="edit-cancel">Annuler</button><button type="button" class="edit-save">Enregistrer</button>`;
+    act.querySelector(".edit-save").addEventListener("click", ()=>{ editingCategoryTitle = null; catEditSnap = null; renderAll(); });
+    act.querySelector(".edit-cancel").addEventListener("click", ()=>{ cancelCatEdit(); renderAll(); });
+    box.appendChild(act);
+    card.querySelector(".chat-box").appendChild(box);
+  }
+  wireDragCard(card, card.querySelector(".cat-grip"), catIdx);
+  return card;
+}
+// menu « … » ouvert : un clic à côté le ferme
+// (sans re-dessiner : le clic doit arriver intact à ce qu'il vise) ; de même,
+// un clic à côté d'un message en correction l'annule
+document.addEventListener("pointerdown", e=>{
+  if(chatEdit){
+    const l = document.querySelector(".chat-l.editing");
+    if(!l || !l.contains(e.target)){
+      chatEdit = null;
+      if(l){ l.classList.remove("editing"); const inp = l.querySelector(".chat-edit"), norm = l.querySelector(".chat-norm"); if(inp) inp.remove(); if(norm) norm.hidden = false; }
+    }
+  }
+  if(!chatMenuOpen) return;
+  const card = document.getElementById("cat-" + chatMenuOpen);
+  if(card && card.contains(e.target)) return;
+  chatMenuOpen = null;
+  if(!card) return;
+  card.classList.remove("chat-open");
+  const m = card.querySelector(".chat-menu"), b = card.querySelector(".chat-more");
+  if(m) m.hidden = true;
+  if(b) b.setAttribute("aria-expanded", "false");
+}, true);
+
 function render(){
   // 10.15 : la zone des articles d'une liste de courses défile ; on garde sa
   // position d'un rendu à l'autre (rayer un article ne la ramène pas en haut)
@@ -9055,6 +9282,7 @@ function render(){
   let memoRank = 0;   // 10.23 : rang des mémos, pour varier leur reflet
   catDisplayOrder.forEach(catIdx=>{
     const cat = DATA[catIdx];
+    if(isChatList(cat.id)){ categoriesEl.appendChild(buildChatCard(cat, catIdx)); return; }   // 10.57
     const items = getEffectiveItems(cat);
     const courses = isCoursesList(cat.id);
     const card = document.createElement("div");
@@ -9489,7 +9717,7 @@ function collectDoneDates(){
   });
   const st = loadState(), ca = loadJSONKey(CHECKED_AT_KEY, {});
   DATA.forEach(cat=>{
-    if(isCoursesList(cat.id)) return;   // 10.15
+    if(isSideList(cat.id)) return;   // 10.15 ; 10.57 : écrans
     getEffectiveItems(cat).forEach((base, i)=>{
       const key = itemKey(cat.id, i);
       if(isDeleted(key) || !st[key]) return;
@@ -10091,6 +10319,7 @@ const ACTION_MESSAGES = {
   moveCat: ["Déménagée dans une autre liste, cartons compris.", "Changement de case, acté par le notaire.", "Mutation acceptée, sans passer par l'échevin."],
   newCat: ["Nouvelle case ouverte, comme un échevinat de plus.", "Liste créée. Le conseil communal a voté à main levée."],
   // 10.15 : listes de courses
+  newChat: ["Écran allumé. Un mot, un bisou, une nouvelle.", "Ligne ouverte, comme un téléphone de comptoir."],   // 10.57
   newCourses: ["Panier prêt. Direction le marché du dimanche.", "Mémo ouvert, comme l'épicerie du coin."],
   coursesErase: ["Retiré du panier.", "Reposé sur l'étal.", "Le crémier s'en remettra."],
   coursesQty: ["Quantité mise à jour.", "Le crémier a corrigé l'ardoise."],
@@ -11983,149 +12212,5 @@ if(Store.mode === "doc" && !isStandaloneApp()){
   setTimeout(()=>{ if(!Sync.user && openLoginAt && !(relancePop && relancePop.classList.contains("sync-pop"))) openLoginAt(); }, 500);
 }
 
-// ---- 10.57 : banc d'essai du mini-chat « Entre nous » (essai.html?chat) ----
-// Maquette : rien n'est synchronisé, les messages restent en mémoire le temps
-// de la page. Corriger : double-clic sur une de ses lignes (Entrée garde,
-// Échap annule, vide = supprimer), ou ↑ dans la saisie vide pour reprendre
-// son dernier message. Déplacer : la poignée sous l'écran, comme une liste
-// (place gardée dans ce navigateur). Menu « … » : inviter, retirer, supprimer (pas encore branchés).
-if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
-  const K = "sltapis-essai-chat-6";
-  let st = { pos:1, hiske:false, dim:34, wake:true, where:"grille", w:25, v:"bas", h:"centre", lines:2 };   // retenus au banc le 5/11
-  try{ const r = new URLSearchParams(location.search).get("r"); if(r) Object.assign(st, JSON.parse(decodeURIComponent(escape(atob(r))))); }catch(e){}
-  try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
-  const save = () => { try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){} };
-  const MSG = [
-    { me:true,  t:"17:41", x:"j'ai augmenté le contraste des mémos" },
-    { me:false, t:"17:52", x:"beaucoup mieux, merci" },
-    { me:false, t:"17:52", x:"bisou" },
-    { me:true,  t:"17:58", x:"le faisan approuve" },
-  ];
-  const GRIP = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>`;
-  const card = document.createElement("div");
-  card.className = "chat-card";
-  card.innerHTML = `<div class="chat-box"><div class="chat-hole"><div class="chat-screen"><div class="chat-log"></div><div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div><input class="chat-field" autocomplete="off" aria-label="Écrire un mot"></div></div>`
-    + `<div class="chat-foot"><span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser">${GRIP}</span>`
-    + `<button type="button" class="chat-more" aria-label="Options de l'écran" aria-expanded="false">…</button><span class="chat-who"><b>AP</b> <b>H</b></span>`
-    + `<div class="chat-menu" hidden><button type="button" data-a="add"><span class="ic">+</span>Inviter</button><button type="button" data-a="rm"><span class="ic">−</span>Retirer</button><button type="button" class="danger" data-a="del"><span class="ic">×</span>Supprimer cet écran</button><div class="chat-menu-note" hidden></div></div></div></div>`;
-  const log = card.querySelector(".chat-log"), field = card.querySelector(".chat-field"), typed = card.querySelector(".chat-typed"), inRow = card.querySelector(".chat-in");
-  const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; };
-  const isMine = m => m.me === !st.hiske;
-  let fixing = -1;   // message repris par ↑ dans la saisie
-  function paintLog(){
-    log.innerHTML = "";
-    MSG.forEach((m, i)=>{
-      const l = el("div", "chat-l " + (m.me ? "me" : "them") + (isMine(m) ? " mine" : ""));
-      l.dataset.i = i;
-      if(isMine(m)) l.title = "Double-clic pour corriger";
-      l.append(el("span", "chat-pr", (m.me ? "AP" : "H") + "> "), document.createTextNode(m.x + " "), el("span", "chat-m", m.t + (m.mod ? " · modifié" : "")));
-      log.appendChild(l);
-    });
-    log.scrollTop = log.scrollHeight;
-  }
-  const now = () => { const n = new Date(); return String(n.getHours()).padStart(2, "0") + ":" + String(n.getMinutes()).padStart(2, "0"); };
-  const setFixing = i => { fixing = i; inRow.classList.toggle("fixing", i >= 0); };
-  // corriger une ligne en place (double-clic)
-  log.addEventListener("dblclick", e=>{
-    const l = e.target.closest(".chat-l.mine"); if(!l) return;
-    e.stopPropagation();
-    const i = +l.dataset.i, m = MSG[i];
-    const inp = el("input", "chat-edit"); inp.value = m.x;
-    l.innerHTML = ""; l.append(el("span", "chat-pr", (m.me ? "AP" : "H") + "> ")); l.style.display = "flex"; l.style.alignItems = "baseline";
-    if(m.me) l.style.justifyContent = "flex-end";
-    l.appendChild(inp); inp.focus(); inp.select();
-    let done = false;
-    const end = keep=>{
-      if(done) return; done = true;
-      if(keep){ const v = inp.value.trim(); if(!v) MSG.splice(i, 1); else if(v !== m.x){ m.x = v; m.mod = true; } }
-      paintLog();
-    };
-    inp.addEventListener("keydown", ev=>{ if(ev.key === "Enter"){ ev.preventDefault(); end(true); } else if(ev.key === "Escape"){ ev.preventDefault(); end(false); } });
-    inp.addEventListener("blur", ()=> end(false));   // clic à côté = annuler, comme ailleurs
-    inp.addEventListener("click", ev => ev.stopPropagation());
-  });
-  card.querySelector(".chat-screen").addEventListener("click", e=>{ if(e.target.closest(".chat-edit")) return; field.focus({ preventScroll:true }); });
-  card.addEventListener("click", e => e.stopPropagation());
-  field.addEventListener("input", ()=>{ typed.textContent = field.value; });
-  field.addEventListener("keydown", e=>{
-    if(e.key === "ArrowUp" && !field.value){
-      for(let i = MSG.length - 1; i >= 0; i--) if(isMine(MSG[i])){ setFixing(i); field.value = MSG[i].x; typed.textContent = field.value; break; }
-      e.preventDefault(); return;
-    }
-    if(e.key === "Escape" && fixing >= 0){ setFixing(-1); field.value = ""; typed.textContent = ""; return; }
-    if(e.key !== "Enter") return;
-    e.preventDefault();
-    const v = field.value.trim();
-    if(fixing >= 0){
-      if(!v) MSG.splice(fixing, 1); else if(v !== MSG[fixing].x){ MSG[fixing].x = v; MSG[fixing].mod = true; }
-      setFixing(-1);
-    }else if(v) MSG.push({ me:!st.hiske, t:now(), x:v });
-    field.value = ""; typed.textContent = "";
-    paintLog();
-  });
-  // menu « … »
-  const more = card.querySelector(".chat-more"), menu = card.querySelector(".chat-menu"), note = card.querySelector(".chat-menu-note");
-  const closeMenu = () => { menu.hidden = true; more.setAttribute("aria-expanded", "false"); note.hidden = true; };
-  more.addEventListener("click", e=>{ e.stopPropagation(); const open = menu.hidden; closeMenu(); if(open){ menu.hidden = false; more.setAttribute("aria-expanded", "true"); } });
-  menu.addEventListener("click", e=>{
-    const b = e.target.closest("button"); if(!b) return;
-    note.textContent = b.dataset.a === "del" ? "Au banc, l'écran ne disparaît pas : on branchera ça avec la synchro." : "Pas encore branché : viendra avec la synchro (même procédure que le partage des listes).";
-    note.hidden = false;
-  });
-  document.addEventListener("pointerdown", e=>{ if(!menu.hidden && !e.target.closest(".chat-foot")) closeMenu(); }, true);
-  // place parmi les listes
-  const cats = document.getElementById("categories");
-  const others = () => [...cats.children].filter(c => c !== card);
-  const place = ()=>{
-    if(dragState) return;   // pendant un glisser, c'est l'aimant des listes qui place l'écran
-    const o = others(), pos = st.where === "bande" ? 0 : Math.max(0, Math.min(st.pos | 0, o.length));
-    if(card.parentElement === cats && [...cats.children].indexOf(card) === pos) return;
-    if(pos < o.length) cats.insertBefore(card, o[pos]); else cats.appendChild(card);
-  };
-  new MutationObserver(place).observe(cats, { childList:true });
-  // déplacer : exactement comme une liste (même poignée, fantôme, aimant) ;
-  // commitDragOrder (banc) ignore l'écran pour l'ordre des listes et nous
-  // passe la main pour retenir sa place
-  wireDragCard(card, card.querySelector(".cat-grip"), "chat");
-  window.chatNoteOrder = parent=>{
-    const i = [...parent.children].indexOf(card);
-    if(i >= 0 && st.where !== "bande"){ st.pos = i; save(); }
-  };
-  // petit panneau du banc : seulement de quoi voir l'autre côté
-  const box = document.createElement("div");
-  box.className = "papier-bench";
-  function paintBox(){
-    const opt = (k, v, l) => `<button type="button" class="pb-opt${st[k] === v ? " on" : ""}" data-k="${k}" data-v="${v}">${l}</button>`;
-    const rg = (k, l, a, b) => `<label class="pb-rg">${l} <input type="range" min="${a}" max="${b}" step="1" data-r="${k}" value="${st[k]}"></label>`;
-    box.innerHTML = `<div class="pb-title">Entre nous</div>`
-      + `<label class="pb-sw-row"><input type="checkbox" data-k="hiske"${st.hiske ? " checked" : ""}> Écrire en tant que Hiske</label>`
-      + `<div class="pb-note">Corriger : double-clic sur une de ses lignes, ou ↑ dans la saisie vide.</div>`
-      + `<button type="button" class="pb-link">Copier le lien des réglages</button><div class="pb-linkmsg"></div>`;
-    box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", ()=>{ st[b.dataset.k] = b.dataset.v; save(); look(); paintBox(); }));
-    box.querySelectorAll("input[type=checkbox]").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; save(); c.dataset.k === "hiske" ? apply() : look(); }));
-    box.querySelectorAll("input[type=range]").forEach(r => r.addEventListener("input", ()=>{ st[r.dataset.r] = +r.value; save(); look(); }));
-    box.querySelector(".pb-link").addEventListener("click", ()=>{
-      const { hiske, ...keep } = st;
-      const url = location.origin + location.pathname + "?chat&r=" + btoa(unescape(encodeURIComponent(JSON.stringify(keep))));
-      const msg = box.querySelector(".pb-linkmsg");
-      const done = ok => { msg.textContent = ok ? "Lien copié : il suffit de le coller." : url; };
-      if(navigator.clipboard) navigator.clipboard.writeText(url).then(()=>done(true), ()=>done(false)); else done(false);
-    });
-  }
-  document.body.appendChild(box);
-  box.addEventListener("click", e => e.stopPropagation());
-  const look = ()=>{
-    card.style.setProperty("--dim", (st.dim / 100).toFixed(2)); card.classList.toggle("wake", st.wake);
-    card.style.setProperty("--chat-w", st.w + "rem"); card.style.setProperty("--band-lines", st.lines);
-    card.classList.toggle("band", st.where === "bande");
-    ["haut", "bas"].forEach(v => card.classList.toggle("v-" + v, st.where === "grille" && st.v === v));
-    ["gauche", "droite"].forEach(v => card.classList.toggle("h-" + v, st.where === "grille" && st.h === v));
-    place();
-    log.scrollTop = log.scrollHeight;
-  };
-  const apply = ()=>{ inRow.classList.toggle("them", st.hiske); setFixing(-1); field.value = ""; typed.textContent = ""; paintLog(); look(); };
-  paintBox();
-  apply(); place();
-})();
 Sync.start();
 </script>
