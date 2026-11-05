@@ -3822,95 +3822,78 @@ body.ios-gate-on{ overflow:hidden; }
 
 
 /* 10.57 : banc d'essai du mini-chat « Entre nous » (essai.html?chat) — rien
-   en ligne : maquette posée parmi les listes, messages gardés en mémoire */
+   en ligne : maquette posée parmi les listes, messages gardés en mémoire.
+   Réglages retenus au banc (5 tours) : creusé dans le fond comme une tôle
+   percée (tranche arrondie --rim, écran à --bev au fond), fond de l'appli
+   avec trame LCD et ombre du texte, Courier Prime, invite « AP> », moi en
+   bleu-vert foncé à droite, l'autre en vert du faisan à gauche. */
 .papier-bench{ position:fixed; right:1rem; bottom:1rem; z-index:8000; width:15rem; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:0.8rem; box-shadow:0 10px 30px rgba(40,50,60,.15); font-size:0.85rem; color:var(--ink); }
 .pb-title{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; font-size:0.75rem; color:var(--ink-soft); margin-bottom:0.5rem; }
-.pb-opt{ display:flex; align-items:center; gap:0.5rem; width:100%; font:inherit; text-align:left; background:none; border:1px solid transparent; border-radius:8px; padding:0.3rem 0.4rem; cursor:pointer; color:var(--ink); }
-.pb-opt:hover{ background:var(--surface-2); }
-.pb-opt.on{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--surface)); }
 .pb-sw-row{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; cursor:pointer; }
-.pb-rg{ display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin:0.3rem 0 0 1.4rem; font-size:0.8rem; color:var(--ink-soft); }
-.pb-rg input{ width:7rem; }
-.pb-link{ display:block; width:100%; margin-top:0.8rem; font:inherit; font-size:0.82rem; padding:0.4rem; border:0; border-radius:8px; cursor:pointer; background:color-mix(in srgb, var(--accent) 12%, var(--surface)); color:var(--btn-ink); }
-.pb-link:hover{ background:color-mix(in srgb, var(--accent) 20%, var(--surface)); }
-.pb-linkmsg{ font-size:0.72rem; color:var(--ink-faint); margin-top:0.3rem; overflow-wrap:anywhere; user-select:all; }
-.papier-bench.chat-bench{ max-height:calc(100vh - 2rem); overflow-y:auto; width:16rem; }
-.pb-sub{ font-size:0.72rem; color:var(--ink-faint); margin:0.6rem 0 0.15rem; text-transform:uppercase; letter-spacing:0.06em; }
-.chat-card{ position:relative; min-width:0; border-radius:14px; --chat-d:0.14; --chat-me:var(--btn-ink); --chat-them:var(--logo-green-strong); }
-.chat-card.wide{ grid-column:1 / -1; }
+.pb-note{ font-size:0.75rem; color:var(--ink-faint); margin-top:0.5rem; line-height:1.4; }
+.chat-card{
+  position:relative; min-width:0; justify-self:start; width:min(100%, 22rem); margin-top:0.9rem;
+  --rim:2px; --bev:6px; --chat-d:0.42; --pix-a:0.017; --sh-a:0.14;
+  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong);
+  --scr:color-mix(in srgb, var(--ink) 5%, var(--bg));
+}
+.chat-card.dragging{ z-index:50; opacity:0.85; }
+.chat-hole{ padding:var(--rim); border-radius:calc(18px + var(--rim));
+  background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--bg)) 0%, color-mix(in srgb, var(--ink) 6%, var(--bg)) 35%, var(--bg) 60%, #fff 100%);
+  box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px rgba(255,255,255,0.95), inset 0 1px 0 rgba(255,255,255,0.6); }
 .chat-screen{
-  position:relative; border-radius:10px; padding:2.1rem 1.1rem 0.8rem;
-  background:color-mix(in srgb, var(--ink) 5%, var(--bg));
-  box-shadow:inset 0 2px 5px rgba(42,39,37,var(--chat-d)), inset 0 0 0 1px rgba(42,39,37,0.06);
+  position:relative; border-radius:18px; padding:1.1rem 1.1rem 0.8rem;
+  background-color:var(--scr);
+  background-image:repeating-linear-gradient(0deg, rgba(40,50,40,var(--pix-a)) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(40,50,40,var(--pix-a)) 0 1px, transparent 1px 3px);
+  box-shadow:
+    inset 0 calc(var(--bev) * 1.1) calc(var(--bev) * 1.6) calc(var(--bev) * -0.6) rgba(42,39,37,var(--chat-d)),
+    inset 0 2px 3px rgba(42,39,37,0.18),
+    inset calc(var(--bev) * 0.9) 0 calc(var(--bev) * 1.3) calc(var(--bev) * -0.7) rgba(42,39,37,0.16),
+    inset calc(var(--bev) * -0.9) 0 calc(var(--bev) * 1.3) calc(var(--bev) * -0.7) rgba(42,39,37,0.10),
+    inset 0 calc(var(--bev) * -0.9) calc(var(--bev) * 1.2) calc(var(--bev) * -0.6) rgba(255,255,255,0.95);
   font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.9rem; line-height:1.55;
   cursor:text;
 }
-body.chat-profond .chat-card{ --chat-d:0.28; }
-/* écran enfoncé : la carte fait le cadre (surélevée comme les listes), l'écran est creusé dedans */
-body.chat-ecran .chat-card, body.chat-bo .chat-card{ background:var(--surface); box-shadow:var(--shadow); padding:0.7rem; }
-body.chat-bo .chat-card{ background:var(--surface-2); padding:1.6rem 0.8rem 0.8rem; }
-body.chat-bo .chat-card::before{ content:""; position:absolute; left:1rem; top:0.65rem; width:6px; height:6px; border-radius:50%; background:var(--logo-green); box-shadow:0 0 4px var(--logo-green); }
-body.chat-bo .chat-card::after{ content:"sous le tapis · coulisses"; position:absolute; left:1.65rem; top:0.38rem; font:600 0.62rem 'Public Sans', sans-serif; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); }
-body.chat-bo .chat-screen{ background-image:repeating-linear-gradient(transparent 0 3px, rgba(42,39,37,0.025) 3px 4px); }
-.chat-tag{
-  position:absolute; top:0.55rem; right:0.7rem; transform:rotate(var(--tag-r, 2deg));
-  font:600 0.66rem 'Public Sans', sans-serif; letter-spacing:0.08em; text-transform:uppercase;
-  color:color-mix(in srgb, var(--btn-ink) 55%, transparent);
-  background:rgba(255,255,255,0.45); border:1px solid color-mix(in srgb, var(--btn-ink) 18%, transparent);
-  border-radius:4px; padding:2px 7px; pointer-events:none;
-}
-body.chat-tagdroit .chat-tag{ --tag-r:0deg; }
 .chat-log{ max-height:18rem; overflow-y:auto; scrollbar-width:none; }
-.chat-l{ margin:0.12rem 0; overflow-wrap:anywhere; }
+.chat-l, .chat-in{ text-shadow:1px 1px 0 rgba(30,40,30,var(--sh-a)); }
+.chat-l{ margin:0.12rem 0; overflow-wrap:anywhere; border-radius:3px; }
 .chat-l.me{ text-align:right; padding-left:18%; color:var(--chat-me); }
 .chat-l.them{ text-align:left; padding-right:18%; color:var(--chat-them); }
+.chat-l.mine{ cursor:pointer; }
+.chat-l.mine:hover{ background:color-mix(in srgb, var(--chat-me) 6%, transparent); }
+.chat-l.them.mine:hover{ background:color-mix(in srgb, var(--chat-them) 6%, transparent); }
 .chat-m{ font-size:0.7rem; color:var(--ink-faint); white-space:nowrap; }
-.chat-sig{ display:block; font-size:0.7rem; color:var(--ink-faint); margin:-0.1rem 0 0.35rem; }
 .chat-pr{ font-weight:700; }
+.chat-edit{ font:inherit; color:inherit; width:100%; background:color-mix(in srgb, currentColor 7%, transparent); border:0; border-radius:3px; padding:0 0.2rem; outline:none; text-align:inherit; }
 .chat-in{ display:flex; justify-content:flex-end; align-items:center; min-height:1.6rem; border-top:1px dashed rgba(42,39,37,0.15); margin-top:0.6rem; padding-top:0.45rem; color:var(--chat-me); }
 .chat-in.them{ justify-content:flex-start; color:var(--chat-them); }
+.chat-in.fixing::before{ content:"corriger> "; font-size:0.75rem; color:var(--ink-faint); margin-right:0.3rem; }
 .chat-cur{ display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:2px; animation:chat-blink 1.05s steps(1) infinite; }
 @keyframes chat-blink{ 50%{ opacity:0; } }
 .chat-field{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
-/* 2e tour : très profond, plus petit qu'une liste, sticker enfoncé = poignée, écrans LCD */
-.chat-screen{ --scr:color-mix(in srgb, var(--ink) 5%, var(--bg)); background-color:var(--scr); background-image:none; }
-body.chat-tres .chat-card{ --chat-d:0.42; }
-body.chat-tres .chat-screen{ border-radius:18px;
-  box-shadow:
-    inset 0 calc(var(--bev, 8px) * 1.1) calc(var(--bev, 8px) * 1.6) calc(var(--bev, 8px) * -0.6) rgba(42,39,37,var(--chat-d)),
-    inset 0 2px 3px rgba(42,39,37,0.18),
-    inset calc(var(--bev, 8px) * 0.9) 0 calc(var(--bev, 8px) * 1.3) calc(var(--bev, 8px) * -0.7) rgba(42,39,37,0.16),
-    inset calc(var(--bev, 8px) * -0.9) 0 calc(var(--bev, 8px) * 1.3) calc(var(--bev, 8px) * -0.7) rgba(42,39,37,0.10),
-    inset 0 calc(var(--bev, 8px) * -0.9) calc(var(--bev, 8px) * 1.2) calc(var(--bev, 8px) * -0.6) rgba(255,255,255,0.95),
-    0 0 0 1px rgba(42,39,37,0.05), 0 1px 0 1px rgba(255,255,255,0.95), 0 -1px 0 rgba(42,39,37,0.08); }   /* 4e tour : paroi épaisse et arrondie (--bev) : ombre en haut et sur les flancs, reflet en bas, lèvre claire autour */
-.chat-card.petit{ justify-self:start; width:min(100%, 22rem); }
-.chat-tag{ pointer-events:none; user-select:none; -webkit-user-select:none; }
-/* 5e tour : poignée = petit sticker horizontal posé sur le fond, juste sous l'écran */
-.chat-grip{ display:block; width:max-content; margin:0.45rem 0.3rem 0 auto; padding:1px 8px 2px; border-radius:4px; font-size:0.8rem; line-height:1.1; letter-spacing:1px;
-  color:color-mix(in srgb, var(--btn-ink) 65%, transparent); background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.7);
-  box-shadow:0 1px 2px rgba(30,40,45,0.14), 0 3px 6px -2px rgba(30,40,45,0.12);
-  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; transition:box-shadow .15s ease; }
-.chat-grip:hover{ box-shadow:0 2px 3px rgba(30,40,45,0.16), 0 5px 10px -3px rgba(30,40,45,0.16); }
-.chat-card:not(.droite) .chat-grip{ margin-left:0.3rem; margin-right:auto; }
-/* la tôle : le fond est une feuille percée ; son épaisseur (--rim) se voit
-   comme une tranche arrondie autour du trou (sombre en haut, qui s'éloigne
-   de la lumière, claire en bas, qui la reçoit) ; l'écran est au fond, à
-   --bev de distance */
-body.chat-pur .chat-hole{ padding:var(--rim, 4px); border-radius:calc(18px + var(--rim, 4px));
-  background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--bg)) 0%, color-mix(in srgb, var(--ink) 6%, var(--bg)) 35%, var(--bg) 60%, #fff 100%);
-  box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px rgba(255,255,255,0.95), inset 0 1px 0 rgba(255,255,255,0.6); }
+/* sous l'écran, posés sur le fond : poignée (motif des listes) à gauche ;
+   initiales et « … » à droite */
+.chat-foot{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; padding:0 0.2rem; position:relative; }
+.chat-grip{ display:flex; align-items:center; padding:4px 3px; border-radius:6px; color:var(--ink-faint); opacity:0.6; cursor:grab;
+  touch-action:none; -webkit-touch-callout:none; user-select:none; -webkit-user-select:none; transition:opacity .15s ease, background .15s ease, color .15s ease; }
+.chat-grip svg{ transform:rotate(90deg); }
+.chat-grip:hover{ opacity:1; background:var(--surface-2); color:var(--ink-soft); }
 .chat-card.dragging .chat-grip{ cursor:grabbing; }
-.chat-card.droite{ justify-self:end; }
-/* 3e tour : le sticker est collé sur l'écran : un peu transparent, petite ombre portée ; c'est la poignée */
-.chat-tag{ background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.7); color:color-mix(in srgb, var(--btn-ink) 70%, transparent);
-  box-shadow:0 1px 2px rgba(30,40,45,0.14), 0 3px 6px -2px rgba(30,40,45,0.12); }
-.chat-card.dragging{ z-index:50; opacity:0.85; }
-.chat-card.dragging .chat-tag{ cursor:grabbing; }
-.chat-card.lcd-gv .chat-screen{ --scr:#E4E9DC; }
-.chat-card.lcd-bl .chat-screen{ --scr:#E2EBED; }
-.chat-card.lcd-ambre .chat-screen{ --scr:#EDE8D8; }
-.chat-card.pix .chat-screen{ background-image:repeating-linear-gradient(0deg, rgba(40,50,40,var(--pix-a, 0.025)) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(40,50,40,var(--pix-a, 0.025)) 0 1px, transparent 1px 3px); }
-.chat-card.pix .chat-l, .chat-card.pix .chat-in{ text-shadow:1px 1px 0 rgba(30,40,30,var(--sh-a, 0.07)); }
+.chat-who{ margin-left:auto; font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-faint); }
+.chat-who b{ font-weight:700; }
+.chat-more{ appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
+.chat-more:hover, .chat-more[aria-expanded="true"]{ background:var(--surface-2); color:var(--ink-soft); }
+.chat-menu{ position:absolute; right:0; top:calc(100% + 4px); z-index:60; min-width:12rem; background:var(--surface); border-radius:10px; box-shadow:0 8px 24px rgba(40,50,60,.16); padding:0.3rem; font-size:0.85rem; }
+.chat-menu[hidden]{ display:none; }
+.chat-menu button{ display:flex; align-items:center; gap:0.55rem; width:100%; appearance:none; border:0; background:none; font:inherit; color:var(--ink); text-align:left; padding:0.4rem 0.55rem; border-radius:6px; cursor:pointer; }
+.chat-menu button:hover{ background:var(--surface-2); }
+.chat-menu .ic{ width:1rem; text-align:center; color:var(--ink-soft); font-weight:600; }
+.chat-menu .danger{ color:var(--late); }
+.chat-menu .danger .ic{ color:var(--late); }
+.chat-menu-note{ font-size:0.72rem; color:var(--ink-faint); padding:0.25rem 0.55rem 0.2rem; }
+/* cible pendant qu'on déplace l'écran */
+#categories > .chat-drop-before{ box-shadow:-4px 0 0 -1px var(--accent), var(--shadow); }
+#categories > .chat-drop-after{ box-shadow:4px 0 0 -1px var(--accent), var(--shadow); }
 </style>
 
 <div class="wrap">
@@ -11980,56 +11963,95 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 }
 
 // ---- 10.57 : banc d'essai du mini-chat « Entre nous » (essai.html?chat) ----
-// Maquette seulement : rien n'est synchronisé, les messages tapés restent en
-// mémoire le temps de la page. 2e tour : on déplace l'écran en tirant
-// son sticker (position gardée dans ce navigateur). Les réglages sont gardés dans ce navigateur.
+// Maquette : rien n'est synchronisé, les messages restent en mémoire le temps
+// de la page. Corriger : double-clic sur une de ses lignes (Entrée garde,
+// Échap annule, vide = supprimer), ou ↑ dans la saisie vide pour reprendre
+// son dernier message. Déplacer : la poignée sous l'écran (place gardée dans
+// ce navigateur). Menu « … » : inviter, retirer, supprimer (pas encore branchés).
 if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
-  const K = "sltapis-essai-chat-3";
-  let st = { cadre:"pur", prof:"tres", sig:"prompt", voix:"bleufaisan", ecran:"fond", pix:true, pixa:17, sha:14, bev:9, rim:4, tagdroit:false, wide:false, petit:true, droite:true, pos:0, hiske:false };
-  try{ const old = JSON.parse(localStorage.getItem("sltapis-essai-chat-2") || "null"); if(old && old.pos != null) st.pos = old.pos; }catch(e){}
+  const K = "sltapis-essai-chat-5";
+  let st = { pos:0, hiske:false };
   try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
-  // lien des réglages : ?chat&r=… les remet tels quels (et sert à me les transmettre)
-  try{ const r = new URLSearchParams(location.search).get("r"); if(r) Object.assign(st, JSON.parse(decodeURIComponent(escape(atob(r))))); }catch(e){}
-  if(st.bev == null) st.bev = 8; if(st.rim == null) st.rim = 4; if(st.droite == null) st.droite = true; if(st.voix === "bleu" || st.voix === "bleufonce") st.voix = "bleufaisan";
+  const save = () => { try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){} };
   const MSG = [
     { me:true,  t:"17:41", x:"j'ai augmenté le contraste des mémos" },
     { me:false, t:"17:52", x:"beaucoup mieux, merci" },
     { me:false, t:"17:52", x:"bisou" },
     { me:true,  t:"17:58", x:"le faisan approuve" },
   ];
-  const VOIX = { vert:["var(--btn-ink)", "var(--logo-green-strong)"], bleu:["var(--accent)", "var(--logo-green-strong)"], encre:["var(--btn-ink)", "var(--ink)"], bleufonce:["#2F6F7C", "#4C7D1F"], bleufaisan:["#2F6F7C", "var(--logo-green-strong)"], lcd:["#2E3B35", "#3D6B1B"], lcdbl:["#24384A", "#3F6E3A"] };
+  const GRIP = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>`;
   const card = document.createElement("div");
   card.className = "chat-card";
-  card.innerHTML = `<div class="chat-hole"><div class="chat-screen"><span class="chat-tag">Entre nous</span><div class="chat-log"></div><div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div><input class="chat-field" autocomplete="off" aria-label="Écrire un mot"></div></div><span class="chat-grip" title="Glisser pour déplacer">&#8943;&#8943;</span>`;
+  card.innerHTML = `<div class="chat-hole"><div class="chat-screen"><div class="chat-log"></div><div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div><input class="chat-field" autocomplete="off" aria-label="Écrire un mot"></div></div>`
+    + `<div class="chat-foot"><span class="chat-grip" title="Glisser pour déplacer" aria-label="Déplacer l'écran">${GRIP}</span>`
+    + `<span class="chat-who"><b>AP</b> · <b>H</b></span><button type="button" class="chat-more" aria-label="Options de l'écran" aria-expanded="false">…</button>`
+    + `<div class="chat-menu" hidden><button type="button" data-a="add"><span class="ic">+</span>Inviter quelqu'un</button><button type="button" data-a="rm"><span class="ic">−</span>Retirer quelqu'un</button><button type="button" class="danger" data-a="del"><span class="ic">×</span>Supprimer cet écran</button><div class="chat-menu-note" hidden></div></div></div>`;
   const log = card.querySelector(".chat-log"), field = card.querySelector(".chat-field"), typed = card.querySelector(".chat-typed"), inRow = card.querySelector(".chat-in");
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; };
+  const isMine = m => m.me === !st.hiske;
+  let fixing = -1;   // message repris par ↑ dans la saisie
   function paintLog(){
     log.innerHTML = "";
-    MSG.forEach(m=>{
-      const who = m.me ? "AP" : "H";
-      const l = el("div", "chat-l " + (m.me ? "me" : "them"));
-      if(st.sig === "prompt"){
-        l.append(el("span", "chat-pr", who + "> "), document.createTextNode(m.x + " "), el("span", "chat-m", m.t));
-      }else if(st.sig === "dessous"){
-        l.append(document.createTextNode(m.x), el("span", "chat-sig", "— " + who + ", " + m.t));
-      }else{
-        l.append(document.createTextNode(m.x + "  "), el("span", "chat-m", m.t + " · " + who));
-      }
+    MSG.forEach((m, i)=>{
+      const l = el("div", "chat-l " + (m.me ? "me" : "them") + (isMine(m) ? " mine" : ""));
+      l.dataset.i = i;
+      if(isMine(m)) l.title = "Double-clic pour corriger";
+      l.append(el("span", "chat-pr", (m.me ? "AP" : "H") + "> "), document.createTextNode(m.x + " "), el("span", "chat-m", m.t + (m.mod ? " · modifié" : "")));
       log.appendChild(l);
     });
     log.scrollTop = log.scrollHeight;
   }
-  const meNow = () => !st.hiske;
-  card.addEventListener("click", e=>{ e.stopPropagation(); field.focus({ preventScroll:true }); });
+  const now = () => { const n = new Date(); return String(n.getHours()).padStart(2, "0") + ":" + String(n.getMinutes()).padStart(2, "0"); };
+  const setFixing = i => { fixing = i; inRow.classList.toggle("fixing", i >= 0); };
+  // corriger une ligne en place (double-clic)
+  log.addEventListener("dblclick", e=>{
+    const l = e.target.closest(".chat-l.mine"); if(!l) return;
+    e.stopPropagation();
+    const i = +l.dataset.i, m = MSG[i];
+    const inp = el("input", "chat-edit"); inp.value = m.x;
+    l.innerHTML = ""; l.append(el("span", "chat-pr", (m.me ? "AP" : "H") + "> ")); l.style.display = "flex"; l.style.alignItems = "baseline";
+    if(m.me) l.style.justifyContent = "flex-end";
+    l.appendChild(inp); inp.focus(); inp.select();
+    let done = false;
+    const end = keep=>{
+      if(done) return; done = true;
+      if(keep){ const v = inp.value.trim(); if(!v) MSG.splice(i, 1); else if(v !== m.x){ m.x = v; m.mod = true; } }
+      paintLog();
+    };
+    inp.addEventListener("keydown", ev=>{ if(ev.key === "Enter"){ ev.preventDefault(); end(true); } else if(ev.key === "Escape"){ ev.preventDefault(); end(false); } });
+    inp.addEventListener("blur", ()=> end(false));   // clic à côté = annuler, comme ailleurs
+    inp.addEventListener("click", ev => ev.stopPropagation());
+  });
+  card.querySelector(".chat-screen").addEventListener("click", e=>{ if(e.target.closest(".chat-edit")) return; field.focus({ preventScroll:true }); });
+  card.addEventListener("click", e => e.stopPropagation());
   field.addEventListener("input", ()=>{ typed.textContent = field.value; });
   field.addEventListener("keydown", e=>{
-    if(e.key !== "Enter" || !field.value.trim()) return;
+    if(e.key === "ArrowUp" && !field.value){
+      for(let i = MSG.length - 1; i >= 0; i--) if(isMine(MSG[i])){ setFixing(i); field.value = MSG[i].x; typed.textContent = field.value; break; }
+      e.preventDefault(); return;
+    }
+    if(e.key === "Escape" && fixing >= 0){ setFixing(-1); field.value = ""; typed.textContent = ""; return; }
+    if(e.key !== "Enter") return;
     e.preventDefault();
-    const n = new Date();
-    MSG.push({ me:meNow(), t:String(n.getHours()).padStart(2, "0") + ":" + String(n.getMinutes()).padStart(2, "0"), x:field.value.trim() });
+    const v = field.value.trim();
+    if(fixing >= 0){
+      if(!v) MSG.splice(fixing, 1); else if(v !== MSG[fixing].x){ MSG[fixing].x = v; MSG[fixing].mod = true; }
+      setFixing(-1);
+    }else if(v) MSG.push({ me:!st.hiske, t:now(), x:v });
     field.value = ""; typed.textContent = "";
     paintLog();
   });
+  // menu « … »
+  const more = card.querySelector(".chat-more"), menu = card.querySelector(".chat-menu"), note = card.querySelector(".chat-menu-note");
+  const closeMenu = () => { menu.hidden = true; more.setAttribute("aria-expanded", "false"); note.hidden = true; };
+  more.addEventListener("click", e=>{ e.stopPropagation(); const open = menu.hidden; closeMenu(); if(open){ menu.hidden = false; more.setAttribute("aria-expanded", "true"); } });
+  menu.addEventListener("click", e=>{
+    const b = e.target.closest("button"); if(!b) return;
+    note.textContent = b.dataset.a === "del" ? "Au banc, l'écran ne disparaît pas : on branchera ça avec la synchro." : "Pas encore branché : viendra avec la synchro (même procédure que le partage des listes).";
+    note.hidden = false;
+  });
+  document.addEventListener("pointerdown", e=>{ if(!menu.hidden && !e.target.closest(".chat-foot")) closeMenu(); }, true);
+  // place parmi les listes
   const cats = document.getElementById("categories");
   const others = () => [...cats.children].filter(c => c !== card);
   const place = ()=>{
@@ -12037,78 +12059,44 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
     if(card.parentElement === cats && [...cats.children].indexOf(card) === pos) return;
     if(pos < o.length) cats.insertBefore(card, o[pos]); else cats.appendChild(card);
   };
-  // le sticker sert de poignée : on glisse l'écran parmi les listes
-  const tag = card.querySelector(".chat-grip");
-  tag.addEventListener("pointerdown", e=>{
-    e.preventDefault(); e.stopPropagation();
-    tag.setPointerCapture(e.pointerId);
-    const x0 = e.clientX, y0 = e.clientY;
-    card.classList.add("dragging");
-    const move = ev => { card.style.transform = `translate(${ev.clientX - x0}px, ${ev.clientY - y0}px)`; };
-    const up = ev=>{
-      tag.removeEventListener("pointermove", move); tag.removeEventListener("pointerup", up); tag.removeEventListener("pointercancel", up);
-      card.style.transform = ""; card.classList.remove("dragging");
-      const o = others();
-      const hit = document.elementsFromPoint(ev.clientX, ev.clientY).map(n => n.closest && n.closest("#categories > *")).find(n => n && n !== card);
-      if(hit){
-        const r = hit.getBoundingClientRect(), i = o.indexOf(hit);
-        const after = ev.clientY > r.top + r.height / 2;
-        st.pos = after ? i + 1 : i;
-      }else if(ev.clientY > cats.getBoundingClientRect().bottom) st.pos = o.length;
-      apply();
-    };
-    tag.addEventListener("pointermove", move); tag.addEventListener("pointerup", up); tag.addEventListener("pointercancel", up);
-  });
-  tag.addEventListener("click", e => e.stopPropagation());
   new MutationObserver(place).observe(cats, { childList:true });
+  // déplacer : on tire la poignée ; la liste la plus proche montre où l'écran
+  // se posera (avant / après), comme quand on range les listes
+  const grip = card.querySelector(".chat-grip");
+  const target = (x, y)=>{
+    let best = null, bd = Infinity;
+    others().forEach((c, i)=>{ const r = c.getBoundingClientRect(); const cx = r.left + r.width / 2, cy = r.top + r.height / 2; const d = Math.hypot(x - cx, y - cy); if(d < bd){ bd = d; best = { c, i, after: (y > r.bottom - r.height * 0.25) || (x > cx && y > r.top) }; } });
+    return best;
+  };
+  const clearMarks = () => cats.querySelectorAll(".chat-drop-before, .chat-drop-after").forEach(c => c.classList.remove("chat-drop-before", "chat-drop-after"));
+  grip.addEventListener("pointerdown", e=>{
+    if(e.button > 0) return;
+    e.preventDefault(); e.stopPropagation();
+    try{ grip.setPointerCapture(e.pointerId); }catch(err){}
+    const x0 = e.clientX, y0 = e.clientY;
+    card.classList.add("dragging"); closeMenu();
+    let tg = null;
+    const move = ev=>{
+      card.style.transform = `translate(${ev.clientX - x0}px, ${ev.clientY - y0}px)`;
+      tg = target(ev.clientX, ev.clientY); clearMarks();
+      if(tg) tg.c.classList.add(tg.after ? "chat-drop-after" : "chat-drop-before");
+    };
+    const up = ()=>{
+      grip.removeEventListener("pointermove", move); grip.removeEventListener("pointerup", up); grip.removeEventListener("pointercancel", up);
+      card.style.transform = ""; card.classList.remove("dragging"); clearMarks();
+      if(tg){ st.pos = tg.after ? tg.i + 1 : tg.i; save(); place(); }
+    };
+    grip.addEventListener("pointermove", move); grip.addEventListener("pointerup", up); grip.addEventListener("pointercancel", up);
+  });
+  // petit panneau du banc : seulement de quoi voir l'autre côté
   const box = document.createElement("div");
-  box.className = "papier-bench chat-bench";
+  box.className = "papier-bench";
+  box.innerHTML = `<div class="pb-title">Entre nous</div><label class="pb-sw-row"><input type="checkbox"${st.hiske ? " checked" : ""}> Écrire en tant que Hiske</label><div class="pb-note">Corriger : double-clic sur une de ses lignes, ou ↑ dans la saisie vide.</div>`;
   document.body.appendChild(box);
   box.addEventListener("click", e => e.stopPropagation());
-  const apply = ()=>{
-    ["pur", "ecran", "bo"].forEach(v => document.body.classList.toggle("chat-" + v, st.cadre === v));
-    document.body.classList.toggle("chat-profond", st.prof !== "normal");
-    document.body.classList.toggle("chat-tres", st.prof === "tres");
-    document.body.classList.toggle("chat-tagdroit", st.tagdroit);
-    card.style.setProperty("--pix-a", (st.pixa / 1000).toFixed(3)); card.style.setProperty("--sh-a", (st.sha / 100).toFixed(2));
-    card.classList.toggle("wide", st.wide);
-    card.classList.toggle("petit", st.petit && !st.wide);
-    card.classList.toggle("droite", st.droite && st.petit && !st.wide);
-    card.style.setProperty("--bev", st.bev + "px"); card.style.setProperty("--rim", st.rim + "px");
-    ["gv", "bl", "ambre"].forEach(v => card.classList.toggle("lcd-" + v, st.ecran === v));
-    card.classList.toggle("pix", st.pix);
-    const v = VOIX[st.voix] || VOIX.vert;
-    card.style.setProperty("--chat-me", v[0]); card.style.setProperty("--chat-them", v[1]);
-    inRow.classList.toggle("them", st.hiske);
-    try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){}
-    paintLog(); place(); paint();
-  };
-  const opt = (k, v, l) => `<button type="button" class="pb-opt${st[k] === v ? " on" : ""}" data-k="${k}" data-v="${v}">${l}</button>`;
-  const sw = (k, l) => `<label class="pb-sw-row"><input type="checkbox" data-k="${k}"${st[k] ? " checked" : ""}> ${l}</label>`;
-  function paint(){
-    box.innerHTML = `<div class="pb-title">Entre nous</div>`
-      + `<div class="pb-sub">Cadre</div>` + opt("cadre", "pur", "Pur : creusé dans le fond") + opt("cadre", "ecran", "Écran enfoncé dans une carte") + opt("cadre", "bo", "Back-office (cadre, voyant, lignes)")
-      + `<div class="pb-sub">Profondeur</div>` + opt("prof", "normal", "Léger") + opt("prof", "plus", "Marqué") + opt("prof", "tres", "Très creusé")
-      + (st.prof === "tres" ? `<label class="pb-rg">Épaisseur de la tôle <input type="range" min="0" max="10" step="1" data-r="rim" value="${st.rim}"></label><label class="pb-rg">Distance tôle – écran <input type="range" min="0" max="18" step="1" data-r="bev" value="${st.bev}"></label>` : "")
-      + `<div class="pb-sub">Initiales</div>` + opt("sig", "cote", "À côté de l'heure") + opt("sig", "dessous", "Signature dessous") + opt("sig", "prompt", "En invite, façon C:\\")
-      + `<div class="pb-sub">Voix</div>` + opt("voix", "vert", "Ardoise / vert du faisan") + opt("voix", "bleu", "Bleu-vert / vert du faisan") + opt("voix", "bleufonce", "Bleu-vert / vert, plus foncés (lisibilité)") + opt("voix", "bleufaisan", "Bleu-vert foncé / vert du faisan") + opt("voix", "encre", "Ardoise / encre") + opt("voix", "lcd", "LCD : encre sombre / vert profond") + opt("voix", "lcdbl", "LCD : bleu nuit / vert sapin")
-      + `<div class="pb-sub">Écran</div>` + opt("ecran", "fond", "Fond de l'appli") + opt("ecran", "gv", "LCD gris-vert (calculatrice)") + opt("ecran", "bl", "LCD bleuté") + opt("ecran", "ambre", "LCD crème")
-      + sw("pix", "Effet LCD : trame + ombre du texte")
-      + (st.pix ? `<label class="pb-rg">Trame <input type="range" min="0" max="60" step="1" data-r="pixa" value="${st.pixa}"></label><label class="pb-rg">Ombre du texte <input type="range" min="0" max="20" step="1" data-r="sha" value="${st.sha}"></label>` : "")
-      + `<div class="pb-sub">Divers</div>` + sw("tagdroit", "Sticker droit (pas penché)") + sw("petit", "Plus petit qu'une liste") + sw("droite", "Aligné à droite") + sw("wide", "Pleine largeur") + sw("hiske", "Écrire en tant que Hiske")
-      + `<button type="button" class="pb-link">Copier le lien des réglages</button><div class="pb-linkmsg"></div>`;
-    box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", ()=>{ st[b.dataset.k] = b.dataset.v; apply(); }));
-    box.querySelector(".pb-link").addEventListener("click", ()=>{
-      const { hiske, ...keep } = st;
-      const url = location.origin + location.pathname + "?chat&r=" + btoa(unescape(encodeURIComponent(JSON.stringify(keep))));
-      const msg = box.querySelector(".pb-linkmsg");
-      const done = ok => { msg.textContent = ok ? "Lien copié : il suffit de le coller." : url; };
-      if(navigator.clipboard) navigator.clipboard.writeText(url).then(()=>done(true), ()=>done(false)); else done(false);
-    });
-    box.querySelectorAll("input[type=checkbox]").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; apply(); }));
-    box.querySelectorAll("input[type=range]").forEach(r => r.addEventListener("input", ()=>{ st[r.dataset.r] = +r.value; card.style.setProperty("--pix-a", (st.pixa / 1000).toFixed(3)); card.style.setProperty("--sh-a", (st.sha / 100).toFixed(2)); card.style.setProperty("--bev", st.bev + "px"); card.style.setProperty("--rim", st.rim + "px"); try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){} }));
-  }
-  apply();
+  const apply = ()=>{ inRow.classList.toggle("them", st.hiske); setFixing(-1); field.value = ""; typed.textContent = ""; paintLog(); };
+  box.querySelector("input").addEventListener("change", e=>{ st.hiske = e.target.checked; save(); apply(); });
+  apply(); place();
 })();
 Sync.start();
 </script>
