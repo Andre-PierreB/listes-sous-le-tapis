@@ -1279,7 +1279,7 @@
   --gloss:rgba(255,255,255,0);
   --memo-a:#FCFBF7; --memo-b:#FCFBF7; --memo-c:#FCFBF7;
   --memo-line:rgba(0,0,0,0);
-  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong); --chat-lip:#FFFFFF; --chat-glow:#C8F0A0;   /* 10.57 : écran de chat ; 10.60 : rétroéclairage */
+  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong); --chat-lip:#FFFFFF; --chat-glow:#DDF5C4;   /* 10.57 : écran de chat ; 10.60 : rétroéclairage (vert pâle) */
   /* 10.19 : vert du logo (le faisan) pour le titre et la plume connectée ;
      --logo-green-strong au survol du titre */
   --logo-green:#7DB536;   /* un cran sous le vert du logo #8DC63F, trop pâle pour un petit titre */
@@ -1338,7 +1338,7 @@
     --plume-off:var(--ink-faint);
     --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
     --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
-    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07); --chat-glow:#3E6B2A;   /* 10.57 ; 10.60 */
+    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07); --chat-glow:#4A6E3A;   /* 10.57 ; 10.60 */
     --memo-line:rgba(0,0,0,0);
     --logo-green:#A9D65A;
     --logo-green-strong:#C7E58A;
@@ -1382,7 +1382,7 @@
   --plume-off:var(--ink-faint);
   --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
   --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
-    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07); --chat-glow:#3E6B2A;   /* 10.57 ; 10.60 */
+    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07); --chat-glow:#4A6E3A;   /* 10.57 ; 10.60 */
   --memo-line:rgba(0,0,0,0);
   --logo-green:#A9D65A;
   --logo-green-strong:#C7E58A;
@@ -2375,16 +2375,17 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    l'écran sort de sa discrétion et s'éclaire par derrière, comme une
    calculatrice ou une montre à cristaux liquides ; ligne « nouveau » */
 .chat-card.unread .chat-box{ opacity:1; }
-.chat-screen::before{   /* lueur venue de derrière la tôle : du haut et des côtés, en dégradé */
-  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition:opacity .6s ease;
+.chat-screen::before{   /* lueur venue de derrière la tôle : un mince filet de lumière le long du bord haut, qui s'éteint en quelques pixels */
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition:opacity .8s ease;
+  mix-blend-mode:screen;   /* éclaircit comme une lumière, sans teinter */
   background:
-    radial-gradient(120% 70% at 50% 0%, var(--chat-glow) 0%, transparent 70%),
-    radial-gradient(45% 90% at 0% 40%, color-mix(in srgb, var(--chat-glow) 70%, transparent) 0%, transparent 70%),
-    radial-gradient(45% 90% at 100% 40%, color-mix(in srgb, var(--chat-glow) 70%, transparent) 0%, transparent 70%);
+    linear-gradient(180deg, var(--chat-glow) 0, color-mix(in srgb, var(--chat-glow) 35%, transparent) 4px, transparent 14px),
+    linear-gradient(90deg, color-mix(in srgb, var(--chat-glow) 30%, transparent) 0, transparent 10px),
+    linear-gradient(270deg, color-mix(in srgb, var(--chat-glow) 30%, transparent) 0, transparent 10px);
 }
 .chat-log, .chat-in{ position:relative; z-index:1; }   /* le texte au-dessus de la lueur */
 .chat-card.unread .chat-screen::before{ opacity:1; animation:chat-glow 3.2s ease-in-out infinite; }
-@keyframes chat-glow{ 0%, 100%{ opacity:1; } 50%{ opacity:0.55; } }
+@keyframes chat-glow{ 0%, 100%{ opacity:1; } 50%{ opacity:0.5; } }
 @media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-screen::before{ animation:none; } }
 .chat-new{ text-align:center; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink-faint); margin:0.25rem 0 0.15rem; white-space:nowrap; overflow:hidden; }
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
@@ -2408,6 +2409,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-log{ position:relative; flex:1 1 0; min-height:calc(3 * 1.45em); overflow-y:auto;   /* 10.59 : 3 lignes au moins, sinon la hauteur de la rangée (les listes voisines) ; le reste défile */ scrollbar-width:none; }
 .chat-log::-webkit-scrollbar{ display:none; }
 .chat-log{ display:flex; flex-direction:column; }
+.chat-log > *{ flex-shrink:0; }   /* rien ne s'écrase quand ça déborde : ça défile */
 .chat-log > :first-child{ margin-top:auto; }   /* peu de messages : posés en bas, contre la saisie */
 .chat-empty{ color:var(--ink-faint); font-size:0.8rem; }
 .chat-l, .chat-in{ text-shadow:1px 1px 0 rgba(30,40,30,var(--chat-sh)); }
@@ -12311,7 +12313,7 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 
 // ---- banc d'essai (essai.html?glow) : couleur du rétroéclairage, message simulé ----
 if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
-  const C = { vert:["#C8F0A0", "#3E6B2A"], bleu:["#B6E3F4", "#2A5A6E"] };
+  const C = { vert:["#DDF5C4", "#4A6E3A"], bleu:["#D2EEF8", "#3A6478"] };
   const K = "sltapis-essai-glow";
   let v = (()=>{ try{ return localStorage.getItem(K) || "vert"; }catch(e){ return "vert"; } })();
   const box = document.createElement("div");
