@@ -3885,11 +3885,20 @@ body.chat-tres .chat-screen{ border-radius:18px;
     0 0 0 1px rgba(42,39,37,0.05), 0 1px 0 1px rgba(255,255,255,0.95), 0 -1px 0 rgba(42,39,37,0.08); }   /* 4e tour : paroi épaisse et arrondie (--bev) : ombre en haut et sur les flancs, reflet en bas, lèvre claire autour */
 .chat-card.petit{ justify-self:start; width:min(100%, 22rem); }
 .chat-tag{ pointer-events:none; user-select:none; -webkit-user-select:none; }
-.chat-grip{ position:absolute; top:0.55rem; left:0.7rem; padding:1px 6px 2px; border-radius:4px; font-size:0.8rem; letter-spacing:-2px; line-height:1.2;
+/* 5e tour : poignée = petit sticker horizontal posé sur le fond, juste sous l'écran */
+.chat-grip{ display:block; width:max-content; margin:0.45rem 0.3rem 0 auto; padding:1px 8px 2px; border-radius:4px; font-size:0.8rem; line-height:1.1; letter-spacing:1px;
   color:color-mix(in srgb, var(--btn-ink) 65%, transparent); background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.7);
   box-shadow:0 1px 2px rgba(30,40,45,0.14), 0 3px 6px -2px rgba(30,40,45,0.12);
   cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; transition:box-shadow .15s ease; }
 .chat-grip:hover{ box-shadow:0 2px 3px rgba(30,40,45,0.16), 0 5px 10px -3px rgba(30,40,45,0.16); }
+.chat-card:not(.droite) .chat-grip{ margin-left:0.3rem; margin-right:auto; }
+/* la tôle : le fond est une feuille percée ; son épaisseur (--rim) se voit
+   comme une tranche arrondie autour du trou (sombre en haut, qui s'éloigne
+   de la lumière, claire en bas, qui la reçoit) ; l'écran est au fond, à
+   --bev de distance */
+body.chat-pur .chat-hole{ padding:var(--rim, 4px); border-radius:calc(18px + var(--rim, 4px));
+  background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--bg)) 0%, color-mix(in srgb, var(--ink) 6%, var(--bg)) 35%, var(--bg) 60%, #fff 100%);
+  box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px rgba(255,255,255,0.95), inset 0 1px 0 rgba(255,255,255,0.6); }
 .chat-card.dragging .chat-grip{ cursor:grabbing; }
 .chat-card.droite{ justify-self:end; }
 /* 3e tour : le sticker est collé sur l'écran : un peu transparent, petite ombre portée ; c'est la poignée */
@@ -11976,12 +11985,12 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 // son sticker (position gardée dans ce navigateur). Les réglages sont gardés dans ce navigateur.
 if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   const K = "sltapis-essai-chat-3";
-  let st = { cadre:"pur", prof:"tres", sig:"prompt", voix:"bleufaisan", ecran:"bl", pix:true, pixa:25, sha:7, bev:8, tagdroit:true, wide:false, petit:true, droite:true, pos:0, hiske:false };
+  let st = { cadre:"pur", prof:"tres", sig:"prompt", voix:"bleufaisan", ecran:"fond", pix:true, pixa:17, sha:14, bev:9, rim:4, tagdroit:false, wide:false, petit:true, droite:true, pos:0, hiske:false };
   try{ const old = JSON.parse(localStorage.getItem("sltapis-essai-chat-2") || "null"); if(old && old.pos != null) st.pos = old.pos; }catch(e){}
   try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
   // lien des réglages : ?chat&r=… les remet tels quels (et sert à me les transmettre)
   try{ const r = new URLSearchParams(location.search).get("r"); if(r) Object.assign(st, JSON.parse(decodeURIComponent(escape(atob(r))))); }catch(e){}
-  if(st.bev == null) st.bev = 8; if(st.droite == null) st.droite = true; if(st.voix === "bleu" || st.voix === "bleufonce") st.voix = "bleufaisan";
+  if(st.bev == null) st.bev = 8; if(st.rim == null) st.rim = 4; if(st.droite == null) st.droite = true; if(st.voix === "bleu" || st.voix === "bleufonce") st.voix = "bleufaisan";
   const MSG = [
     { me:true,  t:"17:41", x:"j'ai augmenté le contraste des mémos" },
     { me:false, t:"17:52", x:"beaucoup mieux, merci" },
@@ -11991,7 +12000,7 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   const VOIX = { vert:["var(--btn-ink)", "var(--logo-green-strong)"], bleu:["var(--accent)", "var(--logo-green-strong)"], encre:["var(--btn-ink)", "var(--ink)"], bleufonce:["#2F6F7C", "#4C7D1F"], bleufaisan:["#2F6F7C", "var(--logo-green-strong)"], lcd:["#2E3B35", "#3D6B1B"], lcdbl:["#24384A", "#3F6E3A"] };
   const card = document.createElement("div");
   card.className = "chat-card";
-  card.innerHTML = `<div class="chat-screen"><span class="chat-grip" title="Glisser pour déplacer">&#8942;&#8942;</span><span class="chat-tag">Entre nous</span><div class="chat-log"></div><div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div><input class="chat-field" autocomplete="off" aria-label="Écrire un mot"></div>`;
+  card.innerHTML = `<div class="chat-hole"><div class="chat-screen"><span class="chat-tag">Entre nous</span><div class="chat-log"></div><div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div><input class="chat-field" autocomplete="off" aria-label="Écrire un mot"></div></div><span class="chat-grip" title="Glisser pour déplacer">&#8943;&#8943;</span>`;
   const log = card.querySelector(".chat-log"), field = card.querySelector(".chat-field"), typed = card.querySelector(".chat-typed"), inRow = card.querySelector(".chat-in");
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; };
   function paintLog(){
@@ -12065,7 +12074,7 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
     card.classList.toggle("wide", st.wide);
     card.classList.toggle("petit", st.petit && !st.wide);
     card.classList.toggle("droite", st.droite && st.petit && !st.wide);
-    card.style.setProperty("--bev", st.bev + "px");
+    card.style.setProperty("--bev", st.bev + "px"); card.style.setProperty("--rim", st.rim + "px");
     ["gv", "bl", "ambre"].forEach(v => card.classList.toggle("lcd-" + v, st.ecran === v));
     card.classList.toggle("pix", st.pix);
     const v = VOIX[st.voix] || VOIX.vert;
@@ -12080,7 +12089,7 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
     box.innerHTML = `<div class="pb-title">Entre nous</div>`
       + `<div class="pb-sub">Cadre</div>` + opt("cadre", "pur", "Pur : creusé dans le fond") + opt("cadre", "ecran", "Écran enfoncé dans une carte") + opt("cadre", "bo", "Back-office (cadre, voyant, lignes)")
       + `<div class="pb-sub">Profondeur</div>` + opt("prof", "normal", "Léger") + opt("prof", "plus", "Marqué") + opt("prof", "tres", "Très creusé")
-      + (st.prof === "tres" ? `<label class="pb-rg">Épaisseur du bord <input type="range" min="0" max="18" step="1" data-r="bev" value="${st.bev}"></label>` : "")
+      + (st.prof === "tres" ? `<label class="pb-rg">Épaisseur de la tôle <input type="range" min="0" max="10" step="1" data-r="rim" value="${st.rim}"></label><label class="pb-rg">Distance tôle – écran <input type="range" min="0" max="18" step="1" data-r="bev" value="${st.bev}"></label>` : "")
       + `<div class="pb-sub">Initiales</div>` + opt("sig", "cote", "À côté de l'heure") + opt("sig", "dessous", "Signature dessous") + opt("sig", "prompt", "En invite, façon C:\\")
       + `<div class="pb-sub">Voix</div>` + opt("voix", "vert", "Ardoise / vert du faisan") + opt("voix", "bleu", "Bleu-vert / vert du faisan") + opt("voix", "bleufonce", "Bleu-vert / vert, plus foncés (lisibilité)") + opt("voix", "bleufaisan", "Bleu-vert foncé / vert du faisan") + opt("voix", "encre", "Ardoise / encre") + opt("voix", "lcd", "LCD : encre sombre / vert profond") + opt("voix", "lcdbl", "LCD : bleu nuit / vert sapin")
       + `<div class="pb-sub">Écran</div>` + opt("ecran", "fond", "Fond de l'appli") + opt("ecran", "gv", "LCD gris-vert (calculatrice)") + opt("ecran", "bl", "LCD bleuté") + opt("ecran", "ambre", "LCD crème")
@@ -12097,7 +12106,7 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
       if(navigator.clipboard) navigator.clipboard.writeText(url).then(()=>done(true), ()=>done(false)); else done(false);
     });
     box.querySelectorAll("input[type=checkbox]").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; apply(); }));
-    box.querySelectorAll("input[type=range]").forEach(r => r.addEventListener("input", ()=>{ st[r.dataset.r] = +r.value; card.style.setProperty("--pix-a", (st.pixa / 1000).toFixed(3)); card.style.setProperty("--sh-a", (st.sha / 100).toFixed(2)); card.style.setProperty("--bev", st.bev + "px"); try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){} }));
+    box.querySelectorAll("input[type=range]").forEach(r => r.addEventListener("input", ()=>{ st[r.dataset.r] = +r.value; card.style.setProperty("--pix-a", (st.pixa / 1000).toFixed(3)); card.style.setProperty("--sh-a", (st.sha / 100).toFixed(2)); card.style.setProperty("--bev", st.bev + "px"); card.style.setProperty("--rim", st.rim + "px"); try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){} }));
   }
   apply();
 })();
