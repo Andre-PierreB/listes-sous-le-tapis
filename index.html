@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.55 -->
+<!-- Sous le tapis — version AUTONOME 10.56 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1199,6 +1199,8 @@
     s'est choisi. Mode sombre : papier des mémos uni #23231F, sans reflet
     ni liseré, comme en clair. Papier des mémos : blanc chaud #FCFBF7, uni (choisi au banc). Bord des
     listes : barre franche détachée, du titre à deux lignes du bas.
+  - 10.56 : texte des articles de mémo à l'encre pleine (var(--ink), comme
+    les tâches) au lieu de 78 % : plus lisible sur le papier blanc chaud.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2658,7 +2660,7 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 /* 10.17 : chaque article posé sur une ligne de cahier */
 .courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:calc(2 * var(--row-pad) + 0.15rem + 20px - 1.4 * var(--memo-size)) 0.3rem 0; } /* 10.18 : texte posé sur sa ligne (air au-dessus) ; 10.38 : même hauteur de ligne que les tâches, où c'est la case à cocher qui la donne (18px + 0.15rem + 3px) : 2 × row-pad + case − texte − filet 1px */
 .courses-item:hover{ background:color-mix(in srgb, var(--paper-rule) 30%, transparent); } /* voile léger : la marge rouge reste visible */
-.courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); color:color-mix(in srgb, var(--ink) 78%, var(--surface)); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+.courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); color:var(--ink); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
 /* quantité : après le nom (en ligne, pour être barrée avec lui) ; 10.17 : à
    l'encre rose (le rouge reste aux urgences), bien visible, plus de badge gris */
 .courses-qty{
@@ -3859,7 +3861,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.55</span>
+    <span class="version-tag">v10.56</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
