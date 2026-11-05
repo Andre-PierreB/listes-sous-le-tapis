@@ -1235,8 +1235,8 @@
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
   - 10.60 : écran de chat : message non lu (d'un autre, pas encore vu sur cet
-    appareil, CHAT_SEEN_KEY) → l'écran sort de sa discrétion, rétroéclairage
-    qui respire, venue du haut et des côtés (--chat-glow), ligne « --- nouveau
+    appareil, CHAT_SEEN_KEY) → l'écran sort de sa discrétion,
+    voyant vert sur la tôle en haut à droite (.chat-led), ligne « --- nouveau
     --- » (reste jusqu'à ce qu'on écrive : chatNewAt) ; lu dès qu'on passe
     dessus, le touche ou y écrit.
   - 10.59 : la saisie (textarea) s'agrandit avec le texte, 8 lignes au plus ;
@@ -1279,7 +1279,7 @@
   --gloss:rgba(255,255,255,0);
   --memo-a:#FCFBF7; --memo-b:#FCFBF7; --memo-c:#FCFBF7;
   --memo-line:rgba(0,0,0,0);
-  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong); --chat-lip:#FFFFFF; --chat-glow:#DDF5C4;   /* 10.57 : écran de chat ; 10.60 : rétroéclairage (vert pâle) */
+  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong); --chat-lip:#FFFFFF;   /* 10.57 : écran de chat */
   /* 10.19 : vert du logo (le faisan) pour le titre et la plume connectée ;
      --logo-green-strong au survol du titre */
   --logo-green:#7DB536;   /* un cran sous le vert du logo #8DC63F, trop pâle pour un petit titre */
@@ -1338,7 +1338,7 @@
     --plume-off:var(--ink-faint);
     --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
     --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
-    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07); --chat-glow:#4A6E3A;   /* 10.57 ; 10.60 */
+    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07);   /* 10.57 */
     --memo-line:rgba(0,0,0,0);
     --logo-green:#A9D65A;
     --logo-green-strong:#C7E58A;
@@ -1382,7 +1382,7 @@
   --plume-off:var(--ink-faint);
   --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
   --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
-    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07); --chat-glow:#4A6E3A;   /* 10.57 ; 10.60 */
+    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07);   /* 10.57 */
   --memo-line:rgba(0,0,0,0);
   --logo-green:#A9D65A;
   --logo-green-strong:#C7E58A;
@@ -2372,21 +2372,18 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
 @media (max-width:720px){ .chat-box{ width:100%; } }   /* une colonne (téléphone) : la largeur d'une liste */
 /* 10.60 : message non lu (d'un autre, pas encore vu sur cet appareil) :
-   l'écran sort de sa discrétion et s'éclaire par derrière, comme une
-   calculatrice ou une montre à cristaux liquides ; ligne « nouveau » */
+   l'écran sort de sa discrétion, le voyant s'allume ; ligne « nouveau » */
 .chat-card.unread .chat-box{ opacity:1; }
-.chat-screen::before{   /* lueur venue de derrière la tôle : un mince filet de lumière le long du bord haut, qui s'éteint en quelques pixels */
-  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition:opacity .8s ease;
-  mix-blend-mode:screen;   /* éclaircit comme une lumière, sans teinter */
-  background:
-    linear-gradient(180deg, var(--chat-glow) 0, color-mix(in srgb, var(--chat-glow) 35%, transparent) 4px, transparent 14px),
-    linear-gradient(90deg, color-mix(in srgb, var(--chat-glow) 30%, transparent) 0, transparent 10px),
-    linear-gradient(270deg, color-mix(in srgb, var(--chat-glow) 30%, transparent) 0, transparent 10px);
-}
-.chat-log, .chat-in{ position:relative; z-index:1; }   /* le texte au-dessus de la lueur */
-.chat-card.unread .chat-screen::before{ opacity:1; animation:chat-glow 3.2s ease-in-out infinite; }
-@keyframes chat-glow{ 0%, 100%{ opacity:1; } 50%{ opacity:0.5; } }
-@media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-screen::before{ animation:none; } }
+.chat-log, .chat-in{ position:relative; z-index:1; }
+/* voyant sur la tôle, en haut à droite de l'écran : éteint (petit creux gris),
+   il s'allume en vert du faisan et luit doucement tant qu'un message n'est pas lu */
+.chat-box{ position:relative; }
+.chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 3.5px); right:0.7rem; width:7px; height:7px; border-radius:50%;
+  background:color-mix(in srgb, var(--ink) 18%, var(--bg)); box-shadow:inset 0 1px 1px rgba(0,0,0,0.25), 0 1px 0 var(--chat-lip); transition:background .4s ease, box-shadow .4s ease; }
+.chat-card.unread .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
+@keyframes chat-led{ 50%{ box-shadow:0 0 2px 0 color-mix(in srgb, var(--logo-green) 50%, transparent); filter:brightness(0.85); } }
+@media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-led{ animation:none; } }
+@media (max-width:720px){ .chat-led{ right:0.3rem; } }
 .chat-new{ text-align:center; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink-faint); margin:0.25rem 0 0.15rem; white-space:nowrap; overflow:hidden; }
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
 .chat-card.dragging-card > *{ visibility:hidden; }
@@ -9185,7 +9182,7 @@ function buildChatCard(cat, catIdx){
   if(sharing && (!catEditSnap || catEditSnap.id !== cat.id))
     catEditSnap = { id: cat.id, color: cat.color, members: ((listInfo(cat.id) || { members:[] }).members || []).slice() };
   if(sharing || chatMenuOpen === cat.id) card.classList.add("chat-open");
-  card.innerHTML = `<div class="chat-box"><div class="chat-hole"><div class="chat-screen">
+  card.innerHTML = `<div class="chat-box"><span class="chat-led" aria-hidden="true"></span><div class="chat-hole"><div class="chat-screen">
       <div class="chat-log" role="log" aria-label="Messages"></div>
       <div class="chat-in"><textarea class="chat-field" rows="1" aria-label="Écrire un mot" autocomplete="off" enterkeyhint="send"></textarea><span class="chat-cur"></span></div>
     </div></div>
@@ -12313,7 +12310,7 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 
 // ---- banc d'essai (essai.html?glow) : couleur du rétroéclairage, message simulé ----
 if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
-  const C = { vert:["#DDF5C4", "#4A6E3A"], bleu:["#D2EEF8", "#3A6478"] };
+  const C = null;
   const K = "sltapis-essai-glow";
   let v = (()=>{ try{ return localStorage.getItem(K) || "vert"; }catch(e){ return "vert"; } })();
   const box = document.createElement("div");
@@ -12321,13 +12318,8 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
   document.body.appendChild(box);
   box.addEventListener("click", e => e.stopPropagation());
   const apply = ()=>{
-    const dark = matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light" || document.documentElement.dataset.theme === "dark";
-    document.documentElement.style.setProperty("--chat-glow", C[v][dark ? 1 : 0]);
-    try{ localStorage.setItem(K, v); }catch(e){}
-    box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.5rem">Rétroéclairage</div>`
-      + ["vert", "bleu"].map(k => `<button type="button" data-v="${k}" style="display:block;width:100%;text-align:left;font:inherit;background:${k === v ? "color-mix(in srgb, var(--accent) 8%, var(--surface))" : "none"};border:1px solid ${k === v ? "var(--accent)" : "transparent"};border-radius:8px;padding:.3rem .4rem;cursor:pointer;color:var(--ink)"><span style="display:inline-block;width:1.4rem;height:.9rem;border-radius:3px;vertical-align:-2px;margin-right:.4rem;background:${C[k][0]}"></span>${k === "vert" ? "Vert" : "Bleu, plus frais"}</button>`).join("")
+    box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.2rem">Voyant</div>`
       + `<button type="button" data-sim style="display:block;width:100%;margin-top:.7rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Simuler un message reçu</button><div data-msg style="font-size:.72rem;color:var(--ink-faint);margin-top:.3rem"></div>`;
-    box.querySelectorAll("[data-v]").forEach(b => b.addEventListener("click", ()=>{ v = b.dataset.v; apply(); }));
     box.querySelector("[data-sim]").addEventListener("click", ()=>{
       const msg = box.querySelector("[data-msg]");
       const cat = DATA.find(c => !isCategoryDeleted(c.id) && isChatList(c.id));
