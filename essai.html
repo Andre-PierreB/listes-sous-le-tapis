@@ -3852,6 +3852,7 @@ body.ios-gate-on{ overflow:hidden; }
    l'attention ; il revient au survol et pendant qu'on écrit */
 .chat-card.wake:hover .chat-box, .chat-card.wake:focus-within .chat-box{ opacity:1; }
 /* déplacé exactement comme une liste (wireDragCard) : emplacement en pointillés, fantôme */
+body.no-list .chat-card{ display:none; }   /* pas sur l'accueil (aucune liste) */
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
 .chat-card.dragging-card > *{ visibility:hidden; }
 .chat-hole{ padding:var(--rim); border-radius:calc(18px + var(--rim));
