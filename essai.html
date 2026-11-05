@@ -1236,8 +1236,9 @@
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
   - 10.60 : écran de chat : message non lu (d'un autre, pas encore vu sur cet
     appareil, CHAT_SEEN_KEY) → l'écran sort de sa discrétion, rétroéclairage
-    vert qui respire (--chat-glow), ligne « --- nouveau --- » ; lu dès qu'on
-    passe dessus, le touche ou y écrit.
+    qui respire, venue du haut et des côtés (--chat-glow), ligne « --- nouveau
+    --- » (reste jusqu'à ce qu'on écrive : chatNewAt) ; lu dès qu'on passe
+    dessus, le touche ou y écrit.
   - 10.59 : la saisie (textarea) s'agrandit avec le texte, 8 lignes au plus ;
     sur plusieurs lignes, curseur normal (classe multi). écran de chat à la largeur d'une liste moins 1,5rem, même marge
     en haut ; il prend la hauteur de sa rangée (3 lignes au moins) : plus de
@@ -2374,9 +2375,17 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    l'écran sort de sa discrétion et s'éclaire par derrière, comme une
    calculatrice ou une montre à cristaux liquides ; ligne « nouveau » */
 .chat-card.unread .chat-box{ opacity:1; }
-.chat-card.unread .chat-screen{ background-color:color-mix(in srgb, var(--chat-glow) 42%, var(--chat-scr)); animation:chat-glow 3.2s ease-in-out infinite; }
-@keyframes chat-glow{ 0%, 100%{ background-color:color-mix(in srgb, var(--chat-glow) 42%, var(--chat-scr)); } 50%{ background-color:color-mix(in srgb, var(--chat-glow) 26%, var(--chat-scr)); } }
-@media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-screen{ animation:none; } }
+.chat-screen::before{   /* lueur venue de derrière la tôle : du haut et des côtés, en dégradé */
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition:opacity .6s ease;
+  background:
+    radial-gradient(120% 70% at 50% 0%, var(--chat-glow) 0%, transparent 70%),
+    radial-gradient(45% 90% at 0% 40%, color-mix(in srgb, var(--chat-glow) 70%, transparent) 0%, transparent 70%),
+    radial-gradient(45% 90% at 100% 40%, color-mix(in srgb, var(--chat-glow) 70%, transparent) 0%, transparent 70%);
+}
+.chat-log, .chat-in{ position:relative; z-index:1; }   /* le texte au-dessus de la lueur */
+.chat-card.unread .chat-screen::before{ opacity:1; animation:chat-glow 3.2s ease-in-out infinite; }
+@keyframes chat-glow{ 0%, 100%{ opacity:1; } 50%{ opacity:0.55; } }
+@media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-screen::before{ animation:none; } }
 .chat-new{ text-align:center; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink-faint); margin:0.25rem 0 0.15rem; white-space:nowrap; overflow:hidden; }
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
 .chat-card.dragging-card > *{ visibility:hidden; }
@@ -9123,6 +9132,7 @@ let chatMenuOpen = null;   // écran dont le menu « … » est ouvert
 const CHAT_SEEN_KEY = "sous-le-tapis-chat-vu";
 let chatSeen = (()=>{ try{ const o = JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) || "{}"); return o && typeof o === "object" ? o : {}; }catch(e){ return {}; } })();
 function saveChatSeen(){ try{ localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify(chatSeen)); }catch(e){} }
+let chatNewAt = {};   // { idÉcran: index du 1er message qui était non lu } : la ligne « nouveau » y reste jusqu'à ce qu'on écrive (ou au rechargement)
 function chatTime(at){
   if(typeof at !== "number") return "";
   const d = new Date(at), p = n => String(n).padStart(2, "0");
@@ -9229,12 +9239,15 @@ function buildChatCard(cat, catIdx){
   let sep = null;
   if(unread.length){
     card.classList.add("unread");
-    sep = el("div", "chat-new", "--- nouveau ---");
-    const first = log.querySelector('.chat-l[data-i="' + unread[0].i + '"]');
-    if(first) log.insertBefore(sep, first);
+    if(typeof chatNewAt[cat.id] !== "number") chatNewAt[cat.id] = unread[0].i;
   }
-  // lu : dès qu'on passe dessus, qu'on le touche ou qu'on y écrit (la ligne
-  // « nouveau » reste jusqu'au prochain affichage, pour savoir où reprendre)
+  if(typeof chatNewAt[cat.id] === "number"){
+    const first = msgs.find(m => m.i >= chatNewAt[cat.id]);
+    const line = first && log.querySelector('.chat-l[data-i="' + first.i + '"]');
+    if(line){ sep = el("div", "chat-new", "--- nouveau ---"); log.insertBefore(sep, line); }
+  }
+  // lu : dès qu'on passe dessus, qu'on le touche ou qu'on y écrit ; la ligne
+  // « nouveau » reste (chatNewAt) jusqu'à ce qu'on écrive, pour savoir où reprendre
   const markRead = ()=>{
     if(chatSeen[cat.id] === total && !card.classList.contains("unread")) return;
     chatSeen[cat.id] = total; saveChatSeen();
@@ -9283,6 +9296,7 @@ function buildChatCard(cat, catIdx){
       else if(!addChatMessage(cat, v)) return;
     }catch(err){ console.error("[entre nous] échec de l'envoi", err); return; }
     chatFix = null;
+    delete chatNewAt[cat.id];   // on a répondu : la ligne « nouveau » s'en va
     clearDraft();
     chatFocus = cat.id;
     renderAll();
