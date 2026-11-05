@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.59 -->
+<!-- Sous le tapis — version AUTONOME 10.60 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1234,6 +1234,11 @@
     l'interrupteur, « + Ajouter un écran de chat » en dessous. Écran de chat : la saisie est un vrai champ visible (sélection à
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
+  - 10.60 : écran de chat : message non lu (d'un autre, pas encore vu sur cet
+    appareil, CHAT_SEEN_KEY) → l'écran sort de sa discrétion,
+    voyant vert sur la tôle en haut à droite (.chat-led), ligne « --- nouveau
+    --- » (reste jusqu'à ce qu'on écrive : chatNewAt) ; lu dès qu'on passe
+    dessus, le touche ou y écrit.
   - 10.59 : la saisie (textarea) s'agrandit avec le texte, 8 lignes au plus ;
     sur plusieurs lignes, curseur normal (classe multi). écran de chat à la largeur d'une liste moins 1,5rem, même marge
     en haut ; il prend la hauteur de sa rangée (3 lignes au moins) : plus de
@@ -2366,6 +2371,20 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-box{ width:calc(100% - 1.5rem); padding-top:calc(0.35rem + 22px);   /* autant d'air au-dessus que sous l'écran (marge + poignée) */ display:flex; flex-direction:column; opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
 .chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
 @media (max-width:720px){ .chat-box{ width:100%; } }   /* une colonne (téléphone) : la largeur d'une liste */
+/* 10.60 : message non lu (d'un autre, pas encore vu sur cet appareil) :
+   l'écran sort de sa discrétion, le voyant s'allume ; ligne « nouveau » */
+.chat-card.unread .chat-box{ opacity:1; }
+.chat-log, .chat-in{ position:relative; z-index:1; }
+/* voyant sur la tôle, en haut à droite de l'écran : éteint (petit creux gris),
+   il s'allume en vert du faisan et luit doucement tant qu'un message n'est pas lu */
+.chat-box{ position:relative; }
+.chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 3.5px); right:13.5px; width:7px; height:7px; border-radius:50%;
+  background:color-mix(in srgb, var(--ink) 18%, var(--bg)); box-shadow:inset 0 1px 1px rgba(0,0,0,0.25), 0 1px 0 var(--chat-lip); transition:background .4s ease, box-shadow .4s ease; }
+.chat-card.unread .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
+@keyframes chat-led{ 50%{ box-shadow:0 0 2px 0 color-mix(in srgb, var(--logo-green) 50%, transparent); filter:brightness(0.85); } }
+@media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-led{ animation:none; } }
+@media (max-width:720px){ .chat-led{ right:25.5px; } }   /* dans l'axe du trèfle (bandeau « Une petite en passant ? »), ordinateur et téléphone */
+.chat-new{ text-align:center; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink-faint); margin:0.25rem 0 0.15rem; white-space:nowrap; overflow:hidden; }
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
 .chat-card.dragging-card > *{ visibility:hidden; }
 .chat-hole{ flex:1 1 auto; display:flex; flex-direction:column; padding:var(--chat-rim); border-radius:calc(16px + var(--chat-rim));
@@ -2384,9 +2403,10 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.9rem; line-height:1.45;
   cursor:text;
 }
-.chat-log{ flex:1 1 0; min-height:calc(3 * 1.45em); overflow-y:auto;   /* 10.59 : 3 lignes au moins, sinon la hauteur de la rangée (les listes voisines) ; le reste défile */ scrollbar-width:none; }
+.chat-log{ position:relative; flex:1 1 0; min-height:calc(3 * 1.45em); overflow-y:auto;   /* 10.59 : 3 lignes au moins, sinon la hauteur de la rangée (les listes voisines) ; le reste défile */ scrollbar-width:none; }
 .chat-log::-webkit-scrollbar{ display:none; }
 .chat-log{ display:flex; flex-direction:column; }
+.chat-log > *{ flex-shrink:0; }   /* rien ne s'écrase quand ça déborde : ça défile */
 .chat-log > :first-child{ margin-top:auto; }   /* peu de messages : posés en bas, contre la saisie */
 .chat-empty{ color:var(--ink-faint); font-size:0.8rem; }
 .chat-l, .chat-in{ text-shadow:1px 1px 0 rgba(30,40,30,var(--chat-sh)); }
@@ -3987,7 +4007,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.59</span>
+    <span class="version-tag">v10.60</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -9106,6 +9126,12 @@ let chatFocus = null;      // écran dont la saisie avait le curseur
 let chatFix = null;        // { catId, idx } : message repris par ↑ dans la saisie
 let chatEdit = null;       // { catId, idx, v } : message corrigé sur place (double-clic)
 let chatMenuOpen = null;   // écran dont le menu « … » est ouvert
+// 10.60 : lu / non lu, propre à l'appareil (hors fiches, comme SEEN_KEY) :
+// { idÉcran: nombre de messages déjà vus } ; première rencontre = tout est vu
+const CHAT_SEEN_KEY = "sous-le-tapis-chat-vu";
+let chatSeen = (()=>{ try{ const o = JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) || "{}"); return o && typeof o === "object" ? o : {}; }catch(e){ return {}; } })();
+function saveChatSeen(){ try{ localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify(chatSeen)); }catch(e){} }
+let chatNewAt = {};   // { idÉcran: index du 1er message qui était non lu } : la ligne « nouveau » y reste jusqu'à ce qu'on écrive (ou au rechargement)
 function chatTime(at){
   if(typeof at !== "number") return "";
   const d = new Date(at), p = n => String(n).padStart(2, "0");
@@ -9156,7 +9182,7 @@ function buildChatCard(cat, catIdx){
   if(sharing && (!catEditSnap || catEditSnap.id !== cat.id))
     catEditSnap = { id: cat.id, color: cat.color, members: ((listInfo(cat.id) || { members:[] }).members || []).slice() };
   if(sharing || chatMenuOpen === cat.id) card.classList.add("chat-open");
-  card.innerHTML = `<div class="chat-box"><div class="chat-hole"><div class="chat-screen">
+  card.innerHTML = `<div class="chat-box"><span class="chat-led" aria-hidden="true"></span><div class="chat-hole"><div class="chat-screen">
       <div class="chat-log" role="log" aria-label="Messages"></div>
       <div class="chat-in"><textarea class="chat-field" rows="1" aria-label="Écrire un mot" autocomplete="off" enterkeyhint="send"></textarea><span class="chat-cur"></span></div>
     </div></div>
@@ -9205,7 +9231,30 @@ function buildChatCard(cat, catIdx){
     }
     log.appendChild(l);
   });
-  requestAnimationFrame(()=>{ log.scrollTop = log.scrollHeight; });
+  // 10.60 : non lus = messages des autres au-delà de ce que cet appareil a vu
+  const total = items.length;
+  if(typeof chatSeen[cat.id] !== "number"){ chatSeen[cat.id] = total; saveChatSeen(); }
+  const unread = msgs.filter(m => m.i >= chatSeen[cat.id] && !chatMine(cat, m.base));
+  let sep = null;
+  if(unread.length){
+    card.classList.add("unread");
+    if(typeof chatNewAt[cat.id] !== "number") chatNewAt[cat.id] = unread[0].i;
+  }
+  if(typeof chatNewAt[cat.id] === "number"){
+    const first = msgs.find(m => m.i >= chatNewAt[cat.id]);
+    const line = first && log.querySelector('.chat-l[data-i="' + first.i + '"]');
+    if(line){ sep = el("div", "chat-new", "--- nouveau ---"); log.insertBefore(sep, line); }
+  }
+  // lu : dès qu'on passe dessus, qu'on le touche ou qu'on y écrit ; la ligne
+  // « nouveau » reste (chatNewAt) jusqu'à ce qu'on écrive, pour savoir où reprendre
+  const markRead = ()=>{
+    if(chatSeen[cat.id] === total && !card.classList.contains("unread")) return;
+    chatSeen[cat.id] = total; saveChatSeen();
+    card.classList.remove("unread");
+  };
+  ["pointerenter", "touchstart", "focusin"].forEach(ev => card.addEventListener(ev, markRead, { passive:true }));
+  if(unread.length) requestAnimationFrame(()=>{ if(card.isConnected && card.matches(":hover")) markRead(); });   // déjà sous la souris
+  requestAnimationFrame(()=>{ log.scrollTop = sep ? Math.min(sep.offsetTop - 4, log.scrollHeight) : log.scrollHeight; });
   // saisie : un vrai champ, le gros curseur derrière tant qu'on écrit au bout
   const fixing = chatFix && chatFix.catId === cat.id;
   inRow.classList.toggle("fixing", !!fixing);
@@ -9246,6 +9295,7 @@ function buildChatCard(cat, catIdx){
       else if(!addChatMessage(cat, v)) return;
     }catch(err){ console.error("[entre nous] échec de l'envoi", err); return; }
     chatFix = null;
+    delete chatNewAt[cat.id];   // on a répondu : la ligne « nouveau » s'en va
     clearDraft();
     chatFocus = cat.id;
     renderAll();
