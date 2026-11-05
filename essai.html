@@ -3830,6 +3830,8 @@ body.ios-gate-on{ overflow:hidden; }
 .papier-bench{ position:fixed; right:1rem; bottom:1rem; z-index:8000; width:15rem; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:0.8rem; box-shadow:0 10px 30px rgba(40,50,60,.15); font-size:0.85rem; color:var(--ink); }
 .pb-title{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; font-size:0.75rem; color:var(--ink-soft); margin-bottom:0.5rem; }
 .pb-sw-row{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; cursor:pointer; }
+.pb-rg{ display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-top:0.4rem; font-size:0.82rem; color:var(--ink-soft); }
+.pb-rg input{ width:8rem; }
 .pb-note{ font-size:0.75rem; color:var(--ink-faint); margin-top:0.5rem; line-height:1.4; }
 .chat-card{
   position:relative; min-width:0; border-radius:14px;
@@ -3838,7 +3840,10 @@ body.ios-gate-on{ overflow:hidden; }
   --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong);
   --scr:color-mix(in srgb, var(--ink) 5%, var(--bg));
 }
-.chat-box{ width:min(100%, 22rem); }
+.chat-box{ width:min(100%, 22rem); opacity:calc(1 - var(--dim, 0)); transition:opacity .35s ease; }
+/* discrétion : l'écran s'efface un peu au repos pour ne pas capter toute
+   l'attention ; il revient au survol et pendant qu'on écrit */
+.chat-card.wake:hover .chat-box, .chat-card.wake:focus-within .chat-box{ opacity:1; }
 /* déplacé exactement comme une liste (wireDragCard) : emplacement en pointillés, fantôme */
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
 .chat-card.dragging-card > *{ visibility:hidden; }
@@ -3879,7 +3884,7 @@ body.ios-gate-on{ overflow:hidden; }
    initiales à droite */
 .chat-foot{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; padding:0 0.2rem; position:relative; }
 .chat-foot .cat-grip svg{ transform:rotate(90deg); }
-.chat-who{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-faint); }
+.chat-who{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-faint); opacity:0.7; }   /* initiales discrètes */
 .chat-who b{ font-weight:700; }
 .chat-more{ margin-left:auto; appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
 .chat-more:hover, .chat-more[aria-expanded="true"]{ background:var(--surface-2); color:var(--ink-soft); }
@@ -11968,7 +11973,7 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 // (place gardée dans ce navigateur). Menu « … » : inviter, retirer, supprimer (pas encore branchés).
 if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   const K = "sltapis-essai-chat-5";
-  let st = { pos:0, hiske:false };
+  let st = { pos:0, hiske:false, dim:30, wake:true };
   try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
   const save = () => { try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){} };
   const MSG = [
@@ -12070,11 +12075,13 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   // petit panneau du banc : seulement de quoi voir l'autre côté
   const box = document.createElement("div");
   box.className = "papier-bench";
-  box.innerHTML = `<div class="pb-title">Entre nous</div><label class="pb-sw-row"><input type="checkbox"${st.hiske ? " checked" : ""}> Écrire en tant que Hiske</label><div class="pb-note">Corriger : double-clic sur une de ses lignes, ou ↑ dans la saisie vide.</div>`;
+  box.innerHTML = `<div class="pb-title">Entre nous</div><label class="pb-sw-row"><input type="checkbox" data-k="hiske"${st.hiske ? " checked" : ""}> Écrire en tant que Hiske</label><label class="pb-rg">Discrétion <input type="range" min="0" max="70" step="1" value="${st.dim}"></label><label class="pb-sw-row"><input type="checkbox" data-k="wake"${st.wake ? " checked" : ""}> Revient au survol</label><div class="pb-note">Corriger : double-clic sur une de ses lignes, ou ↑ dans la saisie vide.</div>`;
   document.body.appendChild(box);
   box.addEventListener("click", e => e.stopPropagation());
-  const apply = ()=>{ inRow.classList.toggle("them", st.hiske); setFixing(-1); field.value = ""; typed.textContent = ""; paintLog(); };
-  box.querySelector("input").addEventListener("change", e=>{ st.hiske = e.target.checked; save(); apply(); });
+  const dim = ()=>{ card.style.setProperty("--dim", (st.dim / 100).toFixed(2)); card.classList.toggle("wake", st.wake); };
+  const apply = ()=>{ inRow.classList.toggle("them", st.hiske); setFixing(-1); field.value = ""; typed.textContent = ""; paintLog(); dim(); };
+  box.querySelectorAll("input[type=checkbox]").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; save(); c.dataset.k === "hiske" ? apply() : dim(); }));
+  box.querySelector("input[type=range]").addEventListener("input", e=>{ st.dim = +e.target.value; save(); dim(); });
   apply(); place();
 })();
 Sync.start();
