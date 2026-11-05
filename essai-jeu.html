@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banc d'essai — duel de faisans</title>
+<link rel="icon" href="icon-faisan-v2-180.png">
+<!--
+  BANC D'ESSAI DU JEU (essai-jeu.html) — Sous le tapis, à côté de la 10.60
+  À lire avant de reprendre (y compris par Claude dans une nouvelle conversation) :
+
+  - Jeu à deux en tour par tour inspiré de GORILLA.BAS (angle, vitesse, vent,
+    décor qui se troue), version originale : deux faisans sur les toits d'une
+    ville à pignons, objets au choix (Orval, cœur, pistolet, frites, chou de
+    Bruxelles, gaufre). Aucun dessin repris de l'original.
+  - Page autonome, PAS branchée à l'appli ni à Firebase : la partie est gardée
+    dans ce navigateur (localStorage « sltapis-essai-jeu »), on joue à deux sur
+    le même écran ; « Tour par tour » simule le passage de l'un à l'autre
+    (voile « Au tour de … », puis le coup de l'autre est rejoué).
+  - Partie = { seed, regles, shots:[{ p, a, v, o, at }], objets } : tout le
+    reste (ville, vent, trous, scores) se recalcule en rejouant les coups
+    (worldAfter). Ville et collisions sont calculées (rectangles, triangles,
+    cercles des trous), jamais lues dans les pixels : le même coup donne le
+    même résultat sur tous les appareils. C'est ce qui permettra de ranger
+    une partie dans une liste partagée comme les messages de l'écran de chat
+    (10.57) : un coup = une tâche { t:"45 60 orval", by, at }.
+  - Réglages du banc dans l'adresse (?g=…&vent=…&trou=…&manches=…&decor=…
+    &trace=…&son=…&tpt=…) ; bouton « Copier le lien des réglages ».
+    Changer une règle recommence la partie (même graine).
+  - Couleurs : celles de l'appli (variables reprises de index.html, clair et
+    sombre), façades tirées de NEW_CATEGORY_PALETTE ; joueurs aux couleurs
+    de l'écran de chat (--chat-me, --chat-them).
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Courier+Prime:wght@400;700&family=Work+Sans:wght@400;500;600&display=swap');
+
+/* ---------- couleurs (celles de l'appli) ---------- */
+:root{
+  --bg-top:#F7FAF9; --bg-bottom:#ECEFEF;
+  --surface:#FFFFFF;
+  --ink:#2A2725; --ink-soft:#6B6560; --ink-faint:#A39C94;
+  --accent:#4993A2; --accent-soft:#E4ECF3;
+  --btn-ink:#4A5E6E;
+  --logo-green:#7DB536; --logo-green-strong:#64992A;
+  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong);
+  --urgent:#9558D0;
+  --rose:#D98DA1;
+  --lucky-bg:#FCFBE9; --lucky-lemon:#E6D63C;
+  --line:#EDE7DC;
+  --shadow: 0 1px 2px rgba(30,40,45,0.04), 0 8px 24px -12px rgba(30,40,45,0.12);
+  /* propres au jeu */
+  --sky-top:#E4ECF3; --sky-bottom:#F7FAF9;
+  --cloud:rgba(255,255,255,0.85);
+  --win-lit:#FCEFB4; --win-off:rgba(40,50,60,0.13);
+  --facade-mix:#FFFFFF; --facade-amount:30;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg-top:#1B252B; --bg-bottom:#101315;
+    --surface:#1C2125;
+    --ink:#EDF0F1; --ink-soft:#AEB6BA; --ink-faint:#78838A;
+    --accent:#7DBFCB; --accent-soft:#1C2B30;
+    --btn-ink:#AFC0CC;
+    --logo-green:#A9D65A; --logo-green-strong:#C7E58A;
+    --chat-me:#7FC0CC; --chat-them:var(--logo-green);
+    --line:#2A3238;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    --sky-top:#16222A; --sky-bottom:#1F2B31;
+    --cloud:rgba(255,255,255,0.06);
+    --win-lit:#E2C866; --win-off:rgba(0,0,0,0.28);
+    --facade-mix:#1C2125; --facade-amount:45;
+  }
+}
+
+/* ---------- page ---------- */
+*{ box-sizing:border-box; }
+body{
+  margin:0; min-height:100vh; color:var(--ink);
+  background:linear-gradient(180deg, var(--bg-top), var(--bg-bottom)) fixed;
+  font-family:'Public Sans', system-ui, -apple-system, sans-serif;
+}
+.wrap{ max-width:1240px; margin:0 auto; padding:1.4rem 1rem 3rem; }
+.kicker{
+  font:700 0.72rem 'Courier Prime', monospace; letter-spacing:0.08em;
+  text-transform:uppercase; color:var(--ink-soft);
+}
+h1{ margin:0.15rem 0 1rem; font-size:1.35rem; font-weight:700; color:var(--logo-green); }
+.layout{ display:grid; grid-template-columns:minmax(0,1fr) 16rem; gap:1.2rem; align-items:start; }
+@media (max-width:900px){ .layout{ grid-template-columns:1fr; } }
+
+/* ---------- scène ---------- */
+.stage{ background:var(--surface); border-radius:18px; box-shadow:var(--shadow); padding:0.6rem; }
+.screen{ position:relative; }
+canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; touch-action:manipulation; }
+.veil{
+  position:absolute; inset:0; border-radius:12px; display:none;
+  align-items:center; justify-content:center; flex-direction:column; gap:0.8rem;
+  background:color-mix(in srgb, var(--surface) 72%, transparent);
+  backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+}
+.veil.on{ display:flex; }
+.veil .who{ font:700 1.4rem 'Courier Prime', monospace; }
+
+/* ---------- ligne du coup (esprit invite C:\ de l'écran de chat) ---------- */
+.coup{
+  display:flex; flex-wrap:wrap; align-items:center; gap:0.6rem 1.1rem;
+  padding:0.75rem 0.5rem 0.35rem; font-family:'Courier Prime', monospace; font-size:1.05rem;
+}
+.invite{ font-weight:700; min-width:2.6em; }
+.coup label{ display:flex; align-items:baseline; gap:0.35rem; color:var(--ink-soft); }
+.coup input{
+  width:3.3em; font:700 1.1rem 'Courier Prime', monospace; color:var(--ink);
+  background:transparent; border:0; border-bottom:2px solid var(--line);
+  padding:0.1rem 0.15rem; text-align:center; outline:none;
+}
+.coup input:focus{ border-bottom-color:currentColor; }
+.coup input::-webkit-inner-spin-button{ opacity:0.4; }
+.objets{ display:flex; gap:0.25rem; }
+.objets button{
+  width:34px; height:34px; padding:0; border:0; border-radius:10px; cursor:pointer;
+  background:transparent; display:grid; place-items:center;
+  transition:background .15s, box-shadow .15s;
+}
+.objets button:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); }
+.objets button.on{ box-shadow:inset 0 0 0 2px var(--pcolor); }
+.objets canvas{ width:30px; height:30px; pointer-events:none; }
+.btn{
+  font:600 0.92rem 'Public Sans', sans-serif; color:var(--btn-ink);
+  background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:0.45rem 1.1rem; cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+}
+.btn:hover{ background:color-mix(in srgb, var(--logo-green) 16%, var(--surface)); border-color:color-mix(in srgb, var(--logo-green) 40%, var(--line)); }
+.btn:disabled{ opacity:0.45; cursor:default; background:var(--surface); }
+.coup .btn{ margin-left:auto; }
+.statut{ min-height:1.3em; padding:0 0.5rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); }
+
+/* ---------- panneau du banc ---------- */
+.banc{
+  background:var(--surface); border-radius:14px; box-shadow:var(--shadow);
+  padding:0.9rem; font-size:0.85rem;
+}
+.banc h2{ margin:0 0 0.6rem; }
+.reg{ margin:0.55rem 0; }
+.reg .lab{ display:flex; justify-content:space-between; color:var(--ink-soft); margin-bottom:0.15rem; }
+.reg .lab b{ font:700 0.85rem 'Courier Prime', monospace; color:var(--ink); }
+.reg input[type=range]{ width:100%; accent-color:var(--accent); }
+.reg select{ width:100%; font:inherit; padding:0.25rem; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); }
+.sw{ display:flex; align-items:center; gap:0.45rem; margin:0.4rem 0; cursor:pointer; color:var(--ink); }
+.sw input{ accent-color:var(--accent); }
+.banc .btn{ display:block; width:100%; margin-top:0.45rem; font-size:0.82rem; padding:0.4rem; }
+.note{ font-size:0.72rem; color:var(--ink-faint); margin-top:0.3rem; }
+.trace{
+  margin-top:0.8rem; border-top:1px solid var(--line); padding-top:0.6rem;
+}
+.trace pre{
+  margin:0.35rem 0 0; font:0.74rem/1.45 'Courier Prime', monospace; color:var(--ink-soft);
+  max-height:12rem; overflow:auto; white-space:pre-wrap;
+}
+</style>
+
+<div class="wrap">
+  <div class="kicker">Banc d'essai · Sous le tapis</div>
+  <h1>Duel de faisans</h1>
+  <div class="layout">
+    <div class="stage">
+      <div class="screen">
+        <canvas id="jeu"></canvas>
+        <div class="veil" id="veil">
+          <div class="who" id="veilWho"></div>
+          <button type="button" class="btn" id="veilGo"></button>
+        </div>
+      </div>
+      <div class="coup" id="coup">
+        <span class="invite" id="invite"></span>
+        <label>angle <input id="angle" type="number" min="0" max="90" step="1" inputmode="numeric">°</label>
+        <label>vitesse <input id="vitesse" type="number" min="1" max="200" step="1" inputmode="numeric"></label>
+        <div class="objets" id="objets"></div>
+        <button type="button" class="btn" id="lancer">Lancer</button>
+      </div>
+      <div class="statut" id="statut"></div>
+    </div>
+
+    <aside class="banc" id="banc">
+      <h2 class="kicker">Réglages du banc</h2>
+      <div class="reg"><div class="lab">Gravité <b data-v="g"></b></div><input type="range" data-k="g" min="200" max="600" step="20"></div>
+      <div class="reg"><div class="lab">Vent maximal <b data-v="vent"></b></div><input type="range" data-k="vent" min="0" max="15" step="1"></div>
+      <div class="reg"><div class="lab">Taille des trous <b data-v="trou"></b></div><input type="range" data-k="trou" min="10" max="44" step="2"></div>
+      <div class="reg"><div class="lab">Manches pour gagner <b data-v="manches"></b></div><input type="range" data-k="manches" min="1" max="5" step="1"></div>
+      <div class="reg"><div class="lab">Décor</div>
+        <select data-k="decor">
+          <option value="mixte">Pignons, pointes et toits plats</option>
+          <option value="pignons">Pignons à gradins</option>
+          <option value="plats">Toits plats</option>
+        </select>
+      </div>
+      <label class="sw"><input type="checkbox" data-k="trace"> Trace du coup précédent</label>
+      <label class="sw"><input type="checkbox" data-k="son"> Sons</label>
+      <label class="sw"><input type="checkbox" data-k="tpt"> Tour par tour (passer l'écran)</label>
+      <div class="note">Changer une règle recommence la partie.</div>
+      <button type="button" class="btn" id="nouvelle">Nouvelle partie</button>
+      <button type="button" class="btn" id="annuler">Annuler le dernier coup</button>
+      <button type="button" class="btn" id="copier">Copier le lien des réglages</button>
+      <div class="trace">
+        <div class="kicker">Ce que garderait la liste partagée</div>
+        <pre id="etat"></pre>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+"use strict";
+// =====================================================================
+//  Réglages (adresse) et constantes
+// =====================================================================
+const W = 960, H = 540;
+const DEF = { g:360, vent:10, trou:22, manches:3, decor:"mixte", trace:1, son:0, tpt:1 };
+const RULE_KEYS = ["g","vent","trou","manches","decor"];
+const S = (()=>{
+  const q = new URLSearchParams(location.search), s = { ...DEF };
+  for(const k in DEF) if(q.has(k)) s[k] = typeof DEF[k] === "number" ? Number(q.get(k)) : q.get(k);
+  return s;
+})();
+const PLAYERS = [ { ini:"AP", color:"--chat-me" }, { ini:"H", color:"--chat-them" } ];
+const PALETTE = ["#4993A2","#D9A63A","#5E9C86","#C24F6E","#D9774A","#6A9FB9","#B06A92","#8A7DB8","#8C9A4C","#6B728E"];
+const OBJETS = {
+  orval:"Orval", coeur:"Cœur", pistolet:"Pistolet garni",
+  frites:"Cornet de frites", chou:"Chou de Bruxelles", gaufre:"Gaufre"
+};
+const OBJETS_ART = {
+  orval:"une Orval", coeur:"un cœur", pistolet:"un pistolet garni",
+  frites:"un cornet de frites", chou:"un chou de Bruxelles", gaufre:"une gaufre"
+};
+const STORE_KEY = "sltapis-essai-jeu";
+const DT = 1/240;                 // pas de calcul fixe : même résultat partout
+const SPEED = 6, WIND = 6;        // vitesse saisie → px/s ; vent affiché → px/s²
+
+const $ = s => document.querySelector(s);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+// =====================================================================
+//  Hasard reproductible
+// =====================================================================
+function rng(seed){
+  let a = seed >>> 0;
+  return ()=>{ a = (a + 0x6D2B79F5) >>> 0; let t = a;
+    t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+
+// =====================================================================
+//  Partie (ce qui serait rangé dans la liste) et monde recalculé
+// =====================================================================
+let game = null;
+game = load() || newGame();
+function newGame(seed){
+  return { seed: seed ?? (Math.random() * 2**31 | 0),
+           regles: Object.fromEntries(RULE_KEYS.map(k => [k, S[k]])),
+           shots: [], objets: (game && game.objets) || ["orval", "coeur"] };
+}
+function load(){
+  try{ const g = JSON.parse(localStorage.getItem(STORE_KEY));
+    if(g && RULE_KEYS.every(k => g.regles[k] === S[k])) return g; }catch(e){}
+  return null;
+}
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(game)); }catch(e){} renderEtat(); }
+const R = () => game.regles;
+
+function makeCity(seed, round){
+  const r = rng(seed * 7 + round * 7919 + 1);
+  const bs = []; let x = 0, lastC = -1;
+  while(x < W){
+    let w = Math.round(58 + r() * 52);
+    if(W - x < 120) w = W - x;
+    const h = Math.round(130 + r() * 230);
+    let c; do c = Math.floor(r() * PALETTE.length); while(c === lastC); lastC = c;
+    const d = R().decor, t = r();
+    const roof = d === "plats" ? "flat" : d === "pignons" ? (t < 0.85 ? "steps" : "flat")
+               : (t < 0.4 ? "steps" : t < 0.65 ? "point" : "flat");
+    bs.push({ x, w, top: H - h, c, roof, wseed: Math.floor(r() * 1e9) });
+    x += w;
+  }
+  const n = bs.length;
+  const i0 = 1 + Math.floor(r() * 2), i1 = n - 2 - Math.floor(r() * 2);
+  for(const i of [i0, i1]){ bs[i].roof = "flat"; bs[i].top = Math.max(bs[i].top, H - 300); }
+  const ph = [i0, i1].map(i => ({ x: bs[i].x + bs[i].w / 2, y: bs[i].top }));
+  // formes de collision
+  const shapes = [];
+  for(const b of bs){
+    shapes.push({ k:"rect", x:b.x, y:b.top, w:b.w, h:H - b.top });
+    if(b.roof === "steps"){
+      const n = 3, sh = 13;
+      for(let s = 1; s <= n; s++){ const ww = b.w * (1 - s / (n + 1.4));
+        shapes.push({ k:"rect", x:b.x + (b.w - ww) / 2, y:b.top - s * sh, w:ww, h:sh }); }
+    }else if(b.roof === "point"){
+      shapes.push({ k:"tri", x:b.x, w:b.w, base:b.top, apex:b.top - b.w * 0.42 });
+    }
+  }
+  return { bs, ph, shapes };
+}
+function freshWorld(round, scores){
+  const city = makeCity(game.seed, round);
+  const r = rng(game.seed * 31 + round * 104729 + 17);
+  const wind = Math.round((r() * 2 - 1) * R().vent);
+  return { round, scores, city, ph: city.ph, craters: [], wind, over: false, lastPath: [null, null] };
+}
+function solid(w, x, y){
+  let inside = false;
+  for(const s of w.city.shapes){
+    if(s.k === "rect"){ if(x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h){ inside = true; break; } }
+    else if(y <= s.base && x >= s.x && x <= s.x + s.w){
+      const half = s.w / 2, lim = s.apex + Math.abs(x - (s.x + half)) / half * (s.base - s.apex);
+      if(y >= lim){ inside = true; break; }
+    }
+  }
+  if(!inside) return false;
+  for(const c of w.craters) if((x - c.x) ** 2 + (y - c.y) ** 2 < c.r * c.r) return false;
+  return true;
+}
+// un coup : trajectoire complète, calculée d'avance
+function simulate(w, shot){
+  const P = w.ph[shot.p], dir = shot.p === 0 ? 1 : -1;
+  const a = shot.a * Math.PI / 180, v = shot.v * SPEED;
+  let x = P.x + dir * 8, y = P.y - 40, vx = Math.cos(a) * v * dir, vy = -Math.sin(a) * v;
+  const ax = w.wind * WIND, g = R().g, path = [x, y];
+  for(let i = 1; i < 240 * 25; i++){
+    vx += ax * DT; vy += g * DT; x += vx * DT; y += vy * DT;
+    if(i % 4 === 0) path.push(x, y);                         // un point par image (60 /s)
+    for(let k = 0; k < 2; k++){
+      if(k === shot.p && i < 60) continue;
+      const q = w.ph[k];
+      if(Math.abs(x - q.x) < 18 && y > q.y - 42 && y < q.y + 2){ path.push(x, y); return { path, end:{ kind:"hit", x, y, victim:k } }; }
+    }
+    if(x < -80 || x > W + 80 || y > H + 10){ path.push(x, y); return { path, end:{ kind:"miss", x, y } }; }
+    if(y > 0 && solid(w, x, y)){ path.push(x, y); return { path, end:{ kind:"city", x, y } }; }
+  }
+  return { path, end:{ kind:"miss", x, y } };
+}
+function applyResult(w, shot, res){
+  w.lastPath[shot.p] = res.path;
+  if(res.end.kind === "city") w.craters.push({ x:res.end.x, y:res.end.y, r:R().trou });
+  if(res.end.kind !== "hit") return w;
+  const winner = res.end.victim === shot.p ? 1 - shot.p : shot.p;
+  const sc = [...w.scores]; sc[winner]++;
+  if(sc[winner] >= R().manches){
+    w.scores = sc; w.over = true; w.winner = winner; w.fallen = res.end.victim;
+    w.craters.push({ x:res.end.x, y:res.end.y, r:R().trou * 1.6 });
+    return w;
+  }
+  return freshWorld(w.round + 1, sc);
+}
+function worldAfter(n){
+  let w = freshWorld(0, [0, 0]);
+  for(let i = 0; i < n; i++) w = applyResult(w, game.shots[i], simulate(w, game.shots[i]));
+  return w;
+}
+const turn = () => game.shots.length ? 1 - game.shots[game.shots.length - 1].p : 0;
+function lastShotOf(p){ for(let i = game.shots.length - 1; i >= 0; i--) if(game.shots[i].p === p) return game.shots[i]; return null; }
+
+// =====================================================================
+//  Dessin : faisans, objets, ville
+// =====================================================================
+const cv = $("#jeu"), ctx = cv.getContext("2d");
+const city = document.createElement("canvas"), cctx = city.getContext("2d");
+let DPR = 1;
+function sizeCanvas(){
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  for(const c of [cv, city]){ c.width = W * DPR; c.height = H * DPR; }
+}
+
+function mixHex(a, b, t){
+  const p = h => [1,3,5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const A = p(a), B = p(b.length === 4 ? "#" + [...b.slice(1)].map(c => c + c).join("") : b);
+  return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("");
+}
+
+function renderCity(w){
+  cctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  cctx.globalCompositeOperation = "source-over";
+  cctx.clearRect(0, 0, W, H);
+  const mix = css("--facade-mix"), amt = Number(css("--facade-amount")) / 100;
+  const lit = css("--win-lit"), off = css("--win-off");
+  for(const b of w.city.bs){
+    const col = mixHex(PALETTE[b.c], mix, amt);
+    cctx.fillStyle = col;
+    cctx.fillRect(b.x, b.top, b.w, H - b.top);
+    if(b.roof === "steps"){
+      const n = 3, sh = 13;
+      for(let s = 1; s <= n; s++){ const ww = b.w * (1 - s / (n + 1.4));
+        cctx.fillRect(b.x + (b.w - ww) / 2, b.top - s * sh, ww, sh + 0.5); }
+    }else if(b.roof === "point"){
+      cctx.beginPath(); cctx.moveTo(b.x, b.top + 0.5); cctx.lineTo(b.x + b.w / 2, b.top - b.w * 0.42);
+      cctx.lineTo(b.x + b.w, b.top + 0.5); cctx.fill();
+    }
+    // léger filet d'ombre entre deux façades
+    cctx.fillStyle = "rgba(0,0,0,0.05)"; cctx.fillRect(b.x + b.w - 1.5, b.top, 1.5, H - b.top);
+    // fenêtres
+    const r = rng(b.wseed);
+    const cols = Math.max(1, Math.floor((b.w - 14) / 15)), rows = Math.floor((H - b.top - 20) / 21);
+    const gx = (b.w - cols * 15 + 6) / 2;
+    for(let j = 0; j < rows; j++) for(let i = 0; i < cols; i++){
+      cctx.fillStyle = r() < 0.32 ? lit : off;
+      roundRect(cctx, b.x + gx + i * 15, b.top + 14 + j * 21, 8, 11, 1.5); cctx.fill();
+    }
+  }
+  // trous
+  cctx.globalCompositeOperation = "destination-out";
+  for(const c of w.craters){ cctx.beginPath(); cctx.arc(c.x, c.y, c.r, 0, 7); cctx.fill(); }
+  cctx.globalCompositeOperation = "source-atop";
+  cctx.strokeStyle = "rgba(0,0,0,0.13)"; cctx.lineWidth = 4;
+  for(const c of w.craters){ cctx.beginPath(); cctx.arc(c.x, c.y, c.r + 1.5, 0, 7); cctx.stroke(); }
+  cctx.globalCompositeOperation = "source-over";
+}
+function roundRect(c, x, y, w, h, r){
+  c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+
+// faisan dessiné ici (tourné vers la droite si dir = 1), pieds en (0, 0)
+function drawPheasant(c, x, y, dir, o = {}){
+  c.save(); c.translate(x, y); c.scale(dir * 1.15, 1.15);
+  if(o.rot) c.rotate(o.rot);
+  c.globalAlpha = o.alpha ?? 1;
+  // queue
+  c.fillStyle = "#C9954A";
+  c.beginPath(); c.moveTo(-7, -21); c.lineTo(-47, -35); c.lineTo(-48, -31); c.lineTo(-7, -14); c.fill();
+  c.strokeStyle = "#6B4A2A"; c.lineWidth = 1.1;
+  for(let i = 0; i < 5; i++){ const t = 0.2 + i * 0.16, px = -7 - 40 * t, py = -17.5 - 15 * t;
+    c.beginPath(); c.moveTo(px, py - 3.2 + t * 1.5); c.lineTo(px - 1.2, py + 3 - t * 1.2); c.stroke(); }
+  // pattes
+  c.strokeStyle = "#8C8178"; c.lineWidth = 1.6; c.lineCap = "round";
+  c.beginPath(); c.moveTo(-2, -10); c.lineTo(-3, 0); c.moveTo(4, -10); c.lineTo(5.5, 0); c.stroke();
+  // corps
+  c.fillStyle = "#B4612F";
+  c.beginPath(); c.ellipse(0, -17, 14, 9.5, -0.15, 0, 7); c.fill();
+  c.fillStyle = "rgba(255,230,190,0.55)";
+  for(const [a, b] of [[-6,-19],[-1,-14],[4,-18],[-4,-13],[7,-14]]){ c.beginPath(); c.arc(a, b, 1, 0, 7); c.fill(); }
+  // aile (se lève au lancer)
+  c.save(); c.translate(-1, -20); c.rotate(-(o.wing || 0) * 1.1);
+  c.fillStyle = "#9A6A39"; c.beginPath(); c.ellipse(-4, 1, 9, 5, -0.1, 0, 7); c.fill();
+  c.strokeStyle = "rgba(60,35,15,0.35)"; c.lineWidth = 0.9;
+  c.beginPath(); c.moveTo(-10, 2); c.lineTo(1, 0); c.moveTo(-9, 4); c.lineTo(0, 3); c.stroke();
+  c.restore();
+  // cou et collier blanc
+  c.strokeStyle = "#1F5B57"; c.lineWidth = 7; c.lineCap = "round";
+  c.beginPath(); c.moveTo(8, -21); c.quadraticCurveTo(13, -27, 13, -33); c.stroke();
+  c.strokeStyle = "#FFFFFF"; c.lineWidth = 1.6;
+  c.beginPath(); c.ellipse(10.5, -24.5, 3.6, 1.4, -0.6, 0, 7); c.stroke();
+  // tête
+  c.fillStyle = "#24504F"; c.beginPath(); c.arc(14, -35, 5.5, 0, 7); c.fill();
+  c.beginPath(); c.moveTo(10.5, -38.5); c.lineTo(9, -43); c.lineTo(13, -40); c.fill();
+  c.fillStyle = "#D23B36"; c.beginPath(); c.ellipse(16, -35, 3.1, 3.7, 0, 0, 7); c.fill();
+  c.fillStyle = "#E8D7A8"; c.beginPath(); c.moveTo(18.8, -36.3); c.lineTo(23.5, -34.6); c.lineTo(18.8, -33.4); c.fill();
+  c.fillStyle = "#FFFFFF"; c.beginPath(); c.arc(16.2, -36, 1.2, 0, 7); c.fill();
+  c.fillStyle = "#1A1A1A"; c.beginPath(); c.arc(16.5, -36, 0.6, 0, 7); c.fill();
+  c.restore();
+}
+
+function drawObjet(c, type, x, y, rot = 0, sc = 1){
+  c.save(); c.translate(x, y); c.rotate(rot); c.scale(sc, sc);
+  c.lineJoin = "round"; c.lineCap = "round";
+  if(type === "orval"){
+    c.fillStyle = "#5E4A1C";
+    c.beginPath(); c.ellipse(0, 5, 6, 6.8, 0, 0, 7); c.fill();
+    c.beginPath(); c.ellipse(0, -3.6, 3.7, 3.4, 0, 0, 7); c.fill();
+    c.fillRect(-1.6, -11.5, 3.2, 7);
+    c.fillStyle = "#C9A646"; c.fillRect(-2, -13.2, 4, 2);
+    c.fillStyle = "#EDE3C8"; c.fillRect(-4.4, 3.2, 8.8, 4);
+    c.strokeStyle = "rgba(255,255,255,0.38)"; c.lineWidth = 1.2;
+    c.beginPath(); c.arc(0, 5, 4.3, 2.6, 3.6); c.stroke();
+  }else if(type === "coeur"){
+    c.fillStyle = css("--rose") || "#D98DA1";
+    c.beginPath(); c.moveTo(0, 6); c.bezierCurveTo(-10, -1, -6.5, -10, 0, -4.5);
+    c.bezierCurveTo(6.5, -10, 10, -1, 0, 6); c.fill();
+    c.fillStyle = "rgba(255,255,255,0.45)"; c.beginPath(); c.ellipse(-3.6, -4, 1.6, 1, -0.7, 0, 7); c.fill();
+  }else if(type === "pistolet"){
+    c.fillStyle = "#D7A055"; c.beginPath(); c.ellipse(0, 0, 9, 5.6, 0, 0, 7); c.fill();
+    c.strokeStyle = "#7DB536"; c.lineWidth = 2.2;
+    c.beginPath(); c.moveTo(-8.5, 0); for(let i = -8; i <= 8; i += 2) c.lineTo(i, i % 4 ? 1.3 : -0.6); c.stroke();
+    c.fillStyle = "#D8463C"; c.beginPath(); c.arc(2.5, 0.3, 1.8, 0, 7); c.fill();
+    c.strokeStyle = "rgba(120,70,20,0.45)"; c.lineWidth = 0.9;
+    c.beginPath(); c.moveTo(-4, -4); c.lineTo(-2, -2.5); c.moveTo(1, -4.6); c.lineTo(3, -3); c.stroke();
+  }else if(type === "frites"){
+    c.fillStyle = "#F2C94C"; c.strokeStyle = "#C79A2A"; c.lineWidth = 0.7;
+    for(const [fx, a] of [[-4,-0.2],[-1.5,0.05],[1,-0.08],[3.6,0.22],[0,0.3]]){
+      c.save(); c.translate(fx, -1); c.rotate(a); c.fillRect(-1, -9, 2, 9); c.strokeRect(-1, -9, 2, 9); c.restore(); }
+    c.fillStyle = "#FFFFFF"; c.beginPath(); c.moveTo(-6.5, -1.5); c.lineTo(6.5, -1.5); c.lineTo(0, 10); c.closePath(); c.fill();
+    c.strokeStyle = "#C24F6E"; c.lineWidth = 1.4;
+    c.beginPath(); c.moveTo(-3, -1.5); c.lineTo(-0.6, 8); c.moveTo(2, -1.5); c.lineTo(0.8, 7); c.stroke();
+  }else if(type === "chou"){
+    c.fillStyle = "#8DBF4A"; c.beginPath(); c.arc(0, 0, 6.5, 0, 7); c.fill();
+    c.strokeStyle = "#557F28"; c.lineWidth = 1;
+    c.beginPath(); c.arc(-2.5, 1, 5, -1.2, 1.1); c.stroke();
+    c.beginPath(); c.arc(3, 0.5, 5, 1.9, 4.2); c.stroke();
+    c.fillStyle = "#C7DE8F"; c.fillRect(-1, 5.5, 2, 2);
+  }else if(type === "gaufre"){
+    c.fillStyle = "#E3AE57"; roundRect(c, -8, -6, 16, 12, 3); c.fill();
+    c.strokeStyle = "#B9822F"; c.lineWidth = 0.9;
+    c.beginPath(); for(const gx of [-4, 0, 4]){ c.moveTo(gx, -6); c.lineTo(gx, 6); }
+    for(const gy of [-2, 2]){ c.moveTo(-8, gy); c.lineTo(8, gy); } c.stroke();
+    c.fillStyle = "#FFFFFF"; for(const [a, b] of [[-6,-4],[2,-1],[5,3],[-2,4],[6,-5]]) c.fillRect(a, b, 1.2, 1.2);
+  }
+  c.restore();
+}
+
+// =====================================================================
+//  Animation : nuages, coup en vol, éclats, plumes
+// =====================================================================
+let world = worldAfter(game.shots.length);
+let anim = null, particles = [], flashes = [], tumble = null, banner = null, busy = false, wingT = [0, 0];
+const clouds = Array.from({ length: 5 }, (_, i) => ({ x: i * 220 + Math.random() * 100, y: 40 + Math.random() * 110, s: 0.7 + Math.random() * 0.6 }));
+
+function burst(type, x, y, big){
+  const n = big ? 34 : 20, palette = {
+    orval:["#5E4A1C","#8A6A2A","#FFFFFF","#F4E9C8"], coeur:[css("--rose"), "#F2C3CF"],
+    pistolet:["#D7A055","#7DB536","#D8463C"], frites:["#F2C94C","#FFFFFF"],
+    chou:["#8DBF4A","#557F28"], gaufre:["#E3AE57","#FFFFFF"] }[type];
+  for(let i = 0; i < n; i++){
+    const a = Math.random() * Math.PI * 2, sp = 60 + Math.random() * (big ? 260 : 170);
+    particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 80, life: 1, decay: 0.6 + Math.random() * 0.6,
+      rot: Math.random() * 6, vr: (Math.random() - 0.5) * 12, kind: type, color: palette[i % palette.length], s: 0.6 + Math.random() * 0.8 });
+  }
+  for(let i = 0; i < 8; i++) particles.push({ x, y, vx: (Math.random() - 0.5) * 60, vy: -Math.random() * 40, life: 1, decay: 1.6,
+    kind: "dust", s: 4 + Math.random() * 5, rot: 0, vr: 0 });
+  flashes.push({ x, y, t: 0, r: big ? R().trou * 1.6 : R().trou });
+}
+function feathers(x, y){
+  for(let i = 0; i < 22; i++){ const a = Math.random() * Math.PI * 2, sp = 40 + Math.random() * 150;
+    particles.push({ x, y: y - 18, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, life: 1, decay: 0.35 + Math.random() * 0.3,
+      kind: "feather", color: ["#B4612F","#C9954A","#1F5B57","#9A6A39"][i % 4], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 5, s: 1, sway: Math.random() * 6 }); }
+}
+function drawParticle(p){
+  ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, p.life)); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(p.s, p.s);
+  ctx.fillStyle = p.color;
+  switch(p.kind){
+    case "dust": ctx.globalAlpha *= 0.14; ctx.fillStyle = css("--ink-faint"); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); break;
+    case "orval": if(p.color === "#FFFFFF"){ ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, 7); ctx.stroke(); }
+                  else { ctx.beginPath(); ctx.moveTo(-3, -1); ctx.lineTo(3, -2); ctx.lineTo(0, 3); ctx.fill(); } break;
+    case "coeur": ctx.beginPath(); ctx.moveTo(0, 2.4); ctx.bezierCurveTo(-4, -0.4, -2.6, -4, 0, -1.8); ctx.bezierCurveTo(2.6, -4, 4, -0.4, 0, 2.4); ctx.fill(); break;
+    case "frites": ctx.fillRect(-0.9, -4, 1.8, 8); break;
+    case "chou": case "feather": ctx.beginPath(); ctx.ellipse(0, 0, p.kind === "feather" ? 5 : 3.2, 1.6, 0, 0, 7); ctx.fill(); break;
+    default: ctx.fillRect(-1.3, -1.3, 2.6, 2.6);
+  }
+  ctx.restore();
+}
+
+function frame(){
+  const dt = 1 / 60;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // ciel
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, css("--sky-top")); sky.addColorStop(1, css("--sky-bottom"));
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  // nuages poussés par le vent
+  ctx.fillStyle = css("--cloud");
+  for(const cl of clouds){
+    cl.x += (world.wind * 0.09 + 0.05) * cl.s; if(cl.x > W + 80) cl.x = -80; if(cl.x < -80) cl.x = W + 80;
+    ctx.beginPath();
+    for(const [dx, dy, r] of [[0,0,16],[18,-6,20],[38,0,15],[20,5,15]]) { ctx.moveTo(cl.x + dx * cl.s + r * cl.s, cl.y + dy * cl.s); ctx.arc(cl.x + dx * cl.s, cl.y + dy * cl.s, r * cl.s, 0, 7); }
+    ctx.fill();
+  }
+  ctx.drawImage(city, 0, 0, W, H);
+  // trace du coup précédent du joueur dont c'est le tour
+  if(S.trace && !anim && !world.over){
+    const pth = world.lastPath[turn()];
+    if(pth){ ctx.fillStyle = css(PLAYERS[turn()].color); ctx.globalAlpha = 0.28;
+      for(let i = 0; i < pth.length; i += 6){ ctx.beginPath(); ctx.arc(pth[i], pth[i + 1], 1.4, 0, 7); ctx.fill(); }
+      ctx.globalAlpha = 1; }
+  }
+  // faisans
+  for(let k = 0; k < 2; k++){
+    if(tumble && tumble.k === k) continue;
+    if(world.over && world.fallen === k && !tumble) continue;
+    wingT[k] = Math.max(0, wingT[k] - dt * 2.5);
+    const hop = world.over && world.winner === k ? Math.abs(Math.sin(performance.now() / 180)) * 6 : 0;
+    drawPheasant(ctx, world.ph[k].x, world.ph[k].y - hop, k === 0 ? 1 : -1, { wing: Math.sin(Math.min(1, wingT[k]) * Math.PI) });
+    // initiales au-dessus, couleurs de l'écran de chat
+    ctx.font = "700 13px 'Courier Prime', monospace"; ctx.textAlign = "center";
+    ctx.fillStyle = css(PLAYERS[k].color); ctx.globalAlpha = turn() === k && !world.over ? 1 : 0.55;
+    ctx.fillText(PLAYERS[k].ini, world.ph[k].x, world.ph[k].y - 58 - hop); ctx.globalAlpha = 1;
+  }
+  if(tumble){
+    tumble.t += dt; tumble.vy += 500 * dt; tumble.x += tumble.vx * dt; tumble.y += tumble.vy * dt; tumble.rot += tumble.vr * dt;
+    drawPheasant(ctx, tumble.x, tumble.y, tumble.dir, { rot: tumble.rot, alpha: Math.max(0, 1 - tumble.t / 1.3) });
+  }
+  // objet en vol
+  if(anim){
+    const steps = 1;   // une image = un point (temps réel)
+    for(let s = 0; s < steps && anim; s++){
+      anim.i += 2;
+      if(anim.i >= anim.res.path.length - 2){ endShot(); break; }
+    }
+    if(anim){
+      const p = anim.res.path;
+      ctx.fillStyle = css(PLAYERS[anim.shot.p].color); ctx.globalAlpha = 0.35;
+      for(let i = Math.max(0, anim.i - 40); i < anim.i; i += 6){ ctx.beginPath(); ctx.arc(p[i], p[i + 1], 1.2, 0, 7); ctx.fill(); }
+      ctx.globalAlpha = 1;
+      const x = p[anim.i], y = p[anim.i + 1];
+      if(y < -8){   // au-dessus de l'écran : petit repère
+        ctx.fillStyle = css(PLAYERS[anim.shot.p].color);
+        ctx.beginPath(); ctx.moveTo(x, 4); ctx.lineTo(x - 5, 12); ctx.lineTo(x + 5, 12); ctx.fill();
+      }else drawObjet(ctx, anim.shot.o, x, y, anim.i * 0.09 * (anim.shot.p ? -1 : 1), 1.1);
+    }
+  }
+  // éclats
+  for(const f of flashes){ f.t += dt * 3;
+    ctx.strokeStyle = css("--lucky-lemon"); ctx.globalAlpha = Math.max(0, 1 - f.t); ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (0.6 + f.t), 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
+  flashes = flashes.filter(f => f.t < 1);
+  for(const p of particles){
+    if(p.kind === "feather"){ p.vy = Math.min(p.vy + 120 * dt, 45); p.vx *= 0.97; p.x += Math.sin(p.life * 8 + p.sway) * 0.6; }
+    else if(p.kind === "dust"){ p.s += 0.25; p.vy *= 0.95; }
+    else p.vy += 420 * dt;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.life -= p.decay * dt;
+    drawParticle(p);
+  }
+  particles = particles.filter(p => p.life > 0 && p.y < H + 30);
+  hud();
+  requestAnimationFrame(frame);
+}
+
+function hud(){
+  ctx.textBaseline = "alphabetic";
+  // scores
+  for(let k = 0; k < 2; k++){
+    const x = k ? W - 22 : 22; ctx.textAlign = k ? "right" : "left";
+    ctx.font = "700 20px 'Courier Prime', monospace"; ctx.fillStyle = css(PLAYERS[k].color);
+    ctx.fillText(`${PLAYERS[k].ini} ${world.scores[k]}`, x, 34);
+    const ls = lastShotOf(k);
+    if(ls){ ctx.font = "13px 'Courier Prime', monospace"; ctx.fillStyle = css("--ink-soft");
+      ctx.fillText(`${ls.a}° · ${ls.v}`, x, 52); }
+  }
+  // vent
+  ctx.textAlign = "center"; ctx.font = "700 12px 'Courier Prime', monospace"; ctx.fillStyle = css("--ink-soft");
+  ctx.fillText(world.wind ? `vent ${Math.abs(world.wind)}` : "pas de vent", W / 2, 26);
+  if(world.wind){
+    const len = 10 + Math.abs(world.wind) * 6, d = Math.sign(world.wind);
+    ctx.strokeStyle = css("--accent"); ctx.fillStyle = css("--accent"); ctx.lineWidth = 2.5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(W / 2 - d * len / 2, 38); ctx.lineTo(W / 2 + d * len / 2, 38); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W / 2 + d * (len / 2 + 6), 38); ctx.lineTo(W / 2 + d * len / 2 - d, 33); ctx.lineTo(W / 2 + d * len / 2 - d, 43); ctx.fill();
+  }
+  ctx.font = "12px 'Courier Prime', monospace"; ctx.fillStyle = css("--ink-faint");
+  ctx.fillText(`manche ${world.round + 1} · en ${R().manches}`, W / 2, 60);
+  // bandeau (nouvelle manche, fin)
+  if(banner){
+    banner.t += 1 / 60; const a = Math.min(1, banner.t * 3, (banner.d - banner.t) * 2);
+    if(a <= 0 && banner.t > banner.d) banner = null;
+    else{ ctx.globalAlpha = Math.max(0, a); ctx.font = "700 30px 'Courier Prime', monospace";
+      ctx.lineJoin = "round"; ctx.strokeStyle = css("--surface"); ctx.lineWidth = 6;
+      ctx.strokeText(banner.text, W / 2, H * 0.38);
+      ctx.fillStyle = banner.color || css("--ink"); ctx.fillText(banner.text, W / 2, H * 0.38);
+      if(banner.sub){ ctx.font = "15px 'Courier Prime', monospace"; ctx.lineWidth = 4;
+        ctx.strokeText(banner.sub, W / 2, H * 0.38 + 26);
+        ctx.fillStyle = css("--ink-soft"); ctx.fillText(banner.sub, W / 2, H * 0.38 + 26); }
+      ctx.globalAlpha = 1; }
+  }
+}
+
+// =====================================================================
+//  Jouer un coup
+// =====================================================================
+function play(shot, res, done){
+  busy = true; refreshUI();
+  wingT[shot.p] = 1;
+  anim = { shot, res, i: 0, done };
+  sound("lancer");
+}
+function endShot(){
+  const { shot, res, done } = anim; anim = null;
+  const e = res.end;
+  if(e.kind === "miss"){
+    sound("rate");
+    setTimeout(()=>{ world = applyResult(world, shot, res); finish(done); }, 350);
+    return;
+  }
+  burst(shot.o, e.x, e.y, e.kind === "hit");
+  sound(shot.o === "orval" ? "verre" : "boum");
+  if(e.kind === "city"){
+    world = applyResult(world, shot, res); renderCity(world);
+    setTimeout(()=> finish(done), 450);
+    return;
+  }
+  // un faisan touché
+  const v = e.victim, q = world.ph[v];
+  feathers(q.x, q.y);
+  tumble = { k: v, x: q.x, y: q.y, vx: (v ? 1 : -1) * 90, vy: -220, rot: 0, vr: (v ? 1 : -1) * 7, dir: v ? -1 : 1, t: 0 };
+  const winner = v === shot.p ? 1 - shot.p : shot.p;
+  const before = world;
+  const crater = { x:e.x, y:e.y, r:R().trou * 1.6 };
+  before.craters.push(crater); renderCity(before); before.craters.pop();
+  setTimeout(()=>{
+    tumble = null;
+    world = applyResult(before, shot, res);
+    renderCity(world);
+    if(world.over){
+      banner = { text: `${PLAYERS[winner].ini} gagne la partie`, sub: `${world.scores[0]} – ${world.scores[1]}`, color: css(PLAYERS[winner].color), t: 0, d: 6 };
+    }else{
+      banner = { text: v === shot.p ? `${PLAYERS[v].ini} s'est eu tout seul` : `Touché ! Point pour ${PLAYERS[winner].ini}`,
+                 sub: `manche ${world.round + 1} · ${world.wind ? "vent " + Math.abs(world.wind) + (world.wind > 0 ? " →" : " ←") : "pas de vent"}`, t: 0, d: 2.6 };
+    }
+    finish(done);
+  }, 1500);
+}
+function finish(done){
+  busy = false;
+  if(done) done();
+  refreshUI();
+}
+
+function lancer(){
+  if(busy || world.over) return;
+  const p = turn();
+  const a = clamp(Math.round(Number($("#angle").value)), 0, 90);
+  const v = clamp(Math.round(Number($("#vitesse").value)), 1, 200);
+  if(!isFinite(a) || !isFinite(v)) return;
+  const shot = { p, a, v, o: game.objets[p], at: Date.now() };
+  const res = simulate(world, shot);
+  game.shots.push(shot); save();
+  play(shot, res, ()=>{ if(S.tpt && !world.over) showVeil(); });
+}
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+
+// voile du tour par tour : l'autre arrive, voit le coup qu'on vient de jouer
+function showVeil(){
+  const p = turn(), last = game.shots[game.shots.length - 1];
+  $("#veilWho").textContent = `Au tour de ${PLAYERS[p].ini}`;
+  $("#veilWho").style.color = css(PLAYERS[p].color);
+  $("#veilGo").textContent = last ? `C'est ${PLAYERS[p].ini} — voir le coup de ${PLAYERS[last.p].ini}` : `C'est ${PLAYERS[p].ini}`;
+  $("#veil").classList.add("on"); refreshUI();
+}
+$("#veilGo").addEventListener("click", ()=>{
+  $("#veil").classList.remove("on");
+  const n = game.shots.length;
+  if(!n){ refreshUI(); return; }
+  world = worldAfter(n - 1); renderCity(world);
+  const shot = game.shots[n - 1];
+  play(shot, simulate(world, shot), null);
+});
+
+// =====================================================================
+//  Interface
+// =====================================================================
+function buildObjets(){
+  const box = $("#objets"); box.innerHTML = "";
+  for(const k in OBJETS){
+    const b = document.createElement("button"); b.type = "button"; b.dataset.o = k; b.title = OBJETS[k];
+    const c = document.createElement("canvas"); c.width = c.height = 60;
+    const x = c.getContext("2d"); x.scale(2, 2); drawObjet(x, k, 15, 15, k === "orval" ? 0.35 : 0, 1.15);
+    b.appendChild(c); box.appendChild(b);
+    b.addEventListener("click", ()=>{ game.objets[turn()] = k; save(); refreshUI(); });
+  }
+}
+function refreshUI(){
+  const p = turn(), col = css(PLAYERS[p].color), veil = $("#veil").classList.contains("on");
+  $("#invite").textContent = world.over ? "" : PLAYERS[p].ini + ">";
+  $("#coup").style.setProperty("--pcolor", col);
+  $("#invite").style.color = col;
+  for(const id of ["#angle", "#vitesse"]) $(id).style.color = col;
+  document.querySelectorAll(".objets button").forEach(b => b.classList.toggle("on", b.dataset.o === game.objets[p]));
+  const lock = busy || veil;
+  $("#angle").disabled = $("#vitesse").disabled = lock || world.over;
+  if(world.over){
+    $("#lancer").textContent = "Revanche"; $("#lancer").disabled = busy;
+    $("#statut").textContent = `${PLAYERS[world.winner].ini} gagne ${world.scores[world.winner]} à ${world.scores[1 - world.winner]}.`;
+  }else{
+    $("#lancer").textContent = "Lancer"; $("#lancer").disabled = lock;
+    $("#statut").textContent = busy ? "" : veil ? "" : `À ${PLAYERS[p].ini} de lancer ${OBJETS_ART[game.objets[p]]}.`;
+  }
+  $("#annuler").disabled = busy || !game.shots.length;
+  if(!busy && !veil && !world.over){
+    const ls = lastShotOf(p);
+    $("#angle").value = ls ? ls.a : 45; $("#vitesse").value = ls ? ls.v : 60;
+  }
+}
+function renderEtat(){
+  const lines = [`graine ${game.seed} · règles ${RULE_KEYS.map(k => k + "=" + game.regles[k]).join(" ")}`];
+  game.shots.forEach((s, i) => lines.push(`${String(i + 1).padStart(2)}. ${PLAYERS[s.p].ini.padEnd(2)}> ${s.a} ${s.v} ${s.o}`));
+  if(!game.shots.length) lines.push("(aucun coup)");
+  $("#etat").textContent = lines.join("\n");
+}
+
+$("#lancer").addEventListener("click", ()=>{
+  if(world.over){ game = newGame(); save(); world = worldAfter(0); renderCity(world); banner = null; refreshUI(); return; }
+  lancer();
+});
+for(const id of ["#angle", "#vitesse"]) $(id).addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); lancer(); } });
+$("#nouvelle").addEventListener("click", ()=>{ game = newGame(); save(); world = worldAfter(0); renderCity(world); banner = null; tumble = null; anim = null; busy = false; $("#veil").classList.remove("on"); refreshUI(); });
+$("#annuler").addEventListener("click", ()=>{ if(busy) return; game.shots.pop(); save(); world = worldAfter(game.shots.length); renderCity(world); banner = null; $("#veil").classList.remove("on"); refreshUI(); });
+
+// panneau du banc
+document.querySelectorAll("#banc [data-k]").forEach(el => {
+  const k = el.dataset.k;
+  if(el.type === "checkbox") el.checked = !!S[k]; else el.value = S[k];
+  const show = ()=>{ const v = document.querySelector(`[data-v="${k}"]`); if(v) v.textContent = S[k]; };
+  show();
+  el.addEventListener(el.type === "range" ? "input" : "change", ()=>{
+    S[k] = el.type === "checkbox" ? (el.checked ? 1 : 0) : el.type === "range" ? Number(el.value) : el.value;
+    show(); history.replaceState(null, "", settingsUrl());
+    if(RULE_KEYS.includes(k)){ game = newGame(game.seed); save(); world = worldAfter(0); renderCity(world); banner = null; }
+    if(k === "tpt" && !S.tpt) $("#veil").classList.remove("on");
+    refreshUI();
+  });
+});
+function settingsUrl(){
+  const q = new URLSearchParams(); for(const k in DEF) q.set(k, S[k]);
+  return location.pathname + "?" + q.toString();
+}
+$("#copier").addEventListener("click", async ()=>{
+  const url = location.origin + settingsUrl(), b = $("#copier");
+  try{ await navigator.clipboard.writeText(url); b.textContent = "Lien copié"; }
+  catch(e){ prompt("Lien des réglages :", url); }
+  setTimeout(()=> b.textContent = "Copier le lien des réglages", 1600);
+});
+
+// sons (synthétisés, sans fichier)
+let AC = null;
+function sound(kind){
+  if(!S.son) return;
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const t = AC.currentTime, out = AC.createGain(); out.gain.value = 0.18; out.connect(AC.destination);
+    if(kind === "lancer" || kind === "rate"){
+      const len = kind === "lancer" ? 0.35 : 0.25, buf = AC.createBuffer(1, AC.sampleRate * len, AC.sampleRate), d = buf.getChannelData(0);
+      for(let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / d.length);
+      const src = AC.createBufferSource(); src.buffer = buf;
+      const f = AC.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 1.2;
+      f.frequency.setValueAtTime(kind === "lancer" ? 500 : 900, t); f.frequency.exponentialRampToValueAtTime(kind === "lancer" ? 1800 : 300, t + len);
+      src.connect(f); f.connect(out); src.start(t);
+    }else{
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.3);
+      g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.4);
+      if(kind === "verre") for(const fr of [2400, 3100, 3900]){
+        const o2 = AC.createOscillator(), g2 = AC.createGain(); o2.type = "triangle"; o2.frequency.value = fr + Math.random() * 300;
+        g2.gain.setValueAtTime(0.25, t + 0.01); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        o2.connect(g2); g2.connect(out); o2.start(t); o2.stop(t + 0.3);
+      }
+    }
+  }catch(e){}
+}
+
+// départ
+sizeCanvas(); renderCity(world); buildObjets(); renderEtat(); refreshUI();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ()=>{ renderCity(world); buildObjets(); refreshUI(); });
+window.addEventListener("resize", ()=>{ const d = Math.min(2, window.devicePixelRatio || 1); if(d !== DPR){ sizeCanvas(); renderCity(world); } });
+if(document.fonts) document.fonts.ready.then(()=> refreshUI());
+if(S.tpt && game.shots.length && !world.over) showVeil();
+requestAnimationFrame(frame);
+</script>
+</html>
