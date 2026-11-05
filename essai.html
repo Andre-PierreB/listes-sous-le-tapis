@@ -1234,7 +1234,8 @@
     l'interrupteur, « + Ajouter un écran de chat » en dessous. Écran de chat : la saisie est un vrai champ visible (sélection à
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
-  - 10.59 : écran de chat à la largeur d'une liste moins 1,5rem, même marge
+  - 10.59 : la saisie (textarea) s'agrandit avec le texte, 8 lignes au plus ;
+    sur plusieurs lignes, curseur normal (classe multi). écran de chat à la largeur d'une liste moins 1,5rem, même marge
     en haut ; il prend la hauteur de sa rangée (3 lignes au moins) : plus de
     messages visibles quand une liste voisine est haute.
 -->
@@ -2397,7 +2398,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-m{ font-size:0.7rem; color:var(--ink-faint); white-space:nowrap; }
 .chat-pr{ font-weight:700; }
 .chat-edit{ font:inherit; color:inherit; flex:1; min-width:0; background:color-mix(in srgb, currentColor 7%, transparent); border:0; border-radius:3px; padding:0 0.2rem; outline:none; text-align:inherit; }
-.chat-in{ display:flex; justify-content:flex-end; align-items:center; min-height:1.45em; border-top:1px dashed rgba(42,39,37,0.15); margin-top:0.35rem; padding-top:0.3rem; color:var(--chat-me); overflow-wrap:anywhere; }
+.chat-in{ display:flex; justify-content:flex-end; align-items:flex-end; min-height:1.45em; border-top:1px dashed rgba(42,39,37,0.15); margin-top:0.35rem; padding-top:0.3rem; color:var(--chat-me); overflow-wrap:anywhere; }
 .chat-in.fixing::before{ content:"corriger> "; font-size:0.75rem; color:var(--ink-faint); margin-right:0.3rem; white-space:nowrap; }
 .chat-cur{ flex:none; display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:1px; opacity:0.35; }   /* au repos : fixe et pâle */
 .chat-screen:focus-within .chat-cur{ opacity:1; animation:chat-blink 1.05s steps(1) infinite; }   /* on écrit : il clignote */
@@ -2406,8 +2407,10 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-in.mid .chat-cur{ visibility:hidden; }
 @keyframes chat-blink{ 50%{ opacity:0; } }
 .chat-field{ flex:1 1 auto; min-width:0; appearance:none; border:0; background:none; padding:0; margin:0; outline:none;
-  font:inherit; color:inherit; text-align:right; text-shadow:inherit; caret-color:transparent; }   /* un vrai champ : sélection, flèches, effacer */
-.chat-in.mid .chat-field{ caret-color:currentColor; }
+  font:inherit; line-height:inherit; color:inherit; text-align:right; text-shadow:inherit; caret-color:transparent;
+  resize:none; overflow:hidden; height:1.45em; display:block; }   /* un vrai champ : sélection, flèches, effacer ; s'agrandit avec le texte (fitChatField) */
+.chat-in.mid .chat-field, .chat-in.multi .chat-field{ caret-color:currentColor; }
+.chat-in.multi .chat-cur{ visibility:hidden; }   /* texte sur plusieurs lignes : curseur normal */
 @media (pointer:coarse){ .chat-field{ font-size:16px; } }   /* pas de zoom sur iPhone */
 /* sous l'écran, posés sur le fond : poignée des listes ; « … » et initiales */
 .chat-foot{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; padding:0 0.2rem; position:relative; }
@@ -9154,7 +9157,7 @@ function buildChatCard(cat, catIdx){
   if(sharing || chatMenuOpen === cat.id) card.classList.add("chat-open");
   card.innerHTML = `<div class="chat-box"><div class="chat-hole"><div class="chat-screen">
       <div class="chat-log" role="log" aria-label="Messages"></div>
-      <div class="chat-in"><input type="text" class="chat-field" aria-label="Écrire un mot" autocomplete="off" enterkeyhint="send"><span class="chat-cur"></span></div>
+      <div class="chat-in"><textarea class="chat-field" rows="1" aria-label="Écrire un mot" autocomplete="off" enterkeyhint="send"></textarea><span class="chat-cur"></span></div>
     </div></div>
     <div class="chat-foot">
       <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
@@ -9208,8 +9211,20 @@ function buildChatCard(cat, catIdx){
   field.value = chatDraft[cat.id] || "";
   const toEnd = ()=>{ const n = field.value.length; try{ field.setSelectionRange(n, n); }catch(e){} };
   const caret = ()=>{ const n = field.value.length; inRow.classList.toggle("mid", !(field.selectionStart === n && field.selectionEnd === n)); };
-  const clearDraft = ()=>{ delete chatDraft[cat.id]; field.value = ""; caret(); };
-  field.addEventListener("input", ()=>{ chatDraft[cat.id] = field.value; caret(); });
+  // la saisie s'agrandit avec le texte (8 lignes au plus, puis elle défile)
+  const fit = ()=>{
+    field.style.height = "";
+    const line = field.clientHeight, h = field.scrollHeight;
+    field.style.height = Math.min(h, line * 8) + "px";
+    field.style.overflowY = h > line * 8 ? "auto" : "hidden";
+    inRow.classList.toggle("multi", h > line + 2);
+  };
+  const clearDraft = ()=>{ delete chatDraft[cat.id]; field.value = ""; fit(); caret(); };
+  field.addEventListener("input", ()=>{
+    if(/\n/.test(field.value)){ const p = field.selectionStart; field.value = field.value.replace(/\r?\n/g, " "); try{ field.setSelectionRange(p, p); }catch(e){} }   // un message = une ligne (collage)
+    chatDraft[cat.id] = field.value; fit(); caret();
+  });
+  requestAnimationFrame(()=>{ if(field.isConnected && field.value) fit(); });
   ["keyup", "click", "select", "focus"].forEach(ev => field.addEventListener(ev, caret));
   field.addEventListener("focus", ()=>{ chatFocus = cat.id; });
   // un rendu qui remplace l'écran (synchro…) garde le curseur ; un vrai clic ailleurs le rend
@@ -9218,7 +9233,7 @@ function buildChatCard(cat, catIdx){
     if(e.isComposing) return;
     if(e.key === "ArrowUp" && !field.value){   // ↑ : reprendre son dernier message pour le corriger
       const last = msgs.slice().reverse().find(m => chatMine(cat, m.base));
-      if(last){ chatFix = { catId: cat.id, idx: last.i }; field.value = chatDraft[cat.id] = last.t; toEnd(); caret(); inRow.classList.add("fixing"); }
+      if(last){ chatFix = { catId: cat.id, idx: last.i }; field.value = chatDraft[cat.id] = last.t; fit(); toEnd(); caret(); inRow.classList.add("fixing"); }
       e.preventDefault(); return;
     }
     if(e.key === "Escape"){ if(fixing || chatFix){ chatFix = null; inRow.classList.remove("fixing"); } clearDraft(); field.blur(); return; }
