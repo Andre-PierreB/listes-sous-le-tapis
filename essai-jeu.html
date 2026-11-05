@@ -27,7 +27,9 @@
     même résultat sur tous les appareils. C'est ce qui permettra de ranger
     une partie dans une liste partagée comme les messages de l'écran de chat
     (10.57) : un coup = une tâche { t:"45 60 orval", by, at }.
-  - Réglages du banc dans l'adresse (?g=…&vent=…&trou=…&decor=…
+  - Couleurs du décor : propositions au choix (PALETTES, réglage pal),
+    appliquées en mode clair par applyPalette ; le sombre garde les siennes.
+  - Réglages du banc dans l'adresse (?g=…&vent=…&trou=…&decor=…&pal=…
     &trace=…&son=…&tpt=…) ; bouton « Copier le lien des réglages ».
     Changer une règle recommence la partie (même graine).
   - Faisans : commun pour AP, doré pour H (PLUMES). Fin de partie : cri
@@ -248,6 +250,15 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
           <option value="plats">Toits plats</option>
         </select>
       </div>
+      <div class="reg"><div class="lab">Couleurs</div>
+        <select data-k="pal">
+          <option value="citron">Ciel citron, façades mauve et sauge</option>
+          <option value="sauge">Ciel frais, façades mauve et sauge</option>
+          <option value="soir">Soir doux (crème → mauve)</option>
+          <option value="blocs">Blocs blancs de l'appli</option>
+          <option value="pastels">Pastels (version précédente)</option>
+        </select>
+      </div>
       <label class="sw"><input type="checkbox" data-k="trace"> Trace du coup précédent</label>
       <label class="sw"><input type="checkbox" data-k="son"> Sons</label>
       <label class="sw"><input type="checkbox" data-k="tpt"> Tour par tour (passer l'écran)</label>
@@ -269,7 +280,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 //  Réglages (adresse) et constantes
 // =====================================================================
 const W = 960, H = 540;
-const DEF = { g:360, vent:10, trou:22, decor:"mixte", trace:1, son:1, tpt:1 };
+const DEF = { g:360, vent:10, trou:22, decor:"mixte", pal:"citron", trace:1, son:1, tpt:1 };
 const RULE_KEYS = ["g","vent","trou","decor"];
 const S = (()=>{
   const q = new URLSearchParams(location.search), s = { ...DEF };
@@ -281,6 +292,21 @@ const OBJETS = { stylo:"Stylo plume", orval:"Bouteille d'Orval", coeur:"Cœur" }
 const OBJ_SIZE = { stylo: 1, orval: 1, coeur: 1 };   // taille en vol
 const OBJETS_ART = { stylo:"un stylo plume", orval:"une Orval", coeur:"un cœur" };
 const DANCE_BEAT = 0.32, DANCE_BEATS = 14;   // danse du vainqueur : 14 temps, ailes inversées à chaque temps
+// propositions de couleurs du décor (mode clair ; le mode sombre garde les siennes)
+const PALETTES = {
+  citron:  { sky:["#FCFBE9","#F1EED3"], facades:["#E6DFEE","#DCE6D2","#F3F5F3","#E2E8EC","#EBE5F1"], lit:"rgba(230,214,60,0.38)", off:"rgba(42,39,37,0.06)" },
+  sauge:   { sky:["#F7FAF9","#E6EAEA"], facades:["#E3DBEB","#D8E2CF","#EEF0EC","#DFE5E9","#E8E1EE"], lit:"rgba(230,214,60,0.30)", off:"rgba(42,39,37,0.06)" },
+  soir:    { sky:["#F7F2E2","#E9E0EF"], facades:["#D7CBE5","#C8D8B8","#DBE1E5","#E5E0D6","#D2C6DF"], lit:"rgba(240,220,90,0.55)", off:"rgba(42,39,37,0.08)" },
+  blocs:   { sky:["#F7FAF9","#E6EAEA"], facades:["#FFFFFF","#FBF9F3","#F5F7F6","#FDFDFA","#F6F3ED"], lit:"rgba(230,214,60,0.20)", off:"rgba(42,39,37,0.05)" },
+  pastels: { sky:["#F7FAF9","#E6EAEA"], facades:["#EEE3F9","#FCFBE9","#E9F2DC","#F6F0FC","#F7F3D4"], lit:"rgba(230,214,60,0.20)", off:"rgba(42,39,37,0.05)" },
+};
+const DARK = matchMedia("(prefers-color-scheme: dark)");
+function applyPalette(){
+  const st = document.documentElement.style, P = PALETTES[S.pal] || PALETTES.citron;
+  const props = { "--sky-top":P.sky[0], "--sky-bottom":P.sky[1], "--facades":P.facades.join(","), "--win-lit":P.lit, "--win-off":P.off };
+  for(const k in props) DARK.matches ? st.removeProperty(k) : st.setProperty(k, props[k]);
+}
+applyPalette();
 const STORE_KEY = "sltapis-essai-jeu";
 const DT = 1/240;                 // pas de calcul fixe : même résultat partout
 const SPEED = 6, WIND = 6;        // vitesse saisie → px/s ; vent affiché → px/s²
@@ -1039,6 +1065,7 @@ document.querySelectorAll("#banc [data-k]").forEach(el => {
     S[k] = el.type === "checkbox" ? (el.checked ? 1 : 0) : el.type === "range" ? Number(el.value) : el.value;
     show(); history.replaceState(null, "", settingsUrl());
     if(RULE_KEYS.includes(k)){ game = newGame(game.seed); save(); world = worldAfter(0); renderCity(world); banner = null; }
+    if(k === "pal"){ applyPalette(); renderCity(world, world.over ? finale : 0); }
     if(k === "tpt" && !S.tpt) $("#attente").classList.remove("on");
     refreshUI();
   });
@@ -1140,7 +1167,7 @@ function sound(kind){
 
 // départ
 sizeCanvas(); renderCity(world); buildObjets(); renderEtat(); refreshUI();
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ()=>{ renderCity(world, world.over ? finale : 0); buildObjets(); refreshUI(); });
+DARK.addEventListener("change", ()=>{ applyPalette(); renderCity(world, world.over ? finale : 0); buildObjets(); refreshUI(); });
 window.addEventListener("resize", ()=>{ const d = Math.min(2, window.devicePixelRatio || 1); if(d !== DPR){ sizeCanvas(); renderCity(world, world.over ? finale : 0); } });
 if(document.fonts) document.fonts.ready.then(()=> refreshUI());
 if(S.tpt && game.shots.length && !world.over) showAttente();
