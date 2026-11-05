@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.57 -->
+<!-- Sous le tapis — version AUTONOME 10.58 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1230,6 +1230,10 @@
     les tâches) au lieu de 78 % : plus lisible sur le papier blanc chaud.
   - 10.57 : écran de chat (voir ÉCRAN DE CHAT) : petit chat
     partagé, posé parmi les listes ; isSideList pour les exclusions.
+  - 10.58 : fenêtre « Nouvelle liste » : Annuler / Créer sur la ligne de
+    l'interrupteur, « + Ajouter un écran de chat » en dessous. Écran de chat : la saisie est un vrai champ visible (sélection à
+    la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
+    s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2390,10 +2394,16 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-edit{ font:inherit; color:inherit; flex:1; min-width:0; background:color-mix(in srgb, currentColor 7%, transparent); border:0; border-radius:3px; padding:0 0.2rem; outline:none; text-align:inherit; }
 .chat-in{ display:flex; justify-content:flex-end; align-items:center; min-height:1.45em; border-top:1px dashed rgba(42,39,37,0.15); margin-top:0.35rem; padding-top:0.3rem; color:var(--chat-me); overflow-wrap:anywhere; }
 .chat-in.fixing::before{ content:"corriger> "; font-size:0.75rem; color:var(--ink-faint); margin-right:0.3rem; white-space:nowrap; }
-.chat-cur{ flex:none; display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:2px; opacity:0.35; }   /* au repos : fixe et pâle */
+.chat-cur{ flex:none; display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:1px; opacity:0.35; }   /* au repos : fixe et pâle */
 .chat-screen:focus-within .chat-cur{ opacity:1; animation:chat-blink 1.05s steps(1) infinite; }   /* on écrit : il clignote */
+/* le gros curseur ne vaut qu'en bout de texte ; dès qu'on se place ailleurs
+   ou qu'on sélectionne, c'est le curseur normal du champ qui prend le relais */
+.chat-in.mid .chat-cur{ visibility:hidden; }
 @keyframes chat-blink{ 50%{ opacity:0; } }
-.chat-field{ position:absolute; left:0; bottom:0; opacity:0; width:1px; height:1px; border:0; padding:0; font-size:16px; pointer-events:none; }   /* 16px : pas de zoom sur iPhone */
+.chat-field{ flex:1 1 auto; min-width:0; appearance:none; border:0; background:none; padding:0; margin:0; outline:none;
+  font:inherit; color:inherit; text-align:right; text-shadow:inherit; caret-color:transparent; }   /* un vrai champ : sélection, flèches, effacer */
+.chat-in.mid .chat-field{ caret-color:currentColor; }
+@media (pointer:coarse){ .chat-field{ font-size:16px; } }   /* pas de zoom sur iPhone */
 /* sous l'écran, posés sur le fond : poignée des listes ; « … » et initiales */
 .chat-foot{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; padding:0 0.2rem; position:relative; }
 .chat-foot .cat-grip svg{ transform:rotate(90deg); }
@@ -3720,7 +3730,9 @@ body.no-list .add-category-row{
 }
 .nl-courses input:checked + .nl-switch{ background:var(--accent); }
 .nl-courses input:checked + .nl-switch::after{ transform:translateX(12px); }
-.nl-chat{ align-self:flex-start; display:inline-flex; align-items:center; gap:0.5rem; appearance:none; border:0; background:none; padding:0.15rem 0; font:inherit; font-size:0.86rem; color:var(--ink-soft); cursor:pointer; }   /* 10.57 : sous l'interrupteur, même allure */
+.nl-row{ display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem; }   /* 10.58 : l'interrupteur à gauche, Annuler / Créer à droite */
+.nl-row .edit-actions{ margin-left:auto; }
+.nl-chat{ align-self:flex-start; margin-top:0.35rem; display:inline-flex; align-items:center; gap:0.5rem; appearance:none; border:0; background:none; padding:0.15rem 0; font:inherit; font-size:0.86rem; color:var(--ink-soft); cursor:pointer; }   /* 10.57 : sous l'interrupteur, même allure */
 .nl-chat .add-btn{ pointer-events:none; }
 .nl-chat:hover{ color:var(--ink); }
 .nl-chat:hover .add-btn{ color:var(--ink); border-color:color-mix(in srgb, var(--ink-soft) 40%, var(--line)); }
@@ -3966,7 +3978,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.57</span>
+    <span class="version-tag">v10.58</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6202,12 +6214,14 @@ function renderAddCategoryRow(){
     <div class="new-list-card">
       <div class="edit-form">
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
-        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de shopping ou mémo</label>
-          <button type="button" class="nl-chat"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un écran de chat</button>` : ""}
-        <div class="edit-actions">
-          <button type="button" class="add-cancel nl-cancel">Annuler</button>
-          <button type="button" class="add-save nl-save">Créer</button>
+        <div class="nl-row">
+          ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de shopping ou mémo</label>` : ""}
+          <div class="edit-actions">
+            <button type="button" class="add-cancel nl-cancel">Annuler</button>
+            <button type="button" class="add-save nl-save">Créer</button>
+          </div>
         </div>
+        ${Store.mode === "doc" ? `<button type="button" class="nl-chat"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un écran de chat</button>` : ""}
       </div>
     </div>
   `;
@@ -9135,8 +9149,7 @@ function buildChatCard(cat, catIdx){
   if(sharing || chatMenuOpen === cat.id) card.classList.add("chat-open");
   card.innerHTML = `<div class="chat-box"><div class="chat-hole"><div class="chat-screen">
       <div class="chat-log" role="log" aria-label="Messages"></div>
-      <div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div>
-      <input type="text" class="chat-field" aria-label="Écrire un mot" autocomplete="off" enterkeyhint="send">
+      <div class="chat-in"><input type="text" class="chat-field" aria-label="Écrire un mot" autocomplete="off" enterkeyhint="send"><span class="chat-cur"></span></div>
     </div></div>
     <div class="chat-foot">
       <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
@@ -9147,7 +9160,7 @@ function buildChatCard(cat, catIdx){
         : `<div class="chat-menu-note">Écran ${escapeAttr(deName(personName(listOwnerUid(cat.id), cat.id)))}, en partage.</div>`}</div>
     </div></div>`;
   const log = card.querySelector(".chat-log"), field = card.querySelector(".chat-field"),
-        typed = card.querySelector(".chat-typed"), inRow = card.querySelector(".chat-in");
+        inRow = card.querySelector(".chat-in");
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; };
   if(!msgs.length) log.appendChild(el("div", "chat-empty", people.length > 1 ? "Un mot ?" : "Un mot ? (Inviter quelqu'un avec « … »)"));
   msgs.forEach(m=>{
@@ -9184,13 +9197,15 @@ function buildChatCard(cat, catIdx){
     log.appendChild(l);
   });
   requestAnimationFrame(()=>{ log.scrollTop = log.scrollHeight; });
-  // saisie : le texte tapé s'affiche dans l'écran, le gros curseur derrière
+  // saisie : un vrai champ, le gros curseur derrière tant qu'on écrit au bout
   const fixing = chatFix && chatFix.catId === cat.id;
   inRow.classList.toggle("fixing", !!fixing);
   field.value = chatDraft[cat.id] || "";
-  typed.textContent = field.value;
-  const clearDraft = ()=>{ delete chatDraft[cat.id]; field.value = ""; typed.textContent = ""; };
-  field.addEventListener("input", ()=>{ chatDraft[cat.id] = field.value; typed.textContent = field.value; });
+  const toEnd = ()=>{ const n = field.value.length; try{ field.setSelectionRange(n, n); }catch(e){} };
+  const caret = ()=>{ const n = field.value.length; inRow.classList.toggle("mid", !(field.selectionStart === n && field.selectionEnd === n)); };
+  const clearDraft = ()=>{ delete chatDraft[cat.id]; field.value = ""; caret(); };
+  field.addEventListener("input", ()=>{ chatDraft[cat.id] = field.value; caret(); });
+  ["keyup", "click", "select", "focus"].forEach(ev => field.addEventListener(ev, caret));
   field.addEventListener("focus", ()=>{ chatFocus = cat.id; });
   // un rendu qui remplace l'écran (synchro…) garde le curseur ; un vrai clic ailleurs le rend
   field.addEventListener("blur", ()=> setTimeout(()=>{ if(field.isConnected && document.activeElement !== field && chatFocus === cat.id) chatFocus = null; }, 0));
@@ -9198,7 +9213,7 @@ function buildChatCard(cat, catIdx){
     if(e.isComposing) return;
     if(e.key === "ArrowUp" && !field.value){   // ↑ : reprendre son dernier message pour le corriger
       const last = msgs.slice().reverse().find(m => chatMine(cat, m.base));
-      if(last){ chatFix = { catId: cat.id, idx: last.i }; field.value = chatDraft[cat.id] = last.t; typed.textContent = field.value; inRow.classList.add("fixing"); }
+      if(last){ chatFix = { catId: cat.id, idx: last.i }; field.value = chatDraft[cat.id] = last.t; toEnd(); caret(); inRow.classList.add("fixing"); }
       e.preventDefault(); return;
     }
     if(e.key === "Escape"){ if(fixing || chatFix){ chatFix = null; inRow.classList.remove("fixing"); } clearDraft(); field.blur(); return; }
@@ -9214,8 +9229,9 @@ function buildChatCard(cat, catIdx){
     chatFocus = cat.id;
     renderAll();
   });
-  if(chatFocus === cat.id && !(chatEdit && chatEdit.catId === cat.id)) requestAnimationFrame(()=>{ if(field.isConnected) field.focus({ preventScroll:true }); });
-  card.querySelector(".chat-screen").addEventListener("click", e=>{ if(!e.target.closest(".chat-edit")) field.focus({ preventScroll:true }); });
+  if(chatFocus === cat.id && !(chatEdit && chatEdit.catId === cat.id)) requestAnimationFrame(()=>{ if(field.isConnected){ field.focus({ preventScroll:true }); toEnd(); caret(); } });
+  // un clic dans l'écran (hors du champ) y met le curseur, au bout du texte
+  card.querySelector(".chat-screen").addEventListener("click", e=>{ if(e.target.closest(".chat-edit, .chat-field")) return; field.focus({ preventScroll:true }); toEnd(); caret(); });
   log.addEventListener("dblclick", e=>{
     const l = e.target.closest(".chat-l.mine"); if(!l || l.classList.contains("editing")) return;
     e.stopPropagation();
@@ -9253,6 +9269,13 @@ function buildChatCard(cat, catIdx){
   return card;
 }
 // menu « … » ouvert : un clic à côté le ferme
+// sélection à la souris dans la saisie : gros curseur ou curseur normal (un seul écouteur)
+document.addEventListener("selectionchange", ()=>{
+  const f = document.activeElement;
+  if(!f || !f.classList || !f.classList.contains("chat-field")) return;
+  const n = f.value.length;
+  f.parentElement.classList.toggle("mid", !(f.selectionStart === n && f.selectionEnd === n));
+});
 // (sans re-dessiner : le clic doit arriver intact à ce qu'il vise) ; de même,
 // un clic à côté d'un message en correction l'annule
 document.addEventListener("pointerdown", e=>{
