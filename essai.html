@@ -3893,7 +3893,8 @@ body.ios-gate-on{ overflow:hidden; }
 .chat-in{ display:flex; justify-content:flex-end; align-items:center; min-height:1.6rem; border-top:1px dashed rgba(42,39,37,0.15); margin-top:0.6rem; padding-top:0.45rem; color:var(--chat-me); }
 .chat-in.them{ justify-content:flex-start; color:var(--chat-them); }
 .chat-in.fixing::before{ content:"corriger> "; font-size:0.75rem; color:var(--ink-faint); margin-right:0.3rem; }
-.chat-cur{ display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:2px; animation:chat-blink 1.05s steps(1) infinite; }
+.chat-cur{ display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:2px; opacity:0.35; }   /* au repos : fixe et pâle */
+.chat-screen:focus-within .chat-cur{ opacity:1; animation:chat-blink 1.05s steps(1) infinite; }   /* on écrit : il clignote */
 @keyframes chat-blink{ 50%{ opacity:0; } }
 .chat-field{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
 /* sous l'écran, posés sur le fond : poignée des listes à gauche ; « … » et
@@ -11988,8 +11989,8 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 // son dernier message. Déplacer : la poignée sous l'écran, comme une liste
 // (place gardée dans ce navigateur). Menu « … » : inviter, retirer, supprimer (pas encore branchés).
 if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
-  const K = "sltapis-essai-chat-5";
-  let st = { pos:0, hiske:false, dim:30, wake:true, where:"grille", w:22, v:"centre", h:"centre", lines:3 };
+  const K = "sltapis-essai-chat-6";
+  let st = { pos:1, hiske:false, dim:34, wake:true, where:"grille", w:25, v:"bas", h:"centre", lines:2 };   // retenus au banc le 5/11
   try{ const r = new URLSearchParams(location.search).get("r"); if(r) Object.assign(st, JSON.parse(decodeURIComponent(escape(atob(r))))); }catch(e){}
   try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
   const save = () => { try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){} };
@@ -12096,14 +12097,8 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
     const opt = (k, v, l) => `<button type="button" class="pb-opt${st[k] === v ? " on" : ""}" data-k="${k}" data-v="${v}">${l}</button>`;
     const rg = (k, l, a, b) => `<label class="pb-rg">${l} <input type="range" min="${a}" max="${b}" step="1" data-r="${k}" value="${st[k]}"></label>`;
     box.innerHTML = `<div class="pb-title">Entre nous</div>`
-      + `<div class="pb-sub">Emplacement</div>` + opt("where", "grille", "Dans la grille, comme une liste") + opt("where", "bande", "Bande pleine largeur, en haut")
-      + (st.where === "grille"
-        ? rg("w", "Largeur", 14, 34) + `<div class="pb-sub">Vertical</div><div class="pb-row">` + opt("v", "haut", "Haut") + opt("v", "centre", "Centre") + opt("v", "bas", "Bas") + `</div>`
-          + `<div class="pb-sub">Horizontal</div><div class="pb-row">` + opt("h", "gauche", "Gauche") + opt("h", "centre", "Centre") + opt("h", "droite", "Droite") + `</div>`
-        : rg("lines", "Lignes visibles", 1, 8))
-      + `<div class="pb-sub">Divers</div>` + rg("dim", "Discrétion", 0, 70)
-      + `<label class="pb-sw-row"><input type="checkbox" data-k="wake"${st.wake ? " checked" : ""}> Revient au survol</label>`
       + `<label class="pb-sw-row"><input type="checkbox" data-k="hiske"${st.hiske ? " checked" : ""}> Écrire en tant que Hiske</label>`
+      + `<div class="pb-note">Corriger : double-clic sur une de ses lignes, ou ↑ dans la saisie vide.</div>`
       + `<button type="button" class="pb-link">Copier le lien des réglages</button><div class="pb-linkmsg"></div>`;
     box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", ()=>{ st[b.dataset.k] = b.dataset.v; save(); look(); paintBox(); }));
     box.querySelectorAll("input[type=checkbox]").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; save(); c.dataset.k === "hiske" ? apply() : look(); }));
