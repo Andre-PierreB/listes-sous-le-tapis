@@ -3867,6 +3867,21 @@ body.chat-tagdroit .chat-tag{ --tag-r:0deg; }
 .chat-cur{ display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:2px; animation:chat-blink 1.05s steps(1) infinite; }
 @keyframes chat-blink{ 50%{ opacity:0; } }
 .chat-field{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
+/* 2e tour : très profond, plus petit qu'une liste, sticker enfoncé = poignée, écrans LCD */
+.chat-screen{ --scr:color-mix(in srgb, var(--ink) 5%, var(--bg)); background-color:var(--scr); background-image:none; }
+body.chat-tres .chat-card{ --chat-d:0.42; }
+body.chat-tres .chat-screen{ box-shadow:inset 0 4px 10px rgba(42,39,37,var(--chat-d)), inset 0 1px 2px rgba(42,39,37,0.25), inset 0 0 0 1px rgba(42,39,37,0.08), 0 1px 0 rgba(255,255,255,0.9); }
+.chat-card.petit{ justify-self:start; width:min(100%, 22rem); }
+.chat-tag{ pointer-events:auto; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+body.chat-tagcreux .chat-tag{ background:color-mix(in srgb, var(--scr) 88%, #000); border:0; color:color-mix(in srgb, var(--btn-ink) 70%, transparent);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.7); }
+.chat-card.dragging{ z-index:50; opacity:0.85; }
+.chat-card.dragging .chat-tag{ cursor:grabbing; }
+.chat-card.lcd-gv .chat-screen{ --scr:#DCE2D2; }
+.chat-card.lcd-bl .chat-screen{ --scr:#D6E1E3; }
+.chat-card.lcd-ambre .chat-screen{ --scr:#E6E0CC; }
+.chat-card.pix .chat-screen{ background-image:repeating-linear-gradient(0deg, rgba(40,50,40,0.035) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(40,50,40,0.035) 0 1px, transparent 1px 3px); }
+.chat-card.pix .chat-l, .chat-card.pix .chat-in{ text-shadow:1px 1px 0 rgba(30,40,30,0.13); }
 </style>
 
 <div class="wrap">
@@ -11937,10 +11952,11 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 
 // ---- 10.57 : banc d'essai du mini-chat « Entre nous » (essai.html?chat) ----
 // Maquette seulement : rien n'est synchronisé, les messages tapés restent en
-// mémoire le temps de la page. Les réglages sont gardés dans ce navigateur.
+// mémoire le temps de la page. 2e tour : on déplace l'écran en tirant
+// son sticker (position gardée dans ce navigateur). Les réglages sont gardés dans ce navigateur.
 if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
-  const K = "sltapis-essai-chat-1";
-  let st = { cadre:"ecran", profond:false, sig:"cote", voix:"vert", tagdroit:false, wide:true, haut:true, hiske:false };
+  const K = "sltapis-essai-chat-2";
+  let st = { cadre:"pur", prof:"tres", sig:"prompt", voix:"lcd", ecran:"gv", pix:true, tagdroit:true, tagcreux:true, wide:false, petit:true, pos:0, hiske:false };
   try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
   const MSG = [
     { me:true,  t:"17:41", x:"j'ai augmenté le contraste des mémos" },
@@ -11948,7 +11964,7 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
     { me:false, t:"17:52", x:"bisou" },
     { me:true,  t:"17:58", x:"le faisan approuve" },
   ];
-  const VOIX = { vert:["var(--btn-ink)", "var(--logo-green-strong)"], bleu:["var(--accent)", "var(--logo-green-strong)"], encre:["var(--btn-ink)", "var(--ink)"] };
+  const VOIX = { vert:["var(--btn-ink)", "var(--logo-green-strong)"], bleu:["var(--accent)", "var(--logo-green-strong)"], encre:["var(--btn-ink)", "var(--ink)"], lcd:["#2E3B35", "#3D6B1B"], lcdbl:["#24384A", "#3F6E3A"] };
   const card = document.createElement("div");
   card.className = "chat-card";
   card.innerHTML = `<div class="chat-screen"><span class="chat-tag">Entre nous</span><div class="chat-log"></div><div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div><input class="chat-field" autocomplete="off" aria-label="Écrire un mot"></div>`;
@@ -11982,10 +11998,35 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
     paintLog();
   });
   const cats = document.getElementById("categories");
+  const others = () => [...cats.children].filter(c => c !== card);
   const place = ()=>{
-    if(card.parentElement === cats && (st.haut ? cats.firstElementChild === card : cats.lastElementChild === card)) return;
-    if(st.haut) cats.prepend(card); else cats.appendChild(card);
+    const o = others(), pos = Math.max(0, Math.min(st.pos | 0, o.length));
+    if(card.parentElement === cats && [...cats.children].indexOf(card) === pos) return;
+    if(pos < o.length) cats.insertBefore(card, o[pos]); else cats.appendChild(card);
   };
+  // le sticker sert de poignée : on glisse l'écran parmi les listes
+  const tag = card.querySelector(".chat-tag");
+  tag.addEventListener("pointerdown", e=>{
+    e.preventDefault(); e.stopPropagation();
+    tag.setPointerCapture(e.pointerId);
+    const x0 = e.clientX, y0 = e.clientY;
+    card.classList.add("dragging");
+    const move = ev => { card.style.transform = `translate(${ev.clientX - x0}px, ${ev.clientY - y0}px)`; };
+    const up = ev=>{
+      tag.removeEventListener("pointermove", move); tag.removeEventListener("pointerup", up); tag.removeEventListener("pointercancel", up);
+      card.style.transform = ""; card.classList.remove("dragging");
+      const o = others();
+      const hit = document.elementsFromPoint(ev.clientX, ev.clientY).map(n => n.closest && n.closest("#categories > *")).find(n => n && n !== card);
+      if(hit){
+        const r = hit.getBoundingClientRect(), i = o.indexOf(hit);
+        const after = ev.clientY > r.top + r.height / 2;
+        st.pos = after ? i + 1 : i;
+      }else if(ev.clientY > cats.getBoundingClientRect().bottom) st.pos = o.length;
+      apply();
+    };
+    tag.addEventListener("pointermove", move); tag.addEventListener("pointerup", up); tag.addEventListener("pointercancel", up);
+  });
+  tag.addEventListener("click", e => e.stopPropagation());
   new MutationObserver(place).observe(cats, { childList:true });
   const box = document.createElement("div");
   box.className = "papier-bench chat-bench";
@@ -11993,9 +12034,14 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   box.addEventListener("click", e => e.stopPropagation());
   const apply = ()=>{
     ["pur", "ecran", "bo"].forEach(v => document.body.classList.toggle("chat-" + v, st.cadre === v));
-    document.body.classList.toggle("chat-profond", st.profond);
+    document.body.classList.toggle("chat-profond", st.prof !== "normal");
+    document.body.classList.toggle("chat-tres", st.prof === "tres");
     document.body.classList.toggle("chat-tagdroit", st.tagdroit);
+    document.body.classList.toggle("chat-tagcreux", st.tagcreux);
     card.classList.toggle("wide", st.wide);
+    card.classList.toggle("petit", st.petit && !st.wide);
+    ["gv", "bl", "ambre"].forEach(v => card.classList.toggle("lcd-" + v, st.ecran === v));
+    card.classList.toggle("pix", st.pix);
     const v = VOIX[st.voix] || VOIX.vert;
     card.style.setProperty("--chat-me", v[0]); card.style.setProperty("--chat-them", v[1]);
     inRow.classList.toggle("them", st.hiske);
@@ -12007,10 +12053,12 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   function paint(){
     box.innerHTML = `<div class="pb-title">Entre nous</div>`
       + `<div class="pb-sub">Cadre</div>` + opt("cadre", "pur", "Pur : creusé dans le fond") + opt("cadre", "ecran", "Écran enfoncé dans une carte") + opt("cadre", "bo", "Back-office (cadre, voyant, lignes)")
-      + sw("profond", "Renfoncement plus marqué")
+      + `<div class="pb-sub">Profondeur</div>` + opt("prof", "normal", "Léger") + opt("prof", "plus", "Marqué") + opt("prof", "tres", "Très creusé")
       + `<div class="pb-sub">Initiales</div>` + opt("sig", "cote", "À côté de l'heure") + opt("sig", "dessous", "Signature dessous") + opt("sig", "prompt", "En invite, façon C:\\")
-      + `<div class="pb-sub">Voix</div>` + opt("voix", "vert", "Ardoise / vert du faisan") + opt("voix", "bleu", "Bleu-vert / vert du faisan") + opt("voix", "encre", "Ardoise / encre")
-      + `<div class="pb-sub">Divers</div>` + sw("tagdroit", "Sticker droit (pas penché)") + sw("wide", "Pleine largeur") + sw("haut", "En haut des listes") + sw("hiske", "Écrire en tant que Hiske");
+      + `<div class="pb-sub">Voix</div>` + opt("voix", "vert", "Ardoise / vert du faisan") + opt("voix", "bleu", "Bleu-vert / vert du faisan") + opt("voix", "encre", "Ardoise / encre") + opt("voix", "lcd", "LCD : encre sombre / vert profond") + opt("voix", "lcdbl", "LCD : bleu nuit / vert sapin")
+      + `<div class="pb-sub">Écran</div>` + opt("ecran", "fond", "Fond de l'appli") + opt("ecran", "gv", "LCD gris-vert (calculatrice)") + opt("ecran", "bl", "LCD bleuté") + opt("ecran", "ambre", "LCD crème")
+      + sw("pix", "Effet LCD : trame + ombre du texte")
+      + `<div class="pb-sub">Divers</div>` + sw("tagdroit", "Sticker droit (pas penché)") + sw("tagcreux", "Sticker enfoncé") + sw("petit", "Plus petit qu'une liste") + sw("wide", "Pleine largeur") + sw("hiske", "Écrire en tant que Hiske");
     box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", ()=>{ st[b.dataset.k] = b.dataset.v; apply(); }));
     box.querySelectorAll("input").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; apply(); }));
   }
