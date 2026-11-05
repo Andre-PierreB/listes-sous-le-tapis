@@ -2363,7 +2363,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   --chat-rim:2px; --chat-bev:6px; --chat-d:0.42; --chat-pix:0.017; --chat-sh:0.14; --chat-dim:0.34;
   --chat-scr:color-mix(in srgb, var(--ink) 5%, var(--bg));
 }
-.chat-box{ width:calc(100% - 1.5rem); padding-top:0.75rem; display:flex; flex-direction:column; opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
+.chat-box{ width:calc(100% - 1.5rem); padding-top:calc(0.35rem + 22px);   /* autant d'air au-dessus que sous l'écran (marge + poignée) */ display:flex; flex-direction:column; opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
 .chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
 .chat-card.dragging-card > *{ visibility:hidden; }
