@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.58 -->
+<!-- Sous le tapis — version AUTONOME 10.59 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1234,6 +1234,9 @@
     l'interrupteur, « + Ajouter un écran de chat » en dessous. Écran de chat : la saisie est un vrai champ visible (sélection à
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
+  - 10.59 : écran de chat à la largeur d'une liste moins 1,5rem, même marge
+    en haut ; il prend la hauteur de sa rangée (3 lignes au moins) : plus de
+    messages visibles quand une liste voisine est haute.
 -->
 <title>Sous le tapis</title>
 <style>
@@ -2355,19 +2358,19 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    Réglages choisis au banc d'essai le 5/11/2026. */
 .chat-card{
   position:relative; min-width:0; border-radius:14px;
-  display:flex; align-items:flex-end; justify-content:center;   /* en bas, au milieu de la place d'une liste */
+  display:flex; align-items:stretch; justify-content:center;   /* 10.59 : occupe la place d'une liste, un peu en retrait */
   --chat-rim:2px; --chat-bev:6px; --chat-d:0.42; --chat-pix:0.017; --chat-sh:0.14; --chat-dim:0.34;
   --chat-scr:color-mix(in srgb, var(--ink) 5%, var(--bg));
 }
-.chat-box{ width:min(100%, 25rem); opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
+.chat-box{ width:calc(100% - 1.5rem); padding-top:0.75rem; display:flex; flex-direction:column; opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
 .chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
 .chat-card.dragging-card > *{ visibility:hidden; }
-.chat-hole{ padding:var(--chat-rim); border-radius:calc(16px + var(--chat-rim));
+.chat-hole{ flex:1 1 auto; display:flex; flex-direction:column; padding:var(--chat-rim); border-radius:calc(16px + var(--chat-rim));
   background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--bg)) 0%, color-mix(in srgb, var(--ink) 6%, var(--bg)) 35%, var(--bg) 60%, var(--chat-lip) 100%);
   box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px var(--chat-lip); }
 .chat-screen{
-  position:relative; border-radius:16px; padding:0.65rem 1rem 0.5rem;   /* fin : peu d'air dessus et dessous */
+  position:relative; flex:1 1 auto; display:flex; flex-direction:column; border-radius:16px; padding:0.65rem 1rem 0.5rem;   /* fin : peu d'air dessus et dessous */
   background-color:var(--chat-scr);
   background-image:repeating-linear-gradient(0deg, rgba(40,50,40,var(--chat-pix)) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(40,50,40,var(--chat-pix)) 0 1px, transparent 1px 3px);
   box-shadow:
@@ -2379,8 +2382,10 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.9rem; line-height:1.45;
   cursor:text;
 }
-.chat-log{ max-height:calc(3 * 1.45em); overflow-y:auto;   /* 3 lignes visibles, le reste défile (molette, doigt) */ scrollbar-width:none; }
+.chat-log{ flex:1 1 0; min-height:calc(3 * 1.45em); overflow-y:auto;   /* 10.59 : 3 lignes au moins, sinon la hauteur de la rangée (les listes voisines) ; le reste défile */ scrollbar-width:none; }
 .chat-log::-webkit-scrollbar{ display:none; }
+.chat-log{ display:flex; flex-direction:column; }
+.chat-log > :first-child{ margin-top:auto; }   /* peu de messages : posés en bas, contre la saisie */
 .chat-empty{ color:var(--ink-faint); font-size:0.8rem; }
 .chat-l, .chat-in{ text-shadow:1px 1px 0 rgba(30,40,30,var(--chat-sh)); }
 .chat-l{ margin:0.12rem 0; overflow-wrap:anywhere; border-radius:3px; }
@@ -3978,7 +3983,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.58</span>
+    <span class="version-tag">v10.59</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
