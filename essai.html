@@ -3872,13 +3872,26 @@ body.chat-tagdroit .chat-tag{ --tag-r:0deg; }
 /* 2e tour : très profond, plus petit qu'une liste, sticker enfoncé = poignée, écrans LCD */
 .chat-screen{ --scr:color-mix(in srgb, var(--ink) 5%, var(--bg)); background-color:var(--scr); background-image:none; }
 body.chat-tres .chat-card{ --chat-d:0.42; }
-body.chat-tres .chat-screen{ border-radius:16px; box-shadow:inset 0 6px 12px -2px rgba(42,39,37,var(--chat-d)), inset 0 2px 4px rgba(42,39,37,0.16), inset 0 -3px 5px -1px rgba(255,255,255,0.85), inset 3px 0 6px -3px rgba(42,39,37,0.12), inset -3px 0 6px -3px rgba(42,39,37,0.12), 0 1px 1px rgba(255,255,255,0.9); }   /* 3e tour : paroi arrondie (ombre douce en haut, reflet clair en bas) */
+body.chat-tres .chat-screen{ border-radius:18px;
+  box-shadow:
+    inset 0 calc(var(--bev, 8px) * 1.1) calc(var(--bev, 8px) * 1.6) calc(var(--bev, 8px) * -0.6) rgba(42,39,37,var(--chat-d)),
+    inset 0 2px 3px rgba(42,39,37,0.18),
+    inset calc(var(--bev, 8px) * 0.9) 0 calc(var(--bev, 8px) * 1.3) calc(var(--bev, 8px) * -0.7) rgba(42,39,37,0.16),
+    inset calc(var(--bev, 8px) * -0.9) 0 calc(var(--bev, 8px) * 1.3) calc(var(--bev, 8px) * -0.7) rgba(42,39,37,0.10),
+    inset 0 calc(var(--bev, 8px) * -0.9) calc(var(--bev, 8px) * 1.2) calc(var(--bev, 8px) * -0.6) rgba(255,255,255,0.95),
+    0 0 0 1px rgba(42,39,37,0.05), 0 1px 0 1px rgba(255,255,255,0.95), 0 -1px 0 rgba(42,39,37,0.08); }   /* 4e tour : paroi épaisse et arrondie (--bev) : ombre en haut et sur les flancs, reflet en bas, lèvre claire autour */
 .chat-card.petit{ justify-self:start; width:min(100%, 22rem); }
-.chat-tag{ pointer-events:auto; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+.chat-tag{ pointer-events:none; user-select:none; -webkit-user-select:none; }
+.chat-grip{ position:absolute; top:0.55rem; left:0.7rem; padding:1px 6px 2px; border-radius:4px; font-size:0.8rem; letter-spacing:-2px; line-height:1.2;
+  color:color-mix(in srgb, var(--btn-ink) 65%, transparent); background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.7);
+  box-shadow:0 1px 2px rgba(30,40,45,0.14), 0 3px 6px -2px rgba(30,40,45,0.12);
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; transition:box-shadow .15s ease; }
+.chat-grip:hover{ box-shadow:0 2px 3px rgba(30,40,45,0.16), 0 5px 10px -3px rgba(30,40,45,0.16); }
+.chat-card.dragging .chat-grip{ cursor:grabbing; }
+.chat-card.droite{ justify-self:end; }
 /* 3e tour : le sticker est collé sur l'écran : un peu transparent, petite ombre portée ; c'est la poignée */
 .chat-tag{ background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.7); color:color-mix(in srgb, var(--btn-ink) 70%, transparent);
   box-shadow:0 1px 2px rgba(30,40,45,0.14), 0 3px 6px -2px rgba(30,40,45,0.12); }
-.chat-tag:hover{ box-shadow:0 2px 3px rgba(30,40,45,0.16), 0 5px 10px -3px rgba(30,40,45,0.16); }
 .chat-card.dragging{ z-index:50; opacity:0.85; }
 .chat-card.dragging .chat-tag{ cursor:grabbing; }
 .chat-card.lcd-gv .chat-screen{ --scr:#E4E9DC; }
@@ -11960,19 +11973,20 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 // son sticker (position gardée dans ce navigateur). Les réglages sont gardés dans ce navigateur.
 if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   const K = "sltapis-essai-chat-3";
-  let st = { cadre:"pur", prof:"tres", sig:"prompt", voix:"bleu", ecran:"bl", pix:true, pixa:25, sha:7, tagdroit:true, wide:false, petit:true, pos:0, hiske:false };
+  let st = { cadre:"pur", prof:"tres", sig:"prompt", voix:"bleufaisan", ecran:"bl", pix:true, pixa:25, sha:7, bev:8, tagdroit:true, wide:false, petit:true, droite:true, pos:0, hiske:false };
   try{ const old = JSON.parse(localStorage.getItem("sltapis-essai-chat-2") || "null"); if(old && old.pos != null) st.pos = old.pos; }catch(e){}
   try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
+  if(st.bev == null) st.bev = 8; if(st.droite == null) st.droite = true; if(st.voix === "bleu" || st.voix === "bleufonce") st.voix = "bleufaisan";
   const MSG = [
     { me:true,  t:"17:41", x:"j'ai augmenté le contraste des mémos" },
     { me:false, t:"17:52", x:"beaucoup mieux, merci" },
     { me:false, t:"17:52", x:"bisou" },
     { me:true,  t:"17:58", x:"le faisan approuve" },
   ];
-  const VOIX = { vert:["var(--btn-ink)", "var(--logo-green-strong)"], bleu:["var(--accent)", "var(--logo-green-strong)"], encre:["var(--btn-ink)", "var(--ink)"], bleufonce:["#2F6F7C", "#4C7D1F"], lcd:["#2E3B35", "#3D6B1B"], lcdbl:["#24384A", "#3F6E3A"] };
+  const VOIX = { vert:["var(--btn-ink)", "var(--logo-green-strong)"], bleu:["var(--accent)", "var(--logo-green-strong)"], encre:["var(--btn-ink)", "var(--ink)"], bleufonce:["#2F6F7C", "#4C7D1F"], bleufaisan:["#2F6F7C", "var(--logo-green-strong)"], lcd:["#2E3B35", "#3D6B1B"], lcdbl:["#24384A", "#3F6E3A"] };
   const card = document.createElement("div");
   card.className = "chat-card";
-  card.innerHTML = `<div class="chat-screen"><span class="chat-tag">Entre nous</span><div class="chat-log"></div><div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div><input class="chat-field" autocomplete="off" aria-label="Écrire un mot"></div>`;
+  card.innerHTML = `<div class="chat-screen"><span class="chat-grip" title="Glisser pour déplacer">&#8942;&#8942;</span><span class="chat-tag">Entre nous</span><div class="chat-log"></div><div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div><input class="chat-field" autocomplete="off" aria-label="Écrire un mot"></div>`;
   const log = card.querySelector(".chat-log"), field = card.querySelector(".chat-field"), typed = card.querySelector(".chat-typed"), inRow = card.querySelector(".chat-in");
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; };
   function paintLog(){
@@ -12010,7 +12024,7 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
     if(pos < o.length) cats.insertBefore(card, o[pos]); else cats.appendChild(card);
   };
   // le sticker sert de poignée : on glisse l'écran parmi les listes
-  const tag = card.querySelector(".chat-tag");
+  const tag = card.querySelector(".chat-grip");
   tag.addEventListener("pointerdown", e=>{
     e.preventDefault(); e.stopPropagation();
     tag.setPointerCapture(e.pointerId);
@@ -12045,6 +12059,8 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
     card.style.setProperty("--pix-a", (st.pixa / 1000).toFixed(3)); card.style.setProperty("--sh-a", (st.sha / 100).toFixed(2));
     card.classList.toggle("wide", st.wide);
     card.classList.toggle("petit", st.petit && !st.wide);
+    card.classList.toggle("droite", st.droite && st.petit && !st.wide);
+    card.style.setProperty("--bev", st.bev + "px");
     ["gv", "bl", "ambre"].forEach(v => card.classList.toggle("lcd-" + v, st.ecran === v));
     card.classList.toggle("pix", st.pix);
     const v = VOIX[st.voix] || VOIX.vert;
@@ -12059,15 +12075,16 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
     box.innerHTML = `<div class="pb-title">Entre nous</div>`
       + `<div class="pb-sub">Cadre</div>` + opt("cadre", "pur", "Pur : creusé dans le fond") + opt("cadre", "ecran", "Écran enfoncé dans une carte") + opt("cadre", "bo", "Back-office (cadre, voyant, lignes)")
       + `<div class="pb-sub">Profondeur</div>` + opt("prof", "normal", "Léger") + opt("prof", "plus", "Marqué") + opt("prof", "tres", "Très creusé")
+      + (st.prof === "tres" ? `<label class="pb-rg">Épaisseur du bord <input type="range" min="0" max="18" step="1" data-r="bev" value="${st.bev}"></label>` : "")
       + `<div class="pb-sub">Initiales</div>` + opt("sig", "cote", "À côté de l'heure") + opt("sig", "dessous", "Signature dessous") + opt("sig", "prompt", "En invite, façon C:\\")
-      + `<div class="pb-sub">Voix</div>` + opt("voix", "vert", "Ardoise / vert du faisan") + opt("voix", "bleu", "Bleu-vert / vert du faisan") + opt("voix", "bleufonce", "Bleu-vert / vert, plus foncés (lisibilité)") + opt("voix", "encre", "Ardoise / encre") + opt("voix", "lcd", "LCD : encre sombre / vert profond") + opt("voix", "lcdbl", "LCD : bleu nuit / vert sapin")
+      + `<div class="pb-sub">Voix</div>` + opt("voix", "vert", "Ardoise / vert du faisan") + opt("voix", "bleu", "Bleu-vert / vert du faisan") + opt("voix", "bleufonce", "Bleu-vert / vert, plus foncés (lisibilité)") + opt("voix", "bleufaisan", "Bleu-vert foncé / vert du faisan") + opt("voix", "encre", "Ardoise / encre") + opt("voix", "lcd", "LCD : encre sombre / vert profond") + opt("voix", "lcdbl", "LCD : bleu nuit / vert sapin")
       + `<div class="pb-sub">Écran</div>` + opt("ecran", "fond", "Fond de l'appli") + opt("ecran", "gv", "LCD gris-vert (calculatrice)") + opt("ecran", "bl", "LCD bleuté") + opt("ecran", "ambre", "LCD crème")
       + sw("pix", "Effet LCD : trame + ombre du texte")
       + (st.pix ? `<label class="pb-rg">Trame <input type="range" min="0" max="60" step="1" data-r="pixa" value="${st.pixa}"></label><label class="pb-rg">Ombre du texte <input type="range" min="0" max="20" step="1" data-r="sha" value="${st.sha}"></label>` : "")
-      + `<div class="pb-sub">Divers</div>` + sw("tagdroit", "Sticker droit (pas penché)") + sw("petit", "Plus petit qu'une liste") + sw("wide", "Pleine largeur") + sw("hiske", "Écrire en tant que Hiske");
+      + `<div class="pb-sub">Divers</div>` + sw("tagdroit", "Sticker droit (pas penché)") + sw("petit", "Plus petit qu'une liste") + sw("droite", "Aligné à droite") + sw("wide", "Pleine largeur") + sw("hiske", "Écrire en tant que Hiske");
     box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", ()=>{ st[b.dataset.k] = b.dataset.v; apply(); }));
     box.querySelectorAll("input[type=checkbox]").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; apply(); }));
-    box.querySelectorAll("input[type=range]").forEach(r => r.addEventListener("input", ()=>{ st[r.dataset.r] = +r.value; card.style.setProperty("--pix-a", (st.pixa / 1000).toFixed(3)); card.style.setProperty("--sh-a", (st.sha / 100).toFixed(2)); try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){} }));
+    box.querySelectorAll("input[type=range]").forEach(r => r.addEventListener("input", ()=>{ st[r.dataset.r] = +r.value; card.style.setProperty("--pix-a", (st.pixa / 1000).toFixed(3)); card.style.setProperty("--sh-a", (st.sha / 100).toFixed(2)); card.style.setProperty("--bev", st.bev + "px"); try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){} }));
   }
   apply();
 })();
