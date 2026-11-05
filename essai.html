@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.59 -->
+<!-- Sous le tapis — version AUTONOME 10.60 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1234,6 +1234,10 @@
     l'interrupteur, « + Ajouter un écran de chat » en dessous. Écran de chat : la saisie est un vrai champ visible (sélection à
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
+  - 10.60 : écran de chat : message non lu (d'un autre, pas encore vu sur cet
+    appareil, CHAT_SEEN_KEY) → l'écran sort de sa discrétion, rétroéclairage
+    vert qui respire (--chat-glow), ligne « --- nouveau --- » ; lu dès qu'on
+    passe dessus, le touche ou y écrit.
   - 10.59 : la saisie (textarea) s'agrandit avec le texte, 8 lignes au plus ;
     sur plusieurs lignes, curseur normal (classe multi). écran de chat à la largeur d'une liste moins 1,5rem, même marge
     en haut ; il prend la hauteur de sa rangée (3 lignes au moins) : plus de
@@ -1274,7 +1278,7 @@
   --gloss:rgba(255,255,255,0);
   --memo-a:#FCFBF7; --memo-b:#FCFBF7; --memo-c:#FCFBF7;
   --memo-line:rgba(0,0,0,0);
-  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong); --chat-lip:#FFFFFF;   /* 10.57 : écran de chat */
+  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong); --chat-lip:#FFFFFF; --chat-glow:#C8F0A0;   /* 10.57 : écran de chat ; 10.60 : rétroéclairage */
   /* 10.19 : vert du logo (le faisan) pour le titre et la plume connectée ;
      --logo-green-strong au survol du titre */
   --logo-green:#7DB536;   /* un cran sous le vert du logo #8DC63F, trop pâle pour un petit titre */
@@ -1333,7 +1337,7 @@
     --plume-off:var(--ink-faint);
     --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
     --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
-    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07);   /* 10.57 */
+    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07); --chat-glow:#3E6B2A;   /* 10.57 ; 10.60 */
     --memo-line:rgba(0,0,0,0);
     --logo-green:#A9D65A;
     --logo-green-strong:#C7E58A;
@@ -1377,7 +1381,7 @@
   --plume-off:var(--ink-faint);
   --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
   --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
-    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07);   /* 10.57 */
+    --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07); --chat-glow:#3E6B2A;   /* 10.57 ; 10.60 */
   --memo-line:rgba(0,0,0,0);
   --logo-green:#A9D65A;
   --logo-green-strong:#C7E58A;
@@ -2366,6 +2370,14 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-box{ width:calc(100% - 1.5rem); padding-top:calc(0.35rem + 22px);   /* autant d'air au-dessus que sous l'écran (marge + poignée) */ display:flex; flex-direction:column; opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
 .chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
 @media (max-width:720px){ .chat-box{ width:100%; } }   /* une colonne (téléphone) : la largeur d'une liste */
+/* 10.60 : message non lu (d'un autre, pas encore vu sur cet appareil) :
+   l'écran sort de sa discrétion et s'éclaire par derrière, comme une
+   calculatrice ou une montre à cristaux liquides ; ligne « nouveau » */
+.chat-card.unread .chat-box{ opacity:1; }
+.chat-card.unread .chat-screen{ background-color:color-mix(in srgb, var(--chat-glow) 42%, var(--chat-scr)); animation:chat-glow 3.2s ease-in-out infinite; }
+@keyframes chat-glow{ 0%, 100%{ background-color:color-mix(in srgb, var(--chat-glow) 42%, var(--chat-scr)); } 50%{ background-color:color-mix(in srgb, var(--chat-glow) 26%, var(--chat-scr)); } }
+@media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-screen{ animation:none; } }
+.chat-new{ text-align:center; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink-faint); margin:0.25rem 0 0.15rem; white-space:nowrap; overflow:hidden; }
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
 .chat-card.dragging-card > *{ visibility:hidden; }
 .chat-hole{ flex:1 1 auto; display:flex; flex-direction:column; padding:var(--chat-rim); border-radius:calc(16px + var(--chat-rim));
@@ -2384,7 +2396,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.9rem; line-height:1.45;
   cursor:text;
 }
-.chat-log{ flex:1 1 0; min-height:calc(3 * 1.45em); overflow-y:auto;   /* 10.59 : 3 lignes au moins, sinon la hauteur de la rangée (les listes voisines) ; le reste défile */ scrollbar-width:none; }
+.chat-log{ position:relative; flex:1 1 0; min-height:calc(3 * 1.45em); overflow-y:auto;   /* 10.59 : 3 lignes au moins, sinon la hauteur de la rangée (les listes voisines) ; le reste défile */ scrollbar-width:none; }
 .chat-log::-webkit-scrollbar{ display:none; }
 .chat-log{ display:flex; flex-direction:column; }
 .chat-log > :first-child{ margin-top:auto; }   /* peu de messages : posés en bas, contre la saisie */
@@ -3987,7 +3999,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.59</span>
+    <span class="version-tag">v10.60</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -9106,6 +9118,11 @@ let chatFocus = null;      // écran dont la saisie avait le curseur
 let chatFix = null;        // { catId, idx } : message repris par ↑ dans la saisie
 let chatEdit = null;       // { catId, idx, v } : message corrigé sur place (double-clic)
 let chatMenuOpen = null;   // écran dont le menu « … » est ouvert
+// 10.60 : lu / non lu, propre à l'appareil (hors fiches, comme SEEN_KEY) :
+// { idÉcran: nombre de messages déjà vus } ; première rencontre = tout est vu
+const CHAT_SEEN_KEY = "sous-le-tapis-chat-vu";
+let chatSeen = (()=>{ try{ const o = JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) || "{}"); return o && typeof o === "object" ? o : {}; }catch(e){ return {}; } })();
+function saveChatSeen(){ try{ localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify(chatSeen)); }catch(e){} }
 function chatTime(at){
   if(typeof at !== "number") return "";
   const d = new Date(at), p = n => String(n).padStart(2, "0");
@@ -9205,7 +9222,27 @@ function buildChatCard(cat, catIdx){
     }
     log.appendChild(l);
   });
-  requestAnimationFrame(()=>{ log.scrollTop = log.scrollHeight; });
+  // 10.60 : non lus = messages des autres au-delà de ce que cet appareil a vu
+  const total = items.length;
+  if(typeof chatSeen[cat.id] !== "number"){ chatSeen[cat.id] = total; saveChatSeen(); }
+  const unread = msgs.filter(m => m.i >= chatSeen[cat.id] && !chatMine(cat, m.base));
+  let sep = null;
+  if(unread.length){
+    card.classList.add("unread");
+    sep = el("div", "chat-new", "--- nouveau ---");
+    const first = log.querySelector('.chat-l[data-i="' + unread[0].i + '"]');
+    if(first) log.insertBefore(sep, first);
+  }
+  // lu : dès qu'on passe dessus, qu'on le touche ou qu'on y écrit (la ligne
+  // « nouveau » reste jusqu'au prochain affichage, pour savoir où reprendre)
+  const markRead = ()=>{
+    if(chatSeen[cat.id] === total && !card.classList.contains("unread")) return;
+    chatSeen[cat.id] = total; saveChatSeen();
+    card.classList.remove("unread");
+  };
+  ["pointerenter", "touchstart", "focusin"].forEach(ev => card.addEventListener(ev, markRead, { passive:true }));
+  if(unread.length) requestAnimationFrame(()=>{ if(card.isConnected && card.matches(":hover")) markRead(); });   // déjà sous la souris
+  requestAnimationFrame(()=>{ log.scrollTop = sep ? Math.min(sep.offsetTop - 4, log.scrollHeight) : log.scrollHeight; });
   // saisie : un vrai champ, le gros curseur derrière tant qu'on écrit au bout
   const fixing = chatFix && chatFix.catId === cat.id;
   inRow.classList.toggle("fixing", !!fixing);
@@ -12258,5 +12295,34 @@ if(Store.mode === "doc" && !isStandaloneApp()){
   setTimeout(()=>{ if(!Sync.user && openLoginAt && !(relancePop && relancePop.classList.contains("sync-pop"))) openLoginAt(); }, 500);
 }
 
+// ---- banc d'essai (essai.html?glow) : couleur du rétroéclairage, message simulé ----
+if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
+  const C = { vert:["#C8F0A0", "#3E6B2A"], bleu:["#B6E3F4", "#2A5A6E"] };
+  const K = "sltapis-essai-glow";
+  let v = (()=>{ try{ return localStorage.getItem(K) || "vert"; }catch(e){ return "vert"; } })();
+  const box = document.createElement("div");
+  box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:15rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
+  document.body.appendChild(box);
+  box.addEventListener("click", e => e.stopPropagation());
+  const apply = ()=>{
+    const dark = matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light" || document.documentElement.dataset.theme === "dark";
+    document.documentElement.style.setProperty("--chat-glow", C[v][dark ? 1 : 0]);
+    try{ localStorage.setItem(K, v); }catch(e){}
+    box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.5rem">Rétroéclairage</div>`
+      + ["vert", "bleu"].map(k => `<button type="button" data-v="${k}" style="display:block;width:100%;text-align:left;font:inherit;background:${k === v ? "color-mix(in srgb, var(--accent) 8%, var(--surface))" : "none"};border:1px solid ${k === v ? "var(--accent)" : "transparent"};border-radius:8px;padding:.3rem .4rem;cursor:pointer;color:var(--ink)"><span style="display:inline-block;width:1.4rem;height:.9rem;border-radius:3px;vertical-align:-2px;margin-right:.4rem;background:${C[k][0]}"></span>${k === "vert" ? "Vert" : "Bleu, plus frais"}</button>`).join("")
+      + `<button type="button" data-sim style="display:block;width:100%;margin-top:.7rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Simuler un message reçu</button><div data-msg style="font-size:.72rem;color:var(--ink-faint);margin-top:.3rem"></div>`;
+    box.querySelectorAll("[data-v]").forEach(b => b.addEventListener("click", ()=>{ v = b.dataset.v; apply(); }));
+    box.querySelector("[data-sim]").addEventListener("click", ()=>{
+      const msg = box.querySelector("[data-msg]");
+      const cat = DATA.find(c => !isCategoryDeleted(c.id) && isChatList(c.id));
+      if(!cat){ msg.textContent = "Créez d'abord un écran de chat."; return; }
+      if(!myUid()){ msg.textContent = "Connectez-vous au banc (plume) : sans compte, tout message est à vous."; return; }
+      insertItem(cat, { t: "message de test, bisou", by: "banc-essai", at: Date.now() });   // auteur fictif : compte comme quelqu'un d'autre
+      renderAll();
+      msg.textContent = "Envoyé. Écartez la souris de l'écran pour voir l'effet.";
+    });
+  };
+  apply();
+})();
 Sync.start();
 </script>
