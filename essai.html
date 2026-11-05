@@ -3832,12 +3832,16 @@ body.ios-gate-on{ overflow:hidden; }
 .pb-sw-row{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; cursor:pointer; }
 .pb-note{ font-size:0.75rem; color:var(--ink-faint); margin-top:0.5rem; line-height:1.4; }
 .chat-card{
-  position:relative; min-width:0; justify-self:start; width:min(100%, 22rem); margin-top:0.9rem;
+  position:relative; min-width:0; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;   /* l'écran au milieu de la place d'une liste */
   --rim:2px; --bev:6px; --chat-d:0.42; --pix-a:0.017; --sh-a:0.14;
   --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong);
   --scr:color-mix(in srgb, var(--ink) 5%, var(--bg));
 }
-.chat-card.dragging{ z-index:50; opacity:0.85; }
+.chat-box{ width:min(100%, 22rem); }
+/* déplacé exactement comme une liste (wireDragCard) : emplacement en pointillés, fantôme */
+.chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
+.chat-card.dragging-card > *{ visibility:hidden; }
 .chat-hole{ padding:var(--rim); border-radius:calc(18px + var(--rim));
   background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--bg)) 0%, color-mix(in srgb, var(--ink) 6%, var(--bg)) 35%, var(--bg) 60%, #fff 100%);
   box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px rgba(255,255,255,0.95), inset 0 1px 0 rgba(255,255,255,0.6); }
@@ -3871,17 +3875,13 @@ body.ios-gate-on{ overflow:hidden; }
 .chat-cur{ display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:2px; animation:chat-blink 1.05s steps(1) infinite; }
 @keyframes chat-blink{ 50%{ opacity:0; } }
 .chat-field{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
-/* sous l'écran, posés sur le fond : poignée (motif des listes) à gauche ;
-   initiales et « … » à droite */
+/* sous l'écran, posés sur le fond : poignée des listes à gauche ; « … » et
+   initiales à droite */
 .chat-foot{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; padding:0 0.2rem; position:relative; }
-.chat-grip{ display:flex; align-items:center; padding:4px 3px; border-radius:6px; color:var(--ink-faint); opacity:0.6; cursor:grab;
-  touch-action:none; -webkit-touch-callout:none; user-select:none; -webkit-user-select:none; transition:opacity .15s ease, background .15s ease, color .15s ease; }
-.chat-grip svg{ transform:rotate(90deg); }
-.chat-grip:hover{ opacity:1; background:var(--surface-2); color:var(--ink-soft); }
-.chat-card.dragging .chat-grip{ cursor:grabbing; }
-.chat-who{ margin-left:auto; font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-faint); }
+.chat-foot .cat-grip svg{ transform:rotate(90deg); }
+.chat-who{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-faint); }
 .chat-who b{ font-weight:700; }
-.chat-more{ appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
+.chat-more{ margin-left:auto; appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
 .chat-more:hover, .chat-more[aria-expanded="true"]{ background:var(--surface-2); color:var(--ink-soft); }
 .chat-menu{ position:absolute; right:0; top:calc(100% + 4px); z-index:60; min-width:12rem; background:var(--surface); border-radius:10px; box-shadow:0 8px 24px rgba(40,50,60,.16); padding:0.3rem; font-size:0.85rem; }
 .chat-menu[hidden]{ display:none; }
@@ -3891,9 +3891,6 @@ body.ios-gate-on{ overflow:hidden; }
 .chat-menu .danger{ color:var(--late); }
 .chat-menu .danger .ic{ color:var(--late); }
 .chat-menu-note{ font-size:0.72rem; color:var(--ink-faint); padding:0.25rem 0.55rem 0.2rem; }
-/* cible pendant qu'on déplace l'écran */
-#categories > .chat-drop-before{ box-shadow:-4px 0 0 -1px var(--accent), var(--shadow); }
-#categories > .chat-drop-after{ box-shadow:4px 0 0 -1px var(--accent), var(--shadow); }
 </style>
 
 <div class="wrap">
@@ -7631,8 +7628,9 @@ function commitDragOrder(){
   if(dragMode === "lists"){
     // Ordre visible des cartes, reporté dans l'ordre complet (les listes
     // supprimées gardent leur place, on n'y touche pas).
+    if(window.chatNoteOrder) window.chatNoteOrder(el.parentElement);   // banc du chat : l'écran retient sa place
     const domOrder = Array.from(el.parentElement.children)
-      .filter(node => node.dataset && node.dataset.dragMode === "lists")
+      .filter(node => node.dataset && node.dataset.dragMode === "lists" && node.dataset.dragId !== "chat")
       .map(node => parseInt(node.dataset.dragId, 10));
     const visible = new Set(domOrder);
     const full = getCategoryOrder().slice();
@@ -11966,8 +11964,8 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 // Maquette : rien n'est synchronisé, les messages restent en mémoire le temps
 // de la page. Corriger : double-clic sur une de ses lignes (Entrée garde,
 // Échap annule, vide = supprimer), ou ↑ dans la saisie vide pour reprendre
-// son dernier message. Déplacer : la poignée sous l'écran (place gardée dans
-// ce navigateur). Menu « … » : inviter, retirer, supprimer (pas encore branchés).
+// son dernier message. Déplacer : la poignée sous l'écran, comme une liste
+// (place gardée dans ce navigateur). Menu « … » : inviter, retirer, supprimer (pas encore branchés).
 if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   const K = "sltapis-essai-chat-5";
   let st = { pos:0, hiske:false };
@@ -11982,10 +11980,10 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   const GRIP = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>`;
   const card = document.createElement("div");
   card.className = "chat-card";
-  card.innerHTML = `<div class="chat-hole"><div class="chat-screen"><div class="chat-log"></div><div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div><input class="chat-field" autocomplete="off" aria-label="Écrire un mot"></div></div>`
-    + `<div class="chat-foot"><span class="chat-grip" title="Glisser pour déplacer" aria-label="Déplacer l'écran">${GRIP}</span>`
-    + `<span class="chat-who"><b>AP</b> · <b>H</b></span><button type="button" class="chat-more" aria-label="Options de l'écran" aria-expanded="false">…</button>`
-    + `<div class="chat-menu" hidden><button type="button" data-a="add"><span class="ic">+</span>Inviter quelqu'un</button><button type="button" data-a="rm"><span class="ic">−</span>Retirer quelqu'un</button><button type="button" class="danger" data-a="del"><span class="ic">×</span>Supprimer cet écran</button><div class="chat-menu-note" hidden></div></div></div>`;
+  card.innerHTML = `<div class="chat-box"><div class="chat-hole"><div class="chat-screen"><div class="chat-log"></div><div class="chat-in"><span class="chat-typed"></span><span class="chat-cur"></span></div><input class="chat-field" autocomplete="off" aria-label="Écrire un mot"></div></div>`
+    + `<div class="chat-foot"><span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser">${GRIP}</span>`
+    + `<button type="button" class="chat-more" aria-label="Options de l'écran" aria-expanded="false">…</button><span class="chat-who"><b>AP</b> <b>H</b></span>`
+    + `<div class="chat-menu" hidden><button type="button" data-a="add"><span class="ic">+</span>Inviter</button><button type="button" data-a="rm"><span class="ic">−</span>Retirer</button><button type="button" class="danger" data-a="del"><span class="ic">×</span>Supprimer cet écran</button><div class="chat-menu-note" hidden></div></div></div></div>`;
   const log = card.querySelector(".chat-log"), field = card.querySelector(".chat-field"), typed = card.querySelector(".chat-typed"), inRow = card.querySelector(".chat-in");
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; };
   const isMine = m => m.me === !st.hiske;
@@ -12055,39 +12053,20 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   const cats = document.getElementById("categories");
   const others = () => [...cats.children].filter(c => c !== card);
   const place = ()=>{
+    if(dragState) return;   // pendant un glisser, c'est l'aimant des listes qui place l'écran
     const o = others(), pos = Math.max(0, Math.min(st.pos | 0, o.length));
     if(card.parentElement === cats && [...cats.children].indexOf(card) === pos) return;
     if(pos < o.length) cats.insertBefore(card, o[pos]); else cats.appendChild(card);
   };
   new MutationObserver(place).observe(cats, { childList:true });
-  // déplacer : on tire la poignée ; la liste la plus proche montre où l'écran
-  // se posera (avant / après), comme quand on range les listes
-  const grip = card.querySelector(".chat-grip");
-  const target = (x, y)=>{
-    let best = null, bd = Infinity;
-    others().forEach((c, i)=>{ const r = c.getBoundingClientRect(); const cx = r.left + r.width / 2, cy = r.top + r.height / 2; const d = Math.hypot(x - cx, y - cy); if(d < bd){ bd = d; best = { c, i, after: (y > r.bottom - r.height * 0.25) || (x > cx && y > r.top) }; } });
-    return best;
+  // déplacer : exactement comme une liste (même poignée, fantôme, aimant) ;
+  // commitDragOrder (banc) ignore l'écran pour l'ordre des listes et nous
+  // passe la main pour retenir sa place
+  wireDragCard(card, card.querySelector(".cat-grip"), "chat");
+  window.chatNoteOrder = parent=>{
+    const i = [...parent.children].indexOf(card);
+    if(i >= 0){ st.pos = i; save(); }
   };
-  const clearMarks = () => cats.querySelectorAll(".chat-drop-before, .chat-drop-after").forEach(c => c.classList.remove("chat-drop-before", "chat-drop-after"));
-  grip.addEventListener("pointerdown", e=>{
-    if(e.button > 0) return;
-    e.preventDefault(); e.stopPropagation();
-    try{ grip.setPointerCapture(e.pointerId); }catch(err){}
-    const x0 = e.clientX, y0 = e.clientY;
-    card.classList.add("dragging"); closeMenu();
-    let tg = null;
-    const move = ev=>{
-      card.style.transform = `translate(${ev.clientX - x0}px, ${ev.clientY - y0}px)`;
-      tg = target(ev.clientX, ev.clientY); clearMarks();
-      if(tg) tg.c.classList.add(tg.after ? "chat-drop-after" : "chat-drop-before");
-    };
-    const up = ()=>{
-      grip.removeEventListener("pointermove", move); grip.removeEventListener("pointerup", up); grip.removeEventListener("pointercancel", up);
-      card.style.transform = ""; card.classList.remove("dragging"); clearMarks();
-      if(tg){ st.pos = tg.after ? tg.i + 1 : tg.i; save(); place(); }
-    };
-    grip.addEventListener("pointermove", move); grip.addEventListener("pointerup", up); grip.addEventListener("pointercancel", up);
-  });
   // petit panneau du banc : seulement de quoi voir l'autre côté
   const box = document.createElement("div");
   box.className = "papier-bench";
