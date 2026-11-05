@@ -3832,6 +3832,13 @@ body.ios-gate-on{ overflow:hidden; }
 .pb-sw-row{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; cursor:pointer; }
 .pb-rg{ display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-top:0.4rem; font-size:0.82rem; color:var(--ink-soft); }
 .pb-rg input{ width:8rem; }
+.pb-sub{ font-size:0.72rem; color:var(--ink-faint); margin:0.6rem 0 0.15rem; text-transform:uppercase; letter-spacing:0.06em; }
+.pb-opt{ display:flex; align-items:center; width:100%; font:inherit; text-align:left; background:none; border:1px solid transparent; border-radius:8px; padding:0.3rem 0.4rem; cursor:pointer; color:var(--ink); }
+.pb-opt:hover{ background:var(--surface-2); }
+.pb-opt.on{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.pb-row{ display:flex; gap:0.25rem; } .pb-row .pb-opt{ justify-content:center; }
+.pb-link{ display:block; width:100%; margin-top:0.8rem; font:inherit; font-size:0.82rem; padding:0.4rem; border:0; border-radius:8px; cursor:pointer; background:color-mix(in srgb, var(--accent) 12%, var(--surface)); color:var(--btn-ink); }
+.pb-linkmsg{ font-size:0.72rem; color:var(--ink-faint); margin-top:0.3rem; overflow-wrap:anywhere; user-select:all; }
 .pb-note{ font-size:0.75rem; color:var(--ink-faint); margin-top:0.5rem; line-height:1.4; }
 .chat-card{
   position:relative; min-width:0; border-radius:14px;
@@ -3840,7 +3847,7 @@ body.ios-gate-on{ overflow:hidden; }
   --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong);
   --scr:color-mix(in srgb, var(--ink) 5%, var(--bg));
 }
-.chat-box{ width:min(100%, 22rem); opacity:calc(1 - var(--dim, 0)); transition:opacity .35s ease; }
+.chat-box{ width:min(100%, var(--chat-w, 22rem)); opacity:calc(1 - var(--dim, 0)); transition:opacity .35s ease; }
 /* discrétion : l'écran s'efface un peu au repos pour ne pas capter toute
    l'attention ; il revient au survol et pendant qu'on écrit */
 .chat-card.wake:hover .chat-box, .chat-card.wake:focus-within .chat-box{ opacity:1; }
@@ -3864,6 +3871,15 @@ body.ios-gate-on{ overflow:hidden; }
   cursor:text;
 }
 .chat-log{ max-height:18rem; overflow-y:auto; scrollbar-width:none; }
+/* banc : alignement dans la place d'une liste, ou bande pleine largeur en haut */
+.chat-card.v-haut{ align-items:flex-start; } .chat-card.v-bas{ align-items:flex-end; }
+.chat-card.h-gauche{ justify-content:flex-start; } .chat-card.h-droite{ justify-content:flex-end; }
+.chat-card.band{ grid-column:1 / -1; align-items:stretch; }
+.chat-card.band .chat-box{ width:100%; }
+.chat-card.band .chat-log{ max-height:calc(var(--band-lines, 3) * 1.55em + 0.3rem); }
+.chat-card.band .chat-screen{ padding-top:0.7rem; padding-bottom:0.55rem; }
+.chat-card.band .chat-in{ margin-top:0.35rem; padding-top:0.3rem; }
+.chat-card.band .cat-grip{ visibility:hidden; }
 .chat-l, .chat-in{ text-shadow:1px 1px 0 rgba(30,40,30,var(--sh-a)); }
 .chat-l{ margin:0.12rem 0; overflow-wrap:anywhere; border-radius:3px; }
 .chat-l.me{ text-align:right; padding-left:18%; color:var(--chat-me); }
@@ -11973,7 +11989,8 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 // (place gardée dans ce navigateur). Menu « … » : inviter, retirer, supprimer (pas encore branchés).
 if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   const K = "sltapis-essai-chat-5";
-  let st = { pos:0, hiske:false, dim:30, wake:true };
+  let st = { pos:0, hiske:false, dim:30, wake:true, where:"grille", w:22, v:"centre", h:"centre", lines:3 };
+  try{ const r = new URLSearchParams(location.search).get("r"); if(r) Object.assign(st, JSON.parse(decodeURIComponent(escape(atob(r))))); }catch(e){}
   try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
   const save = () => { try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){} };
   const MSG = [
@@ -12059,7 +12076,7 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   const others = () => [...cats.children].filter(c => c !== card);
   const place = ()=>{
     if(dragState) return;   // pendant un glisser, c'est l'aimant des listes qui place l'écran
-    const o = others(), pos = Math.max(0, Math.min(st.pos | 0, o.length));
+    const o = others(), pos = st.where === "bande" ? 0 : Math.max(0, Math.min(st.pos | 0, o.length));
     if(card.parentElement === cats && [...cats.children].indexOf(card) === pos) return;
     if(pos < o.length) cats.insertBefore(card, o[pos]); else cats.appendChild(card);
   };
@@ -12070,18 +12087,48 @@ if(ESSAI && /[?&]chat/.test(location.search)) (()=>{
   wireDragCard(card, card.querySelector(".cat-grip"), "chat");
   window.chatNoteOrder = parent=>{
     const i = [...parent.children].indexOf(card);
-    if(i >= 0){ st.pos = i; save(); }
+    if(i >= 0 && st.where !== "bande"){ st.pos = i; save(); }
   };
   // petit panneau du banc : seulement de quoi voir l'autre côté
   const box = document.createElement("div");
   box.className = "papier-bench";
-  box.innerHTML = `<div class="pb-title">Entre nous</div><label class="pb-sw-row"><input type="checkbox" data-k="hiske"${st.hiske ? " checked" : ""}> Écrire en tant que Hiske</label><label class="pb-rg">Discrétion <input type="range" min="0" max="70" step="1" value="${st.dim}"></label><label class="pb-sw-row"><input type="checkbox" data-k="wake"${st.wake ? " checked" : ""}> Revient au survol</label><div class="pb-note">Corriger : double-clic sur une de ses lignes, ou ↑ dans la saisie vide.</div>`;
+  function paintBox(){
+    const opt = (k, v, l) => `<button type="button" class="pb-opt${st[k] === v ? " on" : ""}" data-k="${k}" data-v="${v}">${l}</button>`;
+    const rg = (k, l, a, b) => `<label class="pb-rg">${l} <input type="range" min="${a}" max="${b}" step="1" data-r="${k}" value="${st[k]}"></label>`;
+    box.innerHTML = `<div class="pb-title">Entre nous</div>`
+      + `<div class="pb-sub">Emplacement</div>` + opt("where", "grille", "Dans la grille, comme une liste") + opt("where", "bande", "Bande pleine largeur, en haut")
+      + (st.where === "grille"
+        ? rg("w", "Largeur", 14, 34) + `<div class="pb-sub">Vertical</div><div class="pb-row">` + opt("v", "haut", "Haut") + opt("v", "centre", "Centre") + opt("v", "bas", "Bas") + `</div>`
+          + `<div class="pb-sub">Horizontal</div><div class="pb-row">` + opt("h", "gauche", "Gauche") + opt("h", "centre", "Centre") + opt("h", "droite", "Droite") + `</div>`
+        : rg("lines", "Lignes visibles", 1, 8))
+      + `<div class="pb-sub">Divers</div>` + rg("dim", "Discrétion", 0, 70)
+      + `<label class="pb-sw-row"><input type="checkbox" data-k="wake"${st.wake ? " checked" : ""}> Revient au survol</label>`
+      + `<label class="pb-sw-row"><input type="checkbox" data-k="hiske"${st.hiske ? " checked" : ""}> Écrire en tant que Hiske</label>`
+      + `<button type="button" class="pb-link">Copier le lien des réglages</button><div class="pb-linkmsg"></div>`;
+    box.querySelectorAll(".pb-opt").forEach(b => b.addEventListener("click", ()=>{ st[b.dataset.k] = b.dataset.v; save(); look(); paintBox(); }));
+    box.querySelectorAll("input[type=checkbox]").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; save(); c.dataset.k === "hiske" ? apply() : look(); }));
+    box.querySelectorAll("input[type=range]").forEach(r => r.addEventListener("input", ()=>{ st[r.dataset.r] = +r.value; save(); look(); }));
+    box.querySelector(".pb-link").addEventListener("click", ()=>{
+      const { hiske, ...keep } = st;
+      const url = location.origin + location.pathname + "?chat&r=" + btoa(unescape(encodeURIComponent(JSON.stringify(keep))));
+      const msg = box.querySelector(".pb-linkmsg");
+      const done = ok => { msg.textContent = ok ? "Lien copié : il suffit de le coller." : url; };
+      if(navigator.clipboard) navigator.clipboard.writeText(url).then(()=>done(true), ()=>done(false)); else done(false);
+    });
+  }
   document.body.appendChild(box);
   box.addEventListener("click", e => e.stopPropagation());
-  const dim = ()=>{ card.style.setProperty("--dim", (st.dim / 100).toFixed(2)); card.classList.toggle("wake", st.wake); };
-  const apply = ()=>{ inRow.classList.toggle("them", st.hiske); setFixing(-1); field.value = ""; typed.textContent = ""; paintLog(); dim(); };
-  box.querySelectorAll("input[type=checkbox]").forEach(c => c.addEventListener("change", ()=>{ st[c.dataset.k] = c.checked; save(); c.dataset.k === "hiske" ? apply() : dim(); }));
-  box.querySelector("input[type=range]").addEventListener("input", e=>{ st.dim = +e.target.value; save(); dim(); });
+  const look = ()=>{
+    card.style.setProperty("--dim", (st.dim / 100).toFixed(2)); card.classList.toggle("wake", st.wake);
+    card.style.setProperty("--chat-w", st.w + "rem"); card.style.setProperty("--band-lines", st.lines);
+    card.classList.toggle("band", st.where === "bande");
+    ["haut", "bas"].forEach(v => card.classList.toggle("v-" + v, st.where === "grille" && st.v === v));
+    ["gauche", "droite"].forEach(v => card.classList.toggle("h-" + v, st.where === "grille" && st.h === v));
+    place();
+    log.scrollTop = log.scrollHeight;
+  };
+  const apply = ()=>{ inRow.classList.toggle("them", st.hiske); setFixing(-1); field.value = ""; typed.textContent = ""; paintLog(); look(); };
+  paintBox();
   apply(); place();
 })();
 Sync.start();
