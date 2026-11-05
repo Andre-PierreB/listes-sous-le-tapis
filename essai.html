@@ -175,10 +175,10 @@
     du partage, hors ligne, 2e appareil, prénom), et comparaison 10.1 / 10.2
     sans compte (écran et clés identiques, sauf la ligne « Partagée avec »).
 
-  ÉCRAN ENTRE NOUS (depuis la 10.57)
-  - Une liste dont la fiche porte type: "chat" (nom interne « Entre nous »,
-    jamais affiché). Création : bouton discret « écran » dans la fenêtre
-    « + Nouvelle liste » (pas d'interrupteur : rien à convertir).
+  ÉCRAN DE CHAT (depuis la 10.57)
+  - Une liste dont la fiche porte type: "chat" (nom interne « Chat »,
+    jamais affiché). Création : bouton « + Ajouter un écran de chat » dans
+    la fenêtre « + Nouvelle liste » (pas d'interrupteur : rien à convertir).
   - Un message = une tâche ordinaire de la fiche { t, by, at } (at = date
     d'envoi), ajoutée en bas, jamais cochée. Corriger : double-clic sur une
     de ses lignes, ou ↑ dans la saisie vide (Entrée garde, Échap annule) ;
@@ -1228,7 +1228,7 @@
     listes : barre franche détachée, du titre à deux lignes du bas.
   - 10.56 : texte des articles de mémo à l'encre pleine (var(--ink), comme
     les tâches) au lieu de 78 % : plus lisible sur le papier blanc chaud.
-  - 10.57 : écran « Entre nous » (voir ÉCRAN ENTRE NOUS) : petit chat
+  - 10.57 : écran de chat (voir ÉCRAN DE CHAT) : petit chat
     partagé, posé parmi les listes ; isSideList pour les exclusions.
 -->
 <title>Sous le tapis</title>
@@ -1266,7 +1266,7 @@
   --gloss:rgba(255,255,255,0);
   --memo-a:#FCFBF7; --memo-b:#FCFBF7; --memo-c:#FCFBF7;
   --memo-line:rgba(0,0,0,0);
-  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong); --chat-lip:#FFFFFF;   /* 10.57 : écran Entre nous */
+  --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong); --chat-lip:#FFFFFF;   /* 10.57 : écran de chat */
   /* 10.19 : vert du logo (le faisan) pour le titre et la plume connectée ;
      --logo-green-strong au survol du titre */
   --logo-green:#7DB536;   /* un cran sous le vert du logo #8DC63F, trop pâle pour un petit titre */
@@ -2342,7 +2342,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   transform:scale(1.06);
 }
 
-/* ---------- 10.57 : écran « Entre nous » (petit chat partagé) ----------
+/* ---------- 10.57 : écran de chat (petit chat partagé) ----------
    Une liste de type "chat", posée dans la grille comme une liste, mais
    dessinée comme un écran creusé dans le fond (tôle percée : tranche
    arrondie --chat-rim, écran au fond à --chat-bev), Courier Prime, invite
@@ -2359,11 +2359,11 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
 .chat-card.dragging-card > *{ visibility:hidden; }
-.chat-hole{ padding:var(--chat-rim); border-radius:calc(18px + var(--chat-rim));
+.chat-hole{ padding:var(--chat-rim); border-radius:calc(16px + var(--chat-rim));
   background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--bg)) 0%, color-mix(in srgb, var(--ink) 6%, var(--bg)) 35%, var(--bg) 60%, var(--chat-lip) 100%);
   box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px var(--chat-lip); }
 .chat-screen{
-  position:relative; border-radius:18px; padding:1.1rem 1.1rem 0.8rem;
+  position:relative; border-radius:16px; padding:0.65rem 1rem 0.5rem;   /* fin : peu d'air dessus et dessous */
   background-color:var(--chat-scr);
   background-image:repeating-linear-gradient(0deg, rgba(40,50,40,var(--chat-pix)) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(40,50,40,var(--chat-pix)) 0 1px, transparent 1px 3px);
   box-shadow:
@@ -2372,10 +2372,10 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
     inset calc(var(--chat-bev) * 0.9) 0 calc(var(--chat-bev) * 1.3) calc(var(--chat-bev) * -0.7) rgba(42,39,37,0.16),
     inset calc(var(--chat-bev) * -0.9) 0 calc(var(--chat-bev) * 1.3) calc(var(--chat-bev) * -0.7) rgba(42,39,37,0.10),
     inset 0 calc(var(--chat-bev) * -0.9) calc(var(--chat-bev) * 1.2) calc(var(--chat-bev) * -0.6) var(--chat-lip);
-  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.9rem; line-height:1.55;
+  font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.9rem; line-height:1.45;
   cursor:text;
 }
-.chat-log{ max-height:18rem; overflow-y:auto; scrollbar-width:none; }
+.chat-log{ max-height:calc(5 * 1.45em); overflow-y:auto;   /* 5 lignes visibles, le reste défile */ scrollbar-width:none; }
 .chat-log::-webkit-scrollbar{ display:none; }
 .chat-empty{ color:var(--ink-faint); font-size:0.8rem; }
 .chat-l, .chat-in{ text-shadow:1px 1px 0 rgba(30,40,30,var(--chat-sh)); }
@@ -2388,7 +2388,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-m{ font-size:0.7rem; color:var(--ink-faint); white-space:nowrap; }
 .chat-pr{ font-weight:700; }
 .chat-edit{ font:inherit; color:inherit; flex:1; min-width:0; background:color-mix(in srgb, currentColor 7%, transparent); border:0; border-radius:3px; padding:0 0.2rem; outline:none; text-align:inherit; }
-.chat-in{ display:flex; justify-content:flex-end; align-items:center; min-height:1.6rem; border-top:1px dashed rgba(42,39,37,0.15); margin-top:0.6rem; padding-top:0.45rem; color:var(--chat-me); overflow-wrap:anywhere; }
+.chat-in{ display:flex; justify-content:flex-end; align-items:center; min-height:1.45em; border-top:1px dashed rgba(42,39,37,0.15); margin-top:0.35rem; padding-top:0.3rem; color:var(--chat-me); overflow-wrap:anywhere; }
 .chat-in.fixing::before{ content:"corriger> "; font-size:0.75rem; color:var(--ink-faint); margin-right:0.3rem; white-space:nowrap; }
 .chat-cur{ flex:none; display:inline-block; width:0.6em; height:1.15em; background:currentColor; margin-left:2px; opacity:0.35; }   /* au repos : fixe et pâle */
 .chat-screen:focus-within .chat-cur{ opacity:1; animation:chat-blink 1.05s steps(1) infinite; }   /* on écrit : il clignote */
@@ -3720,8 +3720,10 @@ body.no-list .add-category-row{
 }
 .nl-courses input:checked + .nl-switch{ background:var(--accent); }
 .nl-courses input:checked + .nl-switch::after{ transform:translateX(12px); }
-.new-list-card .edit-actions .nl-chat{ margin-right:auto; appearance:none; border:0; background:none; box-shadow:none; min-width:0; height:auto; padding:0.2rem 0.3rem; font:700 0.72rem 'Courier Prime', 'Courier New', Courier, monospace; letter-spacing:0.06em; color:var(--ink-faint); cursor:pointer; border-radius:6px; }   /* 10.57 : discret, à gauche */
-.new-list-card .edit-actions .nl-chat:hover{ color:var(--ink-soft); background:var(--surface-2); }
+.nl-chat{ align-self:flex-start; display:inline-flex; align-items:center; gap:0.5rem; appearance:none; border:0; background:none; padding:0.15rem 0; font:inherit; font-size:0.86rem; color:var(--ink-soft); cursor:pointer; }   /* 10.57 : sous l'interrupteur, même allure */
+.nl-chat .add-btn{ pointer-events:none; }
+.nl-chat:hover{ color:var(--ink); }
+.nl-chat:hover .add-btn{ color:var(--ink); border-color:color-mix(in srgb, var(--ink-soft) 40%, var(--line)); }
 .nl-courses input:focus-visible + .nl-switch{ outline:2px solid var(--accent); outline-offset:2px; }
 .nl-courses:has(input:checked){ color:var(--ink); }
 /* sur l'accueil : pointillés roses, champs jaunes */
@@ -6200,9 +6202,9 @@ function renderAddCategoryRow(){
     <div class="new-list-card">
       <div class="edit-form">
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
-        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de shopping ou mémo</label>` : ""}
+        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de shopping ou mémo</label>
+          <button type="button" class="nl-chat"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un écran de chat</button>` : ""}
         <div class="edit-actions">
-          ${Store.mode === "doc" ? `<button type="button" class="nl-chat" data-tip="Petit écran pour s'écrire" aria-label="Créer un écran Entre nous">écran</button>` : ""}
           <button type="button" class="add-cancel nl-cancel">Annuler</button>
           <button type="button" class="add-save nl-save">Créer</button>
         </div>
@@ -6240,12 +6242,12 @@ function renderAddCategoryRow(){
     renderAll();
   };
   card.querySelector(".nl-save").addEventListener("click", save);
-  // 10.57 : un écran « Entre nous » se crée directement, sans nom
+  // 10.57 : un écran de chat se crée directement, sans nom
   const chatBtn = card.querySelector(".nl-chat");
   if(chatBtn) chatBtn.addEventListener("click", ()=>{
     document.removeEventListener("pointerdown", outside, true);
     try{
-      const cat = addCategory("Entre nous");
+      const cat = addCategory("Chat");
       if(cat && Store.setListField(cat.id, "type", "chat")){ chatFocus = cat.id; actionToast("newChat"); }
     }catch(err){ console.error("[nouvel écran] échec", err); }
     addingCategory = false;
@@ -6678,7 +6680,7 @@ function buildCatShareRow(cat){
 // du graphique, de la purge du lundi, de la corbeille, de la case urgente et
 // du trèfle : rayer le lait ne fait jamais tourner le compteur.
 function isCoursesList(catId){ try{ return Store.listField(catId, "type") === "courses"; }catch(e){ return false; } }
-// 10.57 : écran « Entre nous » ; mémos et écrans restent hors compteur, urgences, trèfle et purge
+// 10.57 : écran de chat ; mémos et écrans restent hors compteur, urgences, trèfle et purge
 function isChatList(catId){ try{ return Store.listField(catId, "type") === "chat"; }catch(e){ return false; } }
 function isSideList(catId){ return isCoursesList(catId) || isChatList(catId); }
 // passer une liste en liste de courses (on) ou la rendre normale (off) : seul
@@ -9071,7 +9073,7 @@ function placeCoursesScroll(card){
   thumb.style.top = top + "px";
 }
 
-// ---- 10.57 : écran « Entre nous » (voir NOTE, ÉCRAN ENTRE NOUS) ----
+// ---- 10.57 : écran de chat (voir NOTE, ÉCRAN DE CHAT) ----
 // Une liste de type "chat" : chaque message est une tâche ordinaire de la
 // fiche ({ t, by, at }), jamais cochée ; corriger = modifier son texte,
 // effacer = marquer effacé (comme un article de mémo). Partage, synchro,
