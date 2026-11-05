@@ -1230,7 +1230,8 @@
     les tâches) au lieu de 78 % : plus lisible sur le papier blanc chaud.
   - 10.57 : écran de chat (voir ÉCRAN DE CHAT) : petit chat
     partagé, posé parmi les listes ; isSideList pour les exclusions.
-  - 10.58 : écran de chat : la saisie est un vrai champ visible (sélection à
+  - 10.58 : fenêtre « Nouvelle liste » : Annuler / Créer sur la ligne de
+    l'interrupteur, « + Ajouter un écran de chat » en dessous. Écran de chat : la saisie est un vrai champ visible (sélection à
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
 -->
@@ -3729,7 +3730,9 @@ body.no-list .add-category-row{
 }
 .nl-courses input:checked + .nl-switch{ background:var(--accent); }
 .nl-courses input:checked + .nl-switch::after{ transform:translateX(12px); }
-.nl-chat{ align-self:flex-start; display:inline-flex; align-items:center; gap:0.5rem; appearance:none; border:0; background:none; padding:0.15rem 0; font:inherit; font-size:0.86rem; color:var(--ink-soft); cursor:pointer; }   /* 10.57 : sous l'interrupteur, même allure */
+.nl-row{ display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem; }   /* 10.58 : l'interrupteur à gauche, Annuler / Créer à droite */
+.nl-row .edit-actions{ margin-left:auto; }
+.nl-chat{ align-self:flex-start; margin-top:0.35rem; display:inline-flex; align-items:center; gap:0.5rem; appearance:none; border:0; background:none; padding:0.15rem 0; font:inherit; font-size:0.86rem; color:var(--ink-soft); cursor:pointer; }   /* 10.57 : sous l'interrupteur, même allure */
 .nl-chat .add-btn{ pointer-events:none; }
 .nl-chat:hover{ color:var(--ink); }
 .nl-chat:hover .add-btn{ color:var(--ink); border-color:color-mix(in srgb, var(--ink-soft) 40%, var(--line)); }
@@ -6211,12 +6214,14 @@ function renderAddCategoryRow(){
     <div class="new-list-card">
       <div class="edit-form">
         <input type="text" class="add-category-title nl-name" placeholder="Un nom pour la liste ?" autocomplete="off">
-        ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de shopping ou mémo</label>
-          <button type="button" class="nl-chat"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un écran de chat</button>` : ""}
-        <div class="edit-actions">
-          <button type="button" class="add-cancel nl-cancel">Annuler</button>
-          <button type="button" class="add-save nl-save">Créer</button>
+        <div class="nl-row">
+          ${Store.mode === "doc" ? `<label class="nl-courses"><input type="checkbox" class="nl-courses-switch" role="switch"><span class="nl-switch" aria-hidden="true"></span>Liste de shopping ou mémo</label>` : ""}
+          <div class="edit-actions">
+            <button type="button" class="add-cancel nl-cancel">Annuler</button>
+            <button type="button" class="add-save nl-save">Créer</button>
+          </div>
         </div>
+        ${Store.mode === "doc" ? `<button type="button" class="nl-chat"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un écran de chat</button>` : ""}
       </div>
     </div>
   `;
