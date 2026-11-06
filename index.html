@@ -1235,6 +1235,8 @@
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
   - 10.61 : phrase retirée (« Vendredi qui rit, dimanche qui fleurit »).
+  - 10.61 : écran de chat sur téléphone (une colonne) : il grandit avec les
+    messages jusqu'à 10 lignes (avant : 3, faute de liste voisine).
   - 10.60 : écran de chat : message non lu (d'un autre, pas encore vu sur cet
     appareil, CHAT_SEEN_KEY) → l'écran sort de sa discrétion,
     voyant vert sur la tôle en haut à droite (.chat-led), ligne « --- nouveau
@@ -2371,7 +2373,10 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 }
 .chat-box{ width:calc(100% - 1.5rem); padding-top:calc(0.35rem + 22px);   /* autant d'air au-dessus que sous l'écran (marge + poignée) */ display:flex; flex-direction:column; opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
 .chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
-@media (max-width:720px){ .chat-box{ width:100%; } }   /* une colonne (téléphone) : la largeur d'une liste */
+@media (max-width:720px){
+  .chat-box{ width:100%; }   /* une colonne (téléphone) : la largeur d'une liste */
+  .chat-card .chat-log{ flex:0 1 auto; max-height:calc(10 * 1.45em); }   /* 10.61 : seul sur sa rangée, il grandit avec les messages, jusqu'à 10 lignes */
+}
 /* 10.60 : message non lu (d'un autre, pas encore vu sur cet appareil) :
    l'écran sort de sa discrétion, le voyant s'allume ; ligne « nouveau » */
 .chat-card.unread .chat-box{ opacity:1; }
