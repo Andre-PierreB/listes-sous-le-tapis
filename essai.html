@@ -218,10 +218,11 @@
     worldAfter), à l'identique sur tous les appareils.
   - Joueurs : celui du 1er coup (il choisit son faisan), puis l'autre personne
     de la liste ; les coups alternent. Seul dans le duel au 1er coup (ou
-    sans compte) : entraînement — coups marqués solo:1, tous tirés du faisan
-    de gauche, l'autre ne renvoie rien, pas de bandeau. Seul = personne
-    d'autre dans le duel en ce moment : dès qu'on partage, les coups solo
-    sont mis de côté et le duel à deux part de zéro (et inversement). Couleurs : 
+    sans compte) : entraînement — coups gardés en mémoire seulement
+    (soloShots : rien d'écrit dans la liste, rien ne part en ligne), tous
+    tirés du faisan de gauche, l'autre ne renvoie rien, pas de bandeau.
+    Seul = personne d'autre dans le duel en ce moment : dès qu'on partage,
+    le duel à deux part de ce qui est dans la liste. Couleurs : 
     un seul bleu (--objet) pour tout : joueurs (reconnus à leur place et à
     leurs initiales), objets, bandeaux et boutons. Carte au gabarit d'une
     liste (une case de la grille) ; mise en page compacte par @container.
@@ -10434,6 +10435,8 @@ let seen = (()=>{ try{ const o = JSON.parse(localStorage.getItem(SEEN_KEY) || "{
 function saveSeen(){ try{ localStorage.setItem(SEEN_KEY, JSON.stringify(seen)); }catch(e){} }
 let monObjet = (()=>{ try{ const o = localStorage.getItem("sous-le-tapis-duel-objet"); return o in OBJETS ? o : "roue"; }catch(e){ return "roue"; } })();
 let persoChoix = 0;      // faisan choisi par celui qui lance la partie, avant son premier coup
+// entraînement : rien n'est écrit dans la liste (ni synchro ni place prise) — les coups vivent ici, le temps de la page
+let soloShots = [], soloSeed = null, soloPerso = 0;
 let lastSig = null, ownShot = false;
 const hashStr = s => { let h = 2166136261; for(const ch of String(s)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
 function readGame(cat){
@@ -10443,14 +10446,14 @@ function readGame(cat){
   live.forEach((x, j)=>{ if(x.b.duel === "partie") start = j; });
   const head = start > -1 ? live[start].b : null;
   // entraînement = personne d'autre dans le duel en ce moment : tous les coups partent du faisan de gauche,
-  // l'autre ne renvoie rien. Dès qu'on partage, le duel commence : les coups d'entraînement (solo:1) sont mis
-  // de côté et la partie à deux repart de zéro, sans devoir finir l'entraînement (et inversement si on retire l'autre)
+  // l'autre ne renvoie rien, et rien n'est enregistré (soloShots, en mémoire). Dès qu'on partage, la partie à
+  // deux part de ce qui est dans la liste, sans devoir finir l'entraînement
   const solo = !listPeople(cat.id).some(u => u !== myUid());
-  const rows = live.slice(start + 1).filter(x => typeof x.b.a === "number" && typeof x.b.v === "number" && !!x.b.solo === solo);
-  const shots = rows.map((x, k)=>({ p: solo ? 0 : k % 2, a: x.b.a, v: x.b.v, o: x.b.o in OBJETS ? x.b.o : "roue", at: x.b.at, by: taskCreator(cat, x.b) }));
-  const p0 = rows.length ? (rows[0].b.perso === 1 ? 1 : 0) : persoChoix;
+  const rows = solo ? [] : live.slice(start + 1).filter(x => typeof x.b.a === "number" && typeof x.b.v === "number" && !x.b.solo);
+  const shots = solo ? soloShots.slice() : rows.map((x, k)=>({ p: k % 2, a: x.b.a, v: x.b.v, o: x.b.o in OBJETS ? x.b.o : "roue", at: x.b.at, by: taskCreator(cat, x.b) }));
+  const p0 = solo ? (soloShots.length ? soloPerso : persoChoix) : rows.length ? (rows[0].b.perso === 1 ? 1 : 0) : persoChoix;
   const g = {
-    seed: head && typeof head.seed === "number" ? head.seed : hashStr(cat.id),
+    seed: solo && soloSeed != null ? soloSeed : head && typeof head.seed === "number" ? head.seed : hashStr(cat.id),
     regles: { g: head && head.g || REGLES.g, vent: head && head.vent != null ? head.vent : REGLES.vent, trou: head && head.trou || REGLES.trou, decor: head && head.decor || REGLES.decor },
     shots, solo, perso: p0 === 1 ? [1, 0] : [0, 1], total: items.length, start: start > -1 ? live[start].i : -1
   };
@@ -10474,7 +10477,7 @@ const myTurn = ()=>{ const me = myUid(); if(!me || game.solo) return true; if(!g
 // pour ne pas couper une animation) et la partie relue dans la liste
 function sync(cat, force){
   CAT = cat;
-  const g = readGame(cat), sig = g.start + ":" + g.seed + ":" + g.shots.length;
+  const g = readGame(cat), sig = (g.solo ? "solo:" : "") + g.start + ":" + g.seed + ":" + g.shots.length;
   if(sig === lastSig && !force){ game.objets = g.objets; game.total = g.total; refreshUI(); return; }
   lastSig = sig;
   if(ownShot){ game = g; return; }   // mon coup est déjà en train de voler
@@ -10526,18 +10529,22 @@ function lancer(){
   const o = monObjet;
   const shot = { p, a, v, o, at: Date.now(), by: myUid() };
   const res = simulate(world, shot);
-  const item = { t: `${a} ${v} ${o}`, a, v, o, at: shot.at };
-  if(game.solo) item.solo = 1;
-  if(!game.shots.length) item.perso = persoChoix;
   ownShot = true;
-  try{ insertItem(CAT, item); }catch(err){ console.error("[duel] coup non enregistré", err); ownShot = false; return; }
+  if(game.solo){   // entraînement : en mémoire seulement
+    if(!soloShots.length) soloPerso = persoChoix;
+    soloShots.push(shot);
+  }else{
+    const item = { t: `${a} ${v} ${o}`, a, v, o, at: shot.at };
+    if(!game.shots.length) item.perso = persoChoix;
+    try{ insertItem(CAT, item); }catch(err){ console.error("[duel] coup non enregistré", err); ownShot = false; return; }
+    seen[CAT.id] = (game.total || 0) + 1; saveSeen();
+  }
   game.shots.push(shot);
-  seen[CAT.id] = (game.total || 0) + 1; saveSeen();
   play(shot, res, ()=>{
     ownShot = false;
     // la liste contient maintenant mon coup : même partie que celle qu'on voit, on ne la recharge pas
     // (sinon la danse, la couronne et les confettis seraient effacés)
-    const g = readGame(CAT); lastSig = g.start + ":" + g.seed + ":" + g.shots.length; game.total = g.total;
+    const g = readGame(CAT); lastSig = (g.solo ? "solo:" : "") + g.start + ":" + g.seed + ":" + g.shots.length; game.total = g.total;
     decideBand();
     renderAll();
   });
@@ -10545,6 +10552,7 @@ function lancer(){
 }
 function nouvellePartie(){
   if(busy || !CAT) return;
+  if(game.solo){ soloShots = []; soloSeed = (Math.random() * 2 ** 31) | 0; lastSig = null; renderAll(); return; }   // entraînement : nouvelle ville, rien d'écrit
   insertItem(CAT, { t: "nouvelle partie", duel: "partie", seed: (Math.random() * 2 ** 31) | 0, g: REGLES.g, vent: REGLES.vent, trou: REGLES.trou, decor: REGLES.decor, at: Date.now() });
   seen[CAT.id] = getEffectiveItems(CAT).length; saveSeen();
   renderAll();
@@ -10709,7 +10717,7 @@ function card(cat, catIdx){
   return ROOT;
 }
 function onTheme(){ cssCache.clear(); spriteCache.clear(); iconesCouleur = null; if(world && ROOT && ROOT.isConnected) renderCity(world, finale); }
-return { card, onTheme, resync: ()=>{ lastSig = null; }, etat: ()=>({ world, dance, finale, busy, simulate }) };   // resync : relire la partie ; etat : pour les tests
+return { card, onTheme, resync: ()=>{ lastSig = null; }, etat: ()=>({ world, dance, finale, busy, simulate, game }) };   // resync : relire la partie ; etat : pour les tests
 };
 // plusieurs duels dans la grille : chacun garde sa propre instance (sinon ils se volaient la carte)
 const Duel = (()=>{
