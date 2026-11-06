@@ -229,9 +229,7 @@
   - Bandeaux : « … a joué ! » + « > Voir son coup » tant que le dernier coup
     d'un autre n'a pas été vu sur cet appareil (sous-le-tapis-duel-vu, hors
     fiches) — le décor reste celui d'avant le coup jusqu'au clic, couronne
-    comprise ; « En attente de … » après mon coup si la partie continue :
-    on y revoit son coup et on peut déjà préparer le suivant (angle/force
-    gardés sur l'appareil, sous-le-tapis-duel-prep, oubliés au lancer).
+    comprise ; « En attente de … » après mon coup si la partie continue.
     Message flottant « X a joué ! » (renderNewNotice).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
@@ -9745,20 +9743,6 @@ function worldAfter(n){
 }
 const persoOf = k => (game.perso || [0, 1])[k];   // 0 : faisan au collier blanc, 1 : faisan à huppe dorée
 const turn = () => game.solo ? 0 : game.shots.length ? 1 - game.shots[game.shots.length - 1].p : 0;   // entraînement : toujours le faisan de gauche
-// coup préparé pendant qu'on attend l'autre : { idListe: { a, v, seed, n } }, propre à l'appareil, oublié au lancer
-const PREP_KEY = "sous-le-tapis-duel-prep";
-function prepOf(){
-  try{ const m = JSON.parse(localStorage.getItem(PREP_KEY) || "{}"), r = CAT && m[CAT.id];
-    return r && r.seed === game.seed && r.by === myUid() && r.n >= game.shots.length - 1 ? r : null; }catch(e){ return null; }
-}
-function setPrep(r){
-  try{ const m = JSON.parse(localStorage.getItem(PREP_KEY) || "{}"); if(r) m[CAT.id] = r; else delete m[CAT.id];
-    localStorage.setItem(PREP_KEY, JSON.stringify(m)); }catch(e){}
-}
-function notePrep(){
-  if(bandMode !== "attente" || !CAT) return;
-  setPrep({ a: Number($(".d-angle").value) || 0, v: Number($(".d-vitesse").value) || 0, seed: game.seed, n: game.shots.length, by: myUid() });
-}
 function lastShotOf(p){ for(let i = game.shots.length - 1 - (hideLast ? 1 : 0); i >= 0; i--) if(game.shots[i].p === p) return game.shots[i]; return null; }
 
 let cv = null, ctx = null;
@@ -10546,7 +10530,6 @@ function lancer(){
   if(!isFinite(a) || !isFinite(v)) return;
   const o = monObjet;
   const shot = { p, a, v, o, at: Date.now(), by: myUid() };
-  if(prepOf()) setPrep(null);
   const res = simulate(world, shot);
   ownShot = true;
   if(game.solo){   // entraînement : en mémoire seulement
@@ -10600,9 +10583,7 @@ function refreshUI(){
   $(".persos").classList.toggle("gone", game.shots.length > 0 || busy);
   ROOT.querySelectorAll(".persos button").forEach(b => b.classList.toggle("on", Number(b.dataset.k) === persoOf(0)));
   const lock = busy || attente || !mine;
-  // pendant l'attente, on peut déjà préparer son prochain coup (Lancer reste bloqué)
-  const lockIn = busy || bandMode === "decouverte" || (!mine && bandMode !== "attente");
-  ROOT.querySelectorAll(".d-angle, .d-vitesse, .pas").forEach(i => i.disabled = lockIn || world.over);
+  ROOT.querySelectorAll(".d-angle, .d-vitesse, .pas").forEach(i => i.disabled = lock || world.over);
   const lancerBtn = $(".d-lancer");
   if(world.over){
     lancerBtn.textContent = "Nouvelle partie"; lancerBtn.disabled = busy;
@@ -10620,7 +10601,7 @@ function refreshUI(){
   if(last) $(".d-revoir").title = `Revoir le coup ${de(PLAYERS[last.p].nom)}`;
   const focused = document.activeElement && ROOT.contains(document.activeElement) && /d-angle|d-vitesse/.test(document.activeElement.className);
   if(!busy && !world.over && !focused){   // en attente (même après rechargement) : les réglages de son dernier coup restent affichés
-    const ls = prepOf() || (bandMode === "attente" && last ? last : lastShotOf(p));
+    const ls = bandMode === "attente" && last ? last : lastShotOf(p);
     $(".d-angle").value = ls ? ls.a : 45; $(".d-vitesse").value = ls ? ls.v : 60;
   }
 }
@@ -10667,11 +10648,10 @@ function build(){
   card.querySelector(".d-revoir").addEventListener("click", ()=> replayLast(false));
   card.querySelector(".d-go").addEventListener("click", ()=>{ haptic("tic"); $(".attente").classList.remove("on"); bandMode = null; setTimeout(()=> replayLast(true), 300); });
   card.querySelectorAll(".d-angle, .d-vitesse").forEach(i => i.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); lancer(); } }));
-  card.querySelectorAll(".d-angle, .d-vitesse").forEach(i => i.addEventListener("input", notePrep));
   card.querySelectorAll(".pas").forEach(b => {
     let t1 = null, t2 = null;
     const pas = ()=>{ const inp = card.querySelector("." + b.dataset.for); if(inp.disabled) return;
-      inp.value = clamp((Number(inp.value) || 0) + Number(b.dataset.d), Number(inp.min), Number(inp.max)); notePrep(); };
+      inp.value = clamp((Number(inp.value) || 0) + Number(b.dataset.d), Number(inp.min), Number(inp.max)); };
     const stop = ()=>{ clearTimeout(t1); clearInterval(t2); t1 = t2 = null; };
     b.addEventListener("pointerdown", e => { e.preventDefault(); haptic("pas"); pas(); t1 = setTimeout(()=>{ t2 = setInterval(pas, 70); }, 380); });
     ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, stop));
