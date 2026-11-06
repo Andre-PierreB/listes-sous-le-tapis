@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.60 -->
+<!-- Sous le tapis — version AUTONOME 10.61 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1234,6 +1234,8 @@
     l'interrupteur, « + Ajouter un écran de chat » en dessous. Écran de chat : la saisie est un vrai champ visible (sélection à
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
+  - 10.61 : écran de chat sur téléphone (une colonne) : il grandit avec les
+    messages jusqu'à 10 lignes (avant : 3, faute de liste voisine).
   - 10.60 : écran de chat : message non lu (d'un autre, pas encore vu sur cet
     appareil, CHAT_SEEN_KEY) → l'écran sort de sa discrétion,
     voyant vert sur la tôle en haut à droite (.chat-led), ligne « --- nouveau
@@ -2370,7 +2372,10 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 }
 .chat-box{ width:calc(100% - 1.5rem); padding-top:calc(0.35rem + 22px);   /* autant d'air au-dessus que sous l'écran (marge + poignée) */ display:flex; flex-direction:column; opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
 .chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
-@media (max-width:720px){ .chat-box{ width:100%; } }   /* une colonne (téléphone) : la largeur d'une liste */
+@media (max-width:720px){
+  .chat-box{ width:100%; }   /* une colonne (téléphone) : la largeur d'une liste */
+  .chat-card .chat-log{ flex:0 1 auto; max-height:calc(10 * 1.45em); }   /* 10.61 : seul sur sa rangée, il grandit avec les messages, jusqu'à 10 lignes */
+}
 /* 10.60 : message non lu (d'un autre, pas encore vu sur cet appareil) :
    l'écran sort de sa discrétion, le voyant s'allume ; ligne « nouveau » */
 .chat-card.unread .chat-box{ opacity:1; }
@@ -4007,7 +4012,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.60</span>
+    <span class="version-tag">v10.61</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
