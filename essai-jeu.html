@@ -10,7 +10,8 @@
 
   - Jeu à deux en tour par tour inspiré de GORILLA.BAS (angle, vitesse, vent,
     décor qui se troue), version originale : deux faisans sur les toits d'une
-    ville à pignons, objets au choix (stylo plume, roue de vélo, cœur).
+    ville à pignons, objets au choix (stylo plume, roue de vélo, réveil, cœur —
+    le réveil est à l'essai, pour comparer avec le stylo).
     Aucun dessin repris de l'original.
   - Page autonome, PAS branchée à l'appli ni à Firebase : la partie est gardée
     dans ce navigateur (localStorage « sltapis-essai-jeu »), on joue à deux sur
@@ -54,7 +55,8 @@
     couleurs de l'écran de chat (--chat-me, --chat-them).
   - Une partie = une touche (pas de manches ni de score) ; bouton « Nouvelle
     partie ». Objets : stylo plume (éclate en lettres, bruit de plume),
-    roue de vélo (rayons et bouts de pneu qui volent, « dring dring »), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
+    roue de vélo (rayons et bouts de pneu qui volent, « dring dring »),
+    réveil (rouages, ressorts et chiffres, sonnerie), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
     le vainqueur, ciel qui vire au mauve et au citron, toutes les fenêtres
     qui s'allument, confettis (finale).
 -->
@@ -308,9 +310,9 @@ const S = (()=>{
 })();
 const PLAYERS = [ { ini:"AP", nom:"André-Pierre", color:"--chat-me" }, { ini:"H", nom:"Hiske", color:"--chat-them" } ];
 const de = n => (/^[aeiouyéèêâîôû]/i.test(n) ? "d'" : "de ") + n;   // « d'André-Pierre », « de Hiske »
-const OBJETS = { stylo:"Stylo plume", roue:"Roue de vélo", coeur:"Cœur" };
-const OBJ_SIZE = { stylo: 1, roue: 1, coeur: 1 };   // taille en vol
-const OBJETS_ART = { stylo:"un stylo plume", roue:"une roue de vélo", coeur:"un cœur" };
+const OBJETS = { stylo:"Stylo plume", roue:"Roue de vélo", reveil:"Réveil", coeur:"Cœur" };
+const OBJ_SIZE = { stylo: 1.15, roue: 1, reveil: 1.1, coeur: 1 };   // taille en vol
+const OBJETS_ART = { stylo:"un stylo plume", roue:"une roue de vélo", reveil:"un réveil", coeur:"un cœur" };
 const DANCE_BEAT = 0.32, DANCE_BEATS = 14;   // danse du vainqueur : 14 temps, ailes inversées à chaque temps
 // couleurs du décor (mode clair ; le mode sombre garde les siennes) — ciel neutre
 // pendant la partie, pour que le ciel de fête de la fin se remarque
@@ -647,18 +649,39 @@ function drawObjet(c, type, x, y, rot = 0, sc = 1){
     c.fillStyle = "rgba(255,255,255,0.7)"; c.beginPath(); c.ellipse(-6.5, -7, 3, 1.7, -0.6, 0, 7); c.fill();
     c.beginPath(); c.arc(-2.8, -9.6, 0.9, 0, 7); c.fill();
   }else if(type === "stylo"){
-    // stylo plume : corps mauve, bagues et plume dorées
-    c.rotate(-0.7);
+    // stylo plume : ce qui le fait reconnaître, c'est la grosse plume dorée, fendue, avec son petit trou
+    c.rotate(-0.75);
     const g = c.createLinearGradient(0, -3, 0, 3);
     g.addColorStop(0, "#8A63C2"); g.addColorStop(0.45, "#562F96"); g.addColorStop(1, "#3B1F6A");
-    c.fillStyle = g; roundRect(c, -15, -2.8, 20, 5.6, 2.6); c.fill();               // corps
-    c.fillStyle = "#D9B44A"; c.fillRect(-3.4, -2.9, 1.3, 5.8); c.fillRect(-13.2, -2.9, 0.9, 5.8);   // bagues
-    c.fillRect(-13, -4.4, 8.5, 1.2); c.beginPath(); c.arc(-4.5, -3.8, 0.9, 0, 7); c.fill();          // agrafe
-    c.fillStyle = "#2A2725"; c.beginPath(); c.moveTo(5, -2.2); c.lineTo(8, -1.7); c.lineTo(8, 1.7); c.lineTo(5, 2.2); c.closePath(); c.fill();   // section
-    c.fillStyle = "#E3C15A"; c.beginPath(); c.moveTo(8, -1.9); c.quadraticCurveTo(13, -1.4, 16, 0); c.quadraticCurveTo(13, 1.4, 8, 1.9); c.closePath(); c.fill();   // plume
-    c.strokeStyle = "#8C6A16"; c.lineWidth = 0.5; c.beginPath(); c.moveTo(10.5, 0); c.lineTo(16, 0); c.stroke();
-    c.fillStyle = "#8C6A16"; c.beginPath(); c.arc(10.3, 0, 0.6, 0, 7); c.fill();
-    c.strokeStyle = "rgba(255,255,255,0.45)"; c.lineWidth = 0.8; c.beginPath(); c.moveTo(-12, -1.4); c.lineTo(3, -1.4); c.stroke();
+    c.fillStyle = g; roundRect(c, -16, -3, 15, 6, 3); c.fill();                                   // corps
+    c.fillStyle = "#D9B44A"; c.fillRect(-4.2, -3.1, 1.4, 6.2);                                        // bague
+    c.fillRect(-14, -4.6, 9, 1.3); c.beginPath(); c.arc(-5, -4, 1, 0, 7); c.fill();                  // agrafe
+    c.fillStyle = "#2A2725"; c.beginPath(); c.moveTo(-1, -2.6); c.lineTo(2.5, -2.1); c.lineTo(2.5, 2.1); c.lineTo(-1, 2.6); c.closePath(); c.fill();   // section
+    const n = c.createLinearGradient(0, -4.5, 0, 4.5); n.addColorStop(0, "#F3D877"); n.addColorStop(1, "#C99A2E");
+    c.fillStyle = n; c.beginPath(); c.moveTo(2.2, -3.6);                                               // plume en fer de lance
+    c.bezierCurveTo(7, -4.6, 12, -2.6, 16.5, 0); c.bezierCurveTo(12, 2.6, 7, 4.6, 2.2, 3.6); c.closePath(); c.fill();
+    c.strokeStyle = "#7A5A10"; c.lineWidth = 0.7; c.beginPath(); c.moveTo(8.6, 0); c.lineTo(16.5, 0); c.stroke();   // fente
+    c.fillStyle = "#7A5A10"; c.beginPath(); c.arc(8, 0, 1, 0, 7); c.fill();                           // trou
+    c.strokeStyle = "rgba(255,255,255,0.5)"; c.lineWidth = 0.8;
+    c.beginPath(); c.moveTo(-13.5, -1.6); c.lineTo(-6, -1.6); c.moveTo(4, -2.2); c.quadraticCurveTo(8, -2.6, 11, -1.4); c.stroke();
+  }else if(type === "reveil"){
+    // réveil matin : deux cloches, marteau, cadran blanc à aiguilles, petits pieds
+    c.strokeStyle = "#5E5650"; c.lineWidth = 1.4;
+    c.beginPath(); c.moveTo(-5, 6.5); c.lineTo(-7.5, 10); c.moveTo(5, 6.5); c.lineTo(7.5, 10); c.stroke();   // pieds
+    c.beginPath(); c.moveTo(0, -9.5); c.lineTo(0, -12.5); c.stroke();                                         // marteau
+    c.fillStyle = "#5E5650"; c.beginPath(); c.arc(0, -12.8, 1.2, 0, 7); c.fill();
+    for(const sx of [-1, 1]){                                                                               // cloches
+      const bg = c.createLinearGradient(0, -14, 0, -7); bg.addColorStop(0, "#F3D877"); bg.addColorStop(1, "#C99A2E");
+      c.fillStyle = bg; c.beginPath(); c.arc(sx * 6, -9, 4, Math.PI * 1.05, Math.PI * 1.95); c.closePath();
+      c.save(); c.translate(sx * 6, -9); c.rotate(sx * 0.5); c.translate(-sx * 6, 9); c.fill(); c.restore();
+    }
+    const bd = c.createRadialGradient(-3, -3, 1, 0, 0, 10); bd.addColorStop(0, "#E07A92"); bd.addColorStop(1, "#B0405C");
+    c.fillStyle = bd; c.beginPath(); c.arc(0, 0, 9, 0, 7); c.fill();                                          // boîtier
+    c.fillStyle = "#FFFDF7"; c.beginPath(); c.arc(0, 0, 6.6, 0, 7); c.fill();                                 // cadran
+    c.fillStyle = "#6B6560"; for(let i = 0; i < 4; i++){ const a = i * Math.PI / 2; c.fillRect(Math.cos(a) * 5.4 - 0.5, Math.sin(a) * 5.4 - 0.5, 1, 1); }
+    c.strokeStyle = "#2A2725"; c.lineWidth = 1; c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -4.4); c.moveTo(0, 0); c.lineTo(3.2, 1.4); c.stroke();   // aiguilles
+    c.fillStyle = "#C24F6E"; c.beginPath(); c.arc(0, 0, 0.9, 0, 7); c.fill();
+    c.fillStyle = "rgba(255,255,255,0.45)"; c.beginPath(); c.ellipse(-4.4, -5.6, 2.2, 1.1, -0.7, 0, 7); c.fill();
   }
   c.restore();
 }
@@ -684,15 +707,15 @@ const clouds = Array.from({ length: 5 }, (_, i) => ({ x: i * 220 + Math.random()
 function burst(type, x, y, big){
   // éclats propres à l'objet : verre et mousse, bisous, écriture
   const n = big ? 34 : 22, LETTRES = "aébdçfgèhlmnpqrstuvz&?!~";
-  const kinds = { roue:["spoke","spoke","rubber"], coeur:["lips","lips","miniheart"], stylo:["letter","letter","letter","ink"] }[type];
-  const colors = { spoke:["#9AA3A8","#C3CACE"], rubber:["#3A3836"], lips:["#C24F6E","#D9667F","#E592A8"], miniheart:["#E592A8","#F2C3CF"],
+  const kinds = { roue:["spoke","spoke","rubber"], coeur:["lips","lips","miniheart"], stylo:["letter","letter","letter","ink"], reveil:["gear","gear","spring","digit"] }[type];
+  const colors = { gear:["#C99A2E","#9AA3A8"], spring:["#7B8389"], digit:["#2A2725","#6B6560"], spoke:["#9AA3A8","#C3CACE"], rubber:["#3A3836"], lips:["#C24F6E","#D9667F","#E592A8"], miniheart:["#E592A8","#F2C3CF"],
                    letter:["#562F96","#4A5E6E","#9558D0"], ink:["#3B1F6A","#562F96"] };
   for(let i = 0; i < n; i++){
     const a = Math.random() * Math.PI * 2, sp = 60 + Math.random() * (big ? 260 : 170), k = kinds[i % kinds.length], col = colors[k];
-    const soft = k === "lips" || k === "miniheart" || k === "letter";   // bisous et lettres flottent plus longtemps
+    const soft = k === "lips" || k === "miniheart" || k === "letter" || k === "digit";   // bisous et lettres flottent plus longtemps
     particles.push({ x, y, vx: Math.cos(a) * sp * (soft ? 0.7 : 1), vy: Math.sin(a) * sp - 80, life: soft ? 1.3 : 1, decay: 0.5 + Math.random() * 0.5,
       rot: soft ? (Math.random() - 0.5) * 0.8 : Math.random() * 6, vr: (Math.random() - 0.5) * (soft ? 2 : 12), kind: k,
-      color: col[i % col.length], s: (soft ? 0.9 : 0.6) + Math.random() * 0.8, ch: LETTRES[Math.floor(Math.random() * LETTRES.length)], float: soft });
+      color: col[i % col.length], s: (soft ? 0.9 : 0.6) + Math.random() * 0.8, ch: k === "digit" ? ["12","3","6","9","1","7"][Math.floor(Math.random() * 6)] : LETTRES[Math.floor(Math.random() * LETTRES.length)], float: soft });
   }
   // morceaux de façade (couleur de la maison touchée) et fenêtres
   const b = world.city.bs.find(b => x >= b.x && x <= b.x + b.w);
@@ -738,6 +761,11 @@ function drawParticle(p){
       ctx.strokeStyle = "rgba(120,20,50,0.5)"; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(-3.4, 0); ctx.quadraticCurveTo(0, 0.8, 3.4, 0); ctx.stroke(); break;
     case "miniheart": ctx.beginPath(); ctx.moveTo(0, 2.4); ctx.bezierCurveTo(-4, -0.4, -2.6, -4, 0, -1.8); ctx.bezierCurveTo(2.6, -4, 4, -0.4, 0, 2.4); ctx.fill(); break;
     case "letter": ctx.font = "italic 700 11px Georgia, 'Times New Roman', serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.ch, 0, 0); break;
+    case "gear": ctx.beginPath(); for(let i = 0; i < 16; i++){ const r = i % 2 ? 2.2 : 3.2, a = i / 16 * Math.PI * 2; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+                 ctx.closePath(); ctx.fill(); ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.beginPath(); ctx.arc(0, 0, 0.8, 0, 7); ctx.fill(); break;
+    case "spring": ctx.strokeStyle = p.color; ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(-4, 0);
+                   for(let i = 0; i < 8; i++) ctx.lineTo(-3 + i, i % 2 ? -1.6 : 1.6); ctx.lineTo(5, 0); ctx.stroke(); break;
+    case "digit": ctx.font = "700 8px 'Courier Prime', monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.ch, 0, 0); break;
     case "ink": ctx.beginPath(); ctx.arc(0, 0, 1.6, 0, 7); ctx.arc(1.8, 1, 0.8, 0, 7); ctx.fill(); break;
     case "confetti": ctx.fillRect(-2.4, -1.2, 4.8, 2.4); break;
     case "feather": ctx.beginPath(); ctx.ellipse(0, 0, 5, 1.6, 0, 0, 7); ctx.fill(); break;
@@ -842,7 +870,10 @@ function frame(){
       if(y < -8){   // au-dessus de l'écran : petit repère
         ctx.fillStyle = css(PLAYERS[anim.shot.p].color);
         ctx.beginPath(); ctx.moveTo(x, 4); ctx.lineTo(x - 5, 12); ctx.lineTo(x + 5, 12); ctx.fill();
-      }else drawObjet(ctx, anim.shot.o, x, y, anim.i * 0.09 * (anim.shot.p ? -1 : 1), OBJ_SIZE[anim.shot.o]);
+      }else{
+        drawObjet(ctx, anim.shot.o, x, y, anim.i * 0.09 * (anim.shot.p ? -1 : 1), OBJ_SIZE[anim.shot.o]);
+        if(anim.shot.o === "stylo" && anim.i % 8 === 0) particles.push({ x, y, vx: 0, vy: 10, life: 0.8, decay: 0.9, kind: "ink", color: "#562F96", rot: 0, vr: 0, s: 0.6 });   // gouttes d'encre
+      }
     }
   }
   // éclats
@@ -927,7 +958,7 @@ function endShot(){
     return;
   }
   burst(shot.o, e.x, e.y, e.kind === "hit");
-  sound("boum"); sound({ roue:"sonnette", coeur:"bisous", stylo:"plume" }[shot.o]);
+  sound("boum"); sound({ roue:"sonnette", coeur:"bisous", stylo:"plume", reveil:"reveil" }[shot.o]);
   if(e.kind === "city"){
     world = applyResult(world, shot, res); renderCity(world);
     setTimeout(()=> finish(done), 450);
@@ -1133,6 +1164,12 @@ function sound(kind){
       const o = AC.createOscillator(), g = env(t, 0.005, 1.2, 0.45);
       o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.4);
       o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
+    }else if(kind === "reveil"){
+      // sonnerie de réveil : le marteau bat entre deux cloches, très vite
+      for(let i = 0; i < 26; i++){
+        const d = 0.04 + i * 0.026, o = AC.createOscillator(); o.type = "triangle"; o.frequency.value = i % 2 ? 2350 : 2780;
+        const g = env(t + d, 0.002, i > 20 ? 0.12 : 0.28, 0.05); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + 0.06);
+      }
     }else if(kind === "sonnette"){
       // « dring dring » : deux coups de sonnette (timbre métallique qui vibre)
       for(const d of [0.05, 0.36]){
