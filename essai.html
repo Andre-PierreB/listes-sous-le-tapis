@@ -202,13 +202,13 @@
   - Réglages de l'écran choisis au banc d'essai le 5/11/2026 (tôle percée,
     trame LCD, Courier Prime, bleu-vert foncé / vert du faisan).
 
-  DUEL DE FAISANS (banc d'essai 10.63, essai.html seulement pour l'instant)
+  DUEL DE FAISANS (depuis la 10.63)
   - Petit jeu à deux en tour par tour (angle, vitesse, vent, ville qui se
     troue), mis au point sur essai-jeu.html (voir sa note). Une liste dont la
     fiche porte type: "duel" (nom interne « Duel », jamais affiché).
-    Création : bouton « + Ajouter un duel de faisans » dans « Nouvelle liste »
-    (sur essai.html seulement, test ESSAI) ; elle reçoit l'en-tête de sa
-    première partie.
+    Création : bouton « + Ajouter un duel de faisans » dans « Nouvelle liste »,
+    sous celui de l'écran de chat ; elle reçoit l'en-tête de sa première
+    partie.
   - Données = tâches ordinaires de la fiche, jamais cochées ni retirées :
     en-tête de partie { t, duel:"partie", seed, g, vent, trou, decor, at },
     puis un coup par tâche { t:"45 60 roue", a, v, o, at, by } (perso : le
@@ -1270,6 +1270,9 @@
     l'interrupteur, « + Ajouter un écran de chat » en dessous. Écran de chat : la saisie est un vrai champ visible (sélection à
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
+  - 10.63 : duel de faisans (voir DUEL DE FAISANS) : petit jeu à deux en
+    tour par tour, créé par « + Ajouter un duel de faisans » ; entraînement
+    seul. Papier des mémos en blanc (--memo-a/b/c #FFFFFF, avant blanc chaud).
   - 10.62 : écran de chat au doigt : toucher l'écran met le curseur dans la
     saisie sans preventScroll, le téléphone la remonte lui-même au-dessus du
     clavier (avant : seulement à la première lettre).
@@ -2500,7 +2503,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* sous Lancer : le choix du faisan (avant le 1er coup), puis Revoir, à la même place : la carte ne change pas de hauteur */
 .duel-card .d-sous{ display:grid; justify-items:center; align-items:center; }
 .duel-card .d-sous > *{ grid-area:1 / 1; }
-.duel-card .d-sous .persos{ justify-self:var(--persos-pos, start); }
+.duel-card .d-sous .persos{ justify-self:var(--persos-pos, end); }   /* à droite (choisi au banc le 6/11/2026) */
 .duel-card .persos.gone, .duel-card .d-revoir.gone{ visibility:hidden; }
 /* pied dans la carte, comme les listes : poignée à gauche, « … » et initiales à droite */
 .duel-card .duel-foot{ margin-top:0.15rem; padding:0 0.15rem; }
@@ -3956,6 +3959,8 @@ body.no-list .add-category-row{
 .nl-chat{ align-self:flex-start; margin-top:0.35rem; display:inline-flex; align-items:center; gap:0.5rem; appearance:none; border:0; background:none; padding:0.15rem 0; font:inherit; font-size:0.86rem; color:var(--ink-soft); cursor:pointer; }   /* 10.57 : sous l'interrupteur, même allure */
 .nl-chat .add-btn{ pointer-events:none; }
 .nl-chat:hover{ color:var(--ink); }
+.nl-chat:not(.nl-duel){ margin-top:0.7rem; }   /* 10.63 : écran de chat et duel groupés, à l'écart de la création d'une liste */
+.nl-chat.nl-duel{ margin-top:-0.3rem; }
 .nl-chat:hover .add-btn{ color:var(--ink); border-color:color-mix(in srgb, var(--ink-soft) 40%, var(--line)); }
 .nl-courses input:focus-visible + .nl-switch{ outline:2px solid var(--accent); outline-offset:2px; }
 .nl-courses:has(input:checked){ color:var(--ink); }
@@ -6442,7 +6447,7 @@ function renderAddCategoryRow(){
           </div>
         </div>
         ${Store.mode === "doc" ? `<button type="button" class="nl-chat"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un écran de chat</button>` : ""}
-        ${Store.mode === "doc" && ESSAI ? `<button type="button" class="nl-chat nl-duel"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un duel de faisans</button>` : ""}
+        ${Store.mode === "doc" ? `<button type="button" class="nl-chat nl-duel"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un duel de faisans</button>` : ""}
       </div>
     </div>
   `;
@@ -13629,7 +13634,7 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 // ---- banc d'essai (essai.html?duel) : place du choix des faisans, lien des réglages ----
 (()=>{
   const K = "sltapis-essai-duel-persos", q = new URLSearchParams(location.search);
-  let v = q.get("persos") || (()=>{ try{ return localStorage.getItem(K); }catch(e){ return null; } })() || "start";
+  let v = q.get("persos") || (()=>{ try{ return localStorage.getItem(K); }catch(e){ return null; } })() || "end";
   const apply = ()=> document.documentElement.style.setProperty("--persos-pos", v);
   apply();
   if(!(ESSAI && q.has("duel"))) return;
