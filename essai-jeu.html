@@ -16,10 +16,10 @@
   - Page autonome, PAS branchée à l'appli ni à Firebase : la partie est gardée
     dans ce navigateur (localStorage « sltapis-essai-jeu »), on joue à deux sur
     le même écran ; « Tour par tour » simule le passage de l'un à l'autre :
-    après son coup, bandeau « En attente de … » (glisse du bas, léger rebond,
-    deux notes) et le faisan attendu somnole (« z ») ; « H arrive » (banc
-    seulement) simule son arrivée : il voit « … a joué ! » et « Voir son
-    coup » rejoue le coup, suivi d'un petit commentaire calculé (commentaire :
+    après son coup, bandeau « En attente de … » sur toute la largeur, en bas
+    (glisse, deux notes, puis immobile) ; « H arrive » (banc
+    seulement) simule son arrivée : il voit « … a joué ! » (bandeau pleine
+    largeur au milieu) et le bouton-poussoir « Voir son coup » rejoue le coup, suivi d'un petit commentaire calculé (commentaire :
     « Ouf, tout juste ! », « Ça devient chaud… », « Pas loin. », « Tranquille. »
     selon la distance au faisan visé). En ouvrant la page : « … a joué ! »
     tant que le dernier coup n'a pas été découvert (game.decouvert ; dans
@@ -126,38 +126,42 @@ h1{ margin:0.15rem 0 1rem; font-size:1.35rem; font-weight:700; color:var(--logo-
 .stage{ background:var(--surface); border-radius:18px; box-shadow:var(--shadow); padding:0.6rem; }
 .screen{ position:relative; }
 canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; touch-action:manipulation; }
-/* bandeau « En attente de … » : glisse du bas avec un léger rebond, reste tant que l'autre n'a pas joué */
+/* bandeaux du tour par tour : toute la largeur du jeu, immobiles une fois posés (rien qui bouge en attente)
+   — « En attente de … » en bas, discret ; « … a joué ! » au milieu, avec le bouton-poussoir pour révéler le coup */
 .attente{
-  position:absolute; left:50%; bottom:0.9rem; transform:translate(-50%, 160%); opacity:0;
-  display:flex; align-items:center; gap:0.7rem; padding:0.45rem 0.6rem 0.45rem 1.1rem;
-  background:color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-  border-radius:999px; box-shadow:var(--shadow), 0 0 0 1px var(--line);
-  font:700 1rem 'Courier Prime', monospace; white-space:nowrap; pointer-events:none;
-  transition:transform .55s cubic-bezier(.34,1.4,.64,1), opacity .35s;
+  position:absolute; left:0; right:0; bottom:0; transform:translateY(100%); opacity:0;
+  display:flex; align-items:center; justify-content:center; gap:1rem; padding:0.55rem 1rem;
+  background:color-mix(in srgb, var(--surface) 90%, transparent); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  border-top:1px solid color-mix(in srgb, var(--pc) 30%, var(--line)); border-radius:0 0 12px 12px;
+  color:var(--pc); font:700 1rem 'Courier Prime', monospace; white-space:nowrap; pointer-events:none;
+  transition:transform .45s cubic-bezier(.2,.8,.3,1), opacity .3s;
 }
-.attente.on{ transform:translate(-50%, 0); opacity:1; pointer-events:auto; }
-.attente .dots{ display:inline-flex; gap:3px; margin-left:-0.35rem; }
-.attente .dots i{ width:4px; height:4px; border-radius:50%; background:currentColor; animation:pointille 1.4s infinite ease-in-out; }
-.attente .dots i:nth-child(2){ animation-delay:.2s; } .attente .dots i:nth-child(3){ animation-delay:.4s; }
-@keyframes pointille{ 0%, 80%, 100%{ opacity:.2; transform:translateY(0); } 40%{ opacity:1; transform:translateY(-3px); } }
+.attente.on{ transform:translateY(0); opacity:1; pointer-events:auto; }
 .attente .btn{ font-size:0.78rem; padding:0.3rem 0.8rem; min-height:0; }
-/* « … a joué ! » : le moment clé — plus grand, au milieu, teinté de la couleur de l'autre, qui respire doucement */
 .attente.decouverte{
-  bottom:50%; transform:translate(-50%, 50%) scale(0.6); font-size:1.35rem; gap:1rem; padding:0.7rem 0.8rem 0.7rem 1.5rem;
-  background:color-mix(in srgb, currentColor 10%, var(--surface)); box-shadow:var(--shadow), 0 0 0 2px color-mix(in srgb, currentColor 45%, transparent);
+  top:50%; bottom:auto; transform:translateY(-50%) scaleY(0); border-radius:0; padding:1.1rem 1rem; gap:1.4rem;
+  background:color-mix(in srgb, var(--pc) 9%, color-mix(in srgb, var(--surface) 92%, transparent));
+  border-top:2px solid color-mix(in srgb, var(--pc) 40%, transparent); border-bottom:2px solid color-mix(in srgb, var(--pc) 40%, transparent);
+  font-size:1.4rem;
 }
-.attente.decouverte.on{ transform:translate(-50%, 50%) scale(1); animation:respire 2.4s 0.8s infinite ease-in-out; }
-@keyframes respire{ 0%, 100%{ box-shadow:var(--shadow), 0 0 0 2px color-mix(in srgb, currentColor 45%, transparent); }
-                    50%{ box-shadow:var(--shadow), 0 0 0 7px color-mix(in srgb, currentColor 18%, transparent); } }
-.attente.decouverte .dots{ display:none; }
-.attente.decouverte .btn{ font-size:0.95rem; padding:0.5rem 1.1rem; color:inherit; background:currentColor; border-color:transparent; }
-.attente.decouverte .btn span{ color:var(--surface); }
-@media (pointer:coarse){ .attente .btn{ min-height:40px; } }
+.attente.decouverte.on{ transform:translateY(-50%) scaleY(1); }
+/* bouton-poussoir : une vraie touche, avec sa tranche, qui s'enfonce quand on appuie */
+.poussoir{
+  font:700 1rem 'Public Sans', sans-serif; color:#FFFFFF; background:var(--pc); cursor:pointer;
+  border:0; border-radius:12px; padding:0.62rem 1.4rem; letter-spacing:0.01em;
+  box-shadow:0 4px 0 color-mix(in srgb, var(--pc) 62%, #000), 0 7px 14px -4px rgba(30,40,45,0.35), inset 0 1px 0 rgba(255,255,255,0.35);
+  transform:translateY(0); transition:transform .07s, box-shadow .07s, filter .15s;
+}
+@media (hover:hover){ .poussoir:hover{ filter:brightness(1.07); } }
+.poussoir:active{ transform:translateY(3px); box-shadow:0 1px 0 color-mix(in srgb, var(--pc) 62%, #000), 0 2px 5px -2px rgba(30,40,45,0.35), inset 0 1px 0 rgba(255,255,255,0.25); }
+@media (pointer:coarse){ .attente .btn{ min-height:40px; } .poussoir{ min-height:46px; } }
 @media (max-width:560px){
-  .attente.decouverte{ font-size:0.85rem; padding:0.3rem 0.3rem 0.3rem 0.9rem; gap:0.5rem; bottom:42%; }
-  .attente.decouverte .btn{ font-size:0.8rem; min-height:36px; padding:0 0.8rem; }
-  .attente{ bottom:0.4rem; gap:0.4rem; padding:0.2rem 0.3rem 0.2rem 0.8rem; font-size:0.8rem; }
+  .attente{ gap:0.6rem; padding:0.35rem 0.6rem; font-size:0.8rem; }
   .attente .btn{ font-size:0.72rem; padding:0 0.6rem; min-height:34px; }
+  .attente.decouverte{ font-size:0.95rem; padding:0.55rem 0.6rem; gap:0.8rem;   /* téléphone : en bas, pour ne pas cacher les faisans */
+    top:auto; bottom:0; transform:translateY(100%); border-radius:0 0 12px 12px; border-bottom:0; }
+  .attente.decouverte.on{ transform:translateY(0); }
+  .poussoir{ font-size:0.85rem; padding:0.5rem 1rem; }
 }
 
 /* ---------- ligne du coup (esprit invite C:\ de l'écran de chat) ---------- */
@@ -246,8 +250,8 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
       <div class="screen">
         <canvas id="jeu"></canvas>
         <div class="attente" id="attente">
-          <span id="attenteQui"></span><span class="dots"><i></i><i></i><i></i></span>
-          <button type="button" class="btn ghost" id="attenteGo" title="Banc d'essai : simule le passage de l'autre joueur"></button>
+          <span id="attenteQui"></span>
+          <button type="button" class="btn ghost" id="attenteGo"></button>
         </div>
       </div>
       <div class="coup" id="coup">
@@ -815,7 +819,6 @@ function frame(){
     if(tumble && tumble.k === k) continue;
     if(world.over && world.fallen === k && !tumble) continue;
     wingT[k] = Math.max(0, wingT[k] - dt * 2.5);
-    if(bandMode === "decouverte" && $("#attente").classList.contains("on") && k !== turn() && wingT[k] === 0 && Math.random() < 0.012) wingT[k] = 1;   // petit signe de l'aile
     let hop = 0;
     if(world.over && world.winner === k){
       // le vainqueur se met de face et danse : une aile en haut, l'autre en bas,
@@ -837,18 +840,6 @@ function frame(){
     ctx.fillStyle = css(PLAYERS[k].color); ctx.globalAlpha = turn() === k && !world.over ? 1 : 0.55;
     const champion = world.over && world.winner === k;
     ctx.fillText(champion ? PLAYERS[k].nom : PLAYERS[k].ini, world.ph[k].x, world.ph[k].y - (champion ? 80 : 64) - hop); ctx.globalAlpha = 1;
-  }
-  // le faisan qu'on attend somnole : des « z » montent au-dessus de lui
-  if($("#attente").classList.contains("on") && bandMode === "attente" && !world.over){
-    const k = turn(), q = world.ph[k], t = performance.now() / 1000;
-    ctx.fillStyle = css(PLAYERS[k].color); ctx.textAlign = "center";
-    for(let i = 0; i < 3; i++){
-      const ph = (t * 0.45 + i / 3) % 1;
-      ctx.globalAlpha = Math.sin(ph * Math.PI) * 0.75;
-      ctx.font = `italic 700 ${F(10 + ph * 8)}px Georgia, serif`;
-      ctx.fillText("z", q.x + (k ? -1 : 1) * (14 + ph * 16) + Math.sin(ph * 6) * 3, q.y - 50 - ph * 34);
-    }
-    ctx.globalAlpha = 1;
   }
   if(tumble){
     tumble.t += dt; tumble.vy += 500 * dt; tumble.x += tumble.vx * dt; tumble.y += tumble.vy * dt; tumble.rot += tumble.vr * dt;
@@ -1010,17 +1001,17 @@ const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 function showBand(mode){
   bandMode = mode;
   const p = turn(), last = game.shots[game.shots.length - 1], who = mode === "attente" ? p : last.p;
-  $("#attenteQui").textContent = mode === "attente" ? `En attente ${de(PLAYERS[p].nom)}` : `${PLAYERS[last.p].nom} a joué !`;
-  $("#attente").style.color = css(PLAYERS[who].color);
+  $("#attenteQui").textContent = mode === "attente" ? `En attente ${de(PLAYERS[p].nom)}…` : `${PLAYERS[last.p].nom} a joué !`;
+  $("#attente").style.setProperty("--pc", css(PLAYERS[who].color));
   $("#attente").classList.toggle("decouverte", mode === "decouverte");
-  $("#attenteGo").innerHTML = mode === "attente" ? escapeHtml(`${PLAYERS[p].nom} arrive`) : "<span>Voir son coup</span>";
+  $("#attenteGo").className = mode === "attente" ? "btn ghost" : "poussoir";
+  $("#attenteGo").textContent = mode === "attente" ? `${PLAYERS[p].nom} arrive` : "Voir son coup";
   $("#attenteGo").title = mode === "attente" ? "Banc d'essai : simule le passage de l'autre joueur" : "";
   if(mode === "decouverte"){   // la surprise reste entière : le décor revient d'un cran, le coup n'est pas encore montré
     hideLast = true; world = worldAfter(game.shots.length - 1); renderCity(world); banner = null; dance = null;
   }
   $("#attente").classList.add("on"); sound("attente"); refreshUI();
 }
-const escapeHtml = t => String(t).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" })[c]);
 const showAttente = () => showBand("attente");
 // petit commentaire après la découverte, vu du côté de celui qui était visé (rien n'est stocké : calculé en rejouant)
 function commentaire(shot, res){
@@ -1165,21 +1156,27 @@ function sound(kind){
       o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.4);
       o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
     }else if(kind === "reveil"){
-      // sonnerie de réveil : le marteau bat entre deux cloches, très vite
-      for(let i = 0; i < 26; i++){
-        const d = 0.04 + i * 0.026, o = AC.createOscillator(); o.type = "triangle"; o.frequency.value = i % 2 ? 2350 : 2780;
-        const g = env(t + d, 0.002, i > 20 ? 0.12 : 0.28, 0.05); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + 0.06);
+      // réveil mécanique : petit déclic, puis le marteau tape vite entre deux cloches graves,
+      // son métallique un peu grinçant (onde carrée filtrée + claquement), qui s'essouffle
+      const lp = AC.createBiquadFilter(); lp.type = "bandpass"; lp.frequency.value = 1500; lp.Q.value = 1.1; lp.connect(out);
+      const n0 = noise(0.02), g0 = env(t, 0.001, 0.6, 0.02); n0.connect(g0); g0.connect(out); n0.start(t);      // déclic
+      for(let i = 0; i < 34; i++){
+        const d = 0.08 + i * 0.03, f = i % 2 ? 1180 : 1420, fade = i > 26 ? (34 - i) / 8 : 1;
+        const o = AC.createOscillator(); o.type = "square"; o.frequency.value = f;
+        const g = env(t + d, 0.001, 0.22 * fade, 0.045); o.connect(g); g.connect(lp); o.start(t + d); o.stop(t + d + 0.05);
+        const k = noise(0.008), gk = env(t + d, 0.0005, 0.25 * fade, 0.008); k.connect(gk); gk.connect(out); k.start(t + d);   // marteau
       }
     }else if(kind === "sonnette"){
-      // « dring dring » : deux coups de sonnette (timbre métallique qui vibre)
-      for(const d of [0.05, 0.36]){
-        for(const f of [2650, 3480]){
-          const o = AC.createOscillator(); o.type = "triangle"; o.frequency.value = f;
-          const trem = AC.createGain(), lfo = AC.createOscillator(), lg = AC.createGain();
-          lfo.frequency.value = 28; lg.gain.value = 0.5; lfo.connect(lg); lg.connect(trem.gain); trem.gain.value = 0.5;
-          const g = env(t + d, 0.003, 0.32, 0.28); o.connect(trem); trem.connect(g); g.connect(out);
-          o.start(t + d); o.stop(t + d + 0.3); lfo.start(t + d); lfo.stop(t + d + 0.3);
+      // sonnette de vélo : « dring dring » — le petit marteau frappe le timbre plusieurs fois très vite,
+      // timbre clair avec ses harmoniques de cloche, qui résonne un peu après chaque série
+      const timbre = (d, amp, len) => {
+        for(const [ratio, a] of [[1, 1], [2.76, 0.55], [5.4, 0.28], [8.9, 0.12]]){
+          const o = AC.createOscillator(); o.type = "sine"; o.frequency.value = 2150 * ratio;
+          const g = env(t + d, 0.002, amp * a, len / ratio ** 0.4); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + len + 0.05);
         }
+      };
+      for(const start of [0.04, 0.42]){
+        for(let i = 0; i < 6; i++) timbre(start + i * 0.034, i === 5 ? 0.32 : 0.2, i === 5 ? 0.55 : 0.09);
       }
     }else if(kind === "attente"){
       // le bandeau arrive : deux notes douces
