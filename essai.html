@@ -1235,7 +1235,8 @@
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
   - 10.62 : écran de chat au doigt : la saisie remonte au-dessus du clavier
-    dès qu'on touche l'écran (chatKeepVisible, visualViewport).
+    dès qu'on touche l'écran (chatKeepVisible, visualViewport), sans cacher
+    le haut de l'écran.
   - 10.61 : écran de chat sur téléphone (une colonne) : il grandit avec les
     messages jusqu'à 10 lignes (avant : 3, faute de liste voisine).
   - 10.60 : écran de chat : message non lu (d'un autre, pas encore vu sur cet
@@ -9353,10 +9354,16 @@ function chatKeepVisible(card){
   if(!matchMedia("(pointer:coarse)").matches || !window.visualViewport) return;
   const vv = window.visualViewport;
   const fit = ()=>{
-    const inRow = card.querySelector(".chat-in");
-    if(!inRow || !inRow.isConnected) return;
-    const r = inRow.getBoundingClientRect(), bottom = vv.offsetTop + vv.height - 12;
-    if(r.bottom > bottom) window.scrollBy(0, r.bottom - bottom);
+    const inRow = card.querySelector(".chat-in"), box = card.querySelector(".chat-hole");
+    if(!inRow || !inRow.isConnected || !box) return;
+    // la saisie au-dessus du clavier, sans jamais cacher le haut de l'écran
+    // (et on redescend si l'iPhone a trop remonté de lui-même)
+    const r = inRow.getBoundingClientRect(), c = box.getBoundingClientRect();
+    const top = vv.offsetTop + 8, bottom = vv.offsetTop + vv.height - 12;
+    let d = 0;
+    if(r.bottom > bottom) d = Math.min(r.bottom - bottom, Math.max(0, c.top - top));
+    else if(c.top < top) d = -Math.min(top - c.top, bottom - r.bottom);
+    if(Math.abs(d) > 1) window.scrollBy(0, d);
   };
   let n = 0;
   const onResize = ()=>{ fit(); if(++n > 3) vv.removeEventListener("resize", onResize); };
