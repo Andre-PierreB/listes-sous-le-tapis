@@ -2413,6 +2413,11 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    mauve et sauge, pignons à gradins ; un seul bleu (--objet) pour les objets et
    les boutons du jeu ; boutons « écran » (Courier Prime, ombre dure) ; les
    couleurs des joueurs (--chat-me, --chat-them) ne servent qu'à les reconnaître. */
+/* au repos, discret comme l'écran de chat (--chat-dim) ; net au survol, quand on joue (toucher dedans,
+   jusqu'à toucher ailleurs), pendant un vol ou la fête, et quand un coup de l'autre attend d'être vu */
+.duel-stage > *{ opacity:calc(1 - 0.34); transition:opacity .35s ease; }   /* le papier reste plein, son contenu s'efface */
+.duel-card:hover .duel-stage > *, .duel-card:focus-within .duel-stage > *, .duel-card.chat-open .duel-stage > *,
+.duel-card.duel-live .duel-stage > *, .duel-card.duel-touch .duel-stage > *{ opacity:1; }
 .duel-card{
   position:relative; min-width:0; container-type:inline-size;   /* une case de la grille, comme une liste */
   --sky-top:#F7FAF9; --sky-bottom:#E6EAEA; --sky-end-top:#EFE3FA; --sky-end-bottom:#FCF8DA;
@@ -10091,6 +10096,8 @@ function frame(now){
   if(!ROOT || !ROOT.isConnected || !world || !cv){ lastNow = 0; requestAnimationFrame(frame); return; }
   dt = lastNow ? Math.min(0.05, (now - lastNow) / 1000) : 1 / 60; lastNow = now;
   const k60 = dt * 60;   // nombre d'« images à 60/s » écoulées
+  const live = busy || !!dance || bandMode === "decouverte";   // comme un message non lu au chat : l'écran sort de sa discrétion
+  if(live !== ROOT._live){ ROOT._live = live; ROOT.classList.toggle("duel-live", live); }
   cssCache.clear(); cvW = cv.clientWidth || W;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, W, H);
@@ -10659,6 +10666,9 @@ function build(){
     b.addEventListener("click", e => e.preventDefault());
   });
   card.addEventListener("click", e => e.stopPropagation());   // un clic dans le jeu ne ferme rien d'autre
+  // au toucher (pas de survol ni de focus sur les boutons d'iPhone) : net jusqu'à ce qu'on touche ailleurs
+  card.addEventListener("pointerdown", ()=> card.classList.add("duel-touch"));
+  document.addEventListener("pointerdown", e => { if(!card.contains(e.target)) card.classList.remove("duel-touch"); }, true);
   return card;
 }
 // le pied de la carte (poignée, « … », initiales, partage) : refait à chaque rendu, comme l'écran de chat
