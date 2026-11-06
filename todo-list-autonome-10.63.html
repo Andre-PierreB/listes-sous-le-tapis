@@ -2525,7 +2525,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   .duel-card .invite{ display:none; }                            /* l'invite « AP> » est déjà dans le jeu, en haut */
   .duel-card .reglage{ grid-row:1; gap:0.25rem; }                 /* angle, force et objets sur la même ligne */
   .duel-card .reglage > span:first-child{ min-width:0; }
-  .duel-card .coup input{ width:2.4em; font-size:0.95rem; padding:0; flex:none; min-height:0; }
+  .duel-card .coup input{ width:3.5em; font-size:0.95rem; padding:0; flex:none; min-height:0; }   /* 3 chiffres + petites flèches de la souris */
   .duel-card .pas{ flex:none; width:26px; height:26px; font-size:0.95rem; box-shadow:1.5px 1.5px 0 var(--objet); }
   .duel-card .pas:disabled{ box-shadow:1.5px 1.5px 0 var(--line); }
   .duel-card .objets{ grid-column:3; grid-row:1; justify-self:end; gap:0; }
@@ -2544,7 +2544,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   .duel-card .reglage > span:first-child{ grid-column:1 / -1; font-size:0.62rem; line-height:1; letter-spacing:0.05em; }
   .duel-card .reglage .unite{ display:none; }
   .duel-card .pas{ width:24px; height:24px; font-size:0.9rem; }
-  .duel-card .coup input{ width:2.1em; }
+  .duel-card .coup input{ width:2.6em; }   /* au doigt : pas de petites flèches, 3 chiffres tiennent */
   .duel-card .coup{ column-gap:0.45rem; }
 }
 
