@@ -42,7 +42,8 @@
   - Réglages du banc dans l'adresse (?g=…&vent=…&trou=…&decor=…&pal=…
     &trace=…&son=…&tpt=…) ; bouton « Copier le lien des réglages ».
     Changer une règle recommence la partie (même graine).
-  - Faisans : commun ou doré (PLUMES). Celui qui lance la partie choisit le
+  - Deux faisans (PLUMES : 0 au collier blanc, 1 à huppe dorée), sans nom :
+    chacun prend le prénom de son joueur. Celui qui lance la partie choisit le
     sien avant le premier coup (game.perso, persoOf) ; l'autre prend l'autre. Fin de partie : cri
     « kôk-kôk », petite fanfare originale et danse du vainqueur, une aile en
     haut / une en bas, inversées à chaque temps, de face (drawPheasantFront),
@@ -267,7 +268,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
         <span class="invite" id="invite"></span>
         <label>angle <input id="angle" type="number" min="0" max="90" step="1" inputmode="numeric">°</label>
         <label>vitesse <input id="vitesse" type="number" min="1" max="200" step="1" inputmode="numeric"></label>
-        <div class="persos" id="persos" title="Celui qui lance la partie choisit son faisan ; l'autre prend l'autre"></div>
+        <div class="persos" id="persos" title="Votre faisan (l'autre joueur prend l'autre)"></div>
         <div class="objets" id="objets"></div>
         <button type="button" class="btn ghost" id="revoir">Revoir</button>
         <button type="button" class="btn" id="lancer">Lancer</button>
@@ -463,7 +464,7 @@ function worldAfter(n){
   for(let i = 0; i < n; i++) w = applyResult(w, game.shots[i], simulate(w, game.shots[i]));
   return w;
 }
-const persoOf = k => (game.perso || [0, 1])[k];   // 0 : faisan commun, 1 : faisan doré
+const persoOf = k => (game.perso || [0, 1])[k];   // 0 : faisan au collier blanc, 1 : faisan à huppe dorée
 const turn = () => game.shots.length ? 1 - game.shots[game.shots.length - 1].p : 0;
 function lastShotOf(p){ for(let i = game.shots.length - 1 - (hideLast ? 1 : 0); i >= 0; i--) if(game.shots[i].p === p) return game.shots[i]; return null; }
 
@@ -536,7 +537,7 @@ function roundRect(c, x, y, w, h, r){
 }
 
 // faisans dessinés ici (tournés vers la droite si dir = 1), pieds en (0, 0)
-// kind 0 : faisan commun (AP) ; kind 1 : faisan doré (H)
+// kind 0 : faisan au collier blanc ; kind 1 : faisan à huppe dorée (attribués par game.perso)
 const PLUMES = [
   { tail:"#C9954A", bar:"#6B4A2A", body:"#B4612F", dots:"rgba(255,230,190,0.55)", wing:"#9A6A39", wingFar:"#7E5530",
     neck:"#1F5B57", head:"#24504F", face:"#D23B36", ring:"#FFFFFF" },
@@ -1068,8 +1069,8 @@ function buildObjets(){
 }
 function buildPersos(){
   const box = $("#persos"); box.innerHTML = "";
-  [["Faisan commun", 0], ["Faisan doré", 1]].forEach(([nom, kind]) => {
-    const b = document.createElement("button"); b.type = "button"; b.dataset.k = kind; b.title = nom;
+  [0, 1].forEach(kind => {   // pas de nom : chaque faisan prend le prénom de son joueur
+    const b = document.createElement("button"); b.type = "button"; b.dataset.k = kind; b.setAttribute("aria-label", "Choisir ce faisan");
     const c = document.createElement("canvas"); c.width = 80; c.height = 68;
     const x = c.getContext("2d"); x.scale(2, 2); x.translate(26, 31); x.scale(0.45, 0.45); drawPheasant(x, 0, 0, 1, { kind }); b.appendChild(c); box.appendChild(b);
     b.addEventListener("click", ()=>{ if(game.shots.length) return; game.perso = kind === 0 ? [0, 1] : [1, 0]; save(); refreshUI(); });
