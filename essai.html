@@ -2097,7 +2097,13 @@ header{
    étalon : le mémo replié (bandeau + saisie), resserré de 3 px entre le bandeau et la saisie */
 :root{ --fold-h:127px; }
 .category.collapsed{ min-height:var(--fold-h); }
-.category.collapsed > ul.items, .category.courses.collapsed .courses-actions{ display:none; }
+.category.courses.collapsed > ul.items, .category.courses.collapsed .courses-actions{ display:none; }
+/* 10.66 : fermée, une liste montre ses premières tâches en aperçu, pâles et coupées en fondu (comme le
+   dernier mot du chat) ; un survol l'entrouvre en entier */
+.category.collapsed:not(.courses){ height:var(--fold-h); overflow:hidden; }
+.category.collapsed:not(.courses) > ul.items{ pointer-events:none; opacity:0.5; margin-top:0.2rem;
+  -webkit-mask-image:linear-gradient(180deg, #000 25%, transparent 78%); mask-image:linear-gradient(180deg, #000 25%, transparent 78%); }
+.category.collapsed:not(.courses) > ul.items > li.is-checked{ display:none; }
 /* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
 .category.courses.collapsed .courses-entry{ cursor:auto; padding-top:calc(0.55rem - 3px); }
 .category.collapsed .cat-fold svg{ transform:rotate(180deg); }
@@ -2550,7 +2556,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   .duel-card .persos button{ width:50px; height:46px; }
   .duel-card .poussoir, .duel-card .d-lancer{ min-height:44px; }
 }
-@container (max-width:560px){   /* carte étroite (une colonne de la grille, téléphone) : poste de commande compact */
+@container (min-width:0px){   /* 10.66 : toujours le poste compact (aussi en pleine page) ; avant : seulement sous 560 px */
   .duel-card .attente{ gap:0.6rem; padding:0.35rem 0.6rem; font-size:0.8rem; }
   .duel-card .attente.decouverte{ font-size:0.95rem; padding:0.5rem 0.5rem 0.7rem; gap:0.45rem; }
   .duel-card .poussoir{ font-size:0.88rem; padding:0.28rem 0.85rem; }
@@ -2687,9 +2693,9 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* 10.66 : la phrase dans un bandeau vintage du style du bouton « Lancer », gris tant qu'aucune action
    n'est attendue (comme le bouton désactivé) ; à son tour ou un coup à découvrir : la couleur du jeu */
 .duel-card.collapsed .d-mini-t{ flex:1 1 auto; font:700 0.9rem/1.2 'Courier Prime', 'Courier New', monospace; letter-spacing:0.02em;
-  color:var(--ink-faint); background:var(--surface); border:2px solid var(--line); border-radius:3px; box-shadow:3px 3px 0 var(--line);
-  padding:0.32rem 0.9rem; margin-right:3px; transition:color .3s, border-color .3s, box-shadow .3s; }
-.duel-card.collapsed .d-mini.attendu .d-mini-t{ color:var(--objet); border-color:var(--objet); box-shadow:3px 3px 0 var(--objet); }
+  color:var(--ink-faint); background:var(--surface); border:2px solid var(--line); border-width:2px 0; border-radius:0; box-shadow:0 3px 0 var(--line);
+  padding:0.36rem 1rem; margin:0 -1rem; transition:color .3s, border-color .3s, box-shadow .3s; }   /* à bords perdus : d'un bord du papier à l'autre */
+.duel-card.collapsed .d-mini.attendu .d-mini-t{ color:var(--objet); border-color:var(--objet); box-shadow:0 3px 0 var(--objet); }
 .d-mini-t{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .duel-card.collapsed .duel-foot{ z-index:1; }
 .duel-card.collapsed .chat-led{ z-index:2; }
@@ -2715,6 +2721,8 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-card.fullpage .chat-log{ flex:1 1 0; max-height:none; }
 .duel-card.fullpage{ display:flex; flex-direction:column; justify-content:center; }
 .duel-card.fullpage .duel-stage > *{ opacity:1; }
+.duel-card.fullpage .duel-stage{ zoom:1.25; }   /* pleine page : le poste de commande de la carte, agrandi */
+@media (max-width:720px){ .duel-card.fullpage .duel-stage{ zoom:1; } }
 .chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ opacity:1; color:var(--ink-soft); }
 .chat-card.fullpage .cat-grip, .duel-card.fullpage .cat-grip, .chat-card.fullpage .cat-fold, .duel-card.fullpage .cat-fold{ visibility:hidden; }
 /* voyant du duel : celui du chat, sur le papier en haut à droite — vert quand un coup de l'autre attend d'être vu */
@@ -11271,12 +11279,13 @@ function unfoldCat(catId){
   }
   setFolded(catId, false);
 }
-let lastPointerType = "mouse", peekHold = 0;   // peekHold : juste après une ouverture, la case qui se retrouve sous la souris ne s'entrouvre pas
+let lastPointerType = "mouse", peekHold = 0, peekId = null;   // peekHold : juste après une ouverture, la case qui se retrouve sous la souris ne s'entrouvre pas
 document.addEventListener("pointerdown", e=>{
   lastPointerType = e.pointerType || "mouse";
   if(!e.target.closest(".peek")) document.querySelectorAll(".peek").forEach(c => peekCard(c, false));
 }, true);
 function peekCard(card, on){
+  if(on) peekId = card.id; else if(peekId === card.id) peekId = null;
   if(on === card.classList.contains("peek")) return;
   card.classList.toggle("peek", on);
   card.classList.toggle("collapsed", !on);
@@ -11286,6 +11295,7 @@ function wireFolded(){
   categoriesEl.querySelectorAll(":scope > .fold-first").forEach(c => c.classList.remove("fold-first"));
   categoriesEl.querySelectorAll(":scope > .collapsed").forEach(card=>{
     card.classList.toggle("fold-first", first); first = false;
+    if(card.id === peekId) peekCard(card, true);   // déjà entrouverte avant ce rendu
     if(card._fw) return;   // le duel garde sa carte d'un rendu à l'autre
     card._fw = true;
     const id = card.id.replace(/^cat-/, "");
@@ -11304,7 +11314,7 @@ function wireFolded(){
       e.stopPropagation(); e.preventDefault();
       if(lastPointerType !== "mouse" && !card.classList.contains("peek")){ peekCard(card, true); return; }   // au doigt : d'abord entrouvrir
       clearTimeout(t);
-      peekHold = Date.now() + 700;
+      peekHold = Date.now() + 700; peekId = null;
       unfoldCat(id); renderAll();
       const c2 = document.getElementById("cat-" + id);
       if(c2) requestAnimationFrame(()=> c2.scrollIntoView({ block:"nearest", behavior:"smooth" }));
