@@ -231,8 +231,8 @@
     Message flottant « X a joué ! » (renderNewNotice).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
-    l'autre (une animation n'est jamais coupée) ; un seul duel animé à la
-    fois. Pied comme l'écran de chat : poignée, « … » (Inviter / Retirer,
+    l'autre (une animation n'est jamais coupée) ; une instance par duel
+    (makeDuel, rangées par liste dans Duel) : plusieurs duels côte à côte. Pied comme l'écran de chat : poignée, « … » (Inviter / Retirer,
     Son, Supprimer ce duel), initiales. Hors compteur, urgences, trèfle,
     graphique et purge : isSideList (isDuelList).
   - Partage, synchro, fusion et règles en ligne : ceux des listes, sans
@@ -9592,7 +9592,7 @@ document.addEventListener("pointerdown", e=>{
 // retirées : tout le reste (ville, vent, trous, vainqueur) se recalcule en
 // rejouant les coups, de la même façon sur tous les appareils (rien n'est lu
 // dans les pixels). Mis au point sur essai-jeu.html (banc du jeu).
-const Duel = (()=>{
+const makeDuel = ()=>{   // 10.63 : une instance par duel (chacun sa carte, son canevas, sa partie)
 const W = 960, H = 540;
 const REGLES = { g:380, vent:10, trou:22, decor:"pignons" };   // réglages retenus au banc le 6/11/2026
 const S = { trace:1, get son(){ try{ return localStorage.getItem("sous-le-tapis-duel-son") !== "0"; }catch(e){ return true; } } };
@@ -10681,7 +10681,18 @@ function card(cat, catIdx){
   return ROOT;
 }
 function onTheme(){ cssCache.clear(); spriteCache.clear(); iconesCouleur = null; if(world && ROOT && ROOT.isConnected) renderCity(world, finale); }
-return { card, onTheme, resync: ()=>{ lastSig = null; renderAll(); }, etat: ()=>({ world, dance, finale, busy, simulate }) };   // etat : pour les tests   // resync : relire la partie (synchro, tests)
+return { card, onTheme, resync: ()=>{ lastSig = null; }, etat: ()=>({ world, dance, finale, busy, simulate }) };   // resync : relire la partie ; etat : pour les tests
+};
+// plusieurs duels dans la grille : chacun garde sa propre instance (sinon ils se volaient la carte)
+const Duel = (()=>{
+  const all = new Map();
+  const of = id => { let d = all.get(id); if(!d){ d = makeDuel(); all.set(id, d); } return d; };
+  return {
+    card: (cat, catIdx) => of(cat.id).card(cat, catIdx),
+    onTheme: () => all.forEach(d => d.onTheme()),
+    resync: () => { all.forEach(d => d.resync()); renderAll(); },
+    etat: () => { const d = [...all.values()].pop(); return d && d.etat(); }
+  };
 })();
 
 try{
