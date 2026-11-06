@@ -10600,8 +10600,8 @@ function refreshUI(){
   $(".d-revoir").disabled = busy;
   if(last) $(".d-revoir").title = `Revoir le coup ${de(PLAYERS[last.p].nom)}`;
   const focused = document.activeElement && ROOT.contains(document.activeElement) && /d-angle|d-vitesse/.test(document.activeElement.className);
-  if(!busy && !attente && !world.over && !focused){
-    const ls = lastShotOf(p);
+  if(!busy && !world.over && !focused){   // en attente (même après rechargement) : les réglages de son dernier coup restent affichés
+    const ls = bandMode === "attente" && last ? last : lastShotOf(p);
     $(".d-angle").value = ls ? ls.a : 45; $(".d-vitesse").value = ls ? ls.v : 60;
   }
 }
