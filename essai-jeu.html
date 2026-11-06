@@ -10,14 +10,18 @@
 
   - Jeu à deux en tour par tour inspiré de GORILLA.BAS (angle, vitesse, vent,
     décor qui se troue), version originale : deux faisans sur les toits d'une
-    ville à pignons, objets au choix (Orval, cœur, pistolet, frites, chou de
-    Bruxelles, gaufre). Aucun dessin repris de l'original.
+    ville à pignons, objets au choix (stylo plume, roue de vélo, cœur).
+    Aucun dessin repris de l'original.
   - Page autonome, PAS branchée à l'appli ni à Firebase : la partie est gardée
     dans ce navigateur (localStorage « sltapis-essai-jeu »), on joue à deux sur
     le même écran ; « Tour par tour » simule le passage de l'un à l'autre :
     après son coup, bandeau « En attente de … » (glisse du bas, léger rebond,
     deux notes) et le faisan attendu somnole (« z ») ; « H arrive » (banc
-    seulement) simule son passage, et le coup qu'on a joué lui est rejoué.
+    seulement) simule son arrivée : il voit « … a joué ! » et « Voir son
+    coup » rejoue le coup, suivi d'un petit commentaire calculé (commentaire :
+    « Ouf, tout juste ! », « Ça devient chaud… », « Pas loin. », « Tranquille. »
+    selon la distance au faisan visé). En ouvrant la page en cours de partie :
+    directement « … a joué ! ».
   - Partie = { seed, regles, shots:[{ p, a, v, o, at }], objets } : tout le
     reste (ville, vent, trous, vainqueur) se recalcule en rejouant les coups
     (worldAfter). Découvrir le coup de l'autre : en arrivant, son dernier
@@ -26,7 +30,7 @@
     cercles des trous), jamais lues dans les pixels : le même coup donne le
     même résultat sur tous les appareils. C'est ce qui permettra de ranger
     une partie dans une liste partagée comme les messages de l'écran de chat
-    (10.57) : un coup = une tâche { t:"45 60 orval", by, at }.
+    (10.57) : un coup = une tâche { t:"45 60 roue", by, at }.
   - Prénoms entiers pour la victoire, l'attente et les messages (nom) ;
     initiales pour l'invite « AP> ».
   - Couleurs du décor : ciel neutre pendant la partie (le ciel de fête de
@@ -48,8 +52,7 @@
     couleurs de l'écran de chat (--chat-me, --chat-them).
   - Une partie = une touche (pas de manches ni de score) ; bouton « Nouvelle
     partie ». Objets : stylo plume (éclate en lettres, bruit de plume),
-    bouteille d'Orval (dessinée de mémoire : corps presque droit, sans
-    étiquette ; verre et mousse), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
+    roue de vélo (rayons et bouts de pneu qui volent, « dring dring »), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
     le vainqueur, ciel qui vire au mauve et au citron, toutes les fenêtres
     qui s'allument, confettis (finale).
 -->
@@ -134,6 +137,8 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 .attente .dots i:nth-child(2){ animation-delay:.2s; } .attente .dots i:nth-child(3){ animation-delay:.4s; }
 @keyframes pointille{ 0%, 80%, 100%{ opacity:.2; transform:translateY(0); } 40%{ opacity:1; transform:translateY(-3px); } }
 .attente .btn{ font-size:0.78rem; padding:0.3rem 0.8rem; min-height:0; }
+.attente.decouverte .dots{ display:none; }
+.attente.decouverte .btn{ background:var(--surface); border-color:var(--line); color:var(--btn-ink); }
 @media (pointer:coarse){ .attente .btn{ min-height:40px; } }
 @media (max-width:560px){
   .attente{ bottom:0.4rem; gap:0.4rem; padding:0.2rem 0.3rem 0.2rem 0.8rem; font-size:0.8rem; }
@@ -290,9 +295,9 @@ const S = (()=>{
 })();
 const PLAYERS = [ { ini:"AP", nom:"André-Pierre", color:"--chat-me" }, { ini:"H", nom:"Hiske", color:"--chat-them" } ];
 const de = n => (/^[aeiouyéèêâîôû]/i.test(n) ? "d'" : "de ") + n;   // « d'André-Pierre », « de Hiske »
-const OBJETS = { stylo:"Stylo plume", orval:"Bouteille d'Orval", coeur:"Cœur" };
-const OBJ_SIZE = { stylo: 1, orval: 1, coeur: 1 };   // taille en vol
-const OBJETS_ART = { stylo:"un stylo plume", orval:"une Orval", coeur:"un cœur" };
+const OBJETS = { stylo:"Stylo plume", roue:"Roue de vélo", coeur:"Cœur" };
+const OBJ_SIZE = { stylo: 1, roue: 1, coeur: 1 };   // taille en vol
+const OBJETS_ART = { stylo:"un stylo plume", roue:"une roue de vélo", coeur:"un cœur" };
 const DANCE_BEAT = 0.32, DANCE_BEATS = 14;   // danse du vainqueur : 14 temps, ailes inversées à chaque temps
 // couleurs du décor (mode clair ; le mode sombre garde les siennes) — ciel neutre
 // pendant la partie, pour que le ciel de fête de la fin se remarque
@@ -333,12 +338,12 @@ game = load() || newGame();
 function newGame(seed){
   return { seed: seed ?? (Math.random() * 2**31 | 0),
            regles: Object.fromEntries(RULE_KEYS.map(k => [k, S[k]])),
-           shots: [], objets: (game && game.objets) || ["orval", "coeur"] };
+           shots: [], objets: (game && game.objets) || ["roue", "coeur"] };
 }
 function load(){
   try{ const g = JSON.parse(localStorage.getItem(STORE_KEY));
     if(g && RULE_KEYS.every(k => g.regles[k] === S[k])){
-      g.objets = (g.objets || []).map((o, i) => o in OBJETS ? o : ["orval", "coeur"][i]);
+      g.objets = (g.objets || []).map((o, i) => o in OBJETS ? o : ["roue", "coeur"][i]);
       if(g.shots.every(s => s.o in OBJETS)) return g; } }catch(e){}
   return null;
 }
@@ -430,7 +435,7 @@ function worldAfter(n){
   return w;
 }
 const turn = () => game.shots.length ? 1 - game.shots[game.shots.length - 1].p : 0;
-function lastShotOf(p){ for(let i = game.shots.length - 1; i >= 0; i--) if(game.shots[i].p === p) return game.shots[i]; return null; }
+function lastShotOf(p){ for(let i = game.shots.length - 1 - (hideLast ? 1 : 0); i >= 0; i--) if(game.shots[i].p === p) return game.shots[i]; return null; }
 
 // =====================================================================
 //  Dessin : faisans, objets, ville
@@ -599,27 +604,6 @@ function drawPheasantFront(c, x, y, o = {}){
 }
 
 // objets lancés, dessinés autour de (0, 0), à peu près 30 px de long
-// bouteille d'Orval (de mémoire) : corps presque droit, épaule courte, sans étiquette, verre brun ambré
-const BOTTLE_R = [   // demi-profil droit, de la base au goulot : [x, y] puis courbes [c1x, c1y, c2x, c2y, x, y]
-  [0, 13], [4.8, 13],
-  [6.4, 13, 6.6, 11.6, 6.6, 10.2],      // fond arrondi
-  [6.4, 4, 6.0, -1.5, 5.4, -3.6],       // flanc presque droit, qui se resserre à peine
-  [4.6, -6.4, 2.2, -7.2, 2.1, -9.6],    // épaule courte
-  [2.1, -15.4],                         // col
-  [2.6, -15.6], [2.6, -16.8],           // bague
-];
-function bottlePath(c){
-  const R = BOTTLE_R;
-  c.beginPath(); c.moveTo(R[0][0], R[0][1]);
-  for(let i = 1; i < R.length; i++){ const s = R[i]; s.length === 2 ? c.lineTo(s[0], s[1]) : c.bezierCurveTo(...s); }
-  const top = R[R.length - 1]; c.lineTo(-top[0], top[1]);
-  for(let i = R.length - 1; i >= 1; i--){   // côté gauche : même chemin en miroir, parcouru à l'envers
-    const s = R[i], prev = R[i - 1], end = prev.length === 2 ? prev : prev.slice(4);
-    if(s.length === 2) c.lineTo(-end[0], end[1]);
-    else c.bezierCurveTo(-s[2], s[3], -s[0], s[1], -end[0], end[1]);
-  }
-  c.closePath();
-}
 function heartPath(c, k = 1){
   c.beginPath(); c.moveTo(0, 10 * k);
   c.bezierCurveTo(-5 * k, 6 * k, -14 * k, 0, -13 * k, -6.5 * k);
@@ -631,20 +615,17 @@ function heartPath(c, k = 1){
 function drawObjet(c, type, x, y, rot = 0, sc = 1){
   c.save(); c.translate(x, y); c.rotate(rot); c.scale(sc, sc);
   c.lineJoin = "round"; c.lineCap = "round";
-  if(type === "orval"){
-    const g = c.createLinearGradient(-8, 0, 8, 0);
-    g.addColorStop(0, "#2B2210"); g.addColorStop(0.32, "#6A5424"); g.addColorStop(0.5, "#7C6430"); g.addColorStop(1, "#241C0C");
-    c.fillStyle = g; bottlePath(c); c.fill();
-    c.save(); bottlePath(c); c.clip();
-    // reflets
-    c.strokeStyle = "rgba(255,255,255,0.55)"; c.lineWidth = 1.2;
-    c.beginPath(); c.moveTo(-4.4, 10.6); c.lineTo(-3.9, -2.6); c.stroke();
-    c.lineWidth = 0.8; c.beginPath(); c.moveTo(-1.1, -9); c.lineTo(-1.1, -14.6); c.stroke();
-    c.restore();
-    // capsule dorée
-    c.fillStyle = "#D9B44A"; c.beginPath(); c.moveTo(-2.8, -16.6); c.lineTo(2.8, -16.6); c.lineTo(2.4, -18.6); c.lineTo(-2.4, -18.6); c.closePath(); c.fill();
-    c.strokeStyle = "#9C7B22"; c.lineWidth = 0.5;
-    c.beginPath(); for(const xx of [-1.5, 0, 1.5]){ c.moveTo(xx, -16.7); c.lineTo(xx, -18.4); } c.stroke();
+  if(type === "roue"){
+    // roue de vélo : pneu, jante, rayons croisés, moyeu, valve
+    c.strokeStyle = "#9AA3A8"; c.lineWidth = 0.45;
+    for(let i = 0; i < 16; i++){ const a0 = i / 16 * Math.PI * 2, a1 = a0 + (i % 2 ? 0.5 : -0.5);
+      c.beginPath(); c.moveTo(Math.cos(a0) * 1.6, Math.sin(a0) * 1.6); c.lineTo(Math.cos(a1) * 10, Math.sin(a1) * 10); c.stroke(); }
+    c.strokeStyle = "#C3CACE"; c.lineWidth = 1.3; c.beginPath(); c.arc(0, 0, 10.2, 0, 7); c.stroke();     // jante
+    c.strokeStyle = "#3A3836"; c.lineWidth = 2.6; c.beginPath(); c.arc(0, 0, 12, 0, 7); c.stroke();       // pneu
+    c.strokeStyle = "rgba(255,255,255,0.25)"; c.lineWidth = 0.7; c.beginPath(); c.arc(0, 0, 12.4, 3.6, 4.6); c.stroke();
+    c.fillStyle = "#7B8389"; c.beginPath(); c.arc(0, 0, 2, 0, 7); c.fill();                               // moyeu
+    c.fillStyle = "#C3CACE"; c.beginPath(); c.arc(0, 0, 0.8, 0, 7); c.fill();
+    c.fillStyle = "#8C8178"; c.fillRect(-0.6, -10.4, 1.2, 2.2);                                           // valve
   }else if(type === "coeur"){
     const g = c.createRadialGradient(-4, -6, 1, 0, 0, 15);
     g.addColorStop(0, "#F6C6D2"); g.addColorStop(0.45, "#E592A8"); g.addColorStop(1, "#C24F6E");
@@ -684,14 +665,14 @@ function drawCrown(c, x, y, s = 1){
 //  Animation : nuages, coup en vol, éclats, plumes
 // =====================================================================
 let world = worldAfter(game.shots.length);
-let anim = null, particles = [], flashes = [], tumble = null, banner = null, busy = false, wingT = [0, 0], shake = 0, dance = null, finale = 0;
+let anim = null, particles = [], flashes = [], tumble = null, banner = null, busy = false, wingT = [0, 0], shake = 0, dance = null, finale = 0, bandMode = null, hideLast = false;
 const clouds = Array.from({ length: 5 }, (_, i) => ({ x: i * 220 + Math.random() * 100, y: 40 + Math.random() * 110, s: 0.7 + Math.random() * 0.6 }));
 
 function burst(type, x, y, big){
   // éclats propres à l'objet : verre et mousse, bisous, écriture
   const n = big ? 34 : 22, LETTRES = "aébdçfgèhlmnpqrstuvz&?!~";
-  const kinds = { orval:["shard","shard","foam"], coeur:["lips","lips","miniheart"], stylo:["letter","letter","letter","ink"] }[type];
-  const colors = { shard:["#5E4A1C","#8A6A2A","#F1EAD6"], foam:["#FFFFFF"], lips:["#C24F6E","#D9667F","#E592A8"], miniheart:["#E592A8","#F2C3CF"],
+  const kinds = { roue:["spoke","spoke","rubber"], coeur:["lips","lips","miniheart"], stylo:["letter","letter","letter","ink"] }[type];
+  const colors = { spoke:["#9AA3A8","#C3CACE"], rubber:["#3A3836"], lips:["#C24F6E","#D9667F","#E592A8"], miniheart:["#E592A8","#F2C3CF"],
                    letter:["#562F96","#4A5E6E","#9558D0"], ink:["#3B1F6A","#562F96"] };
   for(let i = 0; i < n; i++){
     const a = Math.random() * Math.PI * 2, sp = 60 + Math.random() * (big ? 260 : 170), k = kinds[i % kinds.length], col = colors[k];
@@ -736,8 +717,8 @@ function drawParticle(p){
   switch(p.kind){
     case "smoke": ctx.globalAlpha *= 0.11; ctx.fillStyle = css("--ink-faint"); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); break;
     case "chunk": ctx.fillRect(-2.2, -1.6, 4.4, 3.2); break;
-    case "shard": ctx.beginPath(); ctx.moveTo(-3, -1); ctx.lineTo(3, -2); ctx.lineTo(0, 3); ctx.fill(); break;
-    case "foam": ctx.strokeStyle = "rgba(255,255,255,0.95)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, 2.2, 0, 7); ctx.stroke(); break;
+    case "spoke": ctx.strokeStyle = p.color; ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.stroke(); break;
+    case "rubber": ctx.beginPath(); ctx.ellipse(0, 0, 2.6, 1.1, 0, 0, 7); ctx.fill(); break;
     case "lips":   // petite bouche en bisou
       ctx.beginPath(); ctx.moveTo(-4, 0); ctx.quadraticCurveTo(-2, -2.6, 0, -1.1); ctx.quadraticCurveTo(2, -2.6, 4, 0);
       ctx.quadraticCurveTo(0, 3.4, -4, 0); ctx.fill();
@@ -816,7 +797,7 @@ function frame(){
     ctx.fillText(champion ? PLAYERS[k].nom : PLAYERS[k].ini, world.ph[k].x, world.ph[k].y - (champion ? 80 : 64) - hop); ctx.globalAlpha = 1;
   }
   // le faisan qu'on attend somnole : des « z » montent au-dessus de lui
-  if($("#attente").classList.contains("on") && !world.over){
+  if($("#attente").classList.contains("on") && bandMode === "attente" && !world.over){
     const k = turn(), q = world.ph[k], t = performance.now() / 1000;
     ctx.fillStyle = css(PLAYERS[k].color); ctx.textAlign = "center";
     for(let i = 0; i < 3; i++){
@@ -902,10 +883,11 @@ function hud(){
   if(banner){
     banner.t += 1 / 60; const a = Math.min(1, banner.t * 3, (banner.d - banner.t) * 2);
     if(a <= 0 && banner.t > banner.d) banner = null;
-    else{ ctx.globalAlpha = Math.max(0, a); ctx.font = `700 ${F(30)}px 'Courier Prime', monospace`;
+    else{ ctx.globalAlpha = Math.max(0, a); ctx.font = `700 ${F(banner.small ? 20 : 30)}px 'Courier Prime', monospace`;
+      const by = banner.small ? H * 0.3 - (1 - Math.min(1, banner.t * 4)) * 8 : H * 0.38;   // le commentaire monte un peu en apparaissant
       ctx.lineJoin = "round"; ctx.strokeStyle = css("--surface"); ctx.lineWidth = 6;
-      ctx.strokeText(banner.text, W / 2, H * 0.38);
-      ctx.fillStyle = banner.color || css("--ink"); ctx.fillText(banner.text, W / 2, H * 0.38);
+      ctx.strokeText(banner.text, W / 2, by);
+      ctx.fillStyle = banner.color || css(banner.small ? "--ink-soft" : "--ink"); ctx.fillText(banner.text, W / 2, by);
       if(banner.sub){ ctx.font = `${F(15)}px 'Courier Prime', monospace`; ctx.lineWidth = 4;
         ctx.strokeText(banner.sub, W / 2, H * 0.38 + F(26));
         ctx.fillStyle = css("--ink-soft"); ctx.fillText(banner.sub, W / 2, H * 0.38 + F(26)); }
@@ -931,7 +913,7 @@ function endShot(){
     return;
   }
   burst(shot.o, e.x, e.y, e.kind === "hit");
-  sound("boum"); sound({ orval:"verre", coeur:"bisous", stylo:"plume" }[shot.o]);
+  sound("boum"); sound({ roue:"sonnette", coeur:"bisous", stylo:"plume" }[shot.o]);
   if(e.kind === "city"){
     world = applyResult(world, shot, res); renderCity(world);
     setTimeout(()=> finish(done), 450);
@@ -976,24 +958,49 @@ function lancer(){
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 
 // tour par tour : bandeau « En attente de … » jusqu'à ce que l'autre arrive ; il voit alors le coup qu'on vient de jouer
-function showAttente(){
-  const p = turn(), last = game.shots[game.shots.length - 1];
-  $("#attenteQui").textContent = `En attente ${de(PLAYERS[p].nom)}`;
-  $("#attente").style.color = css(PLAYERS[p].color);
-  $("#attenteGo").textContent = `${PLAYERS[p].nom} arrive`;
+// deux temps : 1) celui qui vient de jouer voit « En attente de … » ;
+// 2) l'autre, en arrivant, voit « … a joué ! » et découvre le coup quand il veut (« Voir son coup »)
+function showBand(mode){
+  bandMode = mode;
+  const p = turn(), last = game.shots[game.shots.length - 1], who = mode === "attente" ? p : last.p;
+  $("#attenteQui").textContent = mode === "attente" ? `En attente ${de(PLAYERS[p].nom)}` : `${PLAYERS[last.p].nom} a joué !`;
+  $("#attente").style.color = css(PLAYERS[who].color);
+  $("#attente").classList.toggle("decouverte", mode === "decouverte");
+  $("#attenteGo").textContent = mode === "attente" ? `${PLAYERS[p].nom} arrive` : "Voir son coup";
+  $("#attenteGo").title = mode === "attente" ? "Banc d'essai : simule le passage de l'autre joueur" : "";
+  if(mode === "decouverte"){   // la surprise reste entière : le décor revient d'un cran, le coup n'est pas encore montré
+    hideLast = true; world = worldAfter(game.shots.length - 1); renderCity(world); banner = null; dance = null;
+  }
   $("#attente").classList.add("on"); sound("attente"); refreshUI();
 }
+const showAttente = () => showBand("attente");
+// petit commentaire après la découverte, vu du côté de celui qui était visé (rien n'est stocké : calculé en rejouant)
+function commentaire(shot, res){
+  if(res.end.kind === "hit") return null;   // la touche a sa propre fête
+  const q = world.ph[1 - shot.p], P = res.path;
+  let d = Infinity;
+  for(let i = 0; i < P.length; i += 2) d = Math.min(d, Math.hypot(P[i] - q.x, P[i + 1] - (q.y - 20)));
+  if(d < 40) return "Ouf, tout juste !";
+  if(d < 95) return "Ça devient chaud…";
+  if(d < 200) return "Pas loin.";
+  return "Tranquille.";
+}
 // rejouer le dernier coup : le monde revient d'un cran, le coup repart, tout se retrouve à l'identique
-function replayLast(){
+function replayLast(avecCommentaire){
   const n = game.shots.length;
   if(!n || busy) return;
-  dance = null; banner = null;
+  dance = null; banner = null; hideLast = false;
   world = worldAfter(n - 1); renderCity(world);
-  const shot = game.shots[n - 1];
-  play(shot, simulate(world, shot), null);
+  const shot = game.shots[n - 1], res = simulate(world, shot), mot = avecCommentaire === true ? commentaire(shot, res) : null;
+  play(shot, res, mot ? () => { banner = { text: mot, small: true, t: 0, d: 2.4 }; } : null);
 }
-$("#attenteGo").addEventListener("click", ()=>{ $("#attente").classList.remove("on"); if(game.shots.length) setTimeout(replayLast, 350); else refreshUI(); });
-$("#revoir").addEventListener("click", replayLast);
+$("#attenteGo").addEventListener("click", ()=>{
+  $("#attente").classList.remove("on");
+  if(!game.shots.length){ refreshUI(); return; }
+  if(bandMode === "attente") setTimeout(()=> showBand("decouverte"), 650);   // banc : l'autre ouvre la partie
+  else setTimeout(()=> replayLast(true), 350);
+});
+$("#revoir").addEventListener("click", ()=> replayLast(false));
 
 // =====================================================================
 //  Interface
@@ -1051,8 +1058,8 @@ $("#lancer").addEventListener("click", ()=>{
   lancer();
 });
 for(const id of ["#angle", "#vitesse"]) $(id).addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); lancer(); } });
-$("#nouvelle").addEventListener("click", ()=>{ game = newGame(); save(); world = worldAfter(0); renderCity(world); banner = null; dance = null; tumble = null; anim = null; busy = false; $("#attente").classList.remove("on"); refreshUI(); });
-$("#annuler").addEventListener("click", ()=>{ if(busy) return; game.shots.pop(); save(); world = worldAfter(game.shots.length); renderCity(world); banner = null; dance = null; $("#attente").classList.remove("on"); refreshUI(); });
+$("#nouvelle").addEventListener("click", ()=>{ game = newGame(); save(); world = worldAfter(0); renderCity(world); banner = null; dance = null; hideLast = false; tumble = null; anim = null; busy = false; $("#attente").classList.remove("on"); refreshUI(); });
+$("#annuler").addEventListener("click", ()=>{ if(busy) return; game.shots.pop(); save(); hideLast = false; world = worldAfter(game.shots.length); renderCity(world); banner = null; dance = null; $("#attente").classList.remove("on"); refreshUI(); });
 
 // panneau du banc
 document.querySelectorAll("#banc [data-k]").forEach(el => {
@@ -1108,12 +1115,16 @@ function sound(kind){
       const o = AC.createOscillator(), g = env(t, 0.005, 1.2, 0.45);
       o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.4);
       o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
-    }else if(kind === "verre"){
-      // verre qui éclate : tintements aigus
-      for(let i = 0; i < 5; i++){
-        const o2 = AC.createOscillator(), g2 = env(t + 0.02 + i * 0.035, 0.002, 0.22, 0.2); o2.type = "triangle";
-        o2.frequency.value = 2200 + Math.random() * 2200; o2.connect(g2); g2.connect(out);
-        o2.start(t + i * 0.035); o2.stop(t + 0.3 + i * 0.035);
+    }else if(kind === "sonnette"){
+      // « dring dring » : deux coups de sonnette (timbre métallique qui vibre)
+      for(const d of [0.05, 0.36]){
+        for(const f of [2650, 3480]){
+          const o = AC.createOscillator(); o.type = "triangle"; o.frequency.value = f;
+          const trem = AC.createGain(), lfo = AC.createOscillator(), lg = AC.createGain();
+          lfo.frequency.value = 28; lg.gain.value = 0.5; lfo.connect(lg); lg.connect(trem.gain); trem.gain.value = 0.5;
+          const g = env(t + d, 0.003, 0.32, 0.28); o.connect(trem); trem.connect(g); g.connect(out);
+          o.start(t + d); o.stop(t + d + 0.3); lfo.start(t + d); lfo.stop(t + d + 0.3);
+        }
       }
     }else if(kind === "attente"){
       // le bandeau arrive : deux notes douces
@@ -1169,7 +1180,7 @@ sizeCanvas(); renderCity(world); buildObjets(); renderEtat(); refreshUI();
 DARK.addEventListener("change", ()=>{ applyPalette(); renderCity(world, world.over ? finale : 0); buildObjets(); refreshUI(); });
 window.addEventListener("resize", ()=>{ const d = Math.min(2, window.devicePixelRatio || 1); if(d !== DPR){ sizeCanvas(); renderCity(world, world.over ? finale : 0); } });
 if(document.fonts) document.fonts.ready.then(()=> refreshUI());
-if(S.tpt && game.shots.length && !world.over) showAttente();
+if(S.tpt && game.shots.length && !world.over) showBand("decouverte");   // en ouvrant la page : « … a joué ! »
 requestAnimationFrame(frame);
 </script>
 </html>
