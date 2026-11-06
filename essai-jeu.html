@@ -55,8 +55,8 @@
     couleurs de l'écran de chat (--chat-me, --chat-them).
   - Une partie = une touche (pas de manches ni de score) ; bouton « Nouvelle
     partie ». Objets : stylo plume (éclate en lettres ; griffonnage « scratch-scratch » en rythme),
-    roue de vélo (rayons et bouts de pneu qui volent ; « dring dring » de
-    sonnette puis clic-clic de roue libre qui ralentit), réveil (rouages, ressorts et chiffres ;
+    roue de vélo (rayons et bouts de pneu qui volent ; clic-clic de
+    roue libre qui ralentit, puis « dring dring ! » en rythme), réveil (rouages, ressorts et chiffres ;
     sonnerie par paquets de plus en plus aigus, « boïng » du ressort), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
     le vainqueur, ciel qui vire au mauve et au citron, toutes les fenêtres
     qui s'allument, confettis (finale).
@@ -140,31 +140,31 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 .attente.on{ transform:translateY(0); opacity:1; pointer-events:auto; visibility:visible; transition:transform .45s cubic-bezier(.2,.8,.3,1), opacity .3s, visibility 0s; }
 .attente .btn{ font-size:0.78rem; padding:0.3rem 0.8rem; min-height:0; }
 .attente.decouverte{
-  top:21%; bottom:auto; transform:translateY(-50%) scaleY(0); border-radius:0;   /* dans le ciel : les faisans sont toujours plus bas */ padding:0.6rem 1rem 0.75rem; gap:1.2rem;
+  top:50%; bottom:auto; transform:translateY(-50%) scaleY(0); border-radius:0; flex-direction:column;   /* texte, puis le bouton dessous */
   background:color-mix(in srgb, var(--pc) 9%, color-mix(in srgb, var(--surface) 96%, transparent));
   border-top:2px solid color-mix(in srgb, var(--pc) 40%, transparent); border-bottom:2px solid color-mix(in srgb, var(--pc) 40%, transparent);
   font-size:1.3rem;
 }
 .attente.decouverte.on{ transform:translateY(-50%) scaleY(1); }
 /* bouton-poussoir : une vraie touche, avec sa tranche, qui s'enfonce quand on appuie */
-/* touche en pilule : blanche, texte à la couleur du joueur, tranche de la même couleur (un peu plus foncée) ;
-   remontée de sa tranche pour que son milieu tombe sur la ligne du texte ; s'enfonce quand on appuie */
-.poussoir{
-  font:600 0.95rem 'Public Sans', sans-serif; color:var(--pc); background:var(--surface); cursor:pointer;
-  border:1.5px solid color-mix(in srgb, var(--pc) 70%, var(--surface)); border-radius:999px; padding:0.42rem 1.15rem 0.42rem 0.95rem;
-  display:inline-flex; align-items:center; gap:0.45rem; line-height:1.2;
-  box-shadow:0 3px 0 color-mix(in srgb, var(--pc) 80%, #000), 0 6px 12px -6px rgba(30,40,45,0.35);
-  transform:translateY(-2px); transition:transform .07s, box-shadow .07s, background .15s;
+/* boutons « écran » : esprit informatique vintage (invite C:\ de l'écran de chat) — Courier Prime, coins presque
+   droits, ombre portée dure sans flou ; le bouton glisse sur son ombre quand on appuie */
+.poussoir, #lancer{
+  font:700 1rem 'Courier Prime', monospace; color:var(--pc); background:var(--surface); cursor:pointer;
+  border:2px solid var(--pc); border-radius:3px; padding:0.38rem 1.1rem; letter-spacing:0.02em; line-height:1.2;
+  box-shadow:3px 3px 0 var(--pc); transform:translate(0, 0); transition:transform .06s, box-shadow .06s, background .12s;
 }
-.poussoir::before{ content:""; width:0; height:0; border-left:0.55em solid currentColor; border-top:0.34em solid transparent; border-bottom:0.34em solid transparent; }
-@media (hover:hover){ .poussoir:hover{ background:color-mix(in srgb, var(--pc) 7%, var(--surface)); } }
-.poussoir:active{ transform:translateY(1px); box-shadow:0 0 0 color-mix(in srgb, var(--pc) 80%, #000), 0 2px 4px -2px rgba(30,40,45,0.3); }
-@media (pointer:coarse){ .attente .btn{ min-height:40px; } .poussoir{ min-height:42px; } }
+#lancer{ --pc:var(--pcolor); min-width:7.5em; }
+.poussoir::before{ content:"> "; }
+@media (hover:hover){ .poussoir:hover, #lancer:not(:disabled):hover{ background:color-mix(in srgb, var(--pc) 9%, var(--surface)); } }
+.poussoir:active, #lancer:not(:disabled):active{ transform:translate(3px, 3px); box-shadow:0 0 0 var(--pc); }
+#lancer:disabled{ opacity:1; cursor:default; color:var(--ink-faint); border-color:var(--line); box-shadow:3px 3px 0 var(--line); background:var(--surface); }
+@media (pointer:coarse){ .attente .btn{ min-height:40px; } .poussoir, #lancer{ min-height:44px; } }
 @media (max-width:560px){
   .attente{ gap:0.6rem; padding:0.35rem 0.6rem; font-size:0.8rem; }
   .attente .btn{ font-size:0.72rem; padding:0 0.6rem; min-height:34px; }
-  .attente.decouverte{ font-size:0.9rem; padding:0.4rem 0.5rem; gap:0.7rem; top:17%; }
-  .poussoir{ font-size:0.85rem; padding:0.38rem 0.9rem 0.38rem 0.75rem; }
+  .attente.decouverte{ font-size:0.95rem; padding:0.55rem 0.5rem 0.75rem; gap:0.5rem; }
+  .poussoir{ font-size:0.9rem; padding:0.3rem 0.9rem; }
 }
 
 /* ---------- ligne du coup (esprit invite C:\ de l'écran de chat) ---------- */
@@ -213,7 +213,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 }
 @media (hover:hover){ .btn:hover{ background:color-mix(in srgb, var(--logo-green) 16%, var(--surface)); border-color:color-mix(in srgb, var(--logo-green) 40%, var(--line)); } }
 .btn:disabled{ opacity:0.45; cursor:default; background:var(--surface); }
-.coup #revoir{ margin-left:auto; }
+.coup #revoir{ margin-left:auto; font-family:'Courier Prime', monospace; font-weight:700; }
 .btn.ghost{ background:transparent; border-color:transparent; color:var(--ink-soft); }
 .btn.ghost:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); border-color:transparent; }
 /* tailles de boutons : souris (compact) / doigt (44 px au moins, iPhone) */
@@ -235,7 +235,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
   .coup .reglage > span:first-child{ min-width:4.3em; }
   .coup .persos{ grid-column:1 / -1; border-right:0; padding-right:0; }
   .coup .objets{ grid-column:1 / -1; }
-  .coup #lancer{ grid-column:1 / -1; justify-self:stretch; }
+  .coup #lancer{ grid-column:1 / -1; justify-self:stretch; margin-right:3px; }
   .coup #revoir{ grid-column:1 / -1; justify-self:center; margin-left:0; white-space:nowrap; padding:0 0.4rem; }
 }
 .statut{ min-height:1.3em; padding:0 0.5rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); }
@@ -283,7 +283,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
         <div class="persos" id="persos" title="Votre faisan (l'autre joueur prend l'autre)"></div>
         <div class="objets" id="objets"></div>
         <button type="button" class="btn ghost" id="revoir">Revoir</button>
-        <button type="button" class="btn" id="lancer">Lancer</button>
+        <button type="button" id="lancer">Lancer</button>
       </div>
       <div class="statut" id="statut"></div>
     </div>
@@ -434,6 +434,23 @@ function freshWorld(){
   const wind = Math.round((r() * 2 - 1) * R().vent);
   return { city, ph: city.ph, craters: [], wind, over: false, lastPath: [null, null] };
 }
+// cœur unité (polygone) : sert à la fois à dessiner le trou et à savoir si un point est dedans
+const HEART = Array.from({ length: 48 }, (_, i) => { const t = i / 48 * Math.PI * 2;
+  return [16 * Math.sin(t) ** 3 / 16, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 16 + 0.15]; });
+function inHeart(px, py){   // point déjà ramené à l'unité
+  let inside = false;
+  for(let i = 0, j = HEART.length - 1; i < HEART.length; j = i++){
+    const [xi, yi] = HEART[i], [xj, yj] = HEART[j];
+    if((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+const inCrater = (c, x, y) => c.shape === "coeur" ? inHeart((x - c.x) / c.r, (y - c.y) / c.r) : (x - c.x) ** 2 + (y - c.y) ** 2 < c.r * c.r;
+function craterPath(c2, c, grow = 0){
+  c2.beginPath();
+  if(c.shape === "coeur"){ const k = c.r + grow; HEART.forEach(([hx, hy], i) => i ? c2.lineTo(c.x + hx * k, c.y + hy * k) : c2.moveTo(c.x + hx * k, c.y + hy * k)); c2.closePath(); }
+  else c2.arc(c.x, c.y, c.r + grow, 0, 7);
+}
 function solid(w, x, y){
   let inside = false;
   for(const s of w.city.shapes){
@@ -444,7 +461,7 @@ function solid(w, x, y){
     }
   }
   if(!inside) return false;
-  for(const c of w.craters) if((x - c.x) ** 2 + (y - c.y) ** 2 < c.r * c.r) return false;
+  for(const c of w.craters) if(inCrater(c, x, y)) return false;
   return true;
 }
 // un coup : trajectoire complète, calculée d'avance
@@ -468,11 +485,12 @@ function simulate(w, shot){
 }
 function applyResult(w, shot, res){
   w.lastPath[shot.p] = res.path;
-  if(res.end.kind === "city") w.craters.push({ x:res.end.x, y:res.end.y, r:R().trou });
+  const coeur = shot.o === "coeur";   // le cœur laisse un trou en forme de cœur
+  if(res.end.kind === "city") w.craters.push({ x:res.end.x, y:res.end.y, r:R().trou * (coeur ? 1.35 : 1), shape: coeur ? "coeur" : undefined });
   if(res.end.kind !== "hit") return w;
   // une partie = une touche : celui qui touche l'autre gagne (se toucher soi-même fait gagner l'autre)
   w.over = true; w.winner = res.end.victim === shot.p ? 1 - shot.p : shot.p; w.fallen = res.end.victim;
-  w.craters.push({ x:res.end.x, y:res.end.y, r:R().trou * 1.6 });
+  w.craters.push({ x:res.end.x, y:res.end.y, r:R().trou * 1.6, shape: coeur ? "coeur" : undefined });
   return w;
 }
 function worldAfter(n){
@@ -538,9 +556,14 @@ function renderCity(w, lights = 0){   // lights : 0 → 1, toutes les fenêtres 
   // trous
   cctx.globalCompositeOperation = "destination-out";
   cctx.fillStyle = "#000";   // opaque : sinon le trou prend la transparence de la dernière fenêtre (trous à moitié faits)
-  for(const c of w.craters){ cctx.beginPath(); cctx.arc(c.x, c.y, c.r, 0, 7); cctx.fill(); }
+  for(const c of w.craters){ craterPath(cctx, c); cctx.fill(); }
   cctx.globalCompositeOperation = "source-atop";
   for(const c of w.craters){
+    if(c.shape === "coeur"){   // bord roussi rose autour du cœur
+      cctx.lineJoin = "round";
+      for(const [lw, a] of [[12, 0.07], [6, 0.14], [2.5, 0.25]]){ cctx.strokeStyle = `rgba(150,40,70,${a})`; cctx.lineWidth = lw; craterPath(cctx, c, 0.5); cctx.stroke(); }
+      continue;
+    }
     const g = cctx.createRadialGradient(c.x, c.y, c.r, c.x, c.y, c.r + 9);
     g.addColorStop(0, "rgba(40,25,15,0.38)"); g.addColorStop(0.35, "rgba(40,25,15,0.16)"); g.addColorStop(1, "rgba(40,25,15,0)");
     cctx.fillStyle = g; cctx.beginPath(); cctx.arc(c.x, c.y, c.r + 9, 0, 7); cctx.fill();
@@ -998,7 +1021,7 @@ function endShot(){
   tumble = { k: v, x: q.x, y: q.y, vx: (v ? 1 : -1) * 90, vy: -220, rot: 0, vr: (v ? 1 : -1) * 7, dir: v ? -1 : 1, t: 0 };
   const winner = v === shot.p ? 1 - shot.p : shot.p;
   const before = world;
-  const crater = { x:e.x, y:e.y, r:R().trou * 1.6 };
+  const crater = { x:e.x, y:e.y, r:R().trou * 1.6, shape: shot.o === "coeur" ? "coeur" : undefined };
   before.craters.push(crater); renderCity(before); before.craters.pop();
   setTimeout(()=>{
     tumble = null;
@@ -1247,21 +1270,21 @@ function sound(kind){
       [[0.03, 4200], [0.10, 3300], [0.27, 4400], [0.34, 3400], [0.51, 4600], [0.565, 3600], [0.62, 4800]]
         .forEach(([d, f], i) => trait(d, i === 6 ? 0.075 : 0.055, f + Math.random() * 300, 1.1));
     }else if(kind === "roulibre"){
-      // roue de vélo : « dring dring » de la sonnette (le petit marteau frappe le timbre très vite,
-      // timbre clair avec ses harmoniques de cloche), puis le clic-clic de la roue libre qui ralentit
-      const timbre = (d, amp, len) => {
-        for(const [ratio, a] of [[1, 1], [2.76, 0.55], [5.4, 0.28], [8.9, 0.12]]){
-          const o = AC.createOscillator(); o.type = "sine"; o.frequency.value = 2150 * ratio;
-          const g = env(t + d, 0.002, amp * a, len / ratio ** 0.4); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + len + 0.05);
-        }
-      };
-      for(const start of [0.04, 0.42]) for(let i = 0; i < 6; i++) timbre(start + i * 0.034, i === 5 ? 0.32 : 0.2, i === 5 ? 0.55 : 0.09);
-      let d = 0.85, gap = 0.032;
-      for(let i = 0; i < 16; i++){
+      // roue de vélo : la roue libre cliquette en ralentissant… puis « dring dring ! » qui tombe en rythme
+      let d = 0.03, gap = 0.034;
+      for(let i = 0; i < 12; i++){
         const n = noise(0.012), bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 3400 + (i % 2) * 700; bp.Q.value = 5;
         const g = env(t + d, 0.001, 0.8 - i * 0.03, 0.02); n.connect(bp); bp.connect(g); g.connect(out); n.start(t + d);
-        d += gap; gap *= 1.14;
+        d += gap; gap *= 1.12;
       }
+      const timbre = (dd, amp, len) => {
+        for(const [ratio, a] of [[1, 1], [2.76, 0.55], [5.4, 0.28], [8.9, 0.12]]){
+          const o = AC.createOscillator(); o.type = "sine"; o.frequency.value = 2150 * ratio;
+          const g = env(t + dd, 0.002, amp * a, len / ratio ** 0.4); o.connect(g); g.connect(out); o.start(t + dd); o.stop(t + dd + len + 0.05);
+        }
+      };
+      const d1 = d + 0.12, d2 = d1 + 0.3;   // un temps de silence, puis dring… dring !
+      for(const st of [d1, d2]) for(let i = 0; i < 6; i++) timbre(st + i * 0.034, i === 5 ? 0.32 : 0.2, i === 5 ? 0.55 : 0.09);
     }else if(kind === "cri"){
       // « kôk-kôk » du faisan : deux appels rauques, puis un battement d'ailes
       for(const [d, f0] of [[0, 1050], [0.2, 980]]){
