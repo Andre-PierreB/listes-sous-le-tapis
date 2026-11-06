@@ -27,7 +27,10 @@
     même résultat sur tous les appareils. C'est ce qui permettra de ranger
     une partie dans une liste partagée comme les messages de l'écran de chat
     (10.57) : un coup = une tâche { t:"45 60 orval", by, at }.
-  - Couleurs du décor : propositions au choix (PALETTES, réglage pal),
+  - Prénoms entiers pour la victoire, l'attente et les messages (nom) ;
+    initiales pour l'invite « AP> ».
+  - Couleurs du décor : ciel neutre pendant la partie (le ciel de fête de
+    la fin doit trancher) ; propositions au choix (PALETTES, réglage pal),
     appliquées en mode clair par applyPalette ; le sombre garde les siennes.
   - Réglages du banc dans l'adresse (?g=…&vent=…&trou=…&decor=…&pal=…
     &trace=…&son=…&tpt=…) ; bouton « Copier le lien des réglages ».
@@ -40,13 +43,13 @@
     secousse de l'écran, bord du trou roussi. Coups précédents des deux
     joueurs affichés d'office ; résultat de chaque coup dans le panneau.
   - Couleurs : celles de l'appli (variables reprises de index.html, clair et
-    sombre). Décor doux : façades aux teintes pâles de l'appli (--facades :
-    mauve, citron, vert) posées avec l'ombre des cartes, ciel = fond de page ; joueurs aux
+    sombre). Décor : façades mauve et sauge éteints (--facades) posées avec
+    l'ombre des cartes, ciel neutre = fond de page ; joueurs aux
     couleurs de l'écran de chat (--chat-me, --chat-them).
   - Une partie = une touche (pas de manches ni de score) ; bouton « Nouvelle
     partie ». Objets : stylo plume (éclate en lettres, bruit de plume),
-    bouteille d'Orval (quille dessinée de mémoire, sans logo ; verre et
-    mousse), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
+    bouteille d'Orval (dessinée de mémoire : corps presque droit, sans
+    étiquette ; verre et mousse), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
     le vainqueur, ciel qui vire au mauve et au citron, toutes les fenêtres
     qui s'allument, confettis (finale).
 -->
@@ -68,11 +71,11 @@
   --line:#EDE7DC;
   --shadow: 0 1px 2px rgba(30,40,45,0.04), 0 8px 24px -12px rgba(30,40,45,0.12);
   /* propres au jeu */
-  /* décor doux : façades aux teintes pâles de l'appli (mauve, citron, vert), ciel = fond de page */
+  /* décor : façades mauve et sauge éteints, ciel neutre = fond de page (réglés par applyPalette en clair) */
   --sky-top:#F7FAF9; --sky-bottom:#E6EAEA;
   --sky-end-top:#EFE3FA; --sky-end-bottom:#FCF8DA;   /* fin de partie : ciel de fête */
   --cloud:rgba(255,255,255,0.9);
-  --facades:#EEE3F9,#FCFBE9,#E9F2DC,#F6F0FC,#F7F3D4;
+  --facades:#E3DBEB,#D8E2CF,#EEF0EC,#DFE5E9,#E8E1EE;
   --facade-shadow:rgba(30,40,45,0.10);
   --win-lit:rgba(230,214,60,0.20); --win-off:rgba(42,39,37,0.05);
 }
@@ -252,9 +255,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
       </div>
       <div class="reg"><div class="lab">Couleurs</div>
         <select data-k="pal">
-          <option value="citron">Ciel citron, façades mauve et sauge</option>
-          <option value="sauge">Ciel frais, façades mauve et sauge</option>
-          <option value="soir">Soir doux (crème → mauve)</option>
+          <option value="sauge">Ciel neutre, façades mauve et sauge</option>
           <option value="blocs">Blocs blancs de l'appli</option>
           <option value="pastels">Pastels (version précédente)</option>
         </select>
@@ -280,29 +281,29 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 //  Réglages (adresse) et constantes
 // =====================================================================
 const W = 960, H = 540;
-const DEF = { g:360, vent:10, trou:22, decor:"mixte", pal:"citron", trace:1, son:1, tpt:1 };
+const DEF = { g:360, vent:10, trou:22, decor:"mixte", pal:"sauge", trace:1, son:1, tpt:1 };
 const RULE_KEYS = ["g","vent","trou","decor"];
 const S = (()=>{
   const q = new URLSearchParams(location.search), s = { ...DEF };
   for(const k in DEF) if(q.has(k)) s[k] = typeof DEF[k] === "number" ? Number(q.get(k)) : q.get(k);
   return s;
 })();
-const PLAYERS = [ { ini:"AP", color:"--chat-me" }, { ini:"H", color:"--chat-them" } ];
+const PLAYERS = [ { ini:"AP", nom:"André-Pierre", color:"--chat-me" }, { ini:"H", nom:"Hiske", color:"--chat-them" } ];
+const de = n => (/^[aeiouyéèêâîôû]/i.test(n) ? "d'" : "de ") + n;   // « d'André-Pierre », « de Hiske »
 const OBJETS = { stylo:"Stylo plume", orval:"Bouteille d'Orval", coeur:"Cœur" };
 const OBJ_SIZE = { stylo: 1, orval: 1, coeur: 1 };   // taille en vol
 const OBJETS_ART = { stylo:"un stylo plume", orval:"une Orval", coeur:"un cœur" };
 const DANCE_BEAT = 0.32, DANCE_BEATS = 14;   // danse du vainqueur : 14 temps, ailes inversées à chaque temps
-// propositions de couleurs du décor (mode clair ; le mode sombre garde les siennes)
+// couleurs du décor (mode clair ; le mode sombre garde les siennes) — ciel neutre
+// pendant la partie, pour que le ciel de fête de la fin se remarque
 const PALETTES = {
-  citron:  { sky:["#FCFBE9","#F1EED3"], facades:["#E6DFEE","#DCE6D2","#F3F5F3","#E2E8EC","#EBE5F1"], lit:"rgba(230,214,60,0.38)", off:"rgba(42,39,37,0.06)" },
   sauge:   { sky:["#F7FAF9","#E6EAEA"], facades:["#E3DBEB","#D8E2CF","#EEF0EC","#DFE5E9","#E8E1EE"], lit:"rgba(230,214,60,0.30)", off:"rgba(42,39,37,0.06)" },
-  soir:    { sky:["#F7F2E2","#E9E0EF"], facades:["#D7CBE5","#C8D8B8","#DBE1E5","#E5E0D6","#D2C6DF"], lit:"rgba(240,220,90,0.55)", off:"rgba(42,39,37,0.08)" },
   blocs:   { sky:["#F7FAF9","#E6EAEA"], facades:["#FFFFFF","#FBF9F3","#F5F7F6","#FDFDFA","#F6F3ED"], lit:"rgba(230,214,60,0.20)", off:"rgba(42,39,37,0.05)" },
   pastels: { sky:["#F7FAF9","#E6EAEA"], facades:["#EEE3F9","#FCFBE9","#E9F2DC","#F6F0FC","#F7F3D4"], lit:"rgba(230,214,60,0.20)", off:"rgba(42,39,37,0.05)" },
 };
 const DARK = matchMedia("(prefers-color-scheme: dark)");
 function applyPalette(){
-  const st = document.documentElement.style, P = PALETTES[S.pal] || PALETTES.citron;
+  const st = document.documentElement.style, P = PALETTES[S.pal] || PALETTES.sauge;
   const props = { "--sky-top":P.sky[0], "--sky-bottom":P.sky[1], "--facades":P.facades.join(","), "--win-lit":P.lit, "--win-off":P.off };
   for(const k in props) DARK.matches ? st.removeProperty(k) : st.setProperty(k, props[k]);
 }
@@ -598,13 +599,14 @@ function drawPheasantFront(c, x, y, o = {}){
 }
 
 // objets lancés, dessinés autour de (0, 0), à peu près 30 px de long
-// bouteille d'Orval (de mémoire, sans logo) : quille — panse basse et ronde, long col effilé, verre brun ambré
+// bouteille d'Orval (de mémoire) : corps presque droit, épaule courte, sans étiquette, verre brun ambré
 const BOTTLE_R = [   // demi-profil droit, de la base au goulot : [x, y] puis courbes [c1x, c1y, c2x, c2y, x, y]
-  [0, 14], [4.4, 14],
-  [7.6, 13.6, 8.4, 6.4, 7.2, 2.6],      // panse, ronde et basse
-  [6.0, -1.4, 2.6, -3.6, 2.2, -8.0],    // longue courbe rentrante vers le col
-  [2.0, -11, 1.9, -14, 1.9, -16.4],     // col effilé
-  [2.5, -16.6], [2.5, -17.8],           // bague
+  [0, 13], [4.8, 13],
+  [6.4, 13, 6.6, 11.6, 6.6, 10.2],      // fond arrondi
+  [6.4, 4, 6.0, -1.5, 5.4, -3.6],       // flanc presque droit, qui se resserre à peine
+  [4.6, -6.4, 2.2, -7.2, 2.1, -9.6],    // épaule courte
+  [2.1, -15.4],                         // col
+  [2.6, -15.6], [2.6, -16.8],           // bague
 ];
 function bottlePath(c){
   const R = BOTTLE_R;
@@ -634,19 +636,15 @@ function drawObjet(c, type, x, y, rot = 0, sc = 1){
     g.addColorStop(0, "#2B2210"); g.addColorStop(0.32, "#6A5424"); g.addColorStop(0.5, "#7C6430"); g.addColorStop(1, "#241C0C");
     c.fillStyle = g; bottlePath(c); c.fill();
     c.save(); bottlePath(c); c.clip();
-    // étiquette de panse, unie, et petite étiquette de col
-    c.fillStyle = "#F1EAD6"; c.beginPath(); c.ellipse(0, 6.8, 9, 3.9, 0, 0, 7); c.fill();
-    c.fillStyle = "rgba(60,40,10,0.22)"; c.fillRect(4.2, 2, 6, 10);
-    c.fillStyle = "#F1EAD6"; c.fillRect(-3, -12.6, 6, 2.6);
     // reflets
     c.strokeStyle = "rgba(255,255,255,0.55)"; c.lineWidth = 1.2;
-    c.beginPath(); c.moveTo(-4.6, 11.6); c.quadraticCurveTo(-6.6, 6, -5.4, 2.2); c.stroke();
-    c.lineWidth = 0.9; c.beginPath(); c.moveTo(-0.9, -4.6); c.lineTo(-0.8, -15.4); c.stroke();
+    c.beginPath(); c.moveTo(-4.4, 10.6); c.lineTo(-3.9, -2.6); c.stroke();
+    c.lineWidth = 0.8; c.beginPath(); c.moveTo(-1.1, -9); c.lineTo(-1.1, -14.6); c.stroke();
     c.restore();
     // capsule dorée
-    c.fillStyle = "#D9B44A"; c.beginPath(); c.moveTo(-2.7, -17.6); c.lineTo(2.7, -17.6); c.lineTo(2.3, -19.6); c.lineTo(-2.3, -19.6); c.closePath(); c.fill();
+    c.fillStyle = "#D9B44A"; c.beginPath(); c.moveTo(-2.8, -16.6); c.lineTo(2.8, -16.6); c.lineTo(2.4, -18.6); c.lineTo(-2.4, -18.6); c.closePath(); c.fill();
     c.strokeStyle = "#9C7B22"; c.lineWidth = 0.5;
-    c.beginPath(); for(const xx of [-1.5, 0, 1.5]){ c.moveTo(xx, -17.7); c.lineTo(xx, -19.4); } c.stroke();
+    c.beginPath(); for(const xx of [-1.5, 0, 1.5]){ c.moveTo(xx, -16.7); c.lineTo(xx, -18.4); } c.stroke();
   }else if(type === "coeur"){
     const g = c.createRadialGradient(-4, -6, 1, 0, 0, 15);
     g.addColorStop(0, "#F6C6D2"); g.addColorStop(0.45, "#E592A8"); g.addColorStop(1, "#C24F6E");
@@ -814,7 +812,8 @@ function frame(){
     // initiales au-dessus, couleurs de l'écran de chat
     ctx.font = `700 ${F(13)}px 'Courier Prime', monospace`; ctx.textAlign = "center";
     ctx.fillStyle = css(PLAYERS[k].color); ctx.globalAlpha = turn() === k && !world.over ? 1 : 0.55;
-    ctx.fillText(PLAYERS[k].ini, world.ph[k].x, world.ph[k].y - (world.over && world.winner === k ? 80 : 64) - hop); ctx.globalAlpha = 1;
+    const champion = world.over && world.winner === k;
+    ctx.fillText(champion ? PLAYERS[k].nom : PLAYERS[k].ini, world.ph[k].x, world.ph[k].y - (champion ? 80 : 64) - hop); ctx.globalAlpha = 1;
   }
   // le faisan qu'on attend somnole : des « z » montent au-dessus de lui
   if($("#attente").classList.contains("on") && !world.over){
@@ -952,7 +951,7 @@ function endShot(){
     renderCity(world);
     if(world.over){
       dance = { k: winner, t: -0.25, beat: -1 }; sound("cri"); setTimeout(()=> sound("musique"), 650);
-      banner = { text: `${PLAYERS[winner].ini} gagne !`, sub: v === shot.p ? `${PLAYERS[v].ini} s'est eu tout seul` : "", color: css(PLAYERS[winner].color), t: 0, d: 5 };
+      banner = { text: `${PLAYERS[winner].nom} gagne !`, sub: v === shot.p ? `${PLAYERS[v].nom} s'est eu tout seul` : "", color: css(PLAYERS[winner].color), t: 0, d: 5 };
     }
     finish(done);
   }, 1500);
@@ -979,9 +978,9 @@ const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 // tour par tour : bandeau « En attente de … » jusqu'à ce que l'autre arrive ; il voit alors le coup qu'on vient de jouer
 function showAttente(){
   const p = turn(), last = game.shots[game.shots.length - 1];
-  $("#attenteQui").textContent = `En attente de ${PLAYERS[p].ini}`;
+  $("#attenteQui").textContent = `En attente ${de(PLAYERS[p].nom)}`;
   $("#attente").style.color = css(PLAYERS[p].color);
-  $("#attenteGo").textContent = `${PLAYERS[p].ini} arrive`;
+  $("#attenteGo").textContent = `${PLAYERS[p].nom} arrive`;
   $("#attente").classList.add("on"); sound("attente"); refreshUI();
 }
 // rejouer le dernier coup : le monde revient d'un cran, le coup repart, tout se retrouve à l'identique
@@ -1020,16 +1019,16 @@ function refreshUI(){
   $("#angle").disabled = $("#vitesse").disabled = lock || world.over;
   if(world.over){
     $("#lancer").textContent = "Nouvelle partie"; $("#lancer").disabled = busy;
-    $("#statut").textContent = `${PLAYERS[world.winner].ini} gagne.`;
+    $("#statut").textContent = `${PLAYERS[world.winner].nom} gagne.`;
   }else{
     $("#lancer").textContent = "Lancer"; $("#lancer").disabled = lock;
-    $("#statut").textContent = busy ? "" : attente ? "" : `À ${PLAYERS[p].ini} de lancer ${OBJETS_ART[game.objets[p]]}.`;
+    $("#statut").textContent = busy ? "" : attente ? "" : `À ${PLAYERS[p].nom} de lancer ${OBJETS_ART[game.objets[p]]}.`;
   }
   $("#annuler").disabled = busy || !game.shots.length;
   const last = game.shots[game.shots.length - 1];
   $("#revoir").hidden = !last || attente;
   $("#revoir").disabled = busy;
-  if(last) $("#revoir").textContent = `Revoir le coup de ${PLAYERS[last.p].ini}`;
+  if(last) $("#revoir").textContent = `Revoir le coup ${de(PLAYERS[last.p].nom)}`;
   if(!busy && !attente && !world.over){
     const ls = lastShotOf(p);
     $("#angle").value = ls ? ls.a : 45; $("#vitesse").value = ls ? ls.v : 60;
