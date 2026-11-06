@@ -1284,8 +1284,9 @@
     1er toucher entrouvre, 2e ouvre, toucher ailleurs referme. Liste fermée :
     aperçu pâle des premières tâches.
     Chat replié : la feuille de style cache les lignes (plus retirées).
-    Duel fermé : la phrase en bandeau bleu façon « Lancer », à bords perdus,
-    au nombre d'or ; estompé après 3 s sauf action attendue (.attendu). Mémos en sombre : papier des listes (#1C2125).
+    Duel fermé : la phrase dans le bandeau de l'écran du jeu (celui de « X a
+    joué ! »), à bords perdus, texte à droite, au nombre d'or. Ouvertures
+    douces : softHeight (la hauteur glisse, 380–620 ms, SOFT_EASE). Mémos en sombre : papier des listes (#1C2125).
   - 10.65 : volet des écrans de chat et de duel (repli sur une ligne,
     voyant vert du duel) ; toutes les cases repliées à la même hauteur
     (--fold-h, 127px : le mémo replié, resserré de 3 px, sert d'étalon) ;
@@ -2690,14 +2691,12 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   opacity:0.28; border-radius:14px; pointer-events:none; z-index:0;
   -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 40%); mask-image:linear-gradient(180deg, transparent 0, #000 40%); }
 .duel-card.collapsed .d-mini{ position:relative; z-index:1; flex:1 1 auto; display:flex; align-items:center; min-width:0; padding:0 0.25rem; white-space:nowrap; }
-/* 10.66 : la phrase dans un bandeau vintage du style du bouton « Lancer », gris tant qu'aucune action
-   n'est attendue (comme le bouton désactivé) ; à son tour ou un coup à découvrir : la couleur du jeu */
-.duel-card.collapsed .d-mini-t{ flex:1 1 auto; font:700 0.9rem/1.2 'Courier Prime', 'Courier New', monospace; letter-spacing:0.02em;
-  color:var(--objet); background:var(--surface); border:2px solid var(--objet); border-width:2px 0; border-radius:0; box-shadow:0 3px 0 var(--objet);
-  padding:0.36rem 1rem; margin:0 -1rem;   /* à bords perdus : d'un bord du papier à l'autre */
-  opacity:0.45; transition:opacity 1.2s ease 3s; }   /* rien n'est attendu de vous : il s'estompe après quelques secondes */
-.duel-card.collapsed .d-mini.attendu .d-mini-t, .duel-card.collapsed:hover .d-mini-t{ opacity:1; transition:opacity .3s ease; }
-/* posé au nombre d'or de la case (≈ 62 % de sa hauteur depuis le haut) */
+/* 10.66 : la phrase dans le bandeau de l'écran du jeu (celui de « X a joué ! ») : voile clair, filets
+   bleus dessus et dessous, à bords perdus, texte calé à droite ; posé au nombre d'or de la case */
+.duel-card.collapsed .d-mini-t{ flex:1 1 auto; text-align:right; font:700 1rem/1.2 'Courier Prime', 'Courier New', monospace; color:var(--objet);
+  background:color-mix(in srgb, var(--objet) 7%, color-mix(in srgb, var(--surface) 62%, transparent));
+  border-top:2px solid color-mix(in srgb, var(--objet) 40%, transparent); border-bottom:2px solid color-mix(in srgb, var(--objet) 40%, transparent);
+  padding:0.45rem 1.25rem; margin:0 -1rem; }
 .duel-card.collapsed .d-mini{ padding-top:var(--d-mini-down, 1.7rem) !important; }
 .d-mini-t{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .duel-card.collapsed .duel-foot{ z-index:1; }
@@ -6034,7 +6033,7 @@ function toggleFold(catId){
   const ul = card && card.querySelector(":scope > ul.items");
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const closing = !isFolded(catId);
-  const ease = { duration:220, easing:"cubic-bezier(.4,0,.2,1)" };
+  const ease = { duration:420, easing:SOFT_EASE };   // 10.66 : plus doux (avant 220 ms)
   if(closing){
     if(reduce || !ul || !ul.animate){ setFolded(catId, true); renderAll(); return; }
     const h = ul.offsetHeight;
@@ -10689,7 +10688,6 @@ function refreshUI(){
   ROOT.classList.toggle("duel-new", bandMode === "decouverte");
   { // l'écran replié : une ligne pour savoir où en est la partie
     const last = game.shots[game.shots.length - 1];
-    $(".d-mini").classList.toggle("attendu", bandMode === "decouverte" || (!game.solo && !world.over && mine && bandMode !== "attente"));   // 10.66
     $(".d-mini-t").textContent = (PLAYERS[p].ini ? PLAYERS[p].ini + "> " : "> ") + (
       bandMode === "decouverte" ? `${PLAYERS[last.p].nom} a joué !`
       : bandMode === "attente" ? `En attente ${de(PLAYERS[p].nom)}…`
@@ -11268,26 +11266,45 @@ document.addEventListener("pointerdown", e=>{
   lastPointerType = e.pointerType || "mouse";
   if(!e.target.closest(".peek")) document.querySelectorAll(".peek").forEach(c => peekCard(c, false));
 }, true);
-function peekCard(card, on){
+function peekCard(card, on, still){
   if(on) peekId = card.id; else if(peekId === card.id) peekId = null;
   if(on === card.classList.contains("peek")) return;
-  card.classList.toggle("peek", on);
-  card.classList.toggle("collapsed", !on);
+  const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); };
+  if(still) change(); else softHeight(card, change, on);
+}
+// 10.66 : la case glisse d'une hauteur à l'autre (douce, sans à-coup), son contenu apparaît en fondu
+const SOFT_EASE = "cubic-bezier(.25,.8,.25,1)";
+function softHeight(card, change, opening){
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const h0 = card.getBoundingClientRect().height;   // pendant une animation : la hauteur du moment
+  if(card._soft){ card._soft.cancel(); card._soft = null; }
+  change();
+  if(reduce || !card.animate) return;
+  const h1 = card.getBoundingClientRect().height;
+  if(Math.abs(h1 - h0) < 2) return;
+  const dur = Math.round(Math.min(620, Math.max(380, Math.abs(h1 - h0) * 1.6)) * (opening ? 1 : 0.85));
+  card.style.overflow = "hidden";
+  const a = card.animate([{ height:h0 + "px" }, { height:h1 + "px" }], { duration:dur, easing:SOFT_EASE });
+  card._soft = a;
+  const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
+  if(opening) kids.forEach(k => k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }));
+  const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; } };
+  a.onfinish = done; a.oncancel = done;
 }
 function wireFolded(){
   categoriesEl.querySelectorAll(":scope > .collapsed").forEach(card=>{
-    if(card.id === peekId) peekCard(card, true);   // déjà entrouverte avant ce rendu
+    if(card.id === peekId) peekCard(card, true, true);   // déjà entrouverte avant ce rendu : sans animation
     if(card._fw) return;   // le duel garde sa carte d'un rendu à l'autre
     card._fw = true;
     const id = card.id.replace(/^cat-/, "");
     let t = null;
     card.addEventListener("pointerenter", e=>{
       if(e.pointerType !== "mouse" || dragState || Date.now() < peekHold || !(card.classList.contains("collapsed") || card.classList.contains("peek"))) return;
-      clearTimeout(t); t = setTimeout(()=> peekCard(card, true), 200);
+      clearTimeout(t); t = setTimeout(()=> peekCard(card, true), 160);
     });
     card.addEventListener("pointerleave", e=>{
       if(e.pointerType !== "mouse") return;
-      clearTimeout(t); t = setTimeout(()=> peekCard(card, false), 120);
+      clearTimeout(t); t = setTimeout(()=> peekCard(card, false), 260);   // un temps de grâce : on peut ressortir et revenir
     });
     card.addEventListener("click", e=>{
       if(!(card.classList.contains("collapsed") || card.classList.contains("peek"))) return;
