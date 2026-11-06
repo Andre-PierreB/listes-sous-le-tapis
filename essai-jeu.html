@@ -54,7 +54,7 @@
     l'ombre des cartes, ciel neutre = fond de page ; joueurs aux
     couleurs de l'écran de chat (--chat-me, --chat-them).
   - Une partie = une touche (pas de manches ni de score) ; bouton « Nouvelle
-    partie ». Objets : stylo plume (éclate en lettres ; « scritch-scritch scriiitch… tac ! »),
+    partie ». Objets : stylo plume (éclate en lettres ; griffonnage « scratch-scratch » en rythme),
     roue de vélo (rayons et bouts de pneu qui volent ; « pouet-pouet », roue
     libre qui ralentit, « doïng »), réveil (rouages, ressorts et chiffres ;
     sonnerie par paquets de plus en plus aigus, « boïng » du ressort), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
@@ -148,13 +148,15 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 .attente.decouverte.on{ transform:translateY(-50%) scaleY(1); }
 /* bouton-poussoir : une vraie touche, avec sa tranche, qui s'enfonce quand on appuie */
 .poussoir{
-  font:700 1rem 'Public Sans', sans-serif; color:#FFFFFF; background:var(--pc); cursor:pointer;
-  border:0; border-radius:12px; padding:0.62rem 1.4rem; letter-spacing:0.01em;
-  box-shadow:0 4px 0 color-mix(in srgb, var(--pc) 62%, #000), 0 7px 14px -4px rgba(30,40,45,0.35), inset 0 1px 0 rgba(255,255,255,0.35);
-  transform:translateY(0); transition:transform .07s, box-shadow .07s, filter .15s;
+  font:700 1rem 'Public Sans', sans-serif; color:var(--pc); background:var(--surface); cursor:pointer;
+  border:2px solid var(--pc); border-radius:14px; padding:0.55rem 1.3rem 0.55rem 1.1rem; letter-spacing:0.01em;
+  display:inline-flex; align-items:center; gap:0.5rem;
+  box-shadow:0 4px 0 var(--pc), 0 8px 14px -6px rgba(30,40,45,0.3);
+  transform:translateY(0); transition:transform .07s, box-shadow .07s, background .15s;
 }
-@media (hover:hover){ .poussoir:hover{ filter:brightness(1.07); } }
-.poussoir:active{ transform:translateY(3px); box-shadow:0 1px 0 color-mix(in srgb, var(--pc) 62%, #000), 0 2px 5px -2px rgba(30,40,45,0.35), inset 0 1px 0 rgba(255,255,255,0.25); }
+.poussoir::before{ content:""; width:0; height:0; border-left:0.62em solid currentColor; border-top:0.38em solid transparent; border-bottom:0.38em solid transparent; }
+@media (hover:hover){ .poussoir:hover{ background:color-mix(in srgb, var(--pc) 8%, var(--surface)); } }
+.poussoir:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--pc), 0 2px 5px -2px rgba(30,40,45,0.3); }
 @media (pointer:coarse){ .attente .btn{ min-height:40px; } .poussoir{ min-height:46px; } }
 @media (max-width:560px){
   .attente{ gap:0.6rem; padding:0.35rem 0.6rem; font-size:0.8rem; }
@@ -685,10 +687,13 @@ function drawObjet(c, type, x, y, rot = 0, sc = 1){
     c.beginPath(); c.moveTo(-5, 6.5); c.lineTo(-7.5, 10); c.moveTo(5, 6.5); c.lineTo(7.5, 10); c.stroke();   // pieds
     c.beginPath(); c.moveTo(0, -9.5); c.lineTo(0, -12.5); c.stroke();                                         // marteau
     c.fillStyle = "#5E5650"; c.beginPath(); c.arc(0, -12.8, 1.2, 0, 7); c.fill();
-    for(const sx of [-1, 1]){                                                                               // cloches
-      const bg = c.createLinearGradient(0, -14, 0, -7); bg.addColorStop(0, "#F3D877"); bg.addColorStop(1, "#C99A2E");
-      c.fillStyle = bg; c.beginPath(); c.arc(sx * 6, -9, 4, Math.PI * 1.05, Math.PI * 1.95); c.closePath();
-      c.save(); c.translate(sx * 6, -9); c.rotate(sx * 0.5); c.translate(-sx * 6, 9); c.fill(); c.restore();
+    for(const sx of [-1, 1]){                                                                               // cloches en dôme, posées sur le boîtier
+      c.save(); c.rotate(sx * 0.62); c.translate(0, -9.6);
+      const bg = c.createLinearGradient(-4, -4, 4, 0); bg.addColorStop(0, "#F6DD84"); bg.addColorStop(1, "#C3922A");
+      c.fillStyle = bg; c.beginPath(); c.arc(0, 0, 4, Math.PI, 0); c.closePath(); c.fill();
+      c.fillStyle = "#B08425"; c.fillRect(-4.3, -0.4, 8.6, 1.2);                                               // bord de la cloche
+      c.fillStyle = "#8C6A16"; c.beginPath(); c.arc(0, -4.3, 0.9, 0, 7); c.fill();                            // petit bouton
+      c.restore();
     }
     const bd = c.createRadialGradient(-3, -3, 1, 0, 0, 10); bd.addColorStop(0, "#E07A92"); bd.addColorStop(1, "#B0405C");
     c.fillStyle = bd; c.beginPath(); c.arc(0, 0, 9, 0, 7); c.fill();                                          // boîtier
@@ -1197,18 +1202,19 @@ function sound(kind){
         const g = env(t + d, 0.004, 0.45, 0.11); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + 0.13);
       }
     }else if(kind === "plume"){
-      // stylo qui griffonne : « scritch-scritch scriiiitch… tac ! » — deux petits traits, un grand
-      // trait qui monte (le soulignement), puis le point final
-      const trait = (d, len, f0, f1, amp) => {
-        const n = noise(len), bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 2.2;
-        bp.frequency.setValueAtTime(f0, t + d); bp.frequency.exponentialRampToValueAtTime(f1, t + d + len);
-        const g = env(t + d, 0.006, amp, len); n.connect(bp); bp.connect(g); g.connect(out); n.start(t + d);
+      // stylo qui griffonne : « scratch-scratch, scratch-scratch, scratch-scratch-scratch »
+      // chaque trait = un frottement court au grain irrégulier ; l'aller un peu plus aigu que le retour
+      const sr = AC.sampleRate;
+      const trait = (d, len, f, amp) => {
+        const buf = AC.createBuffer(1, sr * len | 0, sr), dd = buf.getChannelData(0); let gr = 0;
+        for(let i = 0; i < dd.length; i++){ gr += (Math.random() - 0.5) * 0.7; gr *= 0.9;
+          dd[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / dd.length) ** 0.5 * (0.6 + gr); }
+        const src = AC.createBufferSource(); src.buffer = buf;
+        const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = 2.5;
+        const g = AC.createGain(); g.gain.value = amp; src.connect(bp); bp.connect(g); g.connect(out); src.start(t + d);
       };
-      trait(0.03, 0.07, 2600, 3400, 0.8);
-      trait(0.12, 0.07, 2800, 3600, 0.8);
-      trait(0.24, 0.26, 2200, 6200, 0.9);                    // le grand trait qui monte
-      const o = AC.createOscillator(); o.type = "triangle"; o.frequency.setValueAtTime(900, t + 0.6); o.frequency.exponentialRampToValueAtTime(420, t + 0.65);
-      const gt = env(t + 0.6, 0.002, 0.5, 0.06); o.connect(gt); gt.connect(out); o.start(t + 0.6); o.stop(t + 0.68);   // tac !
+      [[0.03, 4200], [0.10, 3300], [0.27, 4400], [0.34, 3400], [0.51, 4600], [0.565, 3600], [0.62, 4800]]
+        .forEach(([d, f], i) => trait(d, i === 6 ? 0.075 : 0.055, f + Math.random() * 300, 1.1));
     }else if(kind === "roulibre"){
       // roue de vélo : « pouet-pouet » de la trompe, puis la roue libre qui cliquette en ralentissant,
       // et un petit « doïng » de rayon pour finir
