@@ -22,7 +22,7 @@
     « Ouf, tout juste ! », « Ça devient chaud… », « Pas loin. », « Tranquille. »
     selon la distance au faisan visé). En ouvrant la page : « … a joué ! »
     tant que le dernier coup n'a pas été découvert (game.decouvert ; dans
-    l'appli, par personne) — y compris un coup gagnant : le perdant découvre
+    l'appli, par personne ; sur le banc : recharger la page) — y compris un coup gagnant : le perdant découvre
     la victoire de l'autre en révélant le coup, jamais la couronne d'emblée.
   - Partie = { seed, regles, shots:[{ p, a, v, o, at }], objets } : tout le
     reste (ville, vent, trous, vainqueur) se recalcule en rejouant les coups
@@ -956,9 +956,7 @@ function lancer(){
   const res = simulate(world, shot);
   game.shots.push(shot); save();
   play(shot, res, ()=>{
-    if(!S.tpt) return;
-    const g = game, n = g.shots.length;   // pas de bandeau si on a relancé une partie entre-temps
-    setTimeout(()=>{ if(game === g && g.shots.length === n && !busy) showAttente(); }, world.over ? 4500 : 0);
+    if(S.tpt && !world.over) showAttente();   // après une victoire, pas d'attente : la partie est finie de ce côté
   });
 }
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
