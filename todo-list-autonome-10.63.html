@@ -10595,7 +10595,7 @@ function refreshUI(){
       : !PLAYERS[p].uid && me ? "Invitez quelqu'un avec « … » pour jouer à deux." : `À ${PLAYERS[p].nom} de jouer.`;
   }
   const last = game.shots[game.shots.length - 1];
-  $(".d-revoir").classList.toggle("gone", !last || attente || hideLast);
+  $(".d-revoir").classList.toggle("gone", !last || bandMode === "decouverte" || hideLast);   // en attente de l'autre, on peut revoir son propre coup
   $(".d-revoir").disabled = busy;
   if(last) $(".d-revoir").title = `Revoir le coup ${de(PLAYERS[last.p].nom)}`;
   const focused = document.activeElement && ROOT.contains(document.activeElement) && /d-angle|d-vitesse/.test(document.activeElement.className);
