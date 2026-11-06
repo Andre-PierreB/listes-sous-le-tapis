@@ -1318,7 +1318,7 @@
      (choisi au banc ; avant : nacre #FFFFFF / #F4F7FC / #F9F5FC, reflet
      blanc plein, liseré rgba(150,160,200,.28)) */
   --gloss:rgba(255,255,255,0);
-  --memo-a:#FCFBF7; --memo-b:#FCFBF7; --memo-c:#FCFBF7;
+  --memo-a:#FFFFFF; --memo-b:#FFFFFF; --memo-c:#FFFFFF;   /* 10.63 : blanc comme les listes (avant : blanc chaud #FCFBF7), moins de bruit */
   --memo-line:rgba(0,0,0,0);
   --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong); --chat-lip:#FFFFFF;   /* 10.57 : écran de chat */
   /* 10.19 : vert du logo (le faisan) pour le titre et la plume connectée ;
@@ -2404,23 +2404,22 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    couleurs des joueurs (--chat-me, --chat-them) ne servent qu'à les reconnaître. */
 .duel-card{
   position:relative; min-width:0; container-type:inline-size;   /* une case de la grille, comme une liste */
-  /* 10.63 : ciel = fond de l'écran de chat (--chat-scr), façades au papier des listes : moins de bruit */
-  --sky-top:#EEF1F0; --sky-bottom:#E5E8E7; --sky-end-top:#EFE3FA; --sky-end-bottom:#FCF8DA;
-  --cloud:rgba(255,255,255,0.85);
-  --facades:#FFFFFF,#FCFBF7,#FDFDFA,#FAFAF7,#FFFFFF; --facade-shadow:rgba(30,40,45,0.13);
-  --win-lit:rgba(230,214,60,0.32); --win-off:rgba(42,39,37,0.06);
+  --sky-top:#F7FAF9; --sky-bottom:#E6EAEA; --sky-end-top:#EFE3FA; --sky-end-bottom:#FCF8DA;
+  --cloud:rgba(255,255,255,0.9);
+  --facades:#E3DBEB,#D8E2CF,#EEF0EC,#DFE5E9,#E8E1EE; --facade-shadow:rgba(30,40,45,0.10);
+  --win-lit:rgba(230,214,60,0.30); --win-off:rgba(42,39,37,0.06);
   --objet:#2F6F7C;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .duel-card{
-    --sky-top:#1A1F22; --sky-bottom:#15191C; --sky-end-top:#2A2140; --sky-end-bottom:#24231A; --cloud:rgba(255,255,255,0.05);
-    --facades:#232A2F,#252B30,#22282C,#262C31,#232A2F; --facade-shadow:rgba(0,0,0,0.45);
+    --sky-top:#1B252B; --sky-bottom:#101315; --sky-end-top:#2A2140; --sky-end-bottom:#24231A; --cloud:rgba(255,255,255,0.05);
+    --facades:#261D33,#26261C,#1E2A1C,#2B2238,#2A2A1D; --facade-shadow:rgba(0,0,0,0.45);
     --win-lit:rgba(226,200,102,0.22); --win-off:rgba(255,255,255,0.035); --objet:#7FC0CC;
   }
 }
 :root[data-theme="dark"] .duel-card{
-  --sky-top:#1A1F22; --sky-bottom:#15191C; --sky-end-top:#2A2140; --sky-end-bottom:#24231A; --cloud:rgba(255,255,255,0.05);
-  --facades:#232A2F,#252B30,#22282C,#262C31,#232A2F; --facade-shadow:rgba(0,0,0,0.45);
+  --sky-top:#1B252B; --sky-bottom:#101315; --sky-end-top:#2A2140; --sky-end-bottom:#24231A; --cloud:rgba(255,255,255,0.05);
+  --facades:#261D33,#26261C,#1E2A1C,#2B2238,#2A2A1D; --facade-shadow:rgba(0,0,0,0.45);
   --win-lit:rgba(226,200,102,0.22); --win-off:rgba(255,255,255,0.035); --objet:#7FC0CC;
 }
 .duel-stage{ background:var(--surface); border-radius:14px; box-shadow:var(--shadow); padding:0.6rem 0.6rem 0.35rem; }   /* le papier d'une liste */
@@ -2438,19 +2437,20 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
     inset -5.4px 0 7.8px -4.2px rgba(42,39,37,0.10),
     inset 0 -5.4px 7.2px -3.6px var(--chat-lip); }
 .duel-cv{ display:block; width:100%; aspect-ratio:16/9; border-radius:16px; touch-action:manipulation; }
-.duel-card .attente, .duel-card .d-statut{ z-index:2; }
+.duel-card .attente, .duel-card .d-statut{ z-index:0; }   /* sur le plan de la ville : les ombres de l'écran passent par-dessus */
+.duel-screen::after{ z-index:3; }
 /* bandeaux : « En attente de … » en bas, discret ; « … a joué ! » au milieu, texte puis bouton ; immobiles une fois posés */
 .duel-card .attente{
   position:absolute; left:0; right:0; bottom:0; transform:translateY(100%); opacity:0;
   display:flex; align-items:center; justify-content:center; gap:1rem; padding:0.55rem 1rem;
   background:color-mix(in srgb, var(--surface) 70%, transparent);   /* pas de backdrop-filter : trop lourd au-dessus d'un canevas animé */
-  border-top:1px solid color-mix(in srgb, var(--pc) 30%, var(--line)); border-radius:0 0 16px 16px; margin:0 2px 2px;
+  border-top:1px solid color-mix(in srgb, var(--pc) 22%, transparent); border-radius:0 0 16px 16px; margin:0 2px 2px;
   color:var(--pc); font:700 1rem 'Courier Prime', monospace; white-space:nowrap; pointer-events:none; visibility:hidden;
   transition:transform .45s cubic-bezier(.2,.8,.3,1), opacity .3s, visibility 0s .45s;
 }
 .duel-card .attente.on{ transform:translateY(0); opacity:1; pointer-events:auto; visibility:visible; transition:transform .45s cubic-bezier(.2,.8,.3,1), opacity .3s, visibility 0s; }
 .duel-card .attente.decouverte{
-  top:50%; bottom:auto; transform:translateY(-50%) scaleY(0); border-radius:0; flex-direction:column; gap:0.5rem;
+  top:50%; bottom:auto; left:2px; right:2px; margin:0; transform:translateY(-50%) scaleY(0); border-radius:0; flex-direction:column; gap:0.5rem;
   background:color-mix(in srgb, var(--pc) 7%, color-mix(in srgb, var(--surface) 62%, transparent));
   border-top:2px solid color-mix(in srgb, var(--pc) 40%, transparent); border-bottom:2px solid color-mix(in srgb, var(--pc) 40%, transparent);
   font-size:1.3rem; padding:0.6rem 1rem 0.8rem;
@@ -2500,7 +2500,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* sous Lancer : le choix du faisan (avant le 1er coup), puis Revoir, à la même place : la carte ne change pas de hauteur */
 .duel-card .d-sous{ display:grid; justify-items:center; align-items:center; }
 .duel-card .d-sous > *{ grid-area:1 / 1; }
-.duel-card .d-sous .persos{ justify-self:start; }
+.duel-card .d-sous .persos{ justify-self:var(--persos-pos, start); }
 .duel-card .persos.gone, .duel-card .d-revoir.gone{ visibility:hidden; }
 /* pied dans la carte, comme les listes : poignée à gauche, « … » et initiales à droite */
 .duel-card .duel-foot{ margin-top:0.15rem; padding:0 0.15rem; }
@@ -13626,6 +13626,30 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 }
 
 // ---- banc d'essai (essai.html?glow) : couleur du rétroéclairage, message simulé ----
+// ---- banc d'essai (essai.html?duel) : place du choix des faisans, lien des réglages ----
+(()=>{
+  const K = "sltapis-essai-duel-persos", q = new URLSearchParams(location.search);
+  let v = q.get("persos") || (()=>{ try{ return localStorage.getItem(K); }catch(e){ return null; } })() || "start";
+  const apply = ()=> document.documentElement.style.setProperty("--persos-pos", v);
+  apply();
+  if(!(ESSAI && q.has("duel"))) return;
+  const box = document.createElement("div");
+  box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:15rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
+  document.body.appendChild(box);
+  box.addEventListener("click", e => e.stopPropagation());
+  const draw = ()=>{
+    box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.4rem">Choix du faisan</div>`
+      + [["start","À gauche"],["center","Au centre"],["end","À droite"]].map(([k, l]) => `<label style="display:flex;gap:.4rem;align-items:center;margin:.25rem 0;cursor:pointer"><input type="radio" name="dp" value="${k}"${k === v ? " checked" : ""}>${l}</label>`).join("")
+      + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
+    box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ v = i.value; try{ localStorage.setItem(K, v); }catch(e){} apply(); }));
+    box.querySelector("[data-c]").addEventListener("click", async e=>{
+      const url = location.origin + location.pathname + "?duel&persos=" + v;
+      try{ await navigator.clipboard.writeText(url); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", url); }
+      setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
+    });
+  };
+  draw();
+})();
 if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
   const C = null;
   const K = "sltapis-essai-glow";
