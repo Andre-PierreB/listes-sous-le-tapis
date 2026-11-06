@@ -1156,15 +1156,10 @@ function sound(kind){
       o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.4);
       o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
     }else if(kind === "reveil"){
-      // réveil mécanique : petit déclic, puis le marteau tape vite entre deux cloches graves,
-      // son métallique un peu grinçant (onde carrée filtrée + claquement), qui s'essouffle
-      const lp = AC.createBiquadFilter(); lp.type = "bandpass"; lp.frequency.value = 1500; lp.Q.value = 1.1; lp.connect(out);
-      const n0 = noise(0.02), g0 = env(t, 0.001, 0.6, 0.02); n0.connect(g0); g0.connect(out); n0.start(t);      // déclic
-      for(let i = 0; i < 34; i++){
-        const d = 0.08 + i * 0.03, f = i % 2 ? 1180 : 1420, fade = i > 26 ? (34 - i) / 8 : 1;
-        const o = AC.createOscillator(); o.type = "square"; o.frequency.value = f;
-        const g = env(t + d, 0.001, 0.22 * fade, 0.045); o.connect(g); g.connect(lp); o.start(t + d); o.stop(t + d + 0.05);
-        const k = noise(0.008), gk = env(t + d, 0.0005, 0.25 * fade, 0.008); k.connect(gk); gk.connect(out); k.start(t + d);   // marteau
+      // sonnerie de réveil, version rigolote : le marteau bat vite entre deux cloches claires
+      for(let i = 0; i < 26; i++){
+        const d = 0.04 + i * 0.026, o = AC.createOscillator(); o.type = "triangle"; o.frequency.value = i % 2 ? 2350 : 2780;
+        const g = env(t + d, 0.002, i > 20 ? 0.12 : 0.28, 0.05); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + 0.06);
       }
     }else if(kind === "sonnette"){
       // sonnette de vélo : « dring dring » — le petit marteau frappe le timbre plusieurs fois très vite,
@@ -1194,12 +1189,25 @@ function sound(kind){
         const g = env(t + d, 0.004, 0.45, 0.11); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + 0.13);
       }
     }else if(kind === "plume"){
-      // plume qui gratte le papier : petits frottements rapides
-      for(let i = 0; i < 9; i++){
-        const d = 0.03 + i * 0.045 + Math.random() * 0.015, n = noise(0.04), hp = AC.createBiquadFilter();
-        hp.type = "bandpass"; hp.frequency.value = 3200 + Math.random() * 2500; hp.Q.value = 3;
-        const g = env(t + d, 0.003, 0.7, 0.035 + Math.random() * 0.02); n.connect(hp); hp.connect(g); g.connect(out); n.start(t + d);
+      // plume sur le papier : quelques traits d'écriture — frottement continu dans chaque trait
+      // (bruit filtré, grain du papier), petites pauses quand la plume se lève, hauteur qui varie d'un trait à l'autre
+      const len = 0.85, sr = AC.sampleRate, buf = AC.createBuffer(1, sr * len | 0, sr), dd = buf.getChannelData(0);
+      let pos = 0.03 * sr, grain = 0;
+      while(pos < dd.length - 0.05 * sr){
+        const tr = (0.05 + Math.random() * 0.09) * sr | 0, amp = 0.5 + Math.random() * 0.5;   // un trait
+        for(let i = 0; i < tr && pos + i < dd.length; i++){
+          const e = Math.sin(Math.PI * i / tr) ** 0.6;                                         // monte et retombe dans le trait
+          grain += (Math.random() - 0.5) * 0.6; grain *= 0.92;                                // grain irrégulier du papier
+          dd[pos + i] = (Math.random() * 2 - 1) * e * amp * (0.7 + grain);
+        }
+        pos += tr + ((0.015 + Math.random() * 0.045) * sr | 0);                               // la plume se lève
       }
+      const src = AC.createBufferSource(); src.buffer = buf;
+      const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.9;
+      for(let k = 0; k <= 8; k++) bp.frequency.setValueAtTime(3200 + Math.random() * 2600, t + k * len / 8);
+      const hp = AC.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 1400;
+      const g = AC.createGain(); g.gain.value = 0.9;
+      src.connect(bp); bp.connect(hp); hp.connect(g); g.connect(out); src.start(t);
     }else if(kind === "cri"){
       // « kôk-kôk » du faisan : deux appels rauques, puis un battement d'ailes
       for(const [d, f0] of [[0, 1050], [0.2, 980]]){
