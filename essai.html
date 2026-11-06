@@ -1277,6 +1277,15 @@
   - 10.63 : duel de faisans (voir DUEL DE FAISANS) : petit jeu à deux en
     tour par tour, créé par « + Ajouter un duel de faisans » ; entraînement
     seul. Papier des mémos en blanc (--memo-a/b/c #FFFFFF, avant blanc chaud).
+  - 10.66 (banc) : la pile est abandonnée. Les cases fermées se rangent en
+    bas (ouvertes d'abord, fermées ensuite, chacune dans l'ordre ; la 1re
+    fermée commence une rangée : .fold-first). Survol souris = la case
+    s'entrouvre (.peek, sans toucher aux données), clic = ouverte pour de bon
+    et remontée juste après la dernière ouverte (unfoldCat, l'ordre change).
+    Au doigt : 1er toucher entrouvre, 2e ouvre, toucher ailleurs referme.
+    Chat replié : la feuille de style cache les lignes (plus retirées).
+    Duel fermé : la phrase en bandeau façon « Lancer », grise sauf action
+    attendue (.attendu). Mémos en sombre : papier des listes (#1C2125).
   - 10.65 : volet des écrans de chat et de duel (repli sur une ligne,
     voyant vert du duel) ; toutes les cases repliées à la même hauteur
     (--fold-h, 127px : le mémo replié, resserré de 3 px, sert d'étalon) ;
@@ -1285,12 +1294,7 @@
     Écran du duel à la largeur de celui du chat (carte − 1,5rem, ordinateur
     et téléphone). Fermé, le chat garde son écran ; le duel fermé montre le
     jeu en filigrane (le canvas lui-même, object-fit, redessiné 1×/s) et la
-    phrase d'état en clair, dans un rectangle façon bouton « Lancer ». Pile
-    des fermées qui se suivent en bas, dans leur ordre (pileFolded) : chaque
-    case recouvre à peine le haut de la suivante (19 px) ; au survol, ses
-    voisines s'écartent (accordéon). Glisser : listDragCards() traverse la
-    pile ; une case tirée vers le haut en sort.
-    Pile : banc d'essai seulement (replisOpt), réglages : essai.html?replis.
+    phrase d'état en clair, dans un rectangle façon bouton « Lancer ».
   - 10.64 : liste repliée : la bulle compte aussi les œufs en couvaison
     (eggsInCat), en plus des tâches à faire ; toujours pas les cochées.
   - 10.62 : écran de chat au doigt : toucher l'écran met le curseur dans la
@@ -1401,7 +1405,7 @@
     --accent-soft:#1C2B30;
     --plume-off:var(--ink-faint);
     --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
-    --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
+    --memo-a:#1C2125; --memo-b:#1C2125; --memo-c:#1C2125;   /* 10.66 : le papier des autres listes, comme en clair (avant #23231F, un rien chaud) */
     --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07);   /* 10.57 */
     --memo-line:rgba(0,0,0,0);
     --logo-green:#A9D65A;
@@ -1445,7 +1449,7 @@
   --accent-soft:#1C2B30;
   --plume-off:var(--ink-faint);
   --gloss:rgba(255,255,255,0);   /* 10.55 : plus de reflet (comme en clair) */
-  --memo-a:#23231F; --memo-b:#23231F; --memo-c:#23231F;   /* 10.55 : papier uni, un rien chaud (avant : nacre bleutée #1F2328 / #1F2530 / #252231) */
+  --memo-a:#1C2125; --memo-b:#1C2125; --memo-c:#1C2125;   /* 10.66 : le papier des autres listes, comme en clair (avant #23231F, un rien chaud) */
     --chat-me:#7FC0CC; --chat-them:var(--logo-green); --chat-lip:rgba(255,255,255,0.07);   /* 10.57 */
   --memo-line:rgba(0,0,0,0);
   --logo-green:#A9D65A;
@@ -2668,6 +2672,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-card.collapsed .chat-screen{ justify-content:center; }
 .chat-card.collapsed .chat-log{ flex:none; min-height:0; max-height:none; overflow:hidden; }
 .chat-card.collapsed .chat-l{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-card.collapsed .chat-log > :not(:last-child){ display:none; }
 .chat-card.collapsed .chat-l .chat-m{ display:none; }
 .duel-card .d-mini{ display:none; }
 .duel-card.collapsed .attente, .duel-card.collapsed .d-statut, .duel-card.collapsed .coup{ display:none; }
@@ -2679,32 +2684,23 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   opacity:0.28; border-radius:14px; pointer-events:none; z-index:0;
   -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 40%); mask-image:linear-gradient(180deg, transparent 0, #000 40%); }
 .duel-card.collapsed .d-mini{ position:relative; z-index:1; flex:1 1 auto; display:flex; align-items:center; min-width:0; padding:0 0.25rem; white-space:nowrap; }
-/* la phrase dans un rectangle d'écran vintage, comme le bouton « Lancer » du jeu */
-.duel-card.collapsed .d-mini-t{ font:700 0.9rem/1.2 'Courier Prime', 'Courier New', monospace; color:var(--objet); background:var(--surface);
-  border:2px solid var(--objet); border-radius:3px; padding:0.32rem 0.9rem; letter-spacing:0.02em; box-shadow:3px 3px 0 var(--objet); max-width:calc(100% - 3px); }
+/* 10.66 : la phrase dans un bandeau vintage du style du bouton « Lancer », gris tant qu'aucune action
+   n'est attendue (comme le bouton désactivé) ; à son tour ou un coup à découvrir : la couleur du jeu */
+.duel-card.collapsed .d-mini-t{ flex:1 1 auto; font:700 0.9rem/1.2 'Courier Prime', 'Courier New', monospace; letter-spacing:0.02em;
+  color:var(--ink-faint); background:var(--surface); border:2px solid var(--line); border-radius:3px; box-shadow:3px 3px 0 var(--line);
+  padding:0.32rem 0.9rem; margin-right:3px; transition:color .3s, border-color .3s, box-shadow .3s; }
+.duel-card.collapsed .d-mini.attendu .d-mini-t{ color:var(--objet); border-color:var(--objet); box-shadow:3px 3px 0 var(--objet); }
 .d-mini-t{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .duel-card.collapsed .duel-foot{ z-index:1; }
 .duel-card.collapsed .chat-led{ z-index:2; }
 .duel-card.collapsed .duel-stage{ padding-bottom:0.2rem; }
-/* 10.65 (banc) : pile des cases fermées qui se suivent en bas, dans leur ordre. Chaque case
-   recouvre à peine le haut de la suivante (19 px, ≈ 5 mm : l'air au-dessus du titre). Au survol,
-   la case reste où elle est et ses voisines s'écartent (celles du dessus montent, celles du
-   dessous descendent) : des glissements seulement (transform), rien ne se recalcule dans la
-   page, d'où la fluidité. En glissant une carte près de la pile, celle-ci s'ouvre devant elle
-   (aimant inversé) pour montrer où elle peut se loger ; chaque case se tire par sa poignée. */
-.fold-pile{ --ov:19px; --sp:calc(var(--ov) + 6px); position:relative; align-self:start; display:flex; flex-direction:column; min-width:0; }
-.fold-pile > *{ position:relative; z-index:calc(20 - var(--i)); min-width:0; width:100%; box-sizing:border-box;
-  transform:translateY(0); transition:transform .32s cubic-bezier(.22,.9,.3,1), margin-top .32s cubic-bezier(.22,.9,.3,1); will-change:transform; }
-.fold-pile > * + *{ margin-top:calc(-1 * var(--ov)); }
-.fold-pile > .chat-card{ background:var(--bg); border-radius:14px; }   /* posé sur la suivante : le fond de page, opaque */
-.fold-pile > :hover, .fold-pile > :focus-within{ z-index:30; }
-.fold-pile > :has(~ :hover), .fold-pile > :has(~ :focus-within){ transform:translateY(calc(-1 * var(--sp))); }
-.fold-pile > :hover ~ *, .fold-pile > :focus-within ~ *{ transform:translateY(var(--sp)); }
-.fold-pile > :hover .cat-grip, .fold-pile > :focus-within .cat-grip{ opacity:1; }
-/* aimant inversé : pendant un glisser tout près, la pile s'ouvre (cases côte à côte, sans recouvrement) */
-body.dragging-lists .fold-pile > *{ transform:none; }
-.fold-pile.repel > * + *{ margin-top:1.1rem; }
-@media (prefers-reduced-motion:reduce){ .fold-pile > *{ transition:none; } }
+/* 10.66 : les cases fermées se rangent en bas, sur une rangée à part (dans l'ordre
+   d'arrangement) ; au survol (souris), une case fermée s'entrouvre (classe peek) et se
+   referme quand on s'en va ; un clic l'ouvre pour de bon, et elle remonte en bas des
+   ouvertes. Au doigt : un toucher l'entrouvre, un second l'ouvre, toucher ailleurs la referme. */
+.fold-first{ grid-column-start:1; }
+.peek{ align-self:start; z-index:2; cursor:pointer; }
+.category.peek, .duel-card.peek .duel-stage{ box-shadow:0 10px 28px -12px rgba(30,40,45,.28), var(--shadow); }
 /* 10.65 : pleine page des écrans (chat, duel), comme les listes : le bouton à deux flèches en haut à
    droite, à la place du voyant, qui se décale à sa gauche ; même bouton ou Échap pour revenir */
 .chat-box > .scr-full, .duel-stage > .scr-full{ position:absolute; z-index:2; right:calc(1.25rem - 0.75rem);   /* aligné sur celui des listes */ top:calc((0.35rem + 22px) / 2 - 10px); }
@@ -6038,7 +6034,7 @@ function toggleFold(catId){
     a.onfinish = ()=>{ setFolded(catId, true); renderAll(); };
     return;
   }
-  setFolded(catId, false);
+  unfoldCat(catId);   // 10.66 : remonte en bas des ouvertes
   renderAll();
   if(reduce) return;
   const card2 = document.getElementById("cat-" + catId);
@@ -7861,13 +7857,7 @@ function handleListDragMove(x, y){
   const gx = d.ghostLeft + dx + d.w / 2, gy = d.ghostTop + dy + d.h / 2;
   // petit défilement automatique près des bords de la fenêtre
   dragPageScroll(x, y);   // 10.24
-  const cards = listDragCards();   // 10.65 : y compris celles de la pile des fermées
-  // 10.65 (banc) : aimant inversé — la pile s'ouvre quand la carte glissée s'en approche
-  categoriesEl.querySelectorAll(".fold-pile").forEach(pl=>{
-    const r = pl.getBoundingClientRect(), m = 70;
-    const gr = d.ghost.getBoundingClientRect(), gcx = gr.left + gr.width / 2, gcy = gr.top + gr.height / 2;
-    pl.classList.toggle("repel", gcx > r.left - m && gcx < r.right + m && gcy > r.top - m && gcy < r.bottom + m);
-  });
+  const cards = listDragCards();
   let best = null, bestDist = Infinity;
   cards.forEach(c=>{
     const r = layoutRect(c);
@@ -7883,8 +7873,7 @@ function handleListDragMove(x, y){
   if(ls && ls.card === best && Math.hypot(gx - ls.gx, gy - ls.gy) < 48) return;
   const idxBest = cards.indexOf(best), idxEl = cards.indexOf(d.el);
   d.lastSwap = { card: best, gx, gy };
-  const parents = [categoriesEl, ...categoriesEl.querySelectorAll(".fold-pile")];
-  moveDragSlot(parents, ()=>{
+  moveDragSlot([categoriesEl], ()=>{
     best.parentElement.insertBefore(d.el, idxEl < idxBest ? best.nextSibling : best);
   });
 }
@@ -8047,7 +8036,7 @@ function commitDragOrder(){
   if(dragMode === "lists"){
     // Ordre visible des cartes, reporté dans l'ordre complet (les listes
     // supprimées gardent leur place, on n'y touche pas).
-    const domOrder = listDragCards()   // 10.65 : la pile des fermées comprise
+    const domOrder = listDragCards()
       .map(node => parseInt(node.dataset.dragId, 10));
     const visible = new Set(domOrder);
     const full = getCategoryOrder().slice();
@@ -8095,7 +8084,7 @@ function editUrgentEntry(entry){
   const sep = entry.key.lastIndexOf(":");
   const catId = entry.key.slice(0, sep);
   if(fullpageCat && fullpageCat !== catId && !entry.relance) setFullpage(null);
-  if(!entry.relance && isFolded(catId)) setFolded(catId, false);
+  if(!entry.relance && isFolded(catId)) unfoldCat(catId);
   editingKey = entry.key;
   renderAll();
   requestAnimationFrame(()=>{
@@ -9584,12 +9573,7 @@ function buildChatCard(cat, catIdx){
   if(unread.length) requestAnimationFrame(()=>{ if(card.isConnected && card.matches(":hover")) markRead(); });   // déjà sous la souris
   card.querySelector(".cat-fold").addEventListener("click", e => { e.stopPropagation(); toggleFold(cat.id); });
   card.querySelector(".scr-full").addEventListener("click", e => { e.stopPropagation(); setFullpage(fullpageCat === cat.id ? null : cat.id); });
-  if(folded){   // replié : la dernière ligne seulement ; un clic n'importe où (hors pied) rouvre
-    if(sep) sep.remove();
-    const lines = log.querySelectorAll(".chat-l");
-    lines.forEach((l, j) => { if(j < lines.length - 1) l.remove(); });
-    card.addEventListener("click", e => { if(e.target.closest(".chat-foot, .chat-share, .scr-full")) return; toggleFold(cat.id); });
-  }
+  // replié : la feuille de style ne montre que la dernière ligne (10.66 : rien n'est retiré, l'écran peut s'entrouvrir)
   requestAnimationFrame(()=>{ log.scrollTop = sep ? Math.min(sep.offsetTop - 4, log.scrollHeight) : log.scrollHeight; });
   // saisie : un vrai champ, le gros curseur derrière tant qu'on écrit au bout
   const fixing = chatFix && chatFix.catId === cat.id;
@@ -10696,6 +10680,7 @@ function refreshUI(){
   ROOT.classList.toggle("duel-new", bandMode === "decouverte");
   { // l'écran replié : une ligne pour savoir où en est la partie
     const last = game.shots[game.shots.length - 1];
+    $(".d-mini").classList.toggle("attendu", bandMode === "decouverte" || (!game.solo && !world.over && mine && bandMode !== "attente"));   // 10.66
     $(".d-mini-t").textContent = (PLAYERS[p].ini ? PLAYERS[p].ini + "> " : "> ") + (
       bandMode === "decouverte" ? `${PLAYERS[last.p].nom} a joué !`
       : bandMode === "attente" ? `En attente ${de(PLAYERS[p].nom)}…`
@@ -10763,7 +10748,6 @@ function build(){
     </div>`;
   ROOT = card;
   card.querySelector(".cat-fold").addEventListener("click", e => { e.stopPropagation(); if(CAT) toggleFold(CAT.id); });
-  card.addEventListener("click", e => { if(!card.classList.contains("collapsed") || e.target.closest(".duel-foot, .chat-share, .scr-full")) return; e.stopPropagation(); if(CAT) toggleFold(CAT.id); }, true);
   cv = card.querySelector(".duel-cv"); ctx = cv.getContext("2d");
   // objets et faisans à choisir
   const ob = card.querySelector(".objets");
@@ -10847,6 +10831,7 @@ function card(cat, catIdx){
   const full = fullpageCat === cat.id;
   const folded = isFolded(cat.id) && editingCategoryTitle !== cat.id && !full;
   ROOT.classList.toggle("collapsed", folded);
+  ROOT.classList.remove("peek");   // 10.66 : un nouveau rendu referme une case entrouverte
   ROOT.classList.toggle("fullpage", full);
   const sf = ROOT.querySelector(".scr-full");
   if(sf.dataset.full !== String(full)){   // bouton redessiné seulement quand on entre ou sort de la pleine page
@@ -10894,7 +10879,10 @@ function render(){
   const coursesScroll = {};
   categoriesEl.querySelectorAll(".category.courses > ul.items").forEach(u => { coursesScroll[u.parentElement.id] = u.scrollTop; });
   categoriesEl.innerHTML = "";
-  const catDisplayOrder = getCategoryOrder().filter(catIdx => !isCategoryDeleted(DATA[catIdx].id));
+  // 10.66 : les ouvertes d'abord, les fermées ensuite (chacune dans l'ordre d'arrangement)
+  const shownFolded = catIdx => { const id = DATA[catIdx].id; return isFolded(id) && editingCategoryTitle !== id && fullpageCat !== id; };
+  const liveOrder = getCategoryOrder().filter(catIdx => !isCategoryDeleted(DATA[catIdx].id));
+  const catDisplayOrder = liveOrder.filter(i => !shownFolded(i)).concat(liveOrder.filter(shownFolded));
   let memoRank = 0;   // 10.23 : rang des mémos, pour varier leur reflet
   catDisplayOrder.forEach(catIdx=>{
     const cat = DATA[catIdx];
@@ -10928,12 +10916,7 @@ function render(){
     if(!courses && visibleCount && doneInCat === visibleCount) card.classList.add("done");
     const folded = isFolded(cat.id);
     if(folded) card.classList.add("collapsed");
-    // 10.18 : une liste de courses repliée se déplie d'un clic n'importe où
-    // (sauf sur un bouton, la poignée ou un champ)
-    if(folded && courses) card.addEventListener("click", e=>{
-      if(e.target.closest("button, a, input, textarea, .cat-grip")) return;
-      toggleFold(cat.id);
-    });
+    // 10.18 : une liste de courses repliée se dépliait d'un clic ; 10.66 : toutes les cases fermées (wireFolded)
     const leftCount = visibleCount - doneInCat + eggsInCat;   // 10.64 : tâches à faire + œufs en couvaison (jamais les cochées)
     // Une case vide (aucune tâche vivante dedans, cochée ou non) peut être
     // supprimée d'un petit clic ; sinon, pas de bouton du tout — la
@@ -11001,7 +10984,7 @@ function render(){
         if(!txt || !/\n/.test(txt.trim())) return;
         e.preventDefault();
         const lines = splitPastedTasks(quickInp.value.slice(0, quickInp.selectionStart) + txt + quickInp.value.slice(quickInp.selectionEnd));
-        if(isFolded(cat.id)) setFolded(cat.id, false);
+        if(isFolded(cat.id)) unfoldCat(cat.id);
         if(addPastedTasks(cat, lines)) actionToast("add");
         quickInp.value = "";
         refocusQuickCat = cat.id;
@@ -11011,7 +10994,7 @@ function render(){
         if(e.key === "Enter"){
           e.preventDefault();
           if(!quickInp.value.trim()) return;
-          if(isFolded(cat.id)) setFolded(cat.id, false); // 10.7 : la liste se rouvre
+          if(isFolded(cat.id)) unfoldCat(cat.id); // 10.7 : la liste se rouvre
           try{ if(addQuickTask(cat, quickInp.value)) actionToast("add"); }
           catch(err){ console.error("[ajout express] échec", err); }
           quickInp.value = "";
@@ -11028,7 +11011,7 @@ function render(){
       addingCat = addingCat === cat.id ? null : cat.id;
       const typed = quickInp ? quickInp.value.trim() : "";
       addPrefill = addingCat && typed ? { catId: cat.id, t: typed } : null;
-      if(addingCat && isFolded(cat.id)) setFolded(cat.id, false); // 10.7
+      if(addingCat && isFolded(cat.id)) unfoldCat(cat.id); // 10.7
       renderAll();
     });
     if(canDeleteCat){
@@ -11262,7 +11245,7 @@ function render(){
     card.appendChild(fold);
     categoriesEl.appendChild(card);
   });
-  pileFolded();   // 10.65 (banc)
+  wireFolded();   // 10.66
   refocusQuickCat = null;
   refocusCoursesCat = null;
   fitCoursesCards(coursesScroll);
@@ -11272,30 +11255,63 @@ function render(){
   if(waitingSection) waitingSection.hidden = !hasAnyList();
 }
 
-// ---------- 10.65 (banc) : réglages des cases fermées, pile façon notifications ----------
-// Les cases fermées se superposent comme les notifications de l'écran verrouillé
-// de l'iPhone : celle du dessus entière, les suivantes en liserés dessous. Un clic
-// ouvre l'éventail ; un clic ailleurs le referme. Un écran qui attend d'être lu
-// (voyant vert) passe dessus. Rien ne change dans les données ni dans l'ordre.
-const REPLIS_KEY = "sltapis-essai-replis";
-const REPLIS_DEF = { pile: "suite" };
-function replisOpt(k){
-  if(!ESSAI && k === "pile") return "non";   // 10.65 : la pile reste sur le banc d'essai pour l'instant
-  try{ const o = JSON.parse(localStorage.getItem(REPLIS_KEY) || "{}"); return o[k] || REPLIS_DEF[k]; }catch(e){ return REPLIS_DEF[k]; }
+// 10.66 : ouvrir une case fermée la fait remonter juste après la dernière ouverte (l'ordre
+// d'arrangement change en conséquence) ; fermée, elle descend d'elle-même avec les fermées
+function unfoldCat(catId){
+  const idx = DATA.findIndex(c => c.id === catId);
+  if(idx >= 0){
+    order = loadOrder();
+    const full = getCategoryOrder().slice();
+    const open = full.filter(i => i !== idx && !isCategoryDeleted(DATA[i].id) && !isFolded(DATA[i].id));
+    full.splice(full.indexOf(idx), 1);
+    const last = open[open.length - 1];
+    full.splice(last === undefined ? 0 : full.indexOf(last) + 1, 0, idx);
+    order.__categories__ = full;
+    saveOrder(order);
+  }
+  setFolded(catId, false);
 }
-function applyReplis(){}
-function pileFolded(){
-  if(replisOpt("pile") === "non") return;
-  const cards = Array.from(categoriesEl.children).filter(el => el.id && el.id.startsWith("cat-"));
-  const run = [];
-  for(let i = cards.length - 1; i >= 0 && cards[i].classList.contains("collapsed"); i--) run.unshift(cards[i]);
-  if(run.length < 2) return;
-  const pile = document.createElement("div");
-  pile.className = "fold-pile";
-  run[0].before(pile);
-  run.forEach((c, i) => { c.style.setProperty("--i", i); pile.appendChild(c); });
+let lastPointerType = "mouse", peekHold = 0;   // peekHold : juste après une ouverture, la case qui se retrouve sous la souris ne s'entrouvre pas
+document.addEventListener("pointerdown", e=>{
+  lastPointerType = e.pointerType || "mouse";
+  if(!e.target.closest(".peek")) document.querySelectorAll(".peek").forEach(c => peekCard(c, false));
+}, true);
+function peekCard(card, on){
+  if(on === card.classList.contains("peek")) return;
+  card.classList.toggle("peek", on);
+  card.classList.toggle("collapsed", !on);
 }
-// glisser une carte : la pile est transparente (on prend toutes les cartes, dedans comme dehors)
+function wireFolded(){
+  let first = true;
+  categoriesEl.querySelectorAll(":scope > .fold-first").forEach(c => c.classList.remove("fold-first"));
+  categoriesEl.querySelectorAll(":scope > .collapsed").forEach(card=>{
+    card.classList.toggle("fold-first", first); first = false;
+    if(card._fw) return;   // le duel garde sa carte d'un rendu à l'autre
+    card._fw = true;
+    const id = card.id.replace(/^cat-/, "");
+    let t = null;
+    card.addEventListener("pointerenter", e=>{
+      if(e.pointerType !== "mouse" || dragState || Date.now() < peekHold || !(card.classList.contains("collapsed") || card.classList.contains("peek"))) return;
+      clearTimeout(t); t = setTimeout(()=> peekCard(card, true), 200);
+    });
+    card.addEventListener("pointerleave", e=>{
+      if(e.pointerType !== "mouse") return;
+      clearTimeout(t); t = setTimeout(()=> peekCard(card, false), 120);
+    });
+    card.addEventListener("click", e=>{
+      if(!(card.classList.contains("collapsed") || card.classList.contains("peek"))) return;
+      if(e.target.closest(".cat-fold, .cat-grip, .scr-full, .chat-more, .chat-menu, .chat-share, input, textarea")) return;
+      e.stopPropagation(); e.preventDefault();
+      if(lastPointerType !== "mouse" && !card.classList.contains("peek")){ peekCard(card, true); return; }   // au doigt : d'abord entrouvrir
+      clearTimeout(t);
+      peekHold = Date.now() + 700;
+      unfoldCat(id); renderAll();
+      const c2 = document.getElementById("cat-" + id);
+      if(c2) requestAnimationFrame(()=> c2.scrollIntoView({ block:"nearest", behavior:"smooth" }));
+    }, true);
+  });
+}
+// glisser une carte : toutes les cartes de la grille, dans l'ordre affiché
 function listDragCards(){ return Array.from(categoriesEl.querySelectorAll('[data-drag-mode="lists"]')); }
 
 // ---------- corbeille : affichage et remise en liste ----------
@@ -13881,36 +13897,6 @@ if(Store.mode === "doc" && !isStandaloneApp()){
     });
   };
   draw();
-})();
-if(ESSAI && /[?&]replis/.test(location.search)) (()=>{
-  const box = document.createElement("div");
-  box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:16rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
-  document.body.appendChild(box);
-  box.addEventListener("click", e => e.stopPropagation());
-  box.addEventListener("pointerdown", e => e.stopPropagation());
-  const G = [["pile", "Pile des fermées", [["suite","Celles qui se suivent en bas"],["non","Pas de pile"]]]];
-  const q = new URLSearchParams(location.search);
-  try{ const o = JSON.parse(localStorage.getItem(REPLIS_KEY) || "{}"); G.forEach(([k]) => { if(q.get(k)) o[k] = q.get(k); }); localStorage.setItem(REPLIS_KEY, JSON.stringify(o)); }catch(e){}
-  const draw = ()=>{
-    const mini = (()=>{ try{ return localStorage.getItem(REPLIS_KEY + "-mini") === "1"; }catch(e){ return false; } })();
-    box.style.width = mini ? "auto" : "16rem";
-    if(mini){ box.innerHTML = `<button type="button" data-m style="font:700 0.72rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;border:0;background:none;color:var(--ink-soft);cursor:pointer;padding:0">Réglages ▴</button>`;
-      box.querySelector("[data-m]").addEventListener("click", ()=>{ try{ localStorage.setItem(REPLIS_KEY + "-mini", "0"); }catch(e){} draw(); }); return; }
-    box.innerHTML = `<button type="button" data-m style="float:right;border:0;background:none;color:var(--ink-faint);cursor:pointer;font-size:1rem;line-height:1;padding:0 .2rem" aria-label="Réduire">▾</button>` + G.map(([k, t, opts]) => `<div style="font:700 0.72rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:.5rem 0 .2rem">${t}</div>`
-      + opts.map(([v, l]) => `<label style="display:flex;gap:.4rem;align-items:center;margin:.2rem 0;cursor:pointer"><input type="radio" name="rp-${k}" value="${v}"${replisOpt(k) === v ? " checked" : ""}>${l}</label>`).join("")).join("")
-      + `<button type="button" data-c style="display:block;width:100%;margin-top:.7rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
-    box.querySelector("[data-m]").addEventListener("click", ()=>{ try{ localStorage.setItem(REPLIS_KEY + "-mini", "1"); }catch(e){} draw(); });
-    box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{
-      try{ const o = JSON.parse(localStorage.getItem(REPLIS_KEY) || "{}"); o[i.name.slice(3)] = i.value; localStorage.setItem(REPLIS_KEY, JSON.stringify(o)); }catch(e){}
-      applyReplis(); renderAll();
-    }));
-    box.querySelector("[data-c]").addEventListener("click", async e=>{
-      const url = location.origin + location.pathname + "?replis&" + G.map(([k]) => k + "=" + replisOpt(k)).join("&");
-      try{ await navigator.clipboard.writeText(url); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", url); }
-      setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
-    });
-  };
-  applyReplis(); draw();
 })();
 if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
   const C = null;
