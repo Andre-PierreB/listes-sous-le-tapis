@@ -1277,6 +1277,11 @@
   - 10.63 : duel de faisans (voir DUEL DE FAISANS) : petit jeu à deux en
     tour par tour, créé par « + Ajouter un duel de faisans » ; entraînement
     seul. Papier des mémos en blanc (--memo-a/b/c #FFFFFF, avant blanc chaud).
+  - 10.65 (banc) : volet des écrans de chat et de duel (repli sur une ligne,
+    voyant vert du duel) ; toutes les cases repliées à la même hauteur
+    (--fold-h, 127px : le mémo replié, resserré de 3 px, sert d'étalon) ;
+    pleine page des écrans (même bouton que les listes, en haut à droite,
+    voyant décalé à sa gauche ; papier du duel avec la même bande en haut).
   - 10.64 : liste repliée : la bulle compte aussi les œufs en couvaison
     (eggsInCat), en plus des tâches à faire ; toujours pas les cochées.
   - 10.62 : écran de chat au doigt : toucher l'écran met le curseur dans la
@@ -2075,9 +2080,13 @@ header{
 .cat-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 .cat-fold svg{ display:block; transition:transform .25s ease; }
 .category.collapsed{ align-self:start; padding-bottom:2.1rem; }   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
+/* 10.65 : toutes les cases repliées (liste, mémo, chat, duel) ont la même hauteur, --fold-h ;
+   étalon : le mémo replié (bandeau + saisie), resserré de 3 px entre le bandeau et la saisie */
+:root{ --fold-h:127px; }
+.category.collapsed{ min-height:var(--fold-h); }
 .category.collapsed > ul.items, .category.courses.collapsed .courses-actions{ display:none; }
 /* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
-.category.courses.collapsed .courses-entry{ cursor:auto; }
+.category.courses.collapsed .courses-entry{ cursor:auto; padding-top:calc(0.55rem - 3px); }
 .category.collapsed .cat-fold svg{ transform:rotate(180deg); }
 .category.collapsed .cat-order{ display:none; }   /* 10.45 : repliée, la flèche d'ordre se confondait avec celle qui rouvre */
 .category.courses.collapsed{ cursor:pointer; } /* 10.18 : toute la carte repliée se déplie d'un clic */
@@ -2437,7 +2446,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   --facades:#261D33,#26261C,#1E2A1C,#2B2238,#2A2A1D; --facade-shadow:rgba(0,0,0,0.45);
   --win-lit:rgba(226,200,102,0.22); --win-off:rgba(255,255,255,0.035); --objet:#7FC0CC;
 }
-.duel-stage{ background:var(--surface); border-radius:14px; box-shadow:var(--shadow); padding:0.85rem 0.6rem 0.2rem; }   /* le papier d'une liste */
+.duel-stage{ position:relative; background:var(--surface); border-radius:14px; box-shadow:var(--shadow); padding:calc(0.35rem + 22px) 0.6rem 0.2rem; }   /* 10.65 : en haut, la bande du bouton pleine page et du voyant (avant 0.85rem) */   /* le papier d'une liste */
 /* le jeu dans un écran creusé, comme l'écran de chat : tranche de tôle arrondie, écran au fond,
    trame LCD et ombres intérieures posées par-dessus le dessin (::after) */
 .duel-screen{ position:relative; padding:2px; border-radius:18px;
@@ -2585,12 +2594,13 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* voyant sur la tôle, en haut à droite de l'écran : éteint (petit creux gris),
    il s'allume en vert du faisan et luit doucement tant qu'un message n'est pas lu */
 .chat-box{ position:relative; }
-.chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 3.5px); right:13.5px; width:7px; height:7px; border-radius:50%;
+.chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 3.5px); right:calc(0.5rem + 28px); width:7px; height:7px; border-radius:50%;
   background:color-mix(in srgb, var(--ink) 18%, var(--bg)); box-shadow:inset 0 1px 1px rgba(0,0,0,0.25), 0 1px 0 var(--chat-lip); transition:background .4s ease, box-shadow .4s ease; }
 .chat-card.unread .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
 @keyframes chat-led{ 50%{ box-shadow:0 0 2px 0 color-mix(in srgb, var(--logo-green) 50%, transparent); filter:brightness(0.85); } }
 @media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-led{ animation:none; } }
-@media (max-width:720px){ .chat-led{ right:25.5px; } }   /* dans l'axe du trèfle (bandeau « Une petite en passant ? »), ordinateur et téléphone */
+/* 10.65 : le voyant laisse le coin au bouton pleine page (avant : dans l'axe du trèfle) */
+@media (max-width:720px){ .chat-box > .scr-full{ right:1.25rem; } .chat-box > .chat-led{ right:calc(1.25rem + 28px); } }   /* écran à pleine largeur : aligné sur les listes */
 .chat-new{ text-align:center; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink-faint); margin:0.25rem 0 0.15rem; white-space:nowrap; overflow:hidden; }
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
 .chat-card.dragging-card > *{ visibility:hidden; }
@@ -2645,8 +2655,12 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    sur une ligne (dernier message / où en est la partie) ; un clic sur l'écran replié le rouvre */
 .chat-foot .cat-fold{ position:static; flex:none; margin-left:0.15rem; }
 .chat-card.collapsed .cat-fold svg, .duel-card.collapsed .cat-fold svg{ transform:rotate(180deg); }
-.chat-card.collapsed, .duel-card.collapsed{ align-self:start; cursor:pointer; }
+.chat-card.collapsed, .duel-card.collapsed{ align-self:start; cursor:pointer; height:var(--fold-h); }
+.duel-card.collapsed .duel-stage{ height:100%; display:flex; flex-direction:column; }
+.duel-card.collapsed .duel-screen{ flex:1 1 auto; display:flex; }
+.duel-card.collapsed .d-mini{ flex:1 1 auto; display:flex !important; align-items:center; min-width:0; }
 .chat-card.collapsed .chat-in{ display:none; }
+.chat-card.collapsed .chat-screen{ justify-content:center; }
 .chat-card.collapsed .chat-log{ flex:none; min-height:0; max-height:none; overflow:hidden; }
 .chat-card.collapsed .chat-l{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .chat-card.collapsed .chat-l .chat-m{ display:none; }
@@ -2655,8 +2669,24 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.collapsed .d-mini{ display:block; position:relative; z-index:0; padding:0.55rem 0.9rem; border-radius:16px; background:var(--sky-bottom);
   font:0.85rem/1.35 'Courier Prime', 'Courier New', monospace; color:var(--objet); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .duel-card.collapsed .duel-stage{ padding-bottom:0.2rem; }
+/* 10.65 : pleine page des écrans (chat, duel), comme les listes : le bouton à deux flèches en haut à
+   droite, à la place du voyant, qui se décale à sa gauche ; même bouton ou Échap pour revenir */
+.chat-box > .scr-full, .duel-stage > .scr-full{ position:absolute; z-index:2; right:calc(1.25rem - 0.75rem);   /* aligné sur celui des listes */ top:calc((0.35rem + 22px) / 2 - 10px); }
+.chat-card:hover .scr-full, .duel-card:hover .scr-full, .scr-full:focus-visible{ opacity:1; }
+.duel-stage > .scr-full{ right:1.25rem; }
+.chat-card.fullpage, .duel-card.fullpage{
+  position:fixed; z-index:150; top:0; bottom:0; left:50%; transform:translateX(-50%);
+  width:min(820px, 100vw); height:auto; box-sizing:border-box; cursor:auto;
+  padding:max(0.75rem, env(safe-area-inset-top, 0px)) max(1.25rem, env(safe-area-inset-right, 0px)) max(0.75rem, env(safe-area-inset-bottom, 0px)) max(1.25rem, env(safe-area-inset-left, 0px));
+}
+.chat-card.fullpage .chat-box{ width:100%; opacity:1; }
+.chat-card.fullpage .chat-log{ flex:1 1 0; max-height:none; }
+.duel-card.fullpage{ display:flex; flex-direction:column; justify-content:center; }
+.duel-card.fullpage .duel-stage > *{ opacity:1; }
+.chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ opacity:1; color:var(--ink-soft); }
+.chat-card.fullpage .cat-grip, .duel-card.fullpage .cat-grip, .chat-card.fullpage .cat-fold, .duel-card.fullpage .cat-fold{ visibility:hidden; }
 /* voyant du duel : celui du chat, sur le papier en haut à droite — vert quand un coup de l'autre attend d'être vu */
-.duel-card .chat-led{ top:calc(0.85rem / 2 - 3.5px); right:13.5px; }
+.duel-card .chat-led{ top:calc((0.35rem + 22px) / 2 - 3.5px); right:calc(1.25rem + 28px); }
 .duel-card.duel-new .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
 @media (prefers-reduced-motion:reduce){ .duel-card.duel-new .chat-led{ animation:none; } }
 .chat-foot{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; padding:0 0.2rem; position:relative; }
@@ -7612,11 +7642,16 @@ function moveDragSlot(parents, moveFn){
 let fullpageCat = null;
 const FULL_IN_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M10 20H4v-6"/><path d="M20 4 13.5 10.5"/><path d="M4 20l6.5-6.5"/></svg>`;
 const FULL_OUT_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4v6h6"/><path d="M10 20v-6H4"/><path d="M14 10l6.5-6.5"/><path d="M10 14l-6.5 6.5"/></svg>`;
+// 10.65 : le même bouton sur les écrans (chat, duel), en haut à droite
+function scrFullBtn(id){
+  const on = fullpageCat === id;
+  return `<button type="button" class="cat-full scr-full" aria-label="${on ? "Revenir aux listes" : "Ouvrir en pleine page"}" data-tip="${on ? "Réduire" : "Pleine page"}">${on ? FULL_OUT_SVG : FULL_IN_SVG}</button>`;
+}
 function setFullpage(id){
   fullpageCat = id;
   document.body.classList.toggle("has-fullpage", !!id);
   renderAll();
-  if(!document.querySelector(".category.fullpage")){ fullpageCat = null; document.body.classList.remove("has-fullpage"); }
+  if(!document.querySelector(".category.fullpage, .chat-card.fullpage, .duel-card.fullpage")){ fullpageCat = null; document.body.classList.remove("has-fullpage"); }
   else window.scrollTo(0, window.scrollY);
 }
 document.addEventListener("keydown", e=>{
@@ -9429,9 +9464,10 @@ function buildChatCard(cat, catIdx){
   if(sharing && (!catEditSnap || catEditSnap.id !== cat.id))
     catEditSnap = { id: cat.id, color: cat.color, members: ((listInfo(cat.id) || { members:[] }).members || []).slice() };
   if(sharing || chatMenuOpen === cat.id) card.classList.add("chat-open");
-  const folded = isFolded(cat.id) && !sharing;
+  const folded = isFolded(cat.id) && !sharing && fullpageCat !== cat.id;
   if(folded) card.classList.add("collapsed");
-  card.innerHTML = `<div class="chat-box"><span class="chat-led" aria-hidden="true"></span><div class="chat-hole"><div class="chat-screen">
+  if(fullpageCat === cat.id) card.classList.add("fullpage");
+  card.innerHTML = `<div class="chat-box"><span class="chat-led" aria-hidden="true"></span>${scrFullBtn(cat.id)}<div class="chat-hole"><div class="chat-screen">
       <div class="chat-log" role="log" aria-label="Messages"></div>
       <div class="chat-in"><textarea class="chat-field" rows="1" aria-label="Écrire un mot" autocomplete="off" enterkeyhint="send"></textarea><span class="chat-cur"></span></div>
     </div></div>
@@ -9506,11 +9542,12 @@ function buildChatCard(cat, catIdx){
   ["pointerenter", "touchstart", "focusin"].forEach(ev => card.addEventListener(ev, markRead, { passive:true }));
   if(unread.length) requestAnimationFrame(()=>{ if(card.isConnected && card.matches(":hover")) markRead(); });   // déjà sous la souris
   card.querySelector(".cat-fold").addEventListener("click", e => { e.stopPropagation(); toggleFold(cat.id); });
+  card.querySelector(".scr-full").addEventListener("click", e => { e.stopPropagation(); setFullpage(fullpageCat === cat.id ? null : cat.id); });
   if(folded){   // replié : la dernière ligne seulement ; un clic n'importe où (hors pied) rouvre
     if(sep) sep.remove();
     const lines = log.querySelectorAll(".chat-l");
     lines.forEach((l, j) => { if(j < lines.length - 1) l.remove(); });
-    card.addEventListener("click", e => { if(e.target.closest(".chat-foot, .chat-share")) return; toggleFold(cat.id); });
+    card.addEventListener("click", e => { if(e.target.closest(".chat-foot, .chat-share, .scr-full")) return; toggleFold(cat.id); });
   }
   requestAnimationFrame(()=>{ log.scrollTop = sep ? Math.min(sep.offsetTop - 4, log.scrollHeight) : log.scrollHeight; });
   // saisie : un vrai champ, le gros curseur derrière tant qu'on écrit au bout
@@ -10677,11 +10714,11 @@ function build(){
       <button type="button" class="cat-fold"><svg viewBox="0 0 12 8" width="12" height="8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 6.2 6 1.8l4.5 4.4"/></svg></button>
       <div class="chat-menu" hidden></div>
     </div>
-    <span class="chat-led" aria-hidden="true"></span>
+    <span class="chat-led" aria-hidden="true"></span><button type="button" class="cat-full scr-full"></button>
     </div>`;
   ROOT = card;
   card.querySelector(".cat-fold").addEventListener("click", e => { e.stopPropagation(); if(CAT) toggleFold(CAT.id); });
-  card.addEventListener("click", e => { if(!card.classList.contains("collapsed") || e.target.closest(".duel-foot, .chat-share")) return; e.stopPropagation(); if(CAT) toggleFold(CAT.id); }, true);
+  card.addEventListener("click", e => { if(!card.classList.contains("collapsed") || e.target.closest(".duel-foot, .chat-share, .scr-full")) return; e.stopPropagation(); if(CAT) toggleFold(CAT.id); }, true);
   cv = card.querySelector(".duel-cv"); ctx = cv.getContext("2d");
   // objets et faisans à choisir
   const ob = card.querySelector(".objets");
@@ -10762,8 +10799,17 @@ function card(cat, catIdx){
   if(ROOT && cardCat !== cat.id){ ROOT = null; lastSig = null; }   // un autre duel : nouvelle carte
   if(!ROOT){ build(); cardCat = cat.id; ROOT.id = "cat-" + cat.id; }
   const focusEl = document.activeElement && ROOT.contains(document.activeElement) ? document.activeElement : null;
-  const folded = isFolded(cat.id) && editingCategoryTitle !== cat.id;
+  const full = fullpageCat === cat.id;
+  const folded = isFolded(cat.id) && editingCategoryTitle !== cat.id && !full;
   ROOT.classList.toggle("collapsed", folded);
+  ROOT.classList.toggle("fullpage", full);
+  const sf = ROOT.querySelector(".scr-full");
+  if(sf.dataset.full !== String(full)){   // bouton redessiné seulement quand on entre ou sort de la pleine page
+    const t = document.createElement("div"); t.innerHTML = scrFullBtn(cat.id);
+    const nb = t.firstElementChild; nb.dataset.full = full;
+    nb.addEventListener("click", e => { e.stopPropagation(); setFullpage(fullpageCat === cat.id ? null : cat.id); });
+    sf.replaceWith(nb);
+  }
   const fb = ROOT.querySelector(".cat-fold");
   fb.setAttribute("aria-expanded", !folded); fb.setAttribute("aria-label", folded ? "Déplier le duel" : "Replier le duel"); fb.title = folded ? "Déplier" : "Replier";
   foot(cat, catIdx);
