@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.61 -->
+<!-- Sous le tapis — version AUTONOME 10.62 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1235,6 +1235,9 @@
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
   - 10.61 : phrase retirée (« Vendredi qui rit, dimanche qui fleurit »).
+  - 10.62 : écran de chat au doigt : toucher l'écran met le curseur dans la
+    saisie sans preventScroll, le téléphone la remonte lui-même au-dessus du
+    clavier (avant : seulement à la première lettre).
   - 10.61 : écran de chat sur téléphone (une colonne) : il grandit avec les
     messages jusqu'à 10 lignes (avant : 3, faute de liste voisine).
   - 10.60 : écran de chat : message non lu (d'un autre, pas encore vu sur cet
@@ -4013,7 +4016,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.61</span>
+    <span class="version-tag">v10.62</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -9307,7 +9310,7 @@ function buildChatCard(cat, catIdx){
   });
   if(chatFocus === cat.id && !(chatEdit && chatEdit.catId === cat.id)) requestAnimationFrame(()=>{ if(field.isConnected){ field.focus({ preventScroll:true }); toEnd(); caret(); } });
   // un clic dans l'écran (hors du champ) y met le curseur, au bout du texte
-  card.querySelector(".chat-screen").addEventListener("click", e=>{ if(e.target.closest(".chat-edit, .chat-field")) return; field.focus({ preventScroll:true }); toEnd(); caret(); });
+  card.querySelector(".chat-screen").addEventListener("click", e=>{ if(e.target.closest(".chat-edit, .chat-field")) return; field.focus(matchMedia("(pointer:coarse)").matches ? undefined : { preventScroll:true }); toEnd(); caret(); });   // 10.62 : au doigt, on laisse le téléphone remonter la saisie au-dessus du clavier
   log.addEventListener("dblclick", e=>{
     const l = e.target.closest(".chat-l.mine"); if(!l || l.classList.contains("editing")) return;
     e.stopPropagation();
