@@ -19,9 +19,7 @@
     après son coup, bandeau « En attente de … » sur toute la largeur, en bas
     (glisse, deux notes, puis immobile) ; « H arrive » (banc
     seulement) simule son arrivée : il voit « … a joué ! » (bandeau pleine
-    largeur au milieu) et le bouton-poussoir « Voir son coup » rejoue le coup, suivi d'un petit commentaire calculé (commentaire :
-    « Ouf, tout juste ! », « Ça devient chaud… », « Pas loin. », « Tranquille. »
-    selon la distance au faisan visé). En ouvrant la page : « … a joué ! »
+    largeur au milieu) et le bouton-poussoir « Voir son coup » rejoue le coup (pas de commentaire : on reste simple). En ouvrant la page : « … a joué ! »
     tant que le dernier coup n'a pas été découvert (game.decouvert ; dans
     l'appli, par personne ; sur le banc : recharger la page) — y compris un coup gagnant : le perdant découvre
     la victoire de l'autre en révélant le coup, jamais la couronne d'emblée.
@@ -56,9 +54,10 @@
     l'ombre des cartes, ciel neutre = fond de page ; joueurs aux
     couleurs de l'écran de chat (--chat-me, --chat-them).
   - Une partie = une touche (pas de manches ni de score) ; bouton « Nouvelle
-    partie ». Objets : stylo plume (éclate en lettres, petits grattements « tsk »),
-    roue de vélo (rayons et bouts de pneu qui volent, cliquet de roue
-    libre qui ralentit), réveil (rouages, ressorts et chiffres, « dring dring »), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
+    partie ». Objets : stylo plume (éclate en lettres ; « scritch-scritch scriiitch… tac ! »),
+    roue de vélo (rayons et bouts de pneu qui volent ; « pouet-pouet », roue
+    libre qui ralentit, « doïng »), réveil (rouages, ressorts et chiffres ;
+    sonnerie par paquets de plus en plus aigus, « boïng » du ressort), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
     le vainqueur, ciel qui vire au mauve et au citron, toutes les fenêtres
     qui s'allument, confettis (finale).
 -->
@@ -931,11 +930,11 @@ function hud(){
   if(banner){
     banner.t += 1 / 60; const a = Math.min(1, banner.t * 3, (banner.d - banner.t) * 2);
     if(a <= 0 && banner.t > banner.d) banner = null;
-    else{ ctx.globalAlpha = Math.max(0, a); ctx.font = `700 ${F(banner.small ? 20 : 30)}px 'Courier Prime', monospace`;
-      const by = banner.small ? H * 0.3 - (1 - Math.min(1, banner.t * 4)) * 8 : H * 0.38;   // le commentaire monte un peu en apparaissant
+    else{ ctx.globalAlpha = Math.max(0, a); ctx.font = `700 ${F(30)}px 'Courier Prime', monospace`;
+      const by = H * 0.38;
       ctx.lineJoin = "round"; ctx.strokeStyle = css("--surface"); ctx.lineWidth = 6;
       ctx.strokeText(banner.text, W / 2, by);
-      ctx.fillStyle = banner.color || css(banner.small ? "--ink-soft" : "--ink"); ctx.fillText(banner.text, W / 2, by);
+      ctx.fillStyle = banner.color || css("--ink"); ctx.fillText(banner.text, W / 2, by);
       if(banner.sub){ ctx.font = `${F(15)}px 'Courier Prime', monospace`; ctx.lineWidth = 4;
         ctx.strokeText(banner.sub, W / 2, H * 0.38 + F(26));
         ctx.fillStyle = css("--ink-soft"); ctx.fillText(banner.sub, W / 2, H * 0.38 + F(26)); }
@@ -961,7 +960,7 @@ function endShot(){
     return;
   }
   burst(shot.o, e.x, e.y, e.kind === "hit");
-  sound("boum"); sound({ roue:"roulibre", coeur:"bisous", stylo:"plume", reveil:"sonnette" }[shot.o]);
+  sound("boum"); sound({ roue:"roulibre", coeur:"bisous", stylo:"plume", reveil:"reveil" }[shot.o]);
   if(e.kind === "city"){
     world = applyResult(world, shot, res); renderCity(world);
     setTimeout(()=> finish(done), 450);
@@ -1025,26 +1024,15 @@ function showBand(mode){
   $("#attente").classList.add("on"); sound("attente"); refreshUI();
 }
 const showAttente = () => showBand("attente");
-// petit commentaire après la découverte, vu du côté de celui qui était visé (rien n'est stocké : calculé en rejouant)
-function commentaire(shot, res){
-  if(res.end.kind === "hit") return null;   // la touche a sa propre fête
-  const q = world.ph[1 - shot.p], P = res.path;
-  let d = Infinity;
-  for(let i = 0; i < P.length; i += 2) d = Math.min(d, Math.hypot(P[i] - q.x, P[i + 1] - (q.y - 20)));
-  if(d < 40) return "Ouf, tout juste !";
-  if(d < 95) return "Ça devient chaud…";
-  if(d < 200) return "Pas loin.";
-  return "Tranquille.";
-}
 // rejouer le dernier coup : le monde revient d'un cran, le coup repart, tout se retrouve à l'identique
-function replayLast(avecCommentaire){
+function replayLast(decouverte){
   const n = game.shots.length;
   if(!n || busy) return;
   dance = null; banner = null; hideLast = false;
   world = worldAfter(n - 1); renderCity(world);
-  const shot = game.shots[n - 1], res = simulate(world, shot), mot = avecCommentaire === true ? commentaire(shot, res) : null;
-  if(avecCommentaire === true){ game.decouvert = n; save(); }
-  play(shot, res, mot ? () => { banner = { text: mot, small: true, t: 0, d: 2.4 }; } : null);
+  const shot = game.shots[n - 1], res = simulate(world, shot);
+  if(decouverte === true){ game.decouvert = n; save(); }
+  play(shot, res, null);
 }
 $("#attenteGo").addEventListener("click", ()=>{
   $("#attente").classList.remove("on");
@@ -1178,18 +1166,21 @@ function sound(kind){
       const o = AC.createOscillator(), g = env(t, 0.005, 1.2, 0.45);
       o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.4);
       o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
-    }else if(kind === "sonnette"){
-      // sonnette de vélo : « dring dring » — le petit marteau frappe le timbre plusieurs fois très vite,
-      // timbre clair avec ses harmoniques de cloche, qui résonne un peu après chaque série
-      const timbre = (d, amp, len) => {
-        for(const [ratio, a] of [[1, 1], [2.76, 0.55], [5.4, 0.28], [8.9, 0.12]]){
-          const o = AC.createOscillator(); o.type = "sine"; o.frequency.value = 2150 * ratio;
-          const g = env(t + d, 0.002, amp * a, len / ratio ** 0.4); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + len + 0.05);
+    }else if(kind === "reveil"){
+      // réveil qui sonne par paquets « drrrin… drrrin… drrrrrin ! » (le marteau entre deux cloches),
+      // chaque paquet un peu plus aigu et plus long, puis le ressort qui lâche : « boïng »
+      let d = 0.03;
+      [[0.22, 1], [0.22, 1.06], [0.36, 1.12]].forEach(([len, up]) => {
+        for(let x = 0; x < len; x += 0.024){
+          const o = AC.createOscillator(); o.type = "triangle"; o.frequency.value = (Math.round(x / 0.024) % 2 ? 1650 : 1980) * up;
+          const g = env(t + d + x, 0.002, 0.26, 0.04); o.connect(g); g.connect(out); o.start(t + d + x); o.stop(t + d + x + 0.05);
         }
-      };
-      for(const start of [0.04, 0.42]){
-        for(let i = 0; i < 6; i++) timbre(start + i * 0.034, i === 5 ? 0.32 : 0.2, i === 5 ? 0.55 : 0.09);
-      }
+        d += len + 0.11;
+      });
+      const o = AC.createOscillator(); o.type = "sine"; const lfo = AC.createOscillator(), lg = AC.createGain();
+      lfo.frequency.value = 18; lg.gain.value = 70; lfo.connect(lg); lg.connect(o.frequency);
+      o.frequency.setValueAtTime(420, t + d); o.frequency.exponentialRampToValueAtTime(160, t + d + 0.5);
+      const gb = env(t + d, 0.005, 0.45, 0.55); o.connect(gb); gb.connect(out); o.start(t + d); o.stop(t + d + 0.6); lfo.start(t + d); lfo.stop(t + d + 0.6);
     }else if(kind === "attente"){
       // le bandeau arrive : deux notes douces
       for(const [d, f] of [[0, 660], [0.11, 990]]){
@@ -1206,20 +1197,37 @@ function sound(kind){
         const g = env(t + d, 0.004, 0.45, 0.11); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + 0.13);
       }
     }else if(kind === "plume"){
-      // plume qui gratte le papier : petits frottements rapides (« tsk tsk »)
-      for(let i = 0; i < 9; i++){
-        const d = 0.03 + i * 0.045 + Math.random() * 0.015, n = noise(0.04), hp = AC.createBiquadFilter();
-        hp.type = "bandpass"; hp.frequency.value = 3200 + Math.random() * 2500; hp.Q.value = 3;
-        const g = env(t + d, 0.003, 0.7, 0.035 + Math.random() * 0.02); n.connect(hp); hp.connect(g); g.connect(out); n.start(t + d);
-      }
+      // stylo qui griffonne : « scritch-scritch scriiiitch… tac ! » — deux petits traits, un grand
+      // trait qui monte (le soulignement), puis le point final
+      const trait = (d, len, f0, f1, amp) => {
+        const n = noise(len), bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 2.2;
+        bp.frequency.setValueAtTime(f0, t + d); bp.frequency.exponentialRampToValueAtTime(f1, t + d + len);
+        const g = env(t + d, 0.006, amp, len); n.connect(bp); bp.connect(g); g.connect(out); n.start(t + d);
+      };
+      trait(0.03, 0.07, 2600, 3400, 0.8);
+      trait(0.12, 0.07, 2800, 3600, 0.8);
+      trait(0.24, 0.26, 2200, 6200, 0.9);                    // le grand trait qui monte
+      const o = AC.createOscillator(); o.type = "triangle"; o.frequency.setValueAtTime(900, t + 0.6); o.frequency.exponentialRampToValueAtTime(420, t + 0.65);
+      const gt = env(t + 0.6, 0.002, 0.5, 0.06); o.connect(gt); gt.connect(out); o.start(t + 0.6); o.stop(t + 0.68);   // tac !
     }else if(kind === "roulibre"){
-      // roue libre : « clic-clic-clic » du cliquet, vite puis de plus en plus lent, jusqu'au dernier petit clic
-      let d = 0.03, gap = 0.028;
-      for(let i = 0; i < 22; i++){
-        const n = noise(0.012), bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 3600 + (i % 2) * 500; bp.Q.value = 4;
-        const g = env(t + d, 0.001, 0.75 - i * 0.02, 0.018); n.connect(bp); bp.connect(g); g.connect(out); n.start(t + d);
-        d += gap; gap *= 1.11;
+      // roue de vélo : « pouet-pouet » de la trompe, puis la roue libre qui cliquette en ralentissant,
+      // et un petit « doïng » de rayon pour finir
+      for(const [d, f] of [[0.02, 430], [0.22, 390]]){
+        const o = AC.createOscillator(); o.type = "sawtooth";
+        o.frequency.setValueAtTime(f * 1.06, t + d); o.frequency.exponentialRampToValueAtTime(f, t + d + 0.12);
+        const lp = AC.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1300; lp.Q.value = 6;
+        const g = env(t + d, 0.01, 0.55, 0.15); o.connect(lp); lp.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + 0.17);
       }
+      let d = 0.42, gap = 0.032;
+      for(let i = 0; i < 16; i++){
+        const n = noise(0.012), bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 3400 + (i % 2) * 700; bp.Q.value = 5;
+        const g = env(t + d, 0.001, 0.8 - i * 0.03, 0.02); n.connect(bp); bp.connect(g); g.connect(out); n.start(t + d);
+        d += gap; gap *= 1.14;
+      }
+      const o = AC.createOscillator(); o.type = "sine"; const lfo = AC.createOscillator(), lg = AC.createGain();
+      lfo.frequency.value = 14; lg.gain.value = 40; lfo.connect(lg); lg.connect(o.frequency);
+      o.frequency.setValueAtTime(820, t + d); o.frequency.exponentialRampToValueAtTime(520, t + d + 0.35);
+      const gd = env(t + d, 0.004, 0.35, 0.4); o.connect(gd); gd.connect(out); o.start(t + d); o.stop(t + d + 0.42); lfo.start(t + d); lfo.stop(t + d + 0.42);
     }else if(kind === "cri"){
       // « kôk-kôk » du faisan : deux appels rauques, puis un battement d'ailes
       for(const [d, f0] of [[0, 1050], [0.2, 980]]){
