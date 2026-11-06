@@ -1282,6 +1282,11 @@
     (--fold-h, 127px : le mémo replié, resserré de 3 px, sert d'étalon) ;
     pleine page des écrans (même bouton que les listes, en haut à droite,
     voyant décalé à sa gauche ; papier du duel avec la même bande en haut).
+    Écran du duel à la largeur de celui du chat (carte − 1,5rem, ordinateur
+    et téléphone). Fermés, chat et duel perdent leur écran creusé (une ligne
+    sur le papier ; duel : deux mini-faisans face à face + état, toits pâles).
+    Pile des fermées façon notifications (pileFolded, éventail au clic).
+    Réglages au banc : essai.html?replis (REPLIS_KEY).
   - 10.64 : liste repliée : la bulle compte aussi les œufs en couvaison
     (eggsInCat), en plus des tâches à faire ; toujours pas les cochées.
   - 10.62 : écran de chat au doigt : toucher l'écran met le curseur dans la
@@ -2446,7 +2451,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   --facades:#261D33,#26261C,#1E2A1C,#2B2238,#2A2A1D; --facade-shadow:rgba(0,0,0,0.45);
   --win-lit:rgba(226,200,102,0.22); --win-off:rgba(255,255,255,0.035); --objet:#7FC0CC;
 }
-.duel-stage{ position:relative; background:var(--surface); border-radius:14px; box-shadow:var(--shadow); padding:calc(0.35rem + 22px) 0.6rem 0.2rem; }   /* 10.65 : en haut, la bande du bouton pleine page et du voyant (avant 0.85rem) */   /* le papier d'une liste */
+.duel-stage{ position:relative; background:var(--surface); border-radius:14px; box-shadow:var(--shadow); padding:calc(0.35rem + 22px) 0.75rem 0.2rem; }   /* 10.65 : en haut, la bande du bouton pleine page et du voyant (avant 0.85rem) ; côtés 0.75rem : l'écran a la largeur de celui du chat */   /* le papier d'une liste */
 /* le jeu dans un écran creusé, comme l'écran de chat : tranche de tôle arrondie, écran au fond,
    trame LCD et ombres intérieures posées par-dessus le dessin (::after) */
 .duel-screen{ position:relative; padding:2px; border-radius:18px;
@@ -2584,7 +2589,6 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-box{ width:calc(100% - 1.5rem); padding-top:calc(0.35rem + 22px);   /* autant d'air au-dessus que sous l'écran (marge + poignée) */ display:flex; flex-direction:column; opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
 .chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
 @media (max-width:720px){
-  .chat-box{ width:100%; }   /* une colonne (téléphone) : la largeur d'une liste */
   .chat-card .chat-log{ flex:0 1 auto; max-height:calc(10 * 1.45em); }   /* 10.61 : seul sur sa rangée, il grandit avec les messages, jusqu'à 10 lignes */
 }
 /* 10.60 : message non lu (d'un autre, pas encore vu sur cet appareil) :
@@ -2600,7 +2604,6 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 @keyframes chat-led{ 50%{ box-shadow:0 0 2px 0 color-mix(in srgb, var(--logo-green) 50%, transparent); filter:brightness(0.85); } }
 @media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-led{ animation:none; } }
 /* 10.65 : le voyant laisse le coin au bouton pleine page (avant : dans l'axe du trèfle) */
-@media (max-width:720px){ .chat-box > .scr-full{ right:1.25rem; } .chat-box > .chat-led{ right:calc(1.25rem + 28px); } }   /* écran à pleine largeur : aligné sur les listes */
 .chat-new{ text-align:center; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink-faint); margin:0.25rem 0 0.15rem; white-space:nowrap; overflow:hidden; }
 .chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
 .chat-card.dragging-card > *{ visibility:hidden; }
@@ -2661,6 +2664,22 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.collapsed .d-mini{ flex:1 1 auto; display:flex !important; align-items:center; min-width:0; }
 .chat-card.collapsed .chat-in{ display:none; }
 .chat-card.collapsed .chat-screen{ justify-content:center; }
+/* 10.65 : fermés, le chat et le duel perdent leur écran creusé : une ligne posée sur le papier
+   (banc : chat « sur papier » ou « à nu », toits pâles sous le duel — voir le panneau ?replis) */
+.chat-card.collapsed .chat-hole, .duel-card.collapsed .duel-screen{ background:none; box-shadow:none; padding:0; }
+.duel-card.collapsed .duel-screen::after{ display:none; }
+.chat-card.collapsed .chat-screen{ background:none; box-shadow:none; padding:0 0.25rem; }
+.chat-card.collapsed .chat-l{ text-align:left; padding:0; text-shadow:none; }
+html.rp-papier .chat-card.collapsed, .fold-pile .chat-card{ background:var(--surface); box-shadow:var(--shadow); }
+.duel-card.collapsed .d-mini{ background:none !important; padding:0 0.25rem !important; gap:0.55rem; }
+.d-mini-f{ display:none; }
+.duel-card.collapsed .d-mini-f{ display:inline-flex; flex:none; gap:2px; align-items:flex-end; }
+.d-mini-f canvas{ width:36px; height:30.6px; display:block; }
+.d-mini-f canvas + canvas{ transform:scaleX(-1); }   /* face à face, comme dans le jeu */
+.d-mini-t{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
+html.rp-toits .duel-card.collapsed .duel-stage::before{ content:""; position:absolute; left:0.75rem; right:0.75rem; bottom:0; height:20px; pointer-events:none; opacity:0.4;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='30' viewBox='0 0 160 30'%3E%3Cg fill='%23E3DBEB'%3E%3Cpath d='M4 30V14h3v-3h3V8h4v3h3v3h3v16zM62 30V10h3V7h3V4h4v3h3v3h3v20zM118 30V16h3v-3h3v-3h4v3h3v3h3v14z'/%3E%3C/g%3E%3Cg fill='%23D8E2CF'%3E%3Cpath d='M30 30V18h3v-3h3v-3h4v3h3v3h3v12zM88 30V20h3v-3h3v-3h4v3h3v3h3v10zM140 30V12h3V9h3V6h4v3h3v3h3v18z'/%3E%3C/g%3E%3C/svg%3E") repeat-x left bottom / 107px 20px; }
+html.rp-toits .duel-card.collapsed .duel-stage > :not(.scr-full):not(.chat-led){ position:relative; }
 .chat-card.collapsed .chat-log{ flex:none; min-height:0; max-height:none; overflow:hidden; }
 .chat-card.collapsed .chat-l{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .chat-card.collapsed .chat-l .chat-m{ display:none; }
@@ -2669,6 +2688,30 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.collapsed .d-mini{ display:block; position:relative; z-index:0; padding:0.55rem 0.9rem; border-radius:16px; background:var(--sky-bottom);
   font:0.85rem/1.35 'Courier Prime', 'Courier New', monospace; color:var(--objet); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .duel-card.collapsed .duel-stage{ padding-bottom:0.2rem; }
+/* 10.65 (banc) : pile des cases fermées — liserés dessous, éventail au clic */
+.fold-pile{ position:relative; align-self:start; display:grid; min-width:0; cursor:pointer;
+  padding-bottom:calc((var(--n) - 1) * 7px); transition:padding .35s ease; }
+.fold-pile > *:not(.pile-more){ grid-area:1 / 1; min-width:0; transform-origin:50% 100%;
+  transition:transform .35s cubic-bezier(.2,.8,.3,1), opacity .3s ease, margin .35s ease; }
+.fold-pile > :not(:first-child):not(.pile-more){ z-index:calc(10 - var(--i)); pointer-events:none;
+  transform:translateY(calc(min(var(--i), 2) * 7px)) scale(calc(1 - min(var(--i), 2) * 0.04)); }
+.fold-pile > :not(:first-child):not(.pile-more) > :not(.duel-stage),
+.fold-pile > :not(:first-child):not(.pile-more) > .duel-stage > *,
+.fold-pile:not(.open) > :not(:first-child):not(.pile-more)::before, .fold-pile:not(.open) > :not(:first-child):not(.pile-more) .duel-stage::before{ visibility:hidden; }   /* derrière : le papier seul */
+.fold-pile > :first-child{ z-index:20; }
+.fold-pile > :nth-child(n+4):not(.pile-more){ opacity:0; }
+.fold-pile:not(.open) .cat-grip{ visibility:hidden; }
+.fold-pile:not(.open):hover > :not(:first-child):not(.pile-more){ transform:translateY(calc(min(var(--i), 2) * 11px)) scale(calc(1 - min(var(--i), 2) * 0.04)); }
+.fold-pile:not(.open):hover{ padding-bottom:calc((var(--n) - 1) * 11px); }
+.pile-more{ position:absolute; z-index:21; left:50%; bottom:calc((var(--n) - 1) * 7px - 9px); transform:translateX(-50%);
+  font:700 0.68rem/1 'Public Sans', sans-serif; color:var(--ink-faint); background:var(--surface); border:1px solid var(--line);
+  border-radius:999px; padding:0.18rem 0.5rem; pointer-events:none; transition:opacity .2s ease; }
+.fold-pile.open{ display:flex; flex-direction:column; gap:1.1rem; padding-bottom:0; cursor:auto; }
+.fold-pile.open > :nth-child(n):not(.pile-more){ transform:none; opacity:1; pointer-events:auto; width:100%; }
+.fold-pile.open > * > *, .fold-pile.open .duel-stage > *{ visibility:visible !important; }
+.fold-pile.open .pile-more{ opacity:0; }
+.fold-pile .cat-grip{ visibility:hidden; }   /* banc : pas de glisser depuis la pile (dépliez d'abord) */
+@media (prefers-reduced-motion:reduce){ .fold-pile, .fold-pile > *{ transition:none; } }
 /* 10.65 : pleine page des écrans (chat, duel), comme les listes : le bouton à deux flèches en haut à
    droite, à la place du voyant, qui se décale à sa gauche ; même bouton ou Échap pour revenir */
 .chat-box > .scr-full, .duel-stage > .scr-full{ position:absolute; z-index:2; right:calc(1.25rem - 0.75rem);   /* aligné sur celui des listes */ top:calc((0.35rem + 22px) / 2 - 10px); }
@@ -10651,7 +10694,7 @@ function refreshUI(){
   ROOT.classList.toggle("duel-new", bandMode === "decouverte");
   { // l'écran replié : une ligne pour savoir où en est la partie
     const last = game.shots[game.shots.length - 1];
-    $(".d-mini").textContent = (PLAYERS[p].ini ? PLAYERS[p].ini + "> " : "> ") + (
+    $(".d-mini-t").textContent = (PLAYERS[p].ini ? PLAYERS[p].ini + "> " : "> ") + (
       bandMode === "decouverte" ? `${PLAYERS[last.p].nom} a joué !`
       : bandMode === "attente" ? `En attente ${de(PLAYERS[p].nom)}…`
       : world.over ? `${PLAYERS[world.winner].nom} a gagné.`
@@ -10697,7 +10740,7 @@ function build(){
       <div class="duel-screen"><canvas class="duel-cv"></canvas>
         <div class="attente"><span class="d-qui"></span><button type="button" class="poussoir d-go">Voir son coup</button></div>
         <div class="d-statut"></div>
-        <div class="d-mini"></div>
+        <div class="d-mini"><span class="d-mini-f"></span><span class="d-mini-t"></span></div>
       </div>
       <div class="coup">
         <span class="invite d-invite"></span>
@@ -10734,6 +10777,9 @@ function build(){
     const x = c.getContext("2d"); x.scale(2, 2); x.translate(26, 31); x.scale(0.45, 0.45); drawPheasant(x, 0, 0, 1, { kind }); b.appendChild(c); pe.appendChild(b);
     b.addEventListener("click", ()=>{ if(game.shots.length) return; haptic("tic"); persoChoix = kind; game.perso = kind === 0 ? [0, 1] : [1, 0]; refreshUI(); });
   });
+  // 10.65 : fermé, deux petits faisans face à face devant la ligne d'état
+  [0, 1].forEach(kind => { const c = document.createElement("canvas"); c.width = 60; c.height = 51;
+    const x = c.getContext("2d"); x.scale(1.5, 1.5); x.translate(22, 25); x.scale(0.42, 0.42); drawPheasant(x, 0, 0, 1, { kind }); card.querySelector(".d-mini-f").appendChild(c); });
   card.querySelector(".d-lancer").addEventListener("click", ()=>{ if(world && world.over) nouvellePartie(); else lancer(); });
   card.querySelector(".d-revoir").addEventListener("click", ()=> replayLast(false));
   card.querySelector(".d-go").addEventListener("click", ()=>{ haptic("tic"); $(".attente").classList.remove("on"); bandMode = null; setTimeout(()=> replayLast(true), 300); });
@@ -11217,6 +11263,7 @@ function render(){
     card.appendChild(fold);
     categoriesEl.appendChild(card);
   });
+  pileFolded();   // 10.65 (banc)
   refocusQuickCat = null;
   refocusCoursesCat = null;
   fitCoursesCards(coursesScroll);
@@ -11225,6 +11272,52 @@ function render(){
   const waitingSection = document.getElementById("waitingSection");
   if(waitingSection) waitingSection.hidden = !hasAnyList();
 }
+
+// ---------- 10.65 (banc) : réglages des cases fermées, pile façon notifications ----------
+// Les cases fermées se superposent comme les notifications de l'écran verrouillé
+// de l'iPhone : celle du dessus entière, les suivantes en liserés dessous. Un clic
+// ouvre l'éventail ; un clic ailleurs le referme. Un écran qui attend d'être lu
+// (voyant vert) passe dessus. Rien ne change dans les données ni dans l'ordre.
+const REPLIS_KEY = "sltapis-essai-replis";
+const REPLIS_DEF = { chat: "papier", toits: "oui", pile: "suite" };
+function replisOpt(k){
+  try{ const o = JSON.parse(localStorage.getItem(REPLIS_KEY) || "{}"); return o[k] || REPLIS_DEF[k]; }catch(e){ return REPLIS_DEF[k]; }
+}
+function applyReplis(){
+  document.documentElement.classList.toggle("rp-papier", replisOpt("chat") === "papier");
+  document.documentElement.classList.toggle("rp-toits", replisOpt("toits") === "oui");
+}
+applyReplis();
+let pileOpen = false;
+function pileFolded(){
+  const mode = replisOpt("pile");
+  if(mode === "non") return;
+  const cards = Array.from(categoriesEl.children).filter(el => el.id && el.id.startsWith("cat-"));
+  let run = [];
+  if(mode === "toutes") run = cards.filter(c => c.classList.contains("collapsed"));
+  else for(let i = cards.length - 1; i >= 0 && cards[i].classList.contains("collapsed"); i--) run.unshift(cards[i]);
+  if(run.length < 2){ pileOpen = false; return; }
+  const hot = c => c.classList.contains("unread") || c.classList.contains("duel-new") ? 1 : 0;
+  run = run.map((c, i) => ({ c, i })).sort((a, b) => hot(b.c) - hot(a.c) || a.i - b.i).map(o => o.c);
+  const pile = document.createElement("div");
+  pile.className = "fold-pile" + (pileOpen ? " open" : "");
+  pile.style.setProperty("--n", Math.min(run.length, 3));
+  if(mode === "toutes") categoriesEl.appendChild(pile); else run[0].before(pile);
+  run.forEach((c, i) => { c.style.setProperty("--i", i); pile.appendChild(c); });
+  const more = document.createElement("span");
+  more.className = "pile-more"; more.textContent = "+" + (run.length - 1);
+  pile.appendChild(more);
+  pile.addEventListener("click", e=>{
+    if(pile.classList.contains("open")) return;
+    e.stopPropagation(); e.preventDefault();
+    pileOpen = true; pile.classList.add("open");
+  }, true);
+}
+document.addEventListener("pointerdown", e=>{
+  if(!pileOpen || e.target.closest(".fold-pile")) return;
+  pileOpen = false;
+  const p = document.querySelector(".fold-pile.open"); if(p) p.classList.remove("open");
+}, true);
 
 // ---------- corbeille : affichage et remise en liste ----------
 let trashOpen = false;
@@ -13809,6 +13902,38 @@ if(Store.mode === "doc" && !isStandaloneApp()){
     });
   };
   draw();
+})();
+if(ESSAI && /[?&]replis/.test(location.search)) (()=>{
+  const box = document.createElement("div");
+  box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:16rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
+  document.body.appendChild(box);
+  box.addEventListener("click", e => e.stopPropagation());
+  box.addEventListener("pointerdown", e => e.stopPropagation());
+  const G = [["chat", "Chat fermé", [["papier","Sur papier"],["nu","À nu, sur le fond"]]],
+             ["toits", "Toits sous le duel fermé", [["oui","Oui"],["non","Non"]]],
+             ["pile", "Pile des fermées", [["non","Pas de pile"],["suite","Celles qui se suivent en bas"],["toutes","Toutes les fermées"]]]];
+  const q = new URLSearchParams(location.search);
+  try{ const o = JSON.parse(localStorage.getItem(REPLIS_KEY) || "{}"); G.forEach(([k]) => { if(q.get(k)) o[k] = q.get(k); }); localStorage.setItem(REPLIS_KEY, JSON.stringify(o)); }catch(e){}
+  const draw = ()=>{
+    const mini = (()=>{ try{ return localStorage.getItem(REPLIS_KEY + "-mini") === "1"; }catch(e){ return false; } })();
+    box.style.width = mini ? "auto" : "16rem";
+    if(mini){ box.innerHTML = `<button type="button" data-m style="font:700 0.72rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;border:0;background:none;color:var(--ink-soft);cursor:pointer;padding:0">Réglages ▴</button>`;
+      box.querySelector("[data-m]").addEventListener("click", ()=>{ try{ localStorage.setItem(REPLIS_KEY + "-mini", "0"); }catch(e){} draw(); }); return; }
+    box.innerHTML = `<button type="button" data-m style="float:right;border:0;background:none;color:var(--ink-faint);cursor:pointer;font-size:1rem;line-height:1;padding:0 .2rem" aria-label="Réduire">▾</button>` + G.map(([k, t, opts]) => `<div style="font:700 0.72rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:.5rem 0 .2rem">${t}</div>`
+      + opts.map(([v, l]) => `<label style="display:flex;gap:.4rem;align-items:center;margin:.2rem 0;cursor:pointer"><input type="radio" name="rp-${k}" value="${v}"${replisOpt(k) === v ? " checked" : ""}>${l}</label>`).join("")).join("")
+      + `<button type="button" data-c style="display:block;width:100%;margin-top:.7rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
+    box.querySelector("[data-m]").addEventListener("click", ()=>{ try{ localStorage.setItem(REPLIS_KEY + "-mini", "1"); }catch(e){} draw(); });
+    box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{
+      try{ const o = JSON.parse(localStorage.getItem(REPLIS_KEY) || "{}"); o[i.name.slice(3)] = i.value; localStorage.setItem(REPLIS_KEY, JSON.stringify(o)); }catch(e){}
+      applyReplis(); renderAll();
+    }));
+    box.querySelector("[data-c]").addEventListener("click", async e=>{
+      const url = location.origin + location.pathname + "?replis&" + G.map(([k]) => k + "=" + replisOpt(k)).join("&");
+      try{ await navigator.clipboard.writeText(url); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", url); }
+      setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
+    });
+  };
+  applyReplis(); draw();
 })();
 if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
   const C = null;
