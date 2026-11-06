@@ -49,9 +49,10 @@
     Explosion : boule de feu, onde de choc, morceaux de façade, fumée,
     secousse de l'écran, bord du trou roussi. Coups précédents des deux
     joueurs affichés d'office ; résultat de chaque coup dans le panneau.
-  - Objets lancés : une seule couleur, celle du joueur qui lance, en style
-    pixel léger (sprite : dessin ramené à deux tons + blanc dans un petit
-    canevas, affiché sans lissage) ; éclats aux mêmes tons.
+  - Objets lancés et boutons du jeu : un seul bleu (--objet), quel que soit
+    le joueur (sprite : dessin ramené à deux tons de ce bleu + blanc, réduit
+    avec lissage) ; éclats aux mêmes tons. Les couleurs des joueurs (chat)
+    ne servent qu'à les reconnaître : initiales, invite, trajectoires.
   - Couleurs : celles de l'appli (variables reprises de index.html, clair et
     sombre). Décor : façades mauve et sauge éteints (--facades) posées avec
     l'ombre des cartes, ciel neutre = fond de page ; joueurs aux
@@ -76,6 +77,7 @@
   --btn-ink:#4A5E6E;
   --logo-green:#7DB536; --logo-green-strong:#64992A;
   --chat-me:#2F6F7C; --chat-them:var(--logo-green-strong);
+  --objet:#2F6F7C;   /* un seul bleu pour les objets lancés et les boutons du jeu */
   --urgent:#9558D0;
   --rose:#D98DA1;
   --lucky-bg:#FCFBE9; --lucky-lemon:#E6D63C;
@@ -99,6 +101,7 @@
     --btn-ink:#AFC0CC;
     --logo-green:#A9D65A; --logo-green-strong:#C7E58A;
     --chat-me:#7FC0CC; --chat-them:var(--logo-green);
+    --objet:#7FC0CC;
     --line:#2A3238;
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
     --sky-top:#1B252B; --sky-bottom:#101315;
@@ -157,7 +160,8 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
   border:2px solid var(--pc); border-radius:3px; padding:0.38rem 1.1rem; letter-spacing:0.02em; line-height:1.2;
   box-shadow:3px 3px 0 var(--pc); transform:translate(0, 0); transition:transform .06s, box-shadow .06s, background .12s;
 }
-#lancer{ --pc:var(--pcolor); min-width:7.5em; }
+#lancer{ --pc:var(--objet); min-width:7.5em; }
+.poussoir{ --pc:var(--objet); }
 .poussoir::before{ content:"> "; }
 @media (hover:hover){ .poussoir:hover, #lancer:not(:disabled):hover{ background:color-mix(in srgb, var(--pc) 9%, var(--surface)); } }
 .poussoir:active, #lancer:not(:disabled):active{ transform:translate(3px, 3px); box-shadow:0 0 0 var(--pc); }
@@ -186,10 +190,10 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 .coup input::-webkit-inner-spin-button{ opacity:0.4; }
 /* boutons − / + : seulement au doigt (à la souris, les petites flèches du champ suffisent) ; appui long = ça défile */
 /* même esprit « écran » que Lancer : Courier Prime, coins presque droits, ombre dure qui disparaît à l'appui */
-.pas{ display:none; width:38px; height:36px; border-radius:3px; border:2px solid var(--pcolor); background:var(--surface); color:var(--pcolor);
+.pas{ display:none; width:38px; height:36px; border-radius:3px; border:2px solid var(--objet); background:var(--surface); color:var(--objet);
   font:700 1.2rem/1 'Courier Prime', monospace; padding:0; cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
-  box-shadow:2px 2px 0 var(--pcolor); transform:translate(0, 0); transition:transform .05s, box-shadow .05s; }
-.pas:active{ transform:translate(2px, 2px); box-shadow:0 0 0 var(--pcolor); }
+  box-shadow:2px 2px 0 var(--objet); transform:translate(0, 0); transition:transform .05s, box-shadow .05s; }
+.pas:active{ transform:translate(2px, 2px); box-shadow:0 0 0 var(--objet); }
 .pas:disabled{ color:var(--ink-faint); border-color:var(--line); box-shadow:2px 2px 0 var(--line); }
 @media (pointer:coarse){
   .pas{ display:inline-grid; place-items:center; }
@@ -203,13 +207,13 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
   transition:background .15s, box-shadow .15s;
 }
 .objets button:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); }
-.objets button.on{ box-shadow:inset 0 0 0 2px var(--pcolor); }
+.objets button.on{ box-shadow:inset 0 0 0 2px var(--objet); }
 .objets canvas{ width:30px; height:30px; pointer-events:none; }
 .persos{ display:flex; gap:0.25rem; align-items:center; padding-right:0.6rem; margin-right:0.2rem; border-right:1px solid var(--line); }
 .persos[hidden]{ display:none; }
 .persos button{ width:44px; height:38px; padding:0; border:0; border-radius:10px; cursor:pointer; background:transparent; display:grid; place-items:center; transition:background .15s, box-shadow .15s; }
 @media (hover:hover){ .persos button:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); } }
-.persos button.on{ box-shadow:inset 0 0 0 2px var(--pcolor); }
+.persos button.on{ box-shadow:inset 0 0 0 2px var(--objet); }
 .persos canvas{ width:40px; height:34px; pointer-events:none; }
 @media (pointer:coarse){ .persos button{ width:50px; height:46px; } }
 .btn{
@@ -742,27 +746,27 @@ function drawObjet(c, type, x, y, rot = 0, sc = 1){
   }
   c.restore();
 }
-// objets « pixel » d'une seule couleur (celle du joueur qui lance) : le dessin est fait une fois dans un
-// petit canevas (1 pixel = 1 unité du jeu, donc pixels très légèrement visibles), ramené à deux tons de
-// cette couleur + blanc pour les détails, bords nets ; affiché sans lissage, même en tournant
+// objets d'une seule couleur (le bleu de l'appli, quel que soit le joueur) : le dessin est fait une fois
+// dans un canevas 4× plus fin, ramené à deux tons de ce bleu + blanc pour les détails, puis réduit avec
+// lissage (pas d'effet pixel)
 const spriteCache = new Map();
 function hexRgb(h){ h = h.replace("#", ""); if(h.length === 3) h = [...h].map(c => c + c).join(""); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); }
 function sprite(type, color){
   const key = type + color; if(spriteCache.has(key)) return spriteCache.get(key);
-  const N = 40, c = document.createElement("canvas"); c.width = c.height = N;
-  const x = c.getContext("2d"); drawObjet(x, type, N / 2, N / 2, 0, OBJ_SIZE[type]);
+  const N = 160, c = document.createElement("canvas"); c.width = c.height = N;
+  const x = c.getContext("2d"); x.scale(4, 4); drawObjet(x, type, 20, 20, 0, OBJ_SIZE[type]);
   const img = x.getImageData(0, 0, N, N), d = img.data, [r, g, b] = hexRgb(color), mid = [r, g, b].map(v => Math.round(v + (255 - v) * 0.5));
   for(let i = 0; i < d.length; i += 4){
-    if(d[i + 3] < 110){ d[i + 3] = 0; continue; }
+    if(d[i + 3] === 0) continue;
     const L = (0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]) / 255;
     const t = L < 0.5 ? [r, g, b] : L < 0.8 ? mid : [253, 253, 250];
-    d[i] = t[0]; d[i + 1] = t[1]; d[i + 2] = t[2]; d[i + 3] = 255;
+    d[i] = t[0]; d[i + 1] = t[1]; d[i + 2] = t[2];   // on garde la transparence des bords (lisses)
   }
   x.putImageData(img, 0, 0); spriteCache.set(key, c); return c;
 }
-function drawObjetPix(c, type, color, x, y, rot = 0, sc = 1){
+function drawObjetMono(c, type, color, x, y, rot = 0, sc = 1){
   const sp = sprite(type, color);
-  c.save(); c.translate(x, y); c.rotate(rot); c.scale(sc, sc); c.imageSmoothingEnabled = false;
+  c.save(); c.translate(x, y); c.rotate(rot); c.scale(sc / 4, sc / 4); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high";
   c.drawImage(sp, -sp.width / 2, -sp.height / 2); c.restore();
 }
 // couronne du vainqueur
@@ -945,7 +949,7 @@ function frame(now){
         ctx.fillStyle = css(PLAYERS[anim.shot.p].color);
         ctx.beginPath(); ctx.moveTo(x, 4); ctx.lineTo(x - 5, 12); ctx.lineTo(x + 5, 12); ctx.fill();
       }else{
-        drawObjetPix(ctx, anim.shot.o, css(PLAYERS[anim.shot.p].color), x, y, anim.i * 0.09 * (anim.shot.p ? -1 : 1));
+        drawObjetMono(ctx, anim.shot.o, css("--objet"), x, y, anim.i * 0.09 * (anim.shot.p ? -1 : 1));
         if(anim.shot.o === "stylo" && anim.i % 8 === 0) particles.push({ x, y, vx: 0, vy: 10, life: 0.8, decay: 0.9, kind: "ink", color: "#562F96", rot: 0, vr: 0, s: 0.6 });   // gouttes d'encre
       }
     }
@@ -1031,7 +1035,7 @@ function endShot(){
     setTimeout(()=>{ world = applyResult(world, shot, res); finish(done); }, 350);
     return;
   }
-  burst(shot.o, e.x, e.y, e.kind === "hit", css(PLAYERS[shot.p].color));
+  burst(shot.o, e.x, e.y, e.kind === "hit", css("--objet"));
   sound("boum"); sound({ roue:"roulibre", coeur:"bisous", stylo:"plume", reveil:"reveil" }[shot.o]);
   if(e.kind === "city"){
     world = applyResult(world, shot, res); renderCity(world);
@@ -1139,7 +1143,7 @@ let iconesCouleur = null;
 function paintObjets(color){   // redessine les icônes si la couleur du joueur a changé
   if(iconesCouleur === color) return; iconesCouleur = color;
   document.querySelectorAll(".objets button").forEach(b => { const c = b.querySelector("canvas"), x = c.getContext("2d");
-    x.clearRect(0, 0, 60, 60); x.save(); x.scale(1.5, 1.5); drawObjetPix(x, b.dataset.o, color, 20, 20, 0, 1); x.restore(); });
+    x.clearRect(0, 0, 60, 60); x.save(); x.scale(1.5, 1.5); drawObjetMono(x, b.dataset.o, color, 20, 20, 0, 1); x.restore(); });
 }
 function buildPersos(){
   const box = $("#persos"); box.innerHTML = "";
@@ -1157,7 +1161,7 @@ function refreshUI(){
   $("#invite").style.color = col;
   for(const id of ["#angle", "#vitesse"]) $(id).style.color = col;
   document.querySelectorAll(".objets button").forEach(b => b.classList.toggle("on", b.dataset.o === game.objets[p]));
-  paintObjets(col);
+  paintObjets(css("--objet"));
   $("#persos").hidden = game.shots.length > 0 || busy;   // seulement avant le premier coup, pour celui qui lance la partie
   document.querySelectorAll(".persos button").forEach(b => b.classList.toggle("on", Number(b.dataset.k) === persoOf(0)));
   const lock = busy || attente;
