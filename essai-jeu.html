@@ -132,7 +132,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 .attente{
   position:absolute; left:0; right:0; bottom:0; transform:translateY(100%); opacity:0;
   display:flex; align-items:center; justify-content:center; gap:1rem; padding:0.55rem 1rem;
-  background:color-mix(in srgb, var(--surface) 95%, transparent);   /* pas de backdrop-filter : trop lourd au-dessus d'un canevas animé */
+  background:color-mix(in srgb, var(--surface) 70%, transparent);   /* pas de backdrop-filter : trop lourd au-dessus d'un canevas animé */
   border-top:1px solid color-mix(in srgb, var(--pc) 30%, var(--line)); border-radius:0 0 12px 12px;
   color:var(--pc); font:700 1rem 'Courier Prime', monospace; white-space:nowrap; pointer-events:none; visibility:hidden;
   transition:transform .45s cubic-bezier(.2,.8,.3,1), opacity .3s, visibility 0s .45s;
@@ -141,7 +141,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 .attente .btn{ font-size:0.78rem; padding:0.3rem 0.8rem; min-height:0; }
 .attente.decouverte{
   top:50%; bottom:auto; transform:translateY(-50%) scaleY(0); border-radius:0; flex-direction:column;   /* texte, puis le bouton dessous */
-  background:color-mix(in srgb, var(--pc) 9%, color-mix(in srgb, var(--surface) 96%, transparent));
+  background:color-mix(in srgb, var(--pc) 7%, color-mix(in srgb, var(--surface) 62%, transparent));
   border-top:2px solid color-mix(in srgb, var(--pc) 40%, transparent); border-bottom:2px solid color-mix(in srgb, var(--pc) 40%, transparent);
   font-size:1.3rem;
 }
@@ -434,9 +434,16 @@ function freshWorld(){
   const wind = Math.round((r() * 2 - 1) * R().vent);
   return { city, ph: city.ph, craters: [], wind, over: false, lastPath: [null, null] };
 }
-// cœur unité (polygone) : sert à la fois à dessiner le trou et à savoir si un point est dedans
-const HEART = Array.from({ length: 48 }, (_, i) => { const t = i / 48 * Math.PI * 2;
-  return [16 * Math.sin(t) ** 3 / 16, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 16 + 0.15]; });
+// cœur unité (polygone) : même forme que le cœur qu'on lance (heartPath), échantillonnée —
+// sert à la fois à dessiner le trou et à savoir si un point est dedans
+const HEART = (()=>{
+  const C = [[[0,10],[-5,6],[-14,0],[-13,-6.5]], [[-13,-6.5],[-12,-13],[-3,-14],[0,-7]],
+             [[0,-7],[3,-14],[12,-13],[13,-6.5]], [[13,-6.5],[14,0],[5,6],[0,10]]];
+  const pts = [];
+  for(const [p0, p1, p2, p3] of C) for(let i = 0; i < 12; i++){ const t = i / 12, u = 1 - t;
+    pts.push([0, 1].map(k => (u*u*u*p0[k] + 3*u*u*t*p1[k] + 3*u*t*t*p2[k] + t*t*t*p3[k]) / 12 + (k ? 0.1 : 0))); }
+  return pts;
+})();
 function inHeart(px, py){   // point déjà ramené à l'unité
   let inside = false;
   for(let i = 0, j = HEART.length - 1; i < HEART.length; j = i++){
@@ -1269,8 +1276,8 @@ function sound(kind){
           const g = env(t + dd, 0.002, amp * a, len / ratio ** 0.4); o.connect(g); g.connect(out); o.start(t + dd); o.stop(t + dd + len + 0.05);
         }
       };
-      const d1 = d + 0.12, d2 = d1 + 0.3;   // un temps de silence, puis dring… dring !
-      for(const st of [d1, d2]) for(let i = 0; i < 6; i++) timbre(st + i * 0.034, i === 5 ? 0.32 : 0.2, i === 5 ? 0.55 : 0.09);
+      const d1 = d + 0.32, d2 = d1 + 0.2;   // un vrai temps de silence, puis « dring-dring ! » bien vif
+      for(const st of [d1, d2]) for(let i = 0; i < 6; i++) timbre(st + i * 0.022, i === 5 ? 0.32 : 0.2, i === 5 ? 0.45 : 0.06);
     }else if(kind === "cri"){
       // « kôk-kôk » du faisan : deux appels rauques, puis un battement d'ailes
       for(const [d, f0] of [[0, 1050], [0.2, 980]]){
