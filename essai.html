@@ -2449,7 +2449,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   border:2px solid var(--pc); border-radius:3px; padding:0.38rem 1.1rem; letter-spacing:0.02em; line-height:1.2;
   box-shadow:3px 3px 0 var(--pc); transform:translate(0, 0); transition:transform .06s, box-shadow .06s, background .12s;
 }
-.duel-card .d-lancer{ min-width:7.5em; }
+.duel-card .d-lancer{ min-width:7.5em; order:2; }
 .duel-card .poussoir::before{ content:"> "; }
 @media (hover:hover){ .duel-card .poussoir:hover, .duel-card .d-lancer:not(:disabled):hover{ background:color-mix(in srgb, var(--pc) 9%, var(--surface)); } }
 .duel-card .poussoir:active, .duel-card .d-lancer:not(:disabled):active{ transform:translate(3px, 3px); box-shadow:0 0 0 var(--pc); }
@@ -2468,7 +2468,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card .pas:disabled{ color:var(--ink-faint); border-color:var(--line); box-shadow:2px 2px 0 var(--line); }
 .duel-card .objets, .duel-card .persos{ display:flex; gap:0.25rem; align-items:center; }
 .duel-card .persos{ padding-right:0.6rem; margin-right:0.2rem; border-right:1px solid var(--line); }
-.duel-card .persos[hidden]{ display:none; }
+.duel-card .persos.gone{ visibility:hidden; }   /* la place reste : la carte ne change pas de hauteur */
 .duel-card .objets button, .duel-card .persos button{ padding:0; border:0; border-radius:10px; cursor:pointer; background:transparent; display:grid; place-items:center; transition:background .15s, box-shadow .15s; }
 .duel-card .objets button{ width:38px; height:38px; }
 .duel-card .persos button{ width:44px; height:38px; }
@@ -2476,8 +2476,8 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card .objets button.on, .duel-card .persos button.on{ box-shadow:inset 0 0 0 2px var(--objet); }
 .duel-card .objets canvas{ width:30px; height:30px; pointer-events:none; }
 .duel-card .persos canvas{ width:40px; height:34px; pointer-events:none; }
-.duel-card .d-revoir{ margin-left:auto; font:700 0.85rem 'Courier Prime', monospace; color:var(--ink-soft); background:transparent; border:0; border-radius:8px; padding:0.4rem 0.6rem; cursor:pointer; }
-.duel-card .d-revoir[hidden]{ display:none; }
+.duel-card .d-revoir{ order:1; margin-left:auto; font:700 0.85rem 'Courier Prime', monospace; color:var(--ink-soft); background:transparent; border:0; border-radius:8px; padding:0.4rem 0.6rem; cursor:pointer; }
+.duel-card .d-revoir.gone{ visibility:hidden; }
 @media (hover:hover){ .duel-card .d-revoir:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); } }
 .duel-card .d-statut{ min-height:1.3em; padding:0 0.5rem 0.2rem; font-size:0.85rem; color:var(--ink-soft); }
 @media (pointer:coarse){
@@ -2493,15 +2493,18 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   .duel-card .attente{ gap:0.6rem; padding:0.35rem 0.6rem; font-size:0.8rem; }
   .duel-card .attente.decouverte{ font-size:0.95rem; padding:0.55rem 0.5rem 0.75rem; gap:0.5rem; }
   .duel-card .poussoir{ font-size:0.9rem; padding:0.3rem 0.9rem; }
-  .duel-card .coup{ display:grid; grid-template-columns:auto 1fr; gap:0.6rem 0.8rem; padding:0.8rem 0.3rem 0.4rem; }
+  .duel-card .coup{ display:grid; grid-template-columns:auto minmax(0, 1fr) auto; gap:0.6rem 0.7rem; padding:0.8rem 0.3rem 0.4rem; }
   .duel-card .invite{ grid-row:1 / 3; align-self:center; }
-  .duel-card .reglage{ grid-column:2; gap:0.5rem; }
-  .duel-card .reglage > span:first-child{ min-width:4.3em; }
-  .duel-card .persos{ grid-column:1 / -1; border-right:0; padding-right:0; }
+  .duel-card .reglage{ grid-column:2; gap:0.45rem; }
+  .duel-card .reglage > span:first-child{ min-width:3.2em; }
+  .duel-card .persos{ grid-column:3; grid-row:1 / 3; justify-self:end; align-self:center; flex-direction:column; border-right:0; padding-right:0; margin-right:0; }
   .duel-card .objets{ grid-column:1 / -1; }
-  .duel-card .d-revoir{ grid-column:1; justify-self:start; margin-left:0; padding:0.4rem 0.3rem; }
-  .duel-card .d-lancer{ grid-column:2; justify-self:stretch; margin-right:3px; }   /* Revoir et Lancer sur la même ligne */
-  .duel-card .d-revoir[hidden] + .d-lancer{ grid-column:1 / -1; }
+  .duel-card .d-lancer{ order:1; grid-column:1 / -1; justify-self:stretch; margin-right:3px; white-space:nowrap; min-width:0; }
+  .duel-card .d-revoir{ order:2; grid-column:1 / -1; grid-row:auto; justify-self:center; margin:-0.3rem 0 0; padding:0.3rem 0.6rem; white-space:nowrap; }
+  .duel-card .d-statut{ min-height:2.6em; }
+  .duel-card .pas{ flex:none; width:34px; }
+  .duel-card .coup input{ width:2.8em; flex:none; }
+  .duel-card .reglage > span:first-child{ min-width:3.4em; }   /* deux lignes réservées : la carte garde sa hauteur */
 }
 
 /* ---------- 10.57 : écran de chat (petit chat partagé) ----------
@@ -10402,7 +10405,7 @@ const myTurn = ()=>{ const me = myUid(); if(!me || game.solo) return true; if(!g
 function sync(cat, force){
   CAT = cat;
   const g = readGame(cat), sig = g.start + ":" + g.seed + ":" + g.shots.length;
-  if(sig === lastSig && !force){ game.objets = g.objets; refreshUI(); return; }
+  if(sig === lastSig && !force){ game.objets = g.objets; game.total = g.total; refreshUI(); return; }
   lastSig = sig;
   if(ownShot){ game = g; return; }   // mon coup est déjà en train de voler
   game = g;
@@ -10461,8 +10464,12 @@ function lancer(){
   game.shots.push(shot);
   seen[CAT.id] = (game.total || 0) + 1; saveSeen();
   play(shot, res, ()=>{
-    ownShot = false; lastSig = null;
-    renderAll();   // relit la liste (même partie : rien ne bouge) et pose « En attente de … »
+    ownShot = false;
+    // la liste contient maintenant mon coup : même partie que celle qu'on voit, on ne la recharge pas
+    // (sinon la danse, la couronne et les confettis seraient effacés)
+    const g = readGame(CAT); lastSig = g.start + ":" + g.seed + ":" + g.shots.length; game.total = g.total;
+    decideBand();
+    renderAll();
   });
   setTimeout(()=> renderAll(), 0);   // la synchro part tout de suite
 }
@@ -10493,7 +10500,7 @@ function refreshUI(){
   ROOT.querySelectorAll(".d-angle, .d-vitesse").forEach(i => i.style.color = col);
   ROOT.querySelectorAll(".objets button").forEach(b => b.classList.toggle("on", b.dataset.o === monObjet));
   paintObjets(css("--objet"));
-  $(".persos").hidden = game.shots.length > 0 || busy;
+  $(".persos").classList.toggle("gone", game.shots.length > 0 || busy);
   ROOT.querySelectorAll(".persos button").forEach(b => b.classList.toggle("on", Number(b.dataset.k) === persoOf(0)));
   const lock = busy || attente || !mine;
   ROOT.querySelectorAll(".d-angle, .d-vitesse, .pas").forEach(i => i.disabled = lock || world.over);
@@ -10504,12 +10511,12 @@ function refreshUI(){
   }else{
     lancerBtn.textContent = "Lancer"; lancerBtn.disabled = lock;
     $(".d-statut").textContent = busy || attente ? "" :
-      game.solo ? (game.shots.length ? `Entraînement : visez l'autre faisan, il ne renvoie rien.` : `Entraînement (seul dans ce duel) : choisissez votre faisan et visez l'autre. Pour jouer à deux, « … » puis Inviter.`)
+      game.solo ? (game.shots.length ? `Entraînement : visez l'autre faisan, il ne renvoie rien.` : `Entraînement : choisissez votre faisan et visez l'autre.`)
       : mine ? (game.shots.length ? `À vous de lancer ${OBJETS_ART[monObjet]}.` : `Choisissez votre faisan et lancez : l'autre prendra l'autre faisan.`)
       : !PLAYERS[p].uid && me ? "Invitez quelqu'un avec « … » pour jouer à deux." : `À ${PLAYERS[p].nom} de jouer.`;
   }
   const last = game.shots[game.shots.length - 1];
-  $(".d-revoir").hidden = !last || attente || hideLast;
+  $(".d-revoir").classList.toggle("gone", !last || attente || hideLast);
   $(".d-revoir").disabled = busy;
   if(last) $(".d-revoir").title = `Revoir le coup ${de(PLAYERS[last.p].nom)}`;
   const focused = document.activeElement && ROOT.contains(document.activeElement) && /d-angle|d-vitesse/.test(document.activeElement.className);
@@ -10528,11 +10535,11 @@ function build(){
       <div class="coup">
         <span class="invite d-invite"></span>
         <div class="reglage"><span>angle</span><button type="button" class="pas" data-for="d-angle" data-d="-1" aria-label="Moins">−</button><input class="d-angle" type="number" min="0" max="90" step="1" inputmode="numeric" aria-label="Angle"><button type="button" class="pas" data-for="d-angle" data-d="1" aria-label="Plus">+</button><span class="unite">°</span></div>
-        <div class="reglage"><span>vitesse</span><button type="button" class="pas" data-for="d-vitesse" data-d="-1" aria-label="Moins">−</button><input class="d-vitesse" type="number" min="1" max="200" step="1" inputmode="numeric" aria-label="Vitesse"><button type="button" class="pas" data-for="d-vitesse" data-d="1" aria-label="Plus">+</button></div>
+        <div class="reglage"><span>force</span><button type="button" class="pas" data-for="d-vitesse" data-d="-1" aria-label="Moins">−</button><input class="d-vitesse" type="number" min="1" max="200" step="1" inputmode="numeric" aria-label="Force"><button type="button" class="pas" data-for="d-vitesse" data-d="1" aria-label="Plus">+</button></div>
         <div class="persos" title="Votre faisan (l'autre joueur prend l'autre)"></div>
         <div class="objets"></div>
-        <button type="button" class="d-revoir">↺ Revoir</button>
         <button type="button" class="d-lancer">Lancer</button>
+        <button type="button" class="d-revoir">↺ Revoir</button>
       </div>
       <div class="d-statut"></div>
     </div>
@@ -10633,7 +10640,7 @@ function card(cat, catIdx){
   return ROOT;
 }
 function onTheme(){ cssCache.clear(); spriteCache.clear(); iconesCouleur = null; if(world && ROOT && ROOT.isConnected) renderCity(world, finale); }
-return { card, onTheme, resync: ()=>{ lastSig = null; renderAll(); } };   // resync : relire la partie (synchro, tests)
+return { card, onTheme, resync: ()=>{ lastSig = null; renderAll(); }, etat: ()=>({ world, dance, finale, busy, simulate }) };   // etat : pour les tests   // resync : relire la partie (synchro, tests)
 })();
 
 try{
