@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.63 -->
+<!-- Sous le tapis — version AUTONOME 10.64 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1277,6 +1277,8 @@
   - 10.63 : duel de faisans (voir DUEL DE FAISANS) : petit jeu à deux en
     tour par tour, créé par « + Ajouter un duel de faisans » ; entraînement
     seul. Papier des mémos en blanc (--memo-a/b/c #FFFFFF, avant blanc chaud).
+  - 10.64 : liste repliée : la bulle compte aussi les œufs en couvaison
+    (eggsInCat), en plus des tâches à faire ; toujours pas les cochées.
   - 10.61 : phrase retirée (« Vendredi qui rit, dimanche qui fleurit »).
   - 10.62 : écran de chat au doigt : toucher l'écran met le curseur dans la
     saisie sans preventScroll, le téléphone la remonte lui-même au-dessus du
@@ -4210,7 +4212,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.63</span>
+    <span class="version-tag">v10.64</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -10762,14 +10764,14 @@ function render(){
       card.style.setProperty("--gloss-p", g[1] + "%");
     }
 
-    let visibleCount = 0, doneInCat = 0;
+    let visibleCount = 0, doneInCat = 0, eggsInCat = 0;
     if(courses) coursesRows(cat).forEach(r => { visibleCount++; if(state[r.key]) doneInCat++; });
     else items.forEach((base,i)=>{
       const k = itemKey(cat.id, i);
       if(isDeleted(k)) return;
       const eff = getEffective(k, base);
       if(eff.waiting) return;
-      if(eff.egg && !state[k]) return;
+      if(eff.egg && !state[k]){ eggsInCat++; return; }   // 10.64 : compté dans la bulle de la liste repliée
       visibleCount++;
       if(state[k]) doneInCat++;
     });
@@ -10782,7 +10784,7 @@ function render(){
       if(e.target.closest("button, a, input, textarea, .cat-grip")) return;
       toggleFold(cat.id);
     });
-    const leftCount = visibleCount - doneInCat;
+    const leftCount = visibleCount - doneInCat + eggsInCat;   // 10.64 : tâches à faire + œufs en couvaison (jamais les cochées)
     // Une case vide (aucune tâche vivante dedans, cochée ou non) peut être
     // supprimée d'un petit clic ; sinon, pas de bouton du tout — la
     // meilleure façon d'éviter d'effacer une liste pleine par mégarde.
