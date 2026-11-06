@@ -2404,33 +2404,47 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    couleurs des joueurs (--chat-me, --chat-them) ne servent qu'à les reconnaître. */
 .duel-card{
   position:relative; min-width:0; container-type:inline-size;   /* une case de la grille, comme une liste */
-  --sky-top:#F7FAF9; --sky-bottom:#E6EAEA; --sky-end-top:#EFE3FA; --sky-end-bottom:#FCF8DA;
-  --cloud:rgba(255,255,255,0.9);
-  --facades:#E3DBEB,#D8E2CF,#EEF0EC,#DFE5E9,#E8E1EE; --facade-shadow:rgba(30,40,45,0.10);
-  --win-lit:rgba(230,214,60,0.30); --win-off:rgba(42,39,37,0.06);
+  /* 10.63 : ciel = fond de l'écran de chat (--chat-scr), façades au papier des listes : moins de bruit */
+  --sky-top:#EEF1F0; --sky-bottom:#E5E8E7; --sky-end-top:#EFE3FA; --sky-end-bottom:#FCF8DA;
+  --cloud:rgba(255,255,255,0.85);
+  --facades:#FFFFFF,#FCFBF7,#FDFDFA,#FAFAF7,#FFFFFF; --facade-shadow:rgba(30,40,45,0.13);
+  --win-lit:rgba(230,214,60,0.32); --win-off:rgba(42,39,37,0.06);
   --objet:#2F6F7C;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .duel-card{
-    --sky-top:#1B252B; --sky-bottom:#101315; --sky-end-top:#2A2140; --sky-end-bottom:#24231A; --cloud:rgba(255,255,255,0.05);
-    --facades:#261D33,#26261C,#1E2A1C,#2B2238,#2A2A1D; --facade-shadow:rgba(0,0,0,0.45);
+    --sky-top:#1A1F22; --sky-bottom:#15191C; --sky-end-top:#2A2140; --sky-end-bottom:#24231A; --cloud:rgba(255,255,255,0.05);
+    --facades:#232A2F,#252B30,#22282C,#262C31,#232A2F; --facade-shadow:rgba(0,0,0,0.45);
     --win-lit:rgba(226,200,102,0.22); --win-off:rgba(255,255,255,0.035); --objet:#7FC0CC;
   }
 }
 :root[data-theme="dark"] .duel-card{
-  --sky-top:#1B252B; --sky-bottom:#101315; --sky-end-top:#2A2140; --sky-end-bottom:#24231A; --cloud:rgba(255,255,255,0.05);
-  --facades:#261D33,#26261C,#1E2A1C,#2B2238,#2A2A1D; --facade-shadow:rgba(0,0,0,0.45);
+  --sky-top:#1A1F22; --sky-bottom:#15191C; --sky-end-top:#2A2140; --sky-end-bottom:#24231A; --cloud:rgba(255,255,255,0.05);
+  --facades:#232A2F,#252B30,#22282C,#262C31,#232A2F; --facade-shadow:rgba(0,0,0,0.45);
   --win-lit:rgba(226,200,102,0.22); --win-off:rgba(255,255,255,0.035); --objet:#7FC0CC;
 }
-.duel-stage{ background:var(--surface); border-radius:14px; box-shadow:var(--shadow); padding:0.45rem; }
-.duel-screen{ position:relative; }
-.duel-cv{ display:block; width:100%; aspect-ratio:16/9; border-radius:11px; touch-action:manipulation; }
+.duel-stage{ background:var(--surface); border-radius:14px; box-shadow:var(--shadow); padding:0.6rem 0.6rem 0.35rem; }   /* le papier d'une liste */
+/* le jeu dans un écran creusé, comme l'écran de chat : tranche de tôle arrondie, écran au fond,
+   trame LCD et ombres intérieures posées par-dessus le dessin (::after) */
+.duel-screen{ position:relative; padding:2px; border-radius:18px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--surface)) 0%, color-mix(in srgb, var(--ink) 6%, var(--surface)) 35%, var(--surface) 60%, var(--chat-lip) 100%);
+  box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px var(--chat-lip); }
+.duel-screen::after{ content:""; position:absolute; inset:2px; border-radius:16px; pointer-events:none; z-index:1;
+  background-image:repeating-linear-gradient(0deg, rgba(40,50,40,0.017) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(40,50,40,0.017) 0 1px, transparent 1px 3px);
+  box-shadow:
+    inset 0 6.6px 9.6px -3.6px rgba(42,39,37,0.42),
+    inset 0 2px 3px rgba(42,39,37,0.18),
+    inset 5.4px 0 7.8px -4.2px rgba(42,39,37,0.16),
+    inset -5.4px 0 7.8px -4.2px rgba(42,39,37,0.10),
+    inset 0 -5.4px 7.2px -3.6px var(--chat-lip); }
+.duel-cv{ display:block; width:100%; aspect-ratio:16/9; border-radius:16px; touch-action:manipulation; }
+.duel-card .attente, .duel-card .d-statut{ z-index:2; }
 /* bandeaux : « En attente de … » en bas, discret ; « … a joué ! » au milieu, texte puis bouton ; immobiles une fois posés */
 .duel-card .attente{
   position:absolute; left:0; right:0; bottom:0; transform:translateY(100%); opacity:0;
   display:flex; align-items:center; justify-content:center; gap:1rem; padding:0.55rem 1rem;
   background:color-mix(in srgb, var(--surface) 70%, transparent);   /* pas de backdrop-filter : trop lourd au-dessus d'un canevas animé */
-  border-top:1px solid color-mix(in srgb, var(--pc) 30%, var(--line)); border-radius:0 0 11px 11px;
+  border-top:1px solid color-mix(in srgb, var(--pc) 30%, var(--line)); border-radius:0 0 16px 16px; margin:0 2px 2px;
   color:var(--pc); font:700 1rem 'Courier Prime', monospace; white-space:nowrap; pointer-events:none; visibility:hidden;
   transition:transform .45s cubic-bezier(.2,.8,.3,1), opacity .3s, visibility 0s .45s;
 }
@@ -2480,12 +2494,13 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card .d-revoir.gone{ visibility:hidden; }
 @media (hover:hover){ .duel-card .d-revoir:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); } }
 /* texte d'aide : un mince bandeau dans le bas de la ville (caché quand un autre bandeau est là) */
-.duel-card .d-statut{ position:absolute; left:0; right:0; bottom:0; padding:0.22rem 0.6rem; border-radius:0 0 11px 11px;
+.duel-card .d-statut{ position:absolute; left:2px; right:2px; bottom:2px; padding:0.22rem 0.6rem; border-radius:0 0 16px 16px;
   background:color-mix(in srgb, var(--surface) 72%, transparent); color:var(--ink-soft); font:0.72rem/1.3 'Courier Prime', monospace; text-align:center; pointer-events:none; }
 .duel-card .d-statut:empty, .duel-card .attente.on ~ .d-statut{ display:none; }
 /* sous Lancer : le choix du faisan (avant le 1er coup), puis Revoir, à la même place : la carte ne change pas de hauteur */
 .duel-card .d-sous{ display:grid; justify-items:center; align-items:center; }
 .duel-card .d-sous > *{ grid-area:1 / 1; }
+.duel-card .d-sous .persos{ justify-self:start; }
 .duel-card .persos.gone, .duel-card .d-revoir.gone{ visibility:hidden; }
 /* pied dans la carte, comme les listes : poignée à gauche, « … » et initiales à droite */
 .duel-card .duel-foot{ margin-top:0.15rem; padding:0 0.15rem; }
@@ -10533,7 +10548,7 @@ function refreshUI(){
   }else{
     lancerBtn.textContent = "Lancer"; lancerBtn.disabled = lock;
     $(".d-statut").textContent = busy || attente ? "" :
-      game.solo ? (game.shots.length ? `Entraînement : visez l'autre faisan, il ne renvoie rien.` : `Entraînement : choisissez votre faisan, visez l'autre.`)
+      game.solo ? (game.shots.length ? `Entraînement : l'autre faisan ne renvoie rien.` : `Entraînement : choisissez votre faisan, visez l'autre.`)
       : mine ? (game.shots.length ? `À vous de lancer ${OBJETS_ART[monObjet]}.` : `Choisissez votre faisan et lancez : l'autre prendra l'autre faisan.`)
       : !PLAYERS[p].uid && me ? "Invitez quelqu'un avec « … » pour jouer à deux." : `À ${PLAYERS[p].nom} de jouer.`;
   }
