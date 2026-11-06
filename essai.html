@@ -2479,7 +2479,16 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card .d-revoir{ order:1; margin-left:auto; font:700 0.85rem 'Courier Prime', monospace; color:var(--ink-soft); background:transparent; border:0; border-radius:8px; padding:0.4rem 0.6rem; cursor:pointer; }
 .duel-card .d-revoir.gone{ visibility:hidden; }
 @media (hover:hover){ .duel-card .d-revoir:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); } }
-.duel-card .d-statut{ min-height:1.3em; padding:0 0.5rem 0.2rem; font-size:0.85rem; color:var(--ink-soft); }
+/* texte d'aide : un mince bandeau dans le bas de la ville (caché quand un autre bandeau est là) */
+.duel-card .d-statut{ position:absolute; left:0; right:0; bottom:0; padding:0.22rem 0.6rem; border-radius:0 0 11px 11px;
+  background:color-mix(in srgb, var(--surface) 72%, transparent); color:var(--ink-soft); font:0.72rem/1.3 'Courier Prime', monospace; text-align:center; pointer-events:none; }
+.duel-card .d-statut:empty, .duel-card .attente.on ~ .d-statut{ display:none; }
+/* sous Lancer : le choix du faisan (avant le 1er coup), puis Revoir, à la même place : la carte ne change pas de hauteur */
+.duel-card .d-sous{ display:grid; justify-items:center; align-items:center; }
+.duel-card .d-sous > *{ grid-area:1 / 1; }
+.duel-card .persos.gone, .duel-card .d-revoir.gone{ visibility:hidden; }
+/* pied dans la carte, comme les listes : poignée à gauche, « … » et initiales à droite */
+.duel-card .duel-foot{ margin-top:0.15rem; padding:0 0.15rem; }
 @media (pointer:coarse){
   .duel-card .pas{ display:inline-grid; place-items:center; }
   .duel-card .coup input{ -moz-appearance:textfield; min-height:42px; width:3.6em; }
@@ -2493,23 +2502,31 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   .duel-card .attente{ gap:0.6rem; padding:0.35rem 0.6rem; font-size:0.8rem; }
   .duel-card .attente.decouverte{ font-size:0.95rem; padding:0.5rem 0.5rem 0.7rem; gap:0.45rem; }
   .duel-card .poussoir{ font-size:0.88rem; padding:0.28rem 0.85rem; }
-  .duel-card .coup{ display:grid; grid-template-columns:auto auto minmax(0, 1fr); align-items:center; gap:0.35rem 0.7rem; padding:0.5rem 0.2rem 0.15rem; font-size:0.85rem; }
+  .duel-card .coup{ display:grid; grid-template-columns:auto auto minmax(0, 1fr); align-items:center; gap:0.4rem 0.6rem; padding:0.5rem 0.2rem 0.1rem; font-size:0.85rem; }
   .duel-card .invite{ display:none; }                            /* l'invite « AP> » est déjà dans le jeu, en haut */
-  .duel-card .reglage{ grid-row:1; gap:0.25rem; }                 /* angle et force sur la même ligne */
+  .duel-card .reglage{ grid-row:1; gap:0.25rem; }                 /* angle, force et objets sur la même ligne */
   .duel-card .reglage > span:first-child{ min-width:0; }
   .duel-card .coup input{ width:2.4em; font-size:0.95rem; padding:0; flex:none; min-height:0; }
   .duel-card .pas{ flex:none; width:26px; height:26px; font-size:0.95rem; box-shadow:1.5px 1.5px 0 var(--objet); }
   .duel-card .pas:disabled{ box-shadow:1.5px 1.5px 0 var(--line); }
-  .duel-card .objets{ grid-column:1 / 3; grid-row:2; gap:0.1rem; }
-  .duel-card .objets button{ width:32px; height:32px; border-radius:8px; }
-  .duel-card .objets canvas{ width:24px; height:24px; }
-  .duel-card .persos{ grid-column:3; grid-row:2; justify-self:end; flex-direction:row; border-right:0; padding-right:0; margin-right:0; gap:0.1rem; }
-  .duel-card .persos button{ width:38px; height:32px; border-radius:8px; }
-  .duel-card .persos canvas{ width:34px; height:29px; }
-  .duel-card .d-lancer{ order:1; grid-column:1 / -1; grid-row:3; justify-self:stretch; margin-right:3px; white-space:nowrap; min-width:0; font-size:0.9rem; padding:0.25rem 0.8rem; min-height:0; box-shadow:2px 2px 0 var(--pc); }
+  .duel-card .objets{ grid-column:3; grid-row:1; justify-self:end; gap:0; }
+  .duel-card .objets button{ width:26px; height:28px; border-radius:6px; }
+  .duel-card .objets canvas{ width:21px; height:21px; }
+  .duel-card .d-lancer{ grid-column:1 / -1; grid-row:2; justify-self:stretch; margin-right:3px; white-space:nowrap; min-width:0; font-size:0.9rem; padding:0.25rem 0.8rem; min-height:0; box-shadow:2px 2px 0 var(--pc); }
   .duel-card .d-lancer:disabled{ box-shadow:2px 2px 0 var(--line); }
-  .duel-card .d-revoir{ order:2; grid-column:1 / -1; grid-row:4; justify-self:center; margin:0; padding:0.15rem 0.5rem; font-size:0.75rem; white-space:nowrap; }
-  .duel-card .d-statut{ min-height:2.5em; font-size:0.75rem; line-height:1.25; padding:0.1rem 0.4rem 0; }
+  .duel-card .d-sous{ grid-column:1 / -1; grid-row:3; min-height:34px; }
+  .duel-card .persos{ flex-direction:row; border-right:0; padding-right:0; margin-right:0; gap:0.2rem; }
+  .duel-card .persos button{ width:40px; height:32px; border-radius:8px; }
+  .duel-card .persos canvas{ width:36px; height:30px; }
+  .duel-card .d-revoir{ margin:0; padding:0.15rem 0.5rem; font-size:0.75rem; white-space:nowrap; }
+}
+@container (max-width:400px){   /* téléphone : le libellé passe au-dessus du réglage, pour garder les objets sur la ligne */
+  .duel-card .reglage{ display:grid; grid-template-columns:auto auto auto; column-gap:0.2rem; row-gap:0; justify-items:center; }
+  .duel-card .reglage > span:first-child{ grid-column:1 / -1; font-size:0.62rem; line-height:1; letter-spacing:0.05em; }
+  .duel-card .reglage .unite{ display:none; }
+  .duel-card .pas{ width:24px; height:24px; font-size:0.9rem; }
+  .duel-card .coup input{ width:2.1em; }
+  .duel-card .coup{ column-gap:0.45rem; }
 }
 
 /* ---------- 10.57 : écran de chat (petit chat partagé) ----------
@@ -10512,11 +10529,11 @@ function refreshUI(){
   const lancerBtn = $(".d-lancer");
   if(world.over){
     lancerBtn.textContent = "Nouvelle partie"; lancerBtn.disabled = busy;
-    $(".d-statut").textContent = `${PLAYERS[world.winner].nom} gagne.`;
+    $(".d-statut").textContent = "";
   }else{
     lancerBtn.textContent = "Lancer"; lancerBtn.disabled = lock;
     $(".d-statut").textContent = busy || attente ? "" :
-      game.solo ? (game.shots.length ? `Entraînement : visez l'autre faisan, il ne renvoie rien.` : `Entraînement : choisissez votre faisan et visez l'autre.`)
+      game.solo ? (game.shots.length ? `Entraînement : visez l'autre faisan, il ne renvoie rien.` : `Entraînement : choisissez votre faisan, visez l'autre.`)
       : mine ? (game.shots.length ? `À vous de lancer ${OBJETS_ART[monObjet]}.` : `Choisissez votre faisan et lancez : l'autre prendra l'autre faisan.`)
       : !PLAYERS[p].uid && me ? "Invitez quelqu'un avec « … » pour jouer à deux." : `À ${PLAYERS[p].nom} de jouer.`;
   }
@@ -10536,23 +10553,22 @@ function build(){
   card.innerHTML = `<div class="duel-stage">
       <div class="duel-screen"><canvas class="duel-cv"></canvas>
         <div class="attente"><span class="d-qui"></span><button type="button" class="poussoir d-go">Voir son coup</button></div>
+        <div class="d-statut"></div>
       </div>
       <div class="coup">
         <span class="invite d-invite"></span>
         <div class="reglage"><span>angle</span><button type="button" class="pas" data-for="d-angle" data-d="-1" aria-label="Moins">−</button><input class="d-angle" type="number" min="0" max="90" step="1" inputmode="numeric" aria-label="Angle"><button type="button" class="pas" data-for="d-angle" data-d="1" aria-label="Plus">+</button><span class="unite">°</span></div>
         <div class="reglage"><span>force</span><button type="button" class="pas" data-for="d-vitesse" data-d="-1" aria-label="Moins">−</button><input class="d-vitesse" type="number" min="1" max="200" step="1" inputmode="numeric" aria-label="Force"><button type="button" class="pas" data-for="d-vitesse" data-d="1" aria-label="Plus">+</button></div>
-        <div class="persos" title="Votre faisan (l'autre joueur prend l'autre)"></div>
         <div class="objets"></div>
         <button type="button" class="d-lancer">Lancer</button>
-        <button type="button" class="d-revoir">↺ Revoir</button>
+        <div class="d-sous"><div class="persos" title="Votre faisan (l'autre joueur prend l'autre)"></div><button type="button" class="d-revoir">↺ Revoir</button></div>
       </div>
-      <div class="d-statut"></div>
-    </div>
     <div class="chat-foot duel-foot">
       <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
       <button type="button" class="chat-more" aria-label="Options du duel">…</button>
       <span class="chat-who"></span>
       <div class="chat-menu" hidden></div>
+    </div>
     </div>`;
   ROOT = card;
   cv = card.querySelector(".duel-cv"); ctx = cv.getContext("2d");
