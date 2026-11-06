@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.60 -->
+<!-- Sous le tapis — version AUTONOME 10.61 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1234,6 +1234,7 @@
     l'interrupteur, « + Ajouter un écran de chat » en dessous. Écran de chat : la saisie est un vrai champ visible (sélection à
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
+  - 10.61 : phrase retirée (« Vendredi qui rit, dimanche qui fleurit »).
   - 10.60 : écran de chat : message non lu (d'un autre, pas encore vu sur cet
     appareil, CHAT_SEEN_KEY) → l'écran sort de sa discrétion,
     voyant vert sur la tôle en haut à droite (.chat-led), ligne « --- nouveau
@@ -4007,7 +4008,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.60</span>
+    <span class="version-tag">v10.61</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5199,7 +5200,6 @@ const WEEKDAY_MESSAGES = {
   "5": [
     "Vendredi : la liste tourne rond comme la camionnette du poissonnier un jour de marché.",
     "Vendredi, l'estaminet s'anime et la liste garde son sang-froid.",
-    "« Vendredi qui rit, dimanche qui fleurit. » — dicton météorologique fraîchement rapiécé.",
     "Vendredi, jour où les comptes se règlent à la friterie et les listes au grand jour."
   ],
   "6": [
