@@ -219,8 +219,9 @@
   - Joueurs : celui du 1er coup (il choisit son faisan), puis l'autre personne
     de la liste ; les coups alternent. Seul dans le duel au 1er coup (ou
     sans compte) : entraînement — coups marqués solo:1, tous tirés du faisan
-    de gauche, l'autre ne renvoie rien, pas de bandeau ; jusqu'à la partie
-    suivante. Couleurs : 
+    de gauche, l'autre ne renvoie rien, pas de bandeau. Seul = personne
+    d'autre dans le duel en ce moment : dès qu'on partage, les coups solo
+    sont mis de côté et le duel à deux part de zéro (et inversement). Couleurs : 
     un seul bleu (--objet) pour tout : joueurs (reconnus à leur place et à
     leurs initiales), objets, bandeaux et boutons. Carte au gabarit d'une
     liste (une case de la grille) ; mise en page compacte par @container.
@@ -2428,7 +2429,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   --facades:#261D33,#26261C,#1E2A1C,#2B2238,#2A2A1D; --facade-shadow:rgba(0,0,0,0.45);
   --win-lit:rgba(226,200,102,0.22); --win-off:rgba(255,255,255,0.035); --objet:#7FC0CC;
 }
-.duel-stage{ background:var(--surface); border-radius:14px; box-shadow:var(--shadow); padding:0.6rem 0.6rem 0.35rem; }   /* le papier d'une liste */
+.duel-stage{ background:var(--surface); border-radius:14px; box-shadow:var(--shadow); padding:0.85rem 0.6rem 0.2rem; }   /* le papier d'une liste */
 /* le jeu dans un écran creusé, comme l'écran de chat : tranche de tôle arrondie, écran au fond,
    trame LCD et ombres intérieures posées par-dessus le dessin (::after) */
 .duel-screen{ position:relative; padding:2px; border-radius:18px;
@@ -2509,7 +2510,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card .d-sous .persos{ justify-self:var(--persos-pos, end); }   /* à droite (choisi au banc le 6/11/2026) */
 .duel-card .persos.gone, .duel-card .d-revoir.gone{ visibility:hidden; }
 /* pied dans la carte, comme les listes : poignée à gauche, « … » et initiales à droite */
-.duel-card .duel-foot{ margin-top:0.15rem; padding:0 0.15rem; }
+.duel-card .duel-foot{ margin-top:0; padding:0 0.15rem; }
 @media (pointer:coarse){
   .duel-card .pas{ display:inline-grid; place-items:center; }
   .duel-card .coup input{ -moz-appearance:textfield; min-height:42px; width:3.6em; }
@@ -2535,7 +2536,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   .duel-card .objets canvas{ width:21px; height:21px; }
   .duel-card .d-lancer{ grid-column:1 / -1; grid-row:2; justify-self:stretch; margin-right:3px; white-space:nowrap; min-width:0; font-size:0.9rem; padding:0.25rem 0.8rem; min-height:0; box-shadow:2px 2px 0 var(--pc); }
   .duel-card .d-lancer:disabled{ box-shadow:2px 2px 0 var(--line); }
-  .duel-card .d-sous{ grid-column:1 / -1; grid-row:3; min-height:34px; }
+  .duel-card .d-sous{ grid-column:1 / -1; grid-row:3; min-height:30px; margin-top:-0.15rem; }
   .duel-card .persos{ flex-direction:row; border-right:0; padding-right:0; margin-right:0; gap:0.2rem; }
   .duel-card .persos button{ width:40px; height:32px; border-radius:8px; }
   .duel-card .persos canvas{ width:36px; height:30px; }
@@ -10441,10 +10442,11 @@ function readGame(cat){
   let start = -1;
   live.forEach((x, j)=>{ if(x.b.duel === "partie") start = j; });
   const head = start > -1 ? live[start].b : null;
-  const rows = live.slice(start + 1).filter(x => typeof x.b.a === "number" && typeof x.b.v === "number");
-  // entraînement (personne d'autre dans la liste au 1er coup) : tous les coups partent du faisan de gauche,
-  // l'autre ne renvoie rien ; la partie le reste jusqu'à « Nouvelle partie », même si quelqu'un arrive entre-temps
-  const solo = rows.length ? !!rows[0].b.solo : !listPeople(cat.id).some(u => u !== myUid());
+  // entraînement = personne d'autre dans le duel en ce moment : tous les coups partent du faisan de gauche,
+  // l'autre ne renvoie rien. Dès qu'on partage, le duel commence : les coups d'entraînement (solo:1) sont mis
+  // de côté et la partie à deux repart de zéro, sans devoir finir l'entraînement (et inversement si on retire l'autre)
+  const solo = !listPeople(cat.id).some(u => u !== myUid());
+  const rows = live.slice(start + 1).filter(x => typeof x.b.a === "number" && typeof x.b.v === "number" && !!x.b.solo === solo);
   const shots = rows.map((x, k)=>({ p: solo ? 0 : k % 2, a: x.b.a, v: x.b.v, o: x.b.o in OBJETS ? x.b.o : "roue", at: x.b.at, by: taskCreator(cat, x.b) }));
   const p0 = rows.length ? (rows[0].b.perso === 1 ? 1 : 0) : persoChoix;
   const g = {
