@@ -42,7 +42,8 @@
   - Réglages du banc dans l'adresse (?g=…&vent=…&trou=…&decor=…&pal=…
     &trace=…&son=…&tpt=…) ; bouton « Copier le lien des réglages ».
     Changer une règle recommence la partie (même graine).
-  - Faisans : commun pour AP, doré pour H (PLUMES). Fin de partie : cri
+  - Faisans : commun ou doré (PLUMES). Celui qui lance la partie choisit le
+    sien avant le premier coup (game.perso, persoOf) ; l'autre prend l'autre. Fin de partie : cri
     « kôk-kôk », petite fanfare originale et danse du vainqueur, une aile en
     haut / une en bas, inversées à chaque temps, de face (drawPheasantFront),
     petits bonds et plumes qui volent (DANCE_BEAT, DANCE_BEATS).
@@ -54,9 +55,9 @@
     l'ombre des cartes, ciel neutre = fond de page ; joueurs aux
     couleurs de l'écran de chat (--chat-me, --chat-them).
   - Une partie = une touche (pas de manches ni de score) ; bouton « Nouvelle
-    partie ». Objets : stylo plume (éclate en lettres, bruit de plume),
-    roue de vélo (rayons et bouts de pneu qui volent, « dring dring »),
-    réveil (rouages, ressorts et chiffres, sonnerie), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
+    partie ». Objets : stylo plume (éclate en lettres, petits grattements « tsk »),
+    roue de vélo (rayons et bouts de pneu qui volent, cliquet de roue
+    libre qui ralentit), réveil (rouages, ressorts et chiffres, « dring dring »), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
     le vainqueur, ciel qui vire au mauve et au citron, toutes les fenêtres
     qui s'allument, confettis (finale).
 -->
@@ -187,6 +188,13 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 .objets button:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); }
 .objets button.on{ box-shadow:inset 0 0 0 2px var(--pcolor); }
 .objets canvas{ width:30px; height:30px; pointer-events:none; }
+.persos{ display:flex; gap:0.25rem; align-items:center; padding-right:0.6rem; margin-right:0.2rem; border-right:1px solid var(--line); }
+.persos[hidden]{ display:none; }
+.persos button{ width:44px; height:38px; padding:0; border:0; border-radius:10px; cursor:pointer; background:transparent; display:grid; place-items:center; transition:background .15s, box-shadow .15s; }
+@media (hover:hover){ .persos button:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); } }
+.persos button.on{ box-shadow:inset 0 0 0 2px var(--pcolor); }
+.persos canvas{ width:40px; height:34px; pointer-events:none; }
+@media (pointer:coarse){ .persos button{ width:50px; height:46px; } }
 .btn{
   font:600 0.92rem 'Public Sans', sans-serif; color:var(--btn-ink);
   background:var(--surface); border:1px solid var(--line); border-radius:10px;
@@ -211,6 +219,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 }
 @media (max-width:560px){
   .coup{ display:grid; grid-template-columns:auto 1fr 1fr; gap:0.7rem 0.8rem; padding:0.8rem 0.3rem 0.4rem; }
+  .coup .persos{ grid-column:1 / -1; border-right:0; padding-right:0; }
   .coup .objets{ grid-column:1 / 3; }
   .coup #lancer{ grid-column:3; justify-self:end; }
   .coup #revoir{ grid-column:1 / -1; justify-self:start; margin-left:0; grid-row:3; white-space:nowrap; padding:0 0.4rem; }
@@ -258,6 +267,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
         <span class="invite" id="invite"></span>
         <label>angle <input id="angle" type="number" min="0" max="90" step="1" inputmode="numeric">°</label>
         <label>vitesse <input id="vitesse" type="number" min="1" max="200" step="1" inputmode="numeric"></label>
+        <div class="persos" id="persos" title="Celui qui lance la partie choisit son faisan ; l'autre prend l'autre"></div>
         <div class="objets" id="objets"></div>
         <button type="button" class="btn ghost" id="revoir">Revoir</button>
         <button type="button" class="btn" id="lancer">Lancer</button>
@@ -357,7 +367,7 @@ game = load() || newGame();
 function newGame(seed){
   return { seed: seed ?? (Math.random() * 2**31 | 0),
            regles: Object.fromEntries(RULE_KEYS.map(k => [k, S[k]])),
-           shots: [], objets: (game && game.objets) || ["roue", "coeur"] };
+           shots: [], perso: [0, 1], objets: (game && game.objets) || ["roue", "coeur"] };
 }
 function load(){
   try{ const g = JSON.parse(localStorage.getItem(STORE_KEY));
@@ -453,6 +463,7 @@ function worldAfter(n){
   for(let i = 0; i < n; i++) w = applyResult(w, game.shots[i], simulate(w, game.shots[i]));
   return w;
 }
+const persoOf = k => (game.perso || [0, 1])[k];   // 0 : faisan commun, 1 : faisan doré
 const turn = () => game.shots.length ? 1 - game.shots[game.shots.length - 1].p : 0;
 function lastShotOf(p){ for(let i = game.shots.length - 1 - (hideLast ? 1 : 0); i >= 0; i--) if(game.shots[i].p === p) return game.shots[i]; return null; }
 
@@ -823,18 +834,18 @@ function frame(){
     if(world.over && world.winner === k){
       // le vainqueur se met de face et danse : une aile en haut, l'autre en bas,
       // inversées à chaque temps, petits bonds, plumes qui volent
-      const f = { kind: k, wingL: -1, wingR: -1, crown: true };
+      const f = { kind: persoOf(k), wingL: -1, wingR: -1, crown: true };
       if(dance){
         dance.t += dt;
         const beat = Math.floor(dance.t / DANCE_BEAT), ph = dance.t / DANCE_BEAT - beat;
         if(dance.t >= 0 && beat < DANCE_BEATS){
           const up = beat % 2 === 0; f.wingL = up ? 1 : -0.7; f.wingR = up ? -0.7 : 1;
           hop = Math.sin(ph * Math.PI) * 8;
-          if(beat !== dance.beat){ dance.beat = beat; puffFeathers(world.ph[k].x, world.ph[k].y - 26, k, 3); }
+          if(beat !== dance.beat){ dance.beat = beat; puffFeathers(world.ph[k].x, world.ph[k].y - 26, persoOf(k), 3); }
         }
       }
       drawPheasantFront(ctx, world.ph[k].x, world.ph[k].y - hop, f);
-    }else drawPheasant(ctx, world.ph[k].x, world.ph[k].y, k === 0 ? 1 : -1, { kind: k, wing: Math.sin(Math.min(1, wingT[k]) * Math.PI) });
+    }else drawPheasant(ctx, world.ph[k].x, world.ph[k].y, k === 0 ? 1 : -1, { kind: persoOf(k), wing: Math.sin(Math.min(1, wingT[k]) * Math.PI) });
     // initiales au-dessus, couleurs de l'écran de chat
     ctx.font = `700 ${F(13)}px 'Courier Prime', monospace`; ctx.textAlign = "center";
     ctx.fillStyle = css(PLAYERS[k].color); ctx.globalAlpha = turn() === k && !world.over ? 1 : 0.55;
@@ -843,7 +854,7 @@ function frame(){
   }
   if(tumble){
     tumble.t += dt; tumble.vy += 500 * dt; tumble.x += tumble.vx * dt; tumble.y += tumble.vy * dt; tumble.rot += tumble.vr * dt;
-    drawPheasant(ctx, tumble.x, tumble.y, tumble.dir, { kind: tumble.k, rot: tumble.rot, alpha: Math.max(0, 1 - tumble.t / 1.3) });
+    drawPheasant(ctx, tumble.x, tumble.y, tumble.dir, { kind: persoOf(tumble.k), rot: tumble.rot, alpha: Math.max(0, 1 - tumble.t / 1.3) });
   }
   // objet en vol
   if(anim){
@@ -949,7 +960,7 @@ function endShot(){
     return;
   }
   burst(shot.o, e.x, e.y, e.kind === "hit");
-  sound("boum"); sound({ roue:"sonnette", coeur:"bisous", stylo:"plume", reveil:"reveil" }[shot.o]);
+  sound("boum"); sound({ roue:"roulibre", coeur:"bisous", stylo:"plume", reveil:"sonnette" }[shot.o]);
   if(e.kind === "city"){
     world = applyResult(world, shot, res); renderCity(world);
     setTimeout(()=> finish(done), 450);
@@ -957,7 +968,7 @@ function endShot(){
   }
   // un faisan touché
   const v = e.victim, q = world.ph[v];
-  feathers(q.x, q.y, v);
+  feathers(q.x, q.y, persoOf(v));
   tumble = { k: v, x: q.x, y: q.y, vx: (v ? 1 : -1) * 90, vy: -220, rot: 0, vr: (v ? 1 : -1) * 7, dir: v ? -1 : 1, t: 0 };
   const winner = v === shot.p ? 1 - shot.p : shot.p;
   const before = world;
@@ -1055,6 +1066,15 @@ function buildObjets(){
     b.addEventListener("click", ()=>{ game.objets[turn()] = k; save(); refreshUI(); });
   }
 }
+function buildPersos(){
+  const box = $("#persos"); box.innerHTML = "";
+  [["Faisan commun", 0], ["Faisan doré", 1]].forEach(([nom, kind]) => {
+    const b = document.createElement("button"); b.type = "button"; b.dataset.k = kind; b.title = nom;
+    const c = document.createElement("canvas"); c.width = 80; c.height = 68;
+    const x = c.getContext("2d"); x.scale(2, 2); x.translate(26, 31); x.scale(0.45, 0.45); drawPheasant(x, 0, 0, 1, { kind }); b.appendChild(c); box.appendChild(b);
+    b.addEventListener("click", ()=>{ if(game.shots.length) return; game.perso = kind === 0 ? [0, 1] : [1, 0]; save(); refreshUI(); });
+  });
+}
 function refreshUI(){
   const p = turn(), col = css(PLAYERS[p].color), attente = $("#attente").classList.contains("on");
   $("#invite").textContent = world.over ? "" : PLAYERS[p].ini + ">";
@@ -1062,6 +1082,8 @@ function refreshUI(){
   $("#invite").style.color = col;
   for(const id of ["#angle", "#vitesse"]) $(id).style.color = col;
   document.querySelectorAll(".objets button").forEach(b => b.classList.toggle("on", b.dataset.o === game.objets[p]));
+  $("#persos").hidden = game.shots.length > 0 || busy;   // seulement avant le premier coup, pour celui qui lance la partie
+  document.querySelectorAll(".persos button").forEach(b => b.classList.toggle("on", Number(b.dataset.k) === persoOf(0)));
   const lock = busy || attente;
   $("#angle").disabled = $("#vitesse").disabled = lock || world.over;
   if(world.over){
@@ -1155,12 +1177,6 @@ function sound(kind){
       const o = AC.createOscillator(), g = env(t, 0.005, 1.2, 0.45);
       o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.4);
       o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
-    }else if(kind === "reveil"){
-      // sonnerie de réveil, version rigolote : le marteau bat vite entre deux cloches claires
-      for(let i = 0; i < 26; i++){
-        const d = 0.04 + i * 0.026, o = AC.createOscillator(); o.type = "triangle"; o.frequency.value = i % 2 ? 2350 : 2780;
-        const g = env(t + d, 0.002, i > 20 ? 0.12 : 0.28, 0.05); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + 0.06);
-      }
     }else if(kind === "sonnette"){
       // sonnette de vélo : « dring dring » — le petit marteau frappe le timbre plusieurs fois très vite,
       // timbre clair avec ses harmoniques de cloche, qui résonne un peu après chaque série
@@ -1189,25 +1205,20 @@ function sound(kind){
         const g = env(t + d, 0.004, 0.45, 0.11); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + 0.13);
       }
     }else if(kind === "plume"){
-      // plume sur le papier : quelques traits d'écriture — frottement continu dans chaque trait
-      // (bruit filtré, grain du papier), petites pauses quand la plume se lève, hauteur qui varie d'un trait à l'autre
-      const len = 0.85, sr = AC.sampleRate, buf = AC.createBuffer(1, sr * len | 0, sr), dd = buf.getChannelData(0);
-      let pos = 0.03 * sr, grain = 0;
-      while(pos < dd.length - 0.05 * sr){
-        const tr = (0.05 + Math.random() * 0.09) * sr | 0, amp = 0.5 + Math.random() * 0.5;   // un trait
-        for(let i = 0; i < tr && pos + i < dd.length; i++){
-          const e = Math.sin(Math.PI * i / tr) ** 0.6;                                         // monte et retombe dans le trait
-          grain += (Math.random() - 0.5) * 0.6; grain *= 0.92;                                // grain irrégulier du papier
-          dd[pos + i] = (Math.random() * 2 - 1) * e * amp * (0.7 + grain);
-        }
-        pos += tr + ((0.015 + Math.random() * 0.045) * sr | 0);                               // la plume se lève
+      // plume qui gratte le papier : petits frottements rapides (« tsk tsk »)
+      for(let i = 0; i < 9; i++){
+        const d = 0.03 + i * 0.045 + Math.random() * 0.015, n = noise(0.04), hp = AC.createBiquadFilter();
+        hp.type = "bandpass"; hp.frequency.value = 3200 + Math.random() * 2500; hp.Q.value = 3;
+        const g = env(t + d, 0.003, 0.7, 0.035 + Math.random() * 0.02); n.connect(hp); hp.connect(g); g.connect(out); n.start(t + d);
       }
-      const src = AC.createBufferSource(); src.buffer = buf;
-      const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.9;
-      for(let k = 0; k <= 8; k++) bp.frequency.setValueAtTime(3200 + Math.random() * 2600, t + k * len / 8);
-      const hp = AC.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 1400;
-      const g = AC.createGain(); g.gain.value = 0.9;
-      src.connect(bp); bp.connect(hp); hp.connect(g); g.connect(out); src.start(t);
+    }else if(kind === "roulibre"){
+      // roue libre : « clic-clic-clic » du cliquet, vite puis de plus en plus lent, jusqu'au dernier petit clic
+      let d = 0.03, gap = 0.028;
+      for(let i = 0; i < 22; i++){
+        const n = noise(0.012), bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 3600 + (i % 2) * 500; bp.Q.value = 4;
+        const g = env(t + d, 0.001, 0.75 - i * 0.02, 0.018); n.connect(bp); bp.connect(g); g.connect(out); n.start(t + d);
+        d += gap; gap *= 1.11;
+      }
     }else if(kind === "cri"){
       // « kôk-kôk » du faisan : deux appels rauques, puis un battement d'ailes
       for(const [d, f0] of [[0, 1050], [0.2, 980]]){
@@ -1236,7 +1247,7 @@ function sound(kind){
 }
 
 // départ
-sizeCanvas(); renderCity(world); buildObjets(); renderEtat(); refreshUI();
+sizeCanvas(); renderCity(world); buildObjets(); buildPersos(); renderEtat(); refreshUI();
 DARK.addEventListener("change", ()=>{ applyPalette(); renderCity(world, world.over ? finale : 0); buildObjets(); refreshUI(); });
 window.addEventListener("resize", ()=>{ const d = Math.min(2, window.devicePixelRatio || 1); if(d !== DPR){ sizeCanvas(); renderCity(world, world.over ? finale : 0); } });
 if(document.fonts) document.fonts.ready.then(()=> refreshUI());
