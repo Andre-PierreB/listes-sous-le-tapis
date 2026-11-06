@@ -55,8 +55,8 @@
     couleurs de l'écran de chat (--chat-me, --chat-them).
   - Une partie = une touche (pas de manches ni de score) ; bouton « Nouvelle
     partie ». Objets : stylo plume (éclate en lettres ; griffonnage « scratch-scratch » en rythme),
-    roue de vélo (rayons et bouts de pneu qui volent ; « pouet-pouet », roue
-    libre qui ralentit, « doïng »), réveil (rouages, ressorts et chiffres ;
+    roue de vélo (rayons et bouts de pneu qui volent ; « dring dring » de
+    sonnette puis clic-clic de roue libre qui ralentit), réveil (rouages, ressorts et chiffres ;
     sonnerie par paquets de plus en plus aigus, « boïng » du ressort), cœur (éclate en bisous, « smack »). Fin de partie : couronne sur
     le vainqueur, ciel qui vire au mauve et au citron, toutes les fenêtres
     qui s'allument, confettis (finale).
@@ -140,31 +140,31 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 .attente.on{ transform:translateY(0); opacity:1; pointer-events:auto; visibility:visible; transition:transform .45s cubic-bezier(.2,.8,.3,1), opacity .3s, visibility 0s; }
 .attente .btn{ font-size:0.78rem; padding:0.3rem 0.8rem; min-height:0; }
 .attente.decouverte{
-  top:50%; bottom:auto; transform:translateY(-50%) scaleY(0); border-radius:0; padding:1.1rem 1rem; gap:1.4rem;
+  top:21%; bottom:auto; transform:translateY(-50%) scaleY(0); border-radius:0;   /* dans le ciel : les faisans sont toujours plus bas */ padding:0.6rem 1rem 0.75rem; gap:1.2rem;
   background:color-mix(in srgb, var(--pc) 9%, color-mix(in srgb, var(--surface) 96%, transparent));
   border-top:2px solid color-mix(in srgb, var(--pc) 40%, transparent); border-bottom:2px solid color-mix(in srgb, var(--pc) 40%, transparent);
-  font-size:1.4rem;
+  font-size:1.3rem;
 }
 .attente.decouverte.on{ transform:translateY(-50%) scaleY(1); }
 /* bouton-poussoir : une vraie touche, avec sa tranche, qui s'enfonce quand on appuie */
+/* touche en pilule : blanche, texte à la couleur du joueur, tranche de la même couleur (un peu plus foncée) ;
+   remontée de sa tranche pour que son milieu tombe sur la ligne du texte ; s'enfonce quand on appuie */
 .poussoir{
-  font:700 1rem 'Public Sans', sans-serif; color:var(--pc); background:var(--surface); cursor:pointer;
-  border:2px solid var(--pc); border-radius:14px; padding:0.55rem 1.3rem 0.55rem 1.1rem; letter-spacing:0.01em;
-  display:inline-flex; align-items:center; gap:0.5rem;
-  box-shadow:0 4px 0 var(--pc), 0 8px 14px -6px rgba(30,40,45,0.3);
-  transform:translateY(0); transition:transform .07s, box-shadow .07s, background .15s;
+  font:600 0.95rem 'Public Sans', sans-serif; color:var(--pc); background:var(--surface); cursor:pointer;
+  border:1.5px solid color-mix(in srgb, var(--pc) 70%, var(--surface)); border-radius:999px; padding:0.42rem 1.15rem 0.42rem 0.95rem;
+  display:inline-flex; align-items:center; gap:0.45rem; line-height:1.2;
+  box-shadow:0 3px 0 color-mix(in srgb, var(--pc) 80%, #000), 0 6px 12px -6px rgba(30,40,45,0.35);
+  transform:translateY(-2px); transition:transform .07s, box-shadow .07s, background .15s;
 }
-.poussoir::before{ content:""; width:0; height:0; border-left:0.62em solid currentColor; border-top:0.38em solid transparent; border-bottom:0.38em solid transparent; }
-@media (hover:hover){ .poussoir:hover{ background:color-mix(in srgb, var(--pc) 8%, var(--surface)); } }
-.poussoir:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--pc), 0 2px 5px -2px rgba(30,40,45,0.3); }
-@media (pointer:coarse){ .attente .btn{ min-height:40px; } .poussoir{ min-height:46px; } }
+.poussoir::before{ content:""; width:0; height:0; border-left:0.55em solid currentColor; border-top:0.34em solid transparent; border-bottom:0.34em solid transparent; }
+@media (hover:hover){ .poussoir:hover{ background:color-mix(in srgb, var(--pc) 7%, var(--surface)); } }
+.poussoir:active{ transform:translateY(1px); box-shadow:0 0 0 color-mix(in srgb, var(--pc) 80%, #000), 0 2px 4px -2px rgba(30,40,45,0.3); }
+@media (pointer:coarse){ .attente .btn{ min-height:40px; } .poussoir{ min-height:42px; } }
 @media (max-width:560px){
   .attente{ gap:0.6rem; padding:0.35rem 0.6rem; font-size:0.8rem; }
   .attente .btn{ font-size:0.72rem; padding:0 0.6rem; min-height:34px; }
-  .attente.decouverte{ font-size:0.95rem; padding:0.55rem 0.6rem; gap:0.8rem;   /* téléphone : en bas, pour ne pas cacher les faisans */
-    top:auto; bottom:0; transform:translateY(100%); border-radius:0 0 12px 12px; border-bottom:0; }
-  .attente.decouverte.on{ transform:translateY(0); }
-  .poussoir{ font-size:0.85rem; padding:0.5rem 1rem; }
+  .attente.decouverte{ font-size:0.9rem; padding:0.4rem 0.5rem; gap:0.7rem; top:17%; }
+  .poussoir{ font-size:0.85rem; padding:0.38rem 0.9rem 0.38rem 0.75rem; }
 }
 
 /* ---------- ligne du coup (esprit invite C:\ de l'écran de chat) ---------- */
@@ -173,7 +173,7 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
   padding:0.75rem 0.5rem 0.35rem; font-family:'Courier Prime', monospace; font-size:1.05rem;
 }
 .invite{ font-weight:700; min-width:2.6em; }
-.coup label{ display:flex; align-items:baseline; gap:0.35rem; color:var(--ink-soft); }
+.coup .reglage{ display:flex; align-items:center; gap:0.35rem; color:var(--ink-soft); }
 .coup input{
   width:3.3em; font:700 1.1rem 'Courier Prime', monospace; color:var(--ink);
   background:transparent; border:0; border-bottom:2px solid var(--line);
@@ -181,6 +181,15 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 }
 .coup input:focus{ border-bottom-color:currentColor; }
 .coup input::-webkit-inner-spin-button{ opacity:0.4; }
+/* boutons − / + : seulement au doigt (à la souris, les petites flèches du champ suffisent) ; appui long = ça défile */
+.pas{ display:none; width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft);
+  font:600 1.15rem/1 'Public Sans', sans-serif; padding:0; cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+.pas:active{ background:color-mix(in srgb, var(--pcolor) 14%, var(--surface)); color:var(--pcolor); }
+@media (pointer:coarse){
+  .pas{ display:inline-grid; place-items:center; }
+  .coup input{ -moz-appearance:textfield; }
+  .coup input::-webkit-inner-spin-button, .coup input::-webkit-outer-spin-button{ -webkit-appearance:none; margin:0; }
+}
 .objets{ display:flex; gap:0.25rem; }
 .objets button{
   width:34px; height:34px; padding:0; border:0; border-radius:10px; cursor:pointer;
@@ -220,12 +229,14 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
   .sw{ min-height:40px; }
 }
 @media (max-width:560px){
-  .coup{ display:grid; grid-template-columns:auto 1fr 1fr; gap:0.7rem 0.8rem; padding:0.8rem 0.3rem 0.4rem; }
+  .coup{ display:grid; grid-template-columns:auto 1fr; gap:0.6rem 0.8rem; padding:0.8rem 0.3rem 0.4rem; }
+  .coup .invite{ grid-row:1 / 3; align-self:center; }
+  .coup .reglage{ grid-column:2; gap:0.5rem; }
+  .coup .reglage > span:first-child{ min-width:4.3em; }
   .coup .persos{ grid-column:1 / -1; border-right:0; padding-right:0; }
-  .coup .objets{ grid-column:1 / 3; }
-  .coup #lancer{ grid-column:3; justify-self:end; }
-  .coup #revoir{ grid-column:1 / -1; justify-self:start; margin-left:0; grid-row:3; white-space:nowrap; padding:0 0.4rem; }
-  .coup label{ justify-content:flex-start; }
+  .coup .objets{ grid-column:1 / -1; }
+  .coup #lancer{ grid-column:1 / -1; justify-self:stretch; }
+  .coup #revoir{ grid-column:1 / -1; justify-self:center; margin-left:0; white-space:nowrap; padding:0 0.4rem; }
 }
 .statut{ min-height:1.3em; padding:0 0.5rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); }
 
@@ -267,8 +278,8 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
       </div>
       <div class="coup" id="coup">
         <span class="invite" id="invite"></span>
-        <label>angle <input id="angle" type="number" min="0" max="90" step="1" inputmode="numeric">°</label>
-        <label>vitesse <input id="vitesse" type="number" min="1" max="200" step="1" inputmode="numeric"></label>
+        <div class="reglage"><span>angle</span><button type="button" class="pas" data-for="angle" data-d="-1" aria-label="Moins">−</button><input id="angle" type="number" min="0" max="90" step="1" inputmode="numeric"><button type="button" class="pas" data-for="angle" data-d="1" aria-label="Plus">+</button><span class="unite">°</span></div>
+        <div class="reglage"><span>vitesse</span><button type="button" class="pas" data-for="vitesse" data-d="-1" aria-label="Moins">−</button><input id="vitesse" type="number" min="1" max="200" step="1" inputmode="numeric"><button type="button" class="pas" data-for="vitesse" data-d="1" aria-label="Plus">+</button></div>
         <div class="persos" id="persos" title="Votre faisan (l'autre joueur prend l'autre)"></div>
         <div class="objets" id="objets"></div>
         <button type="button" class="btn ghost" id="revoir">Revoir</button>
@@ -1056,6 +1067,15 @@ $("#attenteGo").addEventListener("click", ()=>{
   else setTimeout(()=> replayLast(true), 350);
 });
 $("#revoir").addEventListener("click", ()=> replayLast(false));
+document.querySelectorAll(".pas").forEach(b => {
+  let t1 = null, t2 = null;
+  const pas = ()=>{ const inp = $("#" + b.dataset.for); if(inp.disabled) return;
+    inp.value = clamp((Number(inp.value) || 0) + Number(b.dataset.d), Number(inp.min), Number(inp.max)); };
+  const stop = ()=>{ clearTimeout(t1); clearInterval(t2); t1 = t2 = null; };
+  b.addEventListener("pointerdown", e => { e.preventDefault(); pas(); t1 = setTimeout(()=>{ t2 = setInterval(pas, 70); }, 380); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, stop));
+  b.addEventListener("click", e => e.preventDefault());   // pas de double pas, et le libellé ne vole pas le clic
+});
 
 // =====================================================================
 //  Interface
@@ -1090,6 +1110,7 @@ function refreshUI(){
   document.querySelectorAll(".persos button").forEach(b => b.classList.toggle("on", Number(b.dataset.k) === persoOf(0)));
   const lock = busy || attente;
   $("#angle").disabled = $("#vitesse").disabled = lock || world.over;
+  document.querySelectorAll(".pas").forEach(b => b.disabled = lock || world.over);
   if(world.over){
     $("#lancer").textContent = "Nouvelle partie"; $("#lancer").disabled = busy;
     $("#statut").textContent = `${PLAYERS[world.winner].nom} gagne.`;
@@ -1226,24 +1247,21 @@ function sound(kind){
       [[0.03, 4200], [0.10, 3300], [0.27, 4400], [0.34, 3400], [0.51, 4600], [0.565, 3600], [0.62, 4800]]
         .forEach(([d, f], i) => trait(d, i === 6 ? 0.075 : 0.055, f + Math.random() * 300, 1.1));
     }else if(kind === "roulibre"){
-      // roue de vélo : « pouet-pouet » de la trompe, puis la roue libre qui cliquette en ralentissant,
-      // et un petit « doïng » de rayon pour finir
-      for(const [d, f] of [[0.02, 430], [0.22, 390]]){
-        const o = AC.createOscillator(); o.type = "sawtooth";
-        o.frequency.setValueAtTime(f * 1.06, t + d); o.frequency.exponentialRampToValueAtTime(f, t + d + 0.12);
-        const lp = AC.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1300; lp.Q.value = 6;
-        const g = env(t + d, 0.01, 0.55, 0.15); o.connect(lp); lp.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + 0.17);
-      }
-      let d = 0.42, gap = 0.032;
+      // roue de vélo : « dring dring » de la sonnette (le petit marteau frappe le timbre très vite,
+      // timbre clair avec ses harmoniques de cloche), puis le clic-clic de la roue libre qui ralentit
+      const timbre = (d, amp, len) => {
+        for(const [ratio, a] of [[1, 1], [2.76, 0.55], [5.4, 0.28], [8.9, 0.12]]){
+          const o = AC.createOscillator(); o.type = "sine"; o.frequency.value = 2150 * ratio;
+          const g = env(t + d, 0.002, amp * a, len / ratio ** 0.4); o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + len + 0.05);
+        }
+      };
+      for(const start of [0.04, 0.42]) for(let i = 0; i < 6; i++) timbre(start + i * 0.034, i === 5 ? 0.32 : 0.2, i === 5 ? 0.55 : 0.09);
+      let d = 0.85, gap = 0.032;
       for(let i = 0; i < 16; i++){
         const n = noise(0.012), bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 3400 + (i % 2) * 700; bp.Q.value = 5;
         const g = env(t + d, 0.001, 0.8 - i * 0.03, 0.02); n.connect(bp); bp.connect(g); g.connect(out); n.start(t + d);
         d += gap; gap *= 1.14;
       }
-      const o = AC.createOscillator(); o.type = "sine"; const lfo = AC.createOscillator(), lg = AC.createGain();
-      lfo.frequency.value = 14; lg.gain.value = 40; lfo.connect(lg); lg.connect(o.frequency);
-      o.frequency.setValueAtTime(820, t + d); o.frequency.exponentialRampToValueAtTime(520, t + d + 0.35);
-      const gd = env(t + d, 0.004, 0.35, 0.4); o.connect(gd); gd.connect(out); o.start(t + d); o.stop(t + d + 0.42); lfo.start(t + d); lfo.stop(t + d + 0.42);
     }else if(kind === "cri"){
       // « kôk-kôk » du faisan : deux appels rauques, puis un battement d'ailes
       for(const [d, f0] of [[0, 1050], [0.2, 980]]){
