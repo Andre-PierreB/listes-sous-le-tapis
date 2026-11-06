@@ -2687,18 +2687,23 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.collapsed .chat-led{ z-index:2; }
 .duel-card.collapsed .duel-stage{ padding-bottom:0.2rem; }
 /* 10.65 (banc) : pile des cases fermées qui se suivent en bas, dans leur ordre. Chaque case
-   recouvre à peine le haut de la suivante (19 px, ≈ 5 mm : l'air au-dessus du titre) ; au survol,
-   ses voisines du dessus et du dessous s'écartent pour l'isoler, comme un accordéon. Chaque case
-   se glisse par sa poignée, vers le haut pour sortir de la pile. */
-.fold-pile{ --ov:19px; position:relative; align-self:start; display:flex; flex-direction:column; min-width:0; }
+   recouvre à peine le haut de la suivante (19 px, ≈ 5 mm : l'air au-dessus du titre). Au survol,
+   la case reste où elle est et ses voisines s'écartent (celles du dessus montent, celles du
+   dessous descendent) : des glissements seulement (transform), rien ne se recalcule dans la
+   page, d'où la fluidité. En glissant une carte près de la pile, celle-ci s'ouvre devant elle
+   (aimant inversé) pour montrer où elle peut se loger ; chaque case se tire par sa poignée. */
+.fold-pile{ --ov:19px; --sp:calc(var(--ov) + 6px); position:relative; align-self:start; display:flex; flex-direction:column; min-width:0; }
 .fold-pile > *{ position:relative; z-index:calc(20 - var(--i)); min-width:0; width:100%; box-sizing:border-box;
-  transition:margin-top .28s cubic-bezier(.2,.8,.3,1) .06s; }
+  transform:translateY(0); transition:transform .32s cubic-bezier(.22,.9,.3,1), margin-top .32s cubic-bezier(.22,.9,.3,1); will-change:transform; }
 .fold-pile > * + *{ margin-top:calc(-1 * var(--ov)); }
 .fold-pile > .chat-card{ background:var(--bg); border-radius:14px; }   /* posé sur la suivante : le fond de page, opaque */
 .fold-pile > :hover, .fold-pile > :focus-within{ z-index:30; }
-.fold-pile > :hover:not(:first-child), .fold-pile > :focus-within:not(:first-child),
-.fold-pile > :hover + *, .fold-pile > :focus-within + *{ margin-top:0.35rem; }
-body.dragging-lists .fold-pile > *{ transition:none; }
+.fold-pile > :has(~ :hover), .fold-pile > :has(~ :focus-within){ transform:translateY(calc(-1 * var(--sp))); }
+.fold-pile > :hover ~ *, .fold-pile > :focus-within ~ *{ transform:translateY(var(--sp)); }
+.fold-pile > :hover .cat-grip, .fold-pile > :focus-within .cat-grip{ opacity:1; }
+/* aimant inversé : pendant un glisser tout près, la pile s'ouvre (cases côte à côte, sans recouvrement) */
+body.dragging-lists .fold-pile > *{ transform:none; }
+.fold-pile.repel > * + *{ margin-top:1.1rem; }
 @media (prefers-reduced-motion:reduce){ .fold-pile > *{ transition:none; } }
 /* 10.65 : pleine page des écrans (chat, duel), comme les listes : le bouton à deux flèches en haut à
    droite, à la place du voyant, qui se décale à sa gauche ; même bouton ou Échap pour revenir */
@@ -7857,6 +7862,12 @@ function handleListDragMove(x, y){
   // petit défilement automatique près des bords de la fenêtre
   dragPageScroll(x, y);   // 10.24
   const cards = listDragCards();   // 10.65 : y compris celles de la pile des fermées
+  // 10.65 (banc) : aimant inversé — la pile s'ouvre quand la carte glissée s'en approche
+  categoriesEl.querySelectorAll(".fold-pile").forEach(pl=>{
+    const r = pl.getBoundingClientRect(), m = 70;
+    const gr = d.ghost.getBoundingClientRect(), gcx = gr.left + gr.width / 2, gcy = gr.top + gr.height / 2;
+    pl.classList.toggle("repel", gcx > r.left - m && gcx < r.right + m && gcy > r.top - m && gcy < r.bottom + m);
+  });
   let best = null, bestDist = Infinity;
   cards.forEach(c=>{
     const r = layoutRect(c);
