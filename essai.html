@@ -217,7 +217,10 @@
     vent, trous, vainqueur) se recalcule en rejouant les coups (Duel,
     worldAfter), à l'identique sur tous les appareils.
   - Joueurs : celui du 1er coup (il choisit son faisan), puis l'autre personne
-    de la liste ; les coups alternent. Couleurs de l'écran de chat pour les
+    de la liste ; les coups alternent. Seul dans le duel au 1er coup (ou
+    sans compte) : entraînement — coups marqués solo:1, tous tirés du faisan
+    de gauche, l'autre ne renvoie rien, pas de bandeau ; jusqu'à la partie
+    suivante. Couleurs de l'écran de chat pour les
     reconnaître (moi --chat-me, l'autre --chat-them) ; objets et boutons du
     jeu dans un seul bleu (--objet). Sans compte : à deux sur le même écran.
   - Bandeaux : « … a joué ! » + « > Voir son coup » tant que le dernier coup
@@ -9685,7 +9688,7 @@ function worldAfter(n){
   return w;
 }
 const persoOf = k => (game.perso || [0, 1])[k];   // 0 : faisan au collier blanc, 1 : faisan à huppe dorée
-const turn = () => game.shots.length ? 1 - game.shots[game.shots.length - 1].p : 0;
+const turn = () => game.solo ? 0 : game.shots.length ? 1 - game.shots[game.shots.length - 1].p : 0;   // entraînement : toujours le faisan de gauche
 function lastShotOf(p){ for(let i = game.shots.length - 1 - (hideLast ? 1 : 0); i >= 0; i--) if(game.shots[i].p === p) return game.shots[i]; return null; }
 
 let cv = null, ctx = null;
@@ -10157,7 +10160,7 @@ function hud(){
   for(let k = 0; k < 2; k++){
     const x = k ? W - 22 : 22, ls = lastShotOf(k); ctx.textAlign = k ? "right" : "left";
     ctx.font = `700 ${F(15)}px 'Courier Prime', monospace`; ctx.fillStyle = css(PLAYERS[k].color);
-    ctx.fillText(ls ? `${PLAYERS[k].ini}> ${ls.a}° · ${ls.v}` : `${PLAYERS[k].ini}>`, x, 14 + F(18));
+    if(PLAYERS[k].ini) ctx.fillText(ls ? `${PLAYERS[k].ini}> ${ls.a}° · ${ls.v}` : `${PLAYERS[k].ini}>`, x, 14 + F(18));
   }
   // vent
   ctx.textAlign = "center"; ctx.font = `700 ${F(12)}px 'Courier Prime', monospace`; ctx.fillStyle = css("--ink-soft");
@@ -10368,12 +10371,15 @@ function readGame(cat){
   live.forEach((x, j)=>{ if(x.b.duel === "partie") start = j; });
   const head = start > -1 ? live[start].b : null;
   const rows = live.slice(start + 1).filter(x => typeof x.b.a === "number" && typeof x.b.v === "number");
-  const shots = rows.map((x, k)=>({ p: k % 2, a: x.b.a, v: x.b.v, o: x.b.o in OBJETS ? x.b.o : "roue", at: x.b.at, by: taskCreator(cat, x.b) }));
+  // entraînement (personne d'autre dans la liste au 1er coup) : tous les coups partent du faisan de gauche,
+  // l'autre ne renvoie rien ; la partie le reste jusqu'à « Nouvelle partie », même si quelqu'un arrive entre-temps
+  const solo = rows.length ? !!rows[0].b.solo : !listPeople(cat.id).some(u => u !== myUid());
+  const shots = rows.map((x, k)=>({ p: solo ? 0 : k % 2, a: x.b.a, v: x.b.v, o: x.b.o in OBJETS ? x.b.o : "roue", at: x.b.at, by: taskCreator(cat, x.b) }));
   const p0 = rows.length ? (rows[0].b.perso === 1 ? 1 : 0) : persoChoix;
   const g = {
     seed: head && typeof head.seed === "number" ? head.seed : hashStr(cat.id),
     regles: { g: head && head.g || REGLES.g, vent: head && head.vent != null ? head.vent : REGLES.vent, trou: head && head.trou || REGLES.trou, decor: head && head.decor || REGLES.decor },
-    shots, perso: p0 === 1 ? [1, 0] : [0, 1], total: items.length, start: start > -1 ? live[start].i : -1
+    shots, solo, perso: p0 === 1 ? [1, 0] : [0, 1], total: items.length, start: start > -1 ? live[start].i : -1
   };
   // les deux joueurs : celui du 1er coup, puis l'autre personne de la liste
   const me = myUid();
@@ -10383,12 +10389,13 @@ function readGame(cat){
   const who = (u, p) => u ? { uid:u, ini: personInitials(u, cat.id), nom: personName(u, cat.id) }
                          : p === 0 ? { uid:null, ini: initialOf(myName()), nom: myName() } : { uid:null, ini:"?", nom:"l'autre" };
   PLAYERS = [u0, u1].map((u, p)=> Object.assign(who(u, p), { color: (me ? u === me : p === 0) ? "--chat-me" : "--chat-them" }));
+  if(solo) PLAYERS[1] = { uid:null, ini:"", nom:"le faisan d'entraînement", color:"--chat-them" };
   const lastOf = p => { for(let k = shots.length - 1; k >= 0; k--) if(shots[k].p === p) return shots[k].o; return null; };
   g.objets = [0, 1].map(p => PLAYERS[p].uid === me && me || (!me && p === turnOf(g)) ? monObjet : (lastOf(p) || "roue"));
   return g;
 }
 const turnOf = g => g.shots.length % 2;
-const myTurn = ()=>{ const me = myUid(); if(!me) return true; if(!game.shots.length) return true; return PLAYERS[turn()].uid === me; };
+const myTurn = ()=>{ const me = myUid(); if(!me || game.solo) return true; if(!game.shots.length) return true; return PLAYERS[turn()].uid === me; };
 
 // à chaque rendu de l'appli : la carte (construite une fois, gardée telle quelle
 // pour ne pas couper une animation) et la partie relue dans la liste
@@ -10412,7 +10419,7 @@ function decideBand(){
   const me = myUid(), last = game.shots[game.shots.length - 1];
   $(".attente").classList.remove("on");
   bandMode = null;
-  if(!last || !me) return;
+  if(!last || !me || game.solo) return;   // entraînement : ni attente ni découverte
   if(last.by !== me && (seen[CAT.id] || 0) < game.total) showBand("decouverte");
   else if(last.by === me && !world.over) showBand("attente");
 }
@@ -10447,6 +10454,7 @@ function lancer(){
   const shot = { p, a, v, o, at: Date.now(), by: myUid() };
   const res = simulate(world, shot);
   const item = { t: `${a} ${v} ${o}`, a, v, o, at: shot.at };
+  if(game.solo) item.solo = 1;
   if(!game.shots.length) item.perso = persoChoix;
   ownShot = true;
   try{ insertItem(CAT, item); }catch(err){ console.error("[duel] coup non enregistré", err); ownShot = false; return; }
@@ -10496,7 +10504,8 @@ function refreshUI(){
   }else{
     lancerBtn.textContent = "Lancer"; lancerBtn.disabled = lock;
     $(".d-statut").textContent = busy || attente ? "" :
-      mine ? (game.shots.length ? `À vous de lancer ${OBJETS_ART[monObjet]}.` : `Choisissez votre faisan et lancez : l'autre prendra l'autre faisan.`)
+      game.solo ? (game.shots.length ? `Entraînement : visez l'autre faisan, il ne renvoie rien.` : `Entraînement (seul dans ce duel) : choisissez votre faisan et visez l'autre. Pour jouer à deux, « … » puis Inviter.`)
+      : mine ? (game.shots.length ? `À vous de lancer ${OBJETS_ART[monObjet]}.` : `Choisissez votre faisan et lancez : l'autre prendra l'autre faisan.`)
       : !PLAYERS[p].uid && me ? "Invitez quelqu'un avec « … » pour jouer à deux." : `À ${PLAYERS[p].nom} de jouer.`;
   }
   const last = game.shots[game.shots.length - 1];
