@@ -1285,9 +1285,11 @@
     Écran du duel à la largeur de celui du chat (carte − 1,5rem, ordinateur
     et téléphone). Fermé, le chat garde son écran ; le duel fermé montre le
     jeu en filigrane (le canvas lui-même, object-fit, redessiné 1×/s) et la
-    phrase d'état en clair. Pile des fermées qui se suivent en bas, dans leur
-    ordre (pileFolded) : 19 px de chaque case dépassent, survol ou toucher =
-    ré-écartées par-dessus la suite, sans pousser la page.
+    phrase d'état en clair, dans un rectangle façon bouton « Lancer ». Pile
+    des fermées qui se suivent en bas, dans leur ordre (pileFolded) : chaque
+    case recouvre à peine le haut de la suivante (19 px) ; au survol, ses
+    voisines s'écartent (accordéon). Glisser : listDragCards() traverse la
+    pile ; une case tirée vers le haut en sort.
     Réglages au banc : essai.html?replis (REPLIS_KEY).
   - 10.64 : liste repliée : la bulle compte aussi les œufs en couvaison
     (eggsInCat), en plus des tâches à faire ; toujours pas les cochées.
@@ -2676,37 +2678,28 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.collapsed .duel-cv{ position:absolute; inset:0; width:100%; height:100%; aspect-ratio:auto; object-fit:cover; object-position:50% 70%;
   opacity:0.28; border-radius:14px; pointer-events:none; z-index:0;
   -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 40%); mask-image:linear-gradient(180deg, transparent 0, #000 40%); }
-.duel-card.collapsed .d-mini{ position:relative; z-index:1; flex:1 1 auto; display:flex; align-items:center; min-width:0; padding:0 0.25rem;
-  font:0.85rem/1.35 'Courier Prime', 'Courier New', monospace; color:var(--objet); white-space:nowrap; }
+.duel-card.collapsed .d-mini{ position:relative; z-index:1; flex:1 1 auto; display:flex; align-items:center; min-width:0; padding:0 0.25rem; white-space:nowrap; }
+/* la phrase dans un rectangle d'écran vintage, comme le bouton « Lancer » du jeu */
+.duel-card.collapsed .d-mini-t{ font:700 0.9rem/1.2 'Courier Prime', 'Courier New', monospace; color:var(--objet); background:var(--surface);
+  border:2px solid var(--objet); border-radius:3px; padding:0.32rem 0.9rem; letter-spacing:0.02em; box-shadow:3px 3px 0 var(--objet); max-width:calc(100% - 3px); }
 .d-mini-t{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .duel-card.collapsed .duel-foot{ z-index:1; }
 .duel-card.collapsed .chat-led{ z-index:2; }
 .duel-card.collapsed .duel-stage{ padding-bottom:0.2rem; }
 /* 10.65 (banc) : pile des cases fermées qui se suivent en bas, dans leur ordre. Chaque case
-   dépasse de 19 px (≈ 5 mm) sous la précédente ; au survol (ou au toucher), elles se ré-écartent
-   par-dessus ce qui suit, sans rien pousser dans la page ; elles se resserrent en partant. */
-.fold-pile{ --peek:19px; --step:calc(var(--fold-h) + 1.1rem);
-  position:relative; z-index:5; align-self:start; display:grid; min-width:0;
-  padding-bottom:calc((var(--n) - 1) * var(--peek)); }
-.fold-pile > *{ grid-area:1 / 1; min-width:0; transform-origin:50% 0;
-  transform:translateY(calc(var(--i) * var(--peek))) scale(calc(1 - min(var(--i), 3) * 0.015));
-  z-index:calc(20 - var(--i));
-  transition:transform .4s cubic-bezier(.2,.8,.3,1) .12s, box-shadow .3s ease; }
-.fold-pile > :not(:first-child) > :not(.duel-stage),
-.fold-pile > :not(:first-child) > .duel-stage > *{ transition:opacity .25s ease .12s; }
-.fold-pile:not(:hover):not(.open) > :not(:first-child) > :not(.duel-stage),
-.fold-pile:not(:hover):not(.open) > :not(:first-child) > .duel-stage > *{ opacity:0; pointer-events:none; }   /* dessous : le bord du papier seul */
-.fold-pile:not(:hover):not(.open) > :not(:first-child){ pointer-events:none; }
-.fold-pile:not(:hover):not(.open) > :not(:first-child)::before{ opacity:0; }   /* la barre des listes */
-.fold-pile:not(:hover):not(.open) > .courses:not(:first-child){ --margin-ink:transparent; }   /* la marge des mémos */
-.fold-pile > .chat-card{ background:var(--bg); border-radius:14px; }   /* écarté par-dessus la suite : le fond de page, opaque */
-.fold-pile:not(:hover):not(.open) > .chat-card:not(:first-child){ background:var(--surface); box-shadow:var(--shadow); border-radius:14px; }
-.fold-pile:hover > *, .fold-pile.open > *{ transform:translateY(calc(var(--i) * var(--step))); }
-/* une zone invisible tient le survol pendant qu'on passe d'une case à l'autre */
-.fold-pile:hover::after, .fold-pile.open::after{ content:""; position:absolute; left:0; right:0; top:0; z-index:-1;
-  height:calc(var(--m) * var(--step)); }
-.fold-pile .cat-grip{ visibility:hidden; }   /* banc : pas de glisser depuis la pile (dépliez d'abord) */
-@media (prefers-reduced-motion:reduce){ .fold-pile > *, .fold-pile > * > *{ transition:none; } }
+   recouvre à peine le haut de la suivante (19 px, ≈ 5 mm : l'air au-dessus du titre) ; au survol,
+   ses voisines du dessus et du dessous s'écartent pour l'isoler, comme un accordéon. Chaque case
+   se glisse par sa poignée, vers le haut pour sortir de la pile. */
+.fold-pile{ --ov:19px; position:relative; align-self:start; display:flex; flex-direction:column; min-width:0; }
+.fold-pile > *{ position:relative; z-index:calc(20 - var(--i)); min-width:0; width:100%; box-sizing:border-box;
+  transition:margin-top .28s cubic-bezier(.2,.8,.3,1) .06s; }
+.fold-pile > * + *{ margin-top:calc(-1 * var(--ov)); }
+.fold-pile > .chat-card{ background:var(--bg); border-radius:14px; }   /* posé sur la suivante : le fond de page, opaque */
+.fold-pile > :hover, .fold-pile > :focus-within{ z-index:30; }
+.fold-pile > :hover:not(:first-child), .fold-pile > :focus-within:not(:first-child),
+.fold-pile > :hover + *, .fold-pile > :focus-within + *{ margin-top:0.35rem; }
+body.dragging-lists .fold-pile > *{ transition:none; }
+@media (prefers-reduced-motion:reduce){ .fold-pile > *{ transition:none; } }
 /* 10.65 : pleine page des écrans (chat, duel), comme les listes : le bouton à deux flèches en haut à
    droite, à la place du voyant, qui se décale à sa gauche ; même bouton ou Échap pour revenir */
 .chat-box > .scr-full, .duel-stage > .scr-full{ position:absolute; z-index:2; right:calc(1.25rem - 0.75rem);   /* aligné sur celui des listes */ top:calc((0.35rem + 22px) / 2 - 10px); }
@@ -7863,8 +7856,7 @@ function handleListDragMove(x, y){
   const gx = d.ghostLeft + dx + d.w / 2, gy = d.ghostTop + dy + d.h / 2;
   // petit défilement automatique près des bords de la fenêtre
   dragPageScroll(x, y);   // 10.24
-  const parent = d.el.parentElement;
-  const cards = Array.from(parent.children).filter(n => n.dataset && n.dataset.dragMode === "lists");
+  const cards = listDragCards();   // 10.65 : y compris celles de la pile des fermées
   let best = null, bestDist = Infinity;
   cards.forEach(c=>{
     const r = layoutRect(c);
@@ -7880,8 +7872,9 @@ function handleListDragMove(x, y){
   if(ls && ls.card === best && Math.hypot(gx - ls.gx, gy - ls.gy) < 48) return;
   const idxBest = cards.indexOf(best), idxEl = cards.indexOf(d.el);
   d.lastSwap = { card: best, gx, gy };
-  moveDragSlot([parent], ()=>{
-    parent.insertBefore(d.el, idxEl < idxBest ? best.nextSibling : best);
+  const parents = [categoriesEl, ...categoriesEl.querySelectorAll(".fold-pile")];
+  moveDragSlot(parents, ()=>{
+    best.parentElement.insertBefore(d.el, idxEl < idxBest ? best.nextSibling : best);
   });
 }
 
@@ -8043,8 +8036,7 @@ function commitDragOrder(){
   if(dragMode === "lists"){
     // Ordre visible des cartes, reporté dans l'ordre complet (les listes
     // supprimées gardent leur place, on n'y touche pas).
-    const domOrder = Array.from(el.parentElement.children)
-      .filter(node => node.dataset && node.dataset.dragMode === "lists")
+    const domOrder = listDragCards()   // 10.65 : la pile des fermées comprise
       .map(node => parseInt(node.dataset.dragId, 10));
     const visible = new Set(domOrder);
     const full = getCategoryOrder().slice();
@@ -11280,33 +11272,19 @@ function replisOpt(k){
   try{ const o = JSON.parse(localStorage.getItem(REPLIS_KEY) || "{}"); return o[k] || REPLIS_DEF[k]; }catch(e){ return REPLIS_DEF[k]; }
 }
 function applyReplis(){}
-let pileOpen = false;
 function pileFolded(){
   if(replisOpt("pile") === "non") return;
   const cards = Array.from(categoriesEl.children).filter(el => el.id && el.id.startsWith("cat-"));
   const run = [];
   for(let i = cards.length - 1; i >= 0 && cards[i].classList.contains("collapsed"); i--) run.unshift(cards[i]);
-  if(run.length < 2){ pileOpen = false; return; }
+  if(run.length < 2) return;
   const pile = document.createElement("div");
-  pile.className = "fold-pile" + (pileOpen ? " open" : "");
-  pile.style.setProperty("--n", run.length);
-  pile.style.setProperty("--m", run.length);
+  pile.className = "fold-pile";
   run[0].before(pile);
   run.forEach((c, i) => { c.style.setProperty("--i", i); pile.appendChild(c); });
-  // au doigt (pas de survol) : un premier toucher écarte la pile ; toucher ailleurs la resserre
-  let pt = "mouse";
-  pile.addEventListener("pointerdown", e => { pt = e.pointerType; }, true);
-  pile.addEventListener("click", e=>{
-    if(pt === "mouse" || pile.classList.contains("open")) return;
-    e.stopPropagation(); e.preventDefault();
-    pileOpen = true; pile.classList.add("open");
-  }, true);
 }
-document.addEventListener("pointerdown", e=>{
-  if(!pileOpen || e.target.closest(".fold-pile")) return;
-  pileOpen = false;
-  const p = document.querySelector(".fold-pile.open"); if(p) p.classList.remove("open");
-}, true);
+// glisser une carte : la pile est transparente (on prend toutes les cartes, dedans comme dehors)
+function listDragCards(){ return Array.from(categoriesEl.querySelectorAll('[data-drag-mode="lists"]')); }
 
 // ---------- corbeille : affichage et remise en liste ----------
 let trashOpen = false;
