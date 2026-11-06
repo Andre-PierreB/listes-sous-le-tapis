@@ -182,9 +182,12 @@ canvas#jeu{ display:block; width:100%; aspect-ratio:16/9; border-radius:12px; to
 .coup input:focus{ border-bottom-color:currentColor; }
 .coup input::-webkit-inner-spin-button{ opacity:0.4; }
 /* boutons − / + : seulement au doigt (à la souris, les petites flèches du champ suffisent) ; appui long = ça défile */
-.pas{ display:none; width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft);
-  font:600 1.15rem/1 'Public Sans', sans-serif; padding:0; cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
-.pas:active{ background:color-mix(in srgb, var(--pcolor) 14%, var(--surface)); color:var(--pcolor); }
+/* même esprit « écran » que Lancer : Courier Prime, coins presque droits, ombre dure qui disparaît à l'appui */
+.pas{ display:none; width:38px; height:36px; border-radius:3px; border:2px solid var(--pcolor); background:var(--surface); color:var(--pcolor);
+  font:700 1.2rem/1 'Courier Prime', monospace; padding:0; cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+  box-shadow:2px 2px 0 var(--pcolor); transform:translate(0, 0); transition:transform .05s, box-shadow .05s; }
+.pas:active{ transform:translate(2px, 2px); box-shadow:0 0 0 var(--pcolor); }
+.pas:disabled{ color:var(--ink-faint); border-color:var(--line); box-shadow:2px 2px 0 var(--line); }
 @media (pointer:coarse){
   .pas{ display:inline-grid; place-items:center; }
   .coup input{ -moz-appearance:textfield; }
