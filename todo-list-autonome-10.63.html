@@ -233,7 +233,9 @@
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
     (makeDuel, rangées par liste dans Duel) : plusieurs duels côte à côte. Pied comme l'écran de chat : poignée, « … » (Inviter / Retirer,
-    Son, Supprimer ce duel), initiales. Hors compteur, urgences, trèfle,
+    Son et vibrations, Supprimer ce duel), initiales. Partage : une seule
+    personne (les autres contacts grisés dès qu'un est coché). Vibrations
+    (haptic) : navigator.vibrate, ou l'interrupteur caché de Safari sur iPhone. Hors compteur, urgences, trèfle,
     graphique et purge : isSideList (isDuelList).
   - Partage, synchro, fusion et règles en ligne : ceux des listes, sans
     changement (firestore.rules inchangé).
@@ -2261,6 +2263,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 }
 .cat-share-person .box svg{ width:0.65rem; height:0.65rem; display:none; }
 .cat-share-person[aria-checked="true"]{ border-color:var(--cat-color, var(--accent)); color:var(--ink); background:color-mix(in srgb, var(--cat-color, var(--accent)) 10%, var(--surface)); }
+.cat-share-person:disabled{ opacity:0.38; cursor:default; }   /* 10.63 : duel, l'adversaire est déjà choisi */
 .cat-share-person[aria-checked="true"] .box{ background:var(--cat-color, var(--accent)); border-color:var(--cat-color, var(--accent)); color:var(--surface); }
 .cat-share-person[aria-checked="true"] .box svg{ display:block; }
 .cat-share-person:hover{ border-color:var(--cat-color, var(--accent)); }
@@ -6913,8 +6916,10 @@ function buildCatShareRow(cat){
     return row;
   }
   const mem = (listInfo(cat.id) || { members:[] }).members;
-  row.innerHTML = label + uids.map(u =>
-    `<button type="button" class="cat-share-person" role="checkbox" aria-checked="${mem.includes(u)}" data-uid="${escapeAttr(u)}"><span class="box">${CHECK_SVG}</span>${escapeAttr(cm[u].name || "?")}</button>`).join("");
+  // 10.63 : un duel se joue à deux — une fois quelqu'un coché, les autres sont grisés (pour jouer avec eux : un autre duel)
+  const duelTaken = isDuelList(cat.id) && uids.some(u => mem.includes(u));
+  row.innerHTML = label + uids.map(u => { const off = duelTaken && !mem.includes(u);
+    return `<button type="button" class="cat-share-person" role="checkbox" aria-checked="${mem.includes(u)}"${off ? ` aria-disabled="true" disabled title="Un duel se joue à deux : créez un autre duel pour jouer avec ${escapeAttr(cm[u].name || "?")}"` : ""} data-uid="${escapeAttr(u)}"><span class="box">${CHECK_SVG}</span>${escapeAttr(cm[u].name || "?")}</button>`; }).join("");
   row.querySelectorAll(".cat-share-person").forEach(b=>{
     b.addEventListener("click", ()=>{
       const on = b.getAttribute("aria-checked") !== "true";
@@ -10133,7 +10138,7 @@ function frame(now){
         if(dance.t >= 0 && beat < DANCE_BEATS){
           const up = beat % 2 === 0; f.wingL = up ? 1 : -0.7; f.wingR = up ? -0.7 : 1;
           hop = Math.sin(ph * Math.PI) * 8;
-          if(beat !== dance.beat){ dance.beat = beat; puffFeathers(world.ph[k].x, world.ph[k].y - 26, persoOf(k), 3); }
+          if(beat !== dance.beat){ dance.beat = beat; puffFeathers(world.ph[k].x, world.ph[k].y - 26, persoOf(k), 3); if(beat % 2 === 0) haptic("tic"); }
         }
       }
       drawPheasantFront(ctx, world.ph[k].x, world.ph[k].y - hop, f);
@@ -10238,6 +10243,7 @@ function hud(){
 //  Jouer un coup
 // =====================================================================
 function play(shot, res, done){
+  haptic("lance");
   busy = true; refreshUI();
   wingT[shot.p] = 1;
   anim = { shot, res, i: 0, done };
@@ -10252,6 +10258,7 @@ function endShot(){
     return;
   }
   burst(shot.o, e.x, e.y, e.kind === "hit", css("--objet"));
+  haptic(e.kind === "hit" ? "touche" : "impact");
   sound("boum"); sound({ roue:"roulibre", coeur:"bisous", stylo:"plume", reveil:"reveil" }[shot.o]);
   if(e.kind === "city"){
     world = applyResult(world, shot, res); renderCity(world);
@@ -10293,6 +10300,25 @@ function noise(len){
 }
 function env(t, a, peak, dur){ const g = AC.createGain(); g.gain.setValueAtTime(0.0001, t);
   g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); return g; }
+// 10.63 : vibrations. Android : navigator.vibrate ; iPhone (Safari 17.4 et plus) : un interrupteur
+// <input type="checkbox" switch> caché qu'on bascule (chaque bascule = un petit « tic ») — ne marche
+// sûrement qu'au moment d'un geste (clic, toucher) ; ailleurs, rien ne se passe, sans erreur
+let hapLabel = null;
+function haptic(kind){
+  if(!S.son) return;   // réglé avec le son (menu « … »)
+  const pat = { tic:[8], lance:[14], impact:[22], touche:[30, 50, 30, 50, 60], pas:[5] }[kind] || [10];
+  try{
+    if(navigator.vibrate){ navigator.vibrate(pat); return; }
+    if(!hapLabel){
+      hapLabel = document.createElement("label"); hapLabel.setAttribute("aria-hidden", "true");
+      hapLabel.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none";
+      const i = document.createElement("input"); i.type = "checkbox"; i.setAttribute("switch", ""); i.tabIndex = -1;
+      hapLabel.appendChild(i); document.body.appendChild(hapLabel);
+    }
+    const n = Math.ceil(pat.length / 2);
+    for(let k = 0; k < n; k++) setTimeout(()=>{ try{ hapLabel.click(); }catch(e){} }, k * 90);
+  }catch(e){}
+}
 function sound(kind){
   if(!S.son) return;
   try{
@@ -10598,25 +10624,25 @@ function build(){
   for(const k in OBJETS){
     const b = document.createElement("button"); b.type = "button"; b.dataset.o = k; b.title = OBJETS[k];
     const c = document.createElement("canvas"); c.width = c.height = 60; b.appendChild(c); ob.appendChild(b);
-    b.addEventListener("click", ()=>{ monObjet = k; try{ localStorage.setItem("sous-le-tapis-duel-objet", k); }catch(e){} refreshUI(); });
+    b.addEventListener("click", ()=>{ haptic("tic"); monObjet = k; try{ localStorage.setItem("sous-le-tapis-duel-objet", k); }catch(e){} refreshUI(); });
   }
   const pe = card.querySelector(".persos");
   [0, 1].forEach(kind => {
     const b = document.createElement("button"); b.type = "button"; b.dataset.k = kind; b.setAttribute("aria-label", "Choisir ce faisan");
     const c = document.createElement("canvas"); c.width = 80; c.height = 68;
     const x = c.getContext("2d"); x.scale(2, 2); x.translate(26, 31); x.scale(0.45, 0.45); drawPheasant(x, 0, 0, 1, { kind }); b.appendChild(c); pe.appendChild(b);
-    b.addEventListener("click", ()=>{ if(game.shots.length) return; persoChoix = kind; game.perso = kind === 0 ? [0, 1] : [1, 0]; refreshUI(); });
+    b.addEventListener("click", ()=>{ if(game.shots.length) return; haptic("tic"); persoChoix = kind; game.perso = kind === 0 ? [0, 1] : [1, 0]; refreshUI(); });
   });
   card.querySelector(".d-lancer").addEventListener("click", ()=>{ if(world && world.over) nouvellePartie(); else lancer(); });
   card.querySelector(".d-revoir").addEventListener("click", ()=> replayLast(false));
-  card.querySelector(".d-go").addEventListener("click", ()=>{ $(".attente").classList.remove("on"); bandMode = null; setTimeout(()=> replayLast(true), 300); });
+  card.querySelector(".d-go").addEventListener("click", ()=>{ haptic("tic"); $(".attente").classList.remove("on"); bandMode = null; setTimeout(()=> replayLast(true), 300); });
   card.querySelectorAll(".d-angle, .d-vitesse").forEach(i => i.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); lancer(); } }));
   card.querySelectorAll(".pas").forEach(b => {
     let t1 = null, t2 = null;
     const pas = ()=>{ const inp = card.querySelector("." + b.dataset.for); if(inp.disabled) return;
       inp.value = clamp((Number(inp.value) || 0) + Number(b.dataset.d), Number(inp.min), Number(inp.max)); };
     const stop = ()=>{ clearTimeout(t1); clearInterval(t2); t1 = t2 = null; };
-    b.addEventListener("pointerdown", e => { e.preventDefault(); pas(); t1 = setTimeout(()=>{ t2 = setInterval(pas, 70); }, 380); });
+    b.addEventListener("pointerdown", e => { e.preventDefault(); haptic("pas"); pas(); t1 = setTimeout(()=>{ t2 = setInterval(pas, 70); }, 380); });
     ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, stop));
     b.addEventListener("click", e => e.preventDefault());
   });
@@ -10636,7 +10662,7 @@ function foot(cat, catIdx){
   menu.innerHTML = (own
     ? `<button type="button" data-a="share"><span class="ic">+</span>Inviter</button><button type="button" data-a="share"><span class="ic">−</span>Retirer</button>`
     : `<div class="chat-menu-note">Duel ${escapeAttr(deName(personName(listOwnerUid(cat.id), cat.id)))}, en partage.</div>`)
-    + `<button type="button" data-a="son"><span class="ic">♪</span>Son : ${S.son ? "oui" : "non"}</button>`
+    + `<button type="button" data-a="son"><span class="ic">♪</span>Son et vibrations : ${S.son ? "oui" : "non"}</button>`
     + (own ? `<button type="button" class="danger" data-a="del"><span class="ic">×</span>Supprimer ce duel</button>` : "");
   more.onclick = e => { e.stopPropagation(); chatMenuOpen = chatMenuOpen === cat.id ? null : cat.id; renderAll(); };
   menu.onclick = e => e.stopPropagation();
