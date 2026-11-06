@@ -1283,9 +1283,11 @@
     pleine page des écrans (même bouton que les listes, en haut à droite,
     voyant décalé à sa gauche ; papier du duel avec la même bande en haut).
     Écran du duel à la largeur de celui du chat (carte − 1,5rem, ordinateur
-    et téléphone). Fermés, chat et duel perdent leur écran creusé (une ligne
-    sur le papier ; duel : deux mini-faisans face à face + état, toits pâles).
-    Pile des fermées façon notifications (pileFolded, éventail au clic).
+    et téléphone). Fermé, le chat garde son écran ; le duel fermé montre le
+    jeu en filigrane (le canvas lui-même, object-fit, redessiné 1×/s) et la
+    phrase d'état en clair. Pile des fermées qui se suivent en bas, dans leur
+    ordre (pileFolded) : 19 px de chaque case dépassent, survol ou toucher =
+    ré-écartées par-dessus la suite, sans pousser la page.
     Réglages au banc : essai.html?replis (REPLIS_KEY).
   - 10.64 : liste repliée : la bulle compte aussi les œufs en couvaison
     (eggsInCat), en plus des tâches à faire ; toujours pas les cochées.
@@ -2660,58 +2662,51 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-card.collapsed .cat-fold svg, .duel-card.collapsed .cat-fold svg{ transform:rotate(180deg); }
 .chat-card.collapsed, .duel-card.collapsed{ align-self:start; cursor:pointer; height:var(--fold-h); }
 .duel-card.collapsed .duel-stage{ height:100%; display:flex; flex-direction:column; }
-.duel-card.collapsed .duel-screen{ flex:1 1 auto; display:flex; }
-.duel-card.collapsed .d-mini{ flex:1 1 auto; display:flex !important; align-items:center; min-width:0; }
 .chat-card.collapsed .chat-in{ display:none; }
 .chat-card.collapsed .chat-screen{ justify-content:center; }
-/* 10.65 : fermés, le chat et le duel perdent leur écran creusé : une ligne posée sur le papier
-   (banc : chat « sur papier » ou « à nu », toits pâles sous le duel — voir le panneau ?replis) */
-.chat-card.collapsed .chat-hole, .duel-card.collapsed .duel-screen{ background:none; box-shadow:none; padding:0; }
-.duel-card.collapsed .duel-screen::after{ display:none; }
-.chat-card.collapsed .chat-screen{ background:none; box-shadow:none; padding:0 0.25rem; }
-.chat-card.collapsed .chat-l{ text-align:left; padding:0; text-shadow:none; }
-html.rp-papier .chat-card.collapsed, .fold-pile .chat-card{ background:var(--surface); box-shadow:var(--shadow); }
-.duel-card.collapsed .d-mini{ background:none !important; padding:0 0.25rem !important; gap:0.55rem; }
-.d-mini-f{ display:none; }
-.duel-card.collapsed .d-mini-f{ display:inline-flex; flex:none; gap:2px; align-items:flex-end; }
-.d-mini-f canvas{ width:36px; height:30.6px; display:block; }
-.d-mini-f canvas + canvas{ transform:scaleX(-1); }   /* face à face, comme dans le jeu */
-.d-mini-t{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
-html.rp-toits .duel-card.collapsed .duel-stage::before{ content:""; position:absolute; left:0.75rem; right:0.75rem; bottom:0; height:20px; pointer-events:none; opacity:0.4;
-  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='30' viewBox='0 0 160 30'%3E%3Cg fill='%23E3DBEB'%3E%3Cpath d='M4 30V14h3v-3h3V8h4v3h3v3h3v16zM62 30V10h3V7h3V4h4v3h3v3h3v20zM118 30V16h3v-3h3v-3h4v3h3v3h3v14z'/%3E%3C/g%3E%3Cg fill='%23D8E2CF'%3E%3Cpath d='M30 30V18h3v-3h3v-3h4v3h3v3h3v12zM88 30V20h3v-3h3v-3h4v3h3v3h3v10zM140 30V12h3V9h3V6h4v3h3v3h3v18z'/%3E%3C/g%3E%3C/svg%3E") repeat-x left bottom / 107px 20px; }
-html.rp-toits .duel-card.collapsed .duel-stage > :not(.scr-full):not(.chat-led){ position:relative; }
 .chat-card.collapsed .chat-log{ flex:none; min-height:0; max-height:none; overflow:hidden; }
 .chat-card.collapsed .chat-l{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .chat-card.collapsed .chat-l .chat-m{ display:none; }
 .duel-card .d-mini{ display:none; }
-.duel-card.collapsed .duel-cv, .duel-card.collapsed .attente, .duel-card.collapsed .d-statut, .duel-card.collapsed .coup{ display:none; }
-.duel-card.collapsed .d-mini{ display:block; position:relative; z-index:0; padding:0.55rem 0.9rem; border-radius:16px; background:var(--sky-bottom);
-  font:0.85rem/1.35 'Courier Prime', 'Courier New', monospace; color:var(--objet); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.duel-card.collapsed .attente, .duel-card.collapsed .d-statut, .duel-card.collapsed .coup{ display:none; }
+/* 10.65 : le duel fermé en filigrane — le jeu lui-même, à son échelle (toits et faisans), très pâle
+   derrière le papier ; seule la phrase de là où en est la partie reste en clair. Le chat fermé garde son écran. */
+.duel-card.collapsed .duel-screen{ position:static; flex:1 1 auto; display:flex; background:none; box-shadow:none; padding:0; opacity:1; }
+.duel-card.collapsed .duel-screen::after{ display:none; }
+.duel-card.collapsed .duel-cv{ position:absolute; inset:0; width:100%; height:100%; aspect-ratio:auto; object-fit:cover; object-position:50% 70%;
+  opacity:0.28; border-radius:14px; pointer-events:none; z-index:0;
+  -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 40%); mask-image:linear-gradient(180deg, transparent 0, #000 40%); }
+.duel-card.collapsed .d-mini{ position:relative; z-index:1; flex:1 1 auto; display:flex; align-items:center; min-width:0; padding:0 0.25rem;
+  font:0.85rem/1.35 'Courier Prime', 'Courier New', monospace; color:var(--objet); white-space:nowrap; }
+.d-mini-t{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.duel-card.collapsed .duel-foot{ z-index:1; }
+.duel-card.collapsed .chat-led{ z-index:2; }
 .duel-card.collapsed .duel-stage{ padding-bottom:0.2rem; }
-/* 10.65 (banc) : pile des cases fermées — liserés dessous, éventail au clic */
-.fold-pile{ position:relative; align-self:start; display:grid; min-width:0; cursor:pointer;
-  padding-bottom:calc((var(--n) - 1) * 7px); transition:padding .35s ease; }
-.fold-pile > *:not(.pile-more){ grid-area:1 / 1; min-width:0; transform-origin:50% 100%;
-  transition:transform .35s cubic-bezier(.2,.8,.3,1), opacity .3s ease, margin .35s ease; }
-.fold-pile > :not(:first-child):not(.pile-more){ z-index:calc(10 - var(--i)); pointer-events:none;
-  transform:translateY(calc(min(var(--i), 2) * 7px)) scale(calc(1 - min(var(--i), 2) * 0.04)); }
-.fold-pile > :not(:first-child):not(.pile-more) > :not(.duel-stage),
-.fold-pile > :not(:first-child):not(.pile-more) > .duel-stage > *,
-.fold-pile:not(.open) > :not(:first-child):not(.pile-more)::before, .fold-pile:not(.open) > :not(:first-child):not(.pile-more) .duel-stage::before{ visibility:hidden; }   /* derrière : le papier seul */
-.fold-pile > :first-child{ z-index:20; }
-.fold-pile > :nth-child(n+4):not(.pile-more){ opacity:0; }
-.fold-pile:not(.open) .cat-grip{ visibility:hidden; }
-.fold-pile:not(.open):hover > :not(:first-child):not(.pile-more){ transform:translateY(calc(min(var(--i), 2) * 11px)) scale(calc(1 - min(var(--i), 2) * 0.04)); }
-.fold-pile:not(.open):hover{ padding-bottom:calc((var(--n) - 1) * 11px); }
-.pile-more{ position:absolute; z-index:21; left:50%; bottom:calc((var(--n) - 1) * 7px - 9px); transform:translateX(-50%);
-  font:700 0.68rem/1 'Public Sans', sans-serif; color:var(--ink-faint); background:var(--surface); border:1px solid var(--line);
-  border-radius:999px; padding:0.18rem 0.5rem; pointer-events:none; transition:opacity .2s ease; }
-.fold-pile.open{ display:flex; flex-direction:column; gap:1.1rem; padding-bottom:0; cursor:auto; }
-.fold-pile.open > :nth-child(n):not(.pile-more){ transform:none; opacity:1; pointer-events:auto; width:100%; }
-.fold-pile.open > * > *, .fold-pile.open .duel-stage > *{ visibility:visible !important; }
-.fold-pile.open .pile-more{ opacity:0; }
+/* 10.65 (banc) : pile des cases fermées qui se suivent en bas, dans leur ordre. Chaque case
+   dépasse de 19 px (≈ 5 mm) sous la précédente ; au survol (ou au toucher), elles se ré-écartent
+   par-dessus ce qui suit, sans rien pousser dans la page ; elles se resserrent en partant. */
+.fold-pile{ --peek:19px; --step:calc(var(--fold-h) + 1.1rem);
+  position:relative; z-index:5; align-self:start; display:grid; min-width:0;
+  padding-bottom:calc((var(--n) - 1) * var(--peek)); }
+.fold-pile > *{ grid-area:1 / 1; min-width:0; transform-origin:50% 0;
+  transform:translateY(calc(var(--i) * var(--peek))) scale(calc(1 - min(var(--i), 3) * 0.015));
+  z-index:calc(20 - var(--i));
+  transition:transform .4s cubic-bezier(.2,.8,.3,1) .12s, box-shadow .3s ease; }
+.fold-pile > :not(:first-child) > :not(.duel-stage),
+.fold-pile > :not(:first-child) > .duel-stage > *{ transition:opacity .25s ease .12s; }
+.fold-pile:not(:hover):not(.open) > :not(:first-child) > :not(.duel-stage),
+.fold-pile:not(:hover):not(.open) > :not(:first-child) > .duel-stage > *{ opacity:0; pointer-events:none; }   /* dessous : le bord du papier seul */
+.fold-pile:not(:hover):not(.open) > :not(:first-child){ pointer-events:none; }
+.fold-pile:not(:hover):not(.open) > :not(:first-child)::before{ opacity:0; }   /* la barre des listes */
+.fold-pile:not(:hover):not(.open) > .courses:not(:first-child){ --margin-ink:transparent; }   /* la marge des mémos */
+.fold-pile > .chat-card{ background:var(--bg); border-radius:14px; }   /* écarté par-dessus la suite : le fond de page, opaque */
+.fold-pile:not(:hover):not(.open) > .chat-card:not(:first-child){ background:var(--surface); box-shadow:var(--shadow); border-radius:14px; }
+.fold-pile:hover > *, .fold-pile.open > *{ transform:translateY(calc(var(--i) * var(--step))); }
+/* une zone invisible tient le survol pendant qu'on passe d'une case à l'autre */
+.fold-pile:hover::after, .fold-pile.open::after{ content:""; position:absolute; left:0; right:0; top:0; z-index:-1;
+  height:calc(var(--m) * var(--step)); }
 .fold-pile .cat-grip{ visibility:hidden; }   /* banc : pas de glisser depuis la pile (dépliez d'abord) */
-@media (prefers-reduced-motion:reduce){ .fold-pile, .fold-pile > *{ transition:none; } }
+@media (prefers-reduced-motion:reduce){ .fold-pile > *, .fold-pile > * > *{ transition:none; } }
 /* 10.65 : pleine page des écrans (chat, duel), comme les listes : le bouton à deux flèches en haut à
    droite, à la place du voyant, qui se décale à sa gauche ; même bouton ou Échap pour revenir */
 .chat-box > .scr-full, .duel-stage > .scr-full{ position:absolute; z-index:2; right:calc(1.25rem - 0.75rem);   /* aligné sur celui des listes */ top:calc((0.35rem + 22px) / 2 - 10px); }
@@ -10199,9 +10194,13 @@ function drawParticle(p){
 let cvW = W;   // largeur affichée du canevas, lue une fois par image
 // temps réel : l'animation avance selon l'horloge, pas d'un pas fixe par image —
 // si le navigateur ne tient que 30 images/s (économie d'énergie…), rien ne passe au ralenti
-let lastNow = 0, pathAcc = 0, dt = 1 / 60;
+let lastNow = 0, pathAcc = 0, dt = 1 / 60, foldDrawAt = 0;
 function frame(now){
-  if(!ROOT || !ROOT.isConnected || !world || !cv || ROOT.classList.contains("collapsed")){ lastNow = 0; requestAnimationFrame(frame); return; }   // replié : rien à dessiner
+  if(!ROOT || !ROOT.isConnected || !world || !cv){ lastNow = 0; requestAnimationFrame(frame); return; }
+  if(ROOT.classList.contains("collapsed")){   // 10.65 : fermé, le jeu reste en filigrane : une image par seconde suffit
+    if(now - foldDrawAt < 1000){ lastNow = 0; requestAnimationFrame(frame); return; }
+    foldDrawAt = now;
+  }
   dt = lastNow ? Math.min(0.05, (now - lastNow) / 1000) : 1 / 60; lastNow = now;
   const k60 = dt * 60;   // nombre d'« images à 60/s » écoulées
   const live = busy || !!dance || bandMode === "decouverte";   // comme un message non lu au chat : l'écran sort de sa discrétion
@@ -10740,7 +10739,7 @@ function build(){
       <div class="duel-screen"><canvas class="duel-cv"></canvas>
         <div class="attente"><span class="d-qui"></span><button type="button" class="poussoir d-go">Voir son coup</button></div>
         <div class="d-statut"></div>
-        <div class="d-mini"><span class="d-mini-f"></span><span class="d-mini-t"></span></div>
+        <div class="d-mini"><span class="d-mini-t"></span></div>
       </div>
       <div class="coup">
         <span class="invite d-invite"></span>
@@ -10777,9 +10776,6 @@ function build(){
     const x = c.getContext("2d"); x.scale(2, 2); x.translate(26, 31); x.scale(0.45, 0.45); drawPheasant(x, 0, 0, 1, { kind }); b.appendChild(c); pe.appendChild(b);
     b.addEventListener("click", ()=>{ if(game.shots.length) return; haptic("tic"); persoChoix = kind; game.perso = kind === 0 ? [0, 1] : [1, 0]; refreshUI(); });
   });
-  // 10.65 : fermé, deux petits faisans face à face devant la ligne d'état
-  [0, 1].forEach(kind => { const c = document.createElement("canvas"); c.width = 60; c.height = 51;
-    const x = c.getContext("2d"); x.scale(1.5, 1.5); x.translate(22, 25); x.scale(0.42, 0.42); drawPheasant(x, 0, 0, 1, { kind }); card.querySelector(".d-mini-f").appendChild(c); });
   card.querySelector(".d-lancer").addEventListener("click", ()=>{ if(world && world.over) nouvellePartie(); else lancer(); });
   card.querySelector(".d-revoir").addEventListener("click", ()=> replayLast(false));
   card.querySelector(".d-go").addEventListener("click", ()=>{ haptic("tic"); $(".attente").classList.remove("on"); bandMode = null; setTimeout(()=> replayLast(true), 300); });
@@ -11279,36 +11275,29 @@ function render(){
 // ouvre l'éventail ; un clic ailleurs le referme. Un écran qui attend d'être lu
 // (voyant vert) passe dessus. Rien ne change dans les données ni dans l'ordre.
 const REPLIS_KEY = "sltapis-essai-replis";
-const REPLIS_DEF = { chat: "papier", toits: "oui", pile: "suite" };
+const REPLIS_DEF = { pile: "suite" };
 function replisOpt(k){
   try{ const o = JSON.parse(localStorage.getItem(REPLIS_KEY) || "{}"); return o[k] || REPLIS_DEF[k]; }catch(e){ return REPLIS_DEF[k]; }
 }
-function applyReplis(){
-  document.documentElement.classList.toggle("rp-papier", replisOpt("chat") === "papier");
-  document.documentElement.classList.toggle("rp-toits", replisOpt("toits") === "oui");
-}
-applyReplis();
+function applyReplis(){}
 let pileOpen = false;
 function pileFolded(){
-  const mode = replisOpt("pile");
-  if(mode === "non") return;
+  if(replisOpt("pile") === "non") return;
   const cards = Array.from(categoriesEl.children).filter(el => el.id && el.id.startsWith("cat-"));
-  let run = [];
-  if(mode === "toutes") run = cards.filter(c => c.classList.contains("collapsed"));
-  else for(let i = cards.length - 1; i >= 0 && cards[i].classList.contains("collapsed"); i--) run.unshift(cards[i]);
+  const run = [];
+  for(let i = cards.length - 1; i >= 0 && cards[i].classList.contains("collapsed"); i--) run.unshift(cards[i]);
   if(run.length < 2){ pileOpen = false; return; }
-  const hot = c => c.classList.contains("unread") || c.classList.contains("duel-new") ? 1 : 0;
-  run = run.map((c, i) => ({ c, i })).sort((a, b) => hot(b.c) - hot(a.c) || a.i - b.i).map(o => o.c);
   const pile = document.createElement("div");
   pile.className = "fold-pile" + (pileOpen ? " open" : "");
-  pile.style.setProperty("--n", Math.min(run.length, 3));
-  if(mode === "toutes") categoriesEl.appendChild(pile); else run[0].before(pile);
+  pile.style.setProperty("--n", run.length);
+  pile.style.setProperty("--m", run.length);
+  run[0].before(pile);
   run.forEach((c, i) => { c.style.setProperty("--i", i); pile.appendChild(c); });
-  const more = document.createElement("span");
-  more.className = "pile-more"; more.textContent = "+" + (run.length - 1);
-  pile.appendChild(more);
+  // au doigt (pas de survol) : un premier toucher écarte la pile ; toucher ailleurs la resserre
+  let pt = "mouse";
+  pile.addEventListener("pointerdown", e => { pt = e.pointerType; }, true);
   pile.addEventListener("click", e=>{
-    if(pile.classList.contains("open")) return;
+    if(pt === "mouse" || pile.classList.contains("open")) return;
     e.stopPropagation(); e.preventDefault();
     pileOpen = true; pile.classList.add("open");
   }, true);
@@ -13909,9 +13898,7 @@ if(ESSAI && /[?&]replis/.test(location.search)) (()=>{
   document.body.appendChild(box);
   box.addEventListener("click", e => e.stopPropagation());
   box.addEventListener("pointerdown", e => e.stopPropagation());
-  const G = [["chat", "Chat fermé", [["papier","Sur papier"],["nu","À nu, sur le fond"]]],
-             ["toits", "Toits sous le duel fermé", [["oui","Oui"],["non","Non"]]],
-             ["pile", "Pile des fermées", [["non","Pas de pile"],["suite","Celles qui se suivent en bas"],["toutes","Toutes les fermées"]]]];
+  const G = [["pile", "Pile des fermées", [["suite","Celles qui se suivent en bas"],["non","Pas de pile"]]]];
   const q = new URLSearchParams(location.search);
   try{ const o = JSON.parse(localStorage.getItem(REPLIS_KEY) || "{}"); G.forEach(([k]) => { if(q.get(k)) o[k] = q.get(k); }); localStorage.setItem(REPLIS_KEY, JSON.stringify(o)); }catch(e){}
   const draw = ()=>{
