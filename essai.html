@@ -1277,15 +1277,15 @@
   - 10.63 : duel de faisans (voir DUEL DE FAISANS) : petit jeu à deux en
     tour par tour, créé par « + Ajouter un duel de faisans » ; entraînement
     seul. Papier des mémos en blanc (--memo-a/b/c #FFFFFF, avant blanc chaud).
-  - 10.66 (banc) : la pile est abandonnée. Les cases fermées se rangent en
-    bas (ouvertes d'abord, fermées ensuite, chacune dans l'ordre ; la 1re
-    fermée commence une rangée : .fold-first). Survol souris = la case
-    s'entrouvre (.peek, sans toucher aux données), clic = ouverte pour de bon
-    et remontée juste après la dernière ouverte (unfoldCat, l'ordre change).
-    Au doigt : 1er toucher entrouvre, 2e ouvre, toucher ailleurs referme.
+  - 10.66 (banc) : la pile est abandonnée, et les cases ne se déplacent
+    jamais seules (essayé puis écarté : fermées rangées en bas, remontée à
+    l'ouverture). Survol souris = la case fermée s'entrouvre (.peek, sans
+    toucher aux données), clic = ouverte pour de bon, à sa place. Au doigt :
+    1er toucher entrouvre, 2e ouvre, toucher ailleurs referme. Liste fermée :
+    aperçu pâle des premières tâches.
     Chat replié : la feuille de style cache les lignes (plus retirées).
-    Duel fermé : la phrase en bandeau façon « Lancer », grise sauf action
-    attendue (.attendu). Mémos en sombre : papier des listes (#1C2125).
+    Duel fermé : la phrase en bandeau bleu façon « Lancer », à bords perdus,
+    au nombre d'or ; estompé après 3 s sauf action attendue (.attendu). Mémos en sombre : papier des listes (#1C2125).
   - 10.65 : volet des écrans de chat et de duel (repli sur une ligne,
     voyant vert du duel) ; toutes les cases repliées à la même hauteur
     (--fold-h, 127px : le mémo replié, resserré de 3 px, sert d'étalon) ;
@@ -2693,18 +2693,19 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* 10.66 : la phrase dans un bandeau vintage du style du bouton « Lancer », gris tant qu'aucune action
    n'est attendue (comme le bouton désactivé) ; à son tour ou un coup à découvrir : la couleur du jeu */
 .duel-card.collapsed .d-mini-t{ flex:1 1 auto; font:700 0.9rem/1.2 'Courier Prime', 'Courier New', monospace; letter-spacing:0.02em;
-  color:var(--ink-faint); background:var(--surface); border:2px solid var(--line); border-width:2px 0; border-radius:0; box-shadow:0 3px 0 var(--line);
-  padding:0.36rem 1rem; margin:0 -1rem; transition:color .3s, border-color .3s, box-shadow .3s; }   /* à bords perdus : d'un bord du papier à l'autre */
-.duel-card.collapsed .d-mini.attendu .d-mini-t{ color:var(--objet); border-color:var(--objet); box-shadow:0 3px 0 var(--objet); }
+  color:var(--objet); background:var(--surface); border:2px solid var(--objet); border-width:2px 0; border-radius:0; box-shadow:0 3px 0 var(--objet);
+  padding:0.36rem 1rem; margin:0 -1rem;   /* à bords perdus : d'un bord du papier à l'autre */
+  opacity:0.45; transition:opacity 1.2s ease 3s; }   /* rien n'est attendu de vous : il s'estompe après quelques secondes */
+.duel-card.collapsed .d-mini.attendu .d-mini-t, .duel-card.collapsed:hover .d-mini-t{ opacity:1; transition:opacity .3s ease; }
+/* posé au nombre d'or de la case (≈ 62 % de sa hauteur depuis le haut) */
+.duel-card.collapsed .d-mini{ padding-top:var(--d-mini-down, 1.7rem) !important; }
 .d-mini-t{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .duel-card.collapsed .duel-foot{ z-index:1; }
 .duel-card.collapsed .chat-led{ z-index:2; }
 .duel-card.collapsed .duel-stage{ padding-bottom:0.2rem; }
-/* 10.66 : les cases fermées se rangent en bas, sur une rangée à part (dans l'ordre
-   d'arrangement) ; au survol (souris), une case fermée s'entrouvre (classe peek) et se
-   referme quand on s'en va ; un clic l'ouvre pour de bon, et elle remonte en bas des
-   ouvertes. Au doigt : un toucher l'entrouvre, un second l'ouvre, toucher ailleurs la referme. */
-.fold-first{ grid-column-start:1; }
+/* 10.66 : au survol (souris), une case fermée s'entrouvre (classe peek) et se referme quand
+   on s'en va ; un clic l'ouvre pour de bon, à sa place. Au doigt : un toucher l'entrouvre,
+   un second l'ouvre, toucher ailleurs la referme. */
 .peek{ align-self:start; z-index:2; cursor:pointer; }
 .category.peek, .duel-card.peek .duel-stage{ box-shadow:0 10px 28px -12px rgba(30,40,45,.28), var(--shadow); }
 /* 10.65 : pleine page des écrans (chat, duel), comme les listes : le bouton à deux flèches en haut à
@@ -10887,10 +10888,7 @@ function render(){
   const coursesScroll = {};
   categoriesEl.querySelectorAll(".category.courses > ul.items").forEach(u => { coursesScroll[u.parentElement.id] = u.scrollTop; });
   categoriesEl.innerHTML = "";
-  // 10.66 : les ouvertes d'abord, les fermées ensuite (chacune dans l'ordre d'arrangement)
-  const shownFolded = catIdx => { const id = DATA[catIdx].id; return isFolded(id) && editingCategoryTitle !== id && fullpageCat !== id; };
-  const liveOrder = getCategoryOrder().filter(catIdx => !isCategoryDeleted(DATA[catIdx].id));
-  const catDisplayOrder = liveOrder.filter(i => !shownFolded(i)).concat(liveOrder.filter(shownFolded));
+  const catDisplayOrder = getCategoryOrder().filter(catIdx => !isCategoryDeleted(DATA[catIdx].id));   // 10.66 : les listes restent où on les a mises, ouvertes ou fermées
   let memoRank = 0;   // 10.23 : rang des mémos, pour varier leur reflet
   catDisplayOrder.forEach(catIdx=>{
     const cat = DATA[catIdx];
@@ -11263,22 +11261,8 @@ function render(){
   if(waitingSection) waitingSection.hidden = !hasAnyList();
 }
 
-// 10.66 : ouvrir une case fermée la fait remonter juste après la dernière ouverte (l'ordre
-// d'arrangement change en conséquence) ; fermée, elle descend d'elle-même avec les fermées
-function unfoldCat(catId){
-  const idx = DATA.findIndex(c => c.id === catId);
-  if(idx >= 0){
-    order = loadOrder();
-    const full = getCategoryOrder().slice();
-    const open = full.filter(i => i !== idx && !isCategoryDeleted(DATA[i].id) && !isFolded(DATA[i].id));
-    full.splice(full.indexOf(idx), 1);
-    const last = open[open.length - 1];
-    full.splice(last === undefined ? 0 : full.indexOf(last) + 1, 0, idx);
-    order.__categories__ = full;
-    saveOrder(order);
-  }
-  setFolded(catId, false);
-}
+// 10.66 : rouvrir une case fermée (elle reste à sa place ; essai abandonné : la faire remonter)
+function unfoldCat(catId){ setFolded(catId, false); }
 let lastPointerType = "mouse", peekHold = 0, peekId = null;   // peekHold : juste après une ouverture, la case qui se retrouve sous la souris ne s'entrouvre pas
 document.addEventListener("pointerdown", e=>{
   lastPointerType = e.pointerType || "mouse";
@@ -11291,10 +11275,7 @@ function peekCard(card, on){
   card.classList.toggle("collapsed", !on);
 }
 function wireFolded(){
-  let first = true;
-  categoriesEl.querySelectorAll(":scope > .fold-first").forEach(c => c.classList.remove("fold-first"));
   categoriesEl.querySelectorAll(":scope > .collapsed").forEach(card=>{
-    card.classList.toggle("fold-first", first); first = false;
     if(card.id === peekId) peekCard(card, true);   // déjà entrouverte avant ce rendu
     if(card._fw) return;   // le duel garde sa carte d'un rendu à l'autre
     card._fw = true;
@@ -11316,8 +11297,6 @@ function wireFolded(){
       clearTimeout(t);
       peekHold = Date.now() + 700; peekId = null;
       unfoldCat(id); renderAll();
-      const c2 = document.getElementById("cat-" + id);
-      if(c2) requestAnimationFrame(()=> c2.scrollIntoView({ block:"nearest", behavior:"smooth" }));
     }, true);
   });
 }
