@@ -2103,7 +2103,7 @@ header{
    Fermée ou entrouverte au survol : couchée de travers, grise, l'aiguille sortie, elle attend
    qu'on l'enfonce. Seule la punaise ouvre ou ferme pour de bon. */
 .cat-fold{ color:var(--ink-faint); opacity:0.5; }   /* grise et discrète comme Agrandir et Trier ; pleine au survol de la carte */
-.category:hover .cat-fold, .chat-card:hover .cat-fold, .duel-card:hover .cat-fold{ opacity:1; }
+.category:hover .cat-fold{ opacity:1; }   /* 10.68 : écrans de chat et de duel : pleine seulement à son propre survol (elle ne bouge pas pendant qu'on joue) */
 .cat-fold:hover, .cat-fold:focus-visible{ background:var(--surface-2); color:var(--ink-soft); opacity:1; }
 .cat-fold svg.pin{ overflow:visible; transform-box:fill-box; transform-origin:50% 100%;
   transition:transform .38s cubic-bezier(.3,1.35,.5,1); }
@@ -2536,9 +2536,13 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card .d-lancer{ min-width:7.5em; order:2; background:transparent; }   /* 10.68 : sur la tôle, le bouton est taillé dans le métal (fond de la tôle, cadre et ombre dure) ; le poussoir des bandeaux, sur l'écran, garde son fond */
 .duel-card .poussoir::before{ content:"> "; }
 @media (hover:hover){ .duel-card .poussoir:hover{ background:color-mix(in srgb, var(--pc) 9%, var(--surface)); }
-  .duel-card .d-lancer:not(:disabled):hover, .duel-card .pas:not(:disabled):hover{ background:color-mix(in srgb, var(--pc, var(--objet)) 8%, transparent); } }
-.duel-card .poussoir:active, .duel-card .d-lancer:not(:disabled):active{ transform:translate(3px, 3px); box-shadow:0 0 0 var(--pc); }
-.duel-card .d-lancer:disabled{ cursor:default; color:var(--ink-faint); border-color:var(--line); box-shadow:3px 3px 0 var(--line); background:transparent; }
+  .duel-card .d-lancer:not(.locked):hover, .duel-card .pas:not(:disabled):hover{ background:color-mix(in srgb, var(--pc, var(--objet)) 8%, transparent); } }
+.duel-card .poussoir:active, .duel-card .d-lancer:active{ transform:translate(3px, 3px); box-shadow:0 0 0 var(--pc); }
+/* 10.68 : Lancer n'est jamais grisé : à chaque clic il s'enfonce dans la tôle et remonte (.appui) ;
+   quand ce n'est pas le moment (.locked : vol en cours, tour de l'autre), le clic ne fait rien d'autre */
+.duel-card .d-lancer.appui{ animation:d-appui .26s ease-out; }
+@keyframes d-appui{ 0%, 40%{ transform:translate(3px, 3px); box-shadow:0 0 0 var(--pc); } 100%{ transform:translate(0, 0); } }
+@media (prefers-reduced-motion:reduce){ .duel-card .d-lancer.appui{ animation:none; } }
 /* ligne du coup (esprit invite C:\ de l'écran de chat) */
 .duel-card .coup{ display:flex; flex-wrap:wrap; align-items:center; gap:0.6rem 1.1rem; padding:0.75rem 0.5rem 0.35rem; font-family:'Courier Prime', monospace; font-size:1.05rem; }
 .duel-card .invite{ font-weight:700; min-width:2.6em; }
@@ -2599,7 +2603,6 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   .duel-card .objets button{ width:26px; height:28px; border-radius:6px; }
   .duel-card .objets canvas{ width:21px; height:21px; }
   .duel-card .d-lancer{ grid-column:1 / -1; grid-row:2; justify-self:stretch; margin-right:3px; white-space:nowrap; min-width:0; font-size:0.9rem; padding:0.25rem 0.8rem; min-height:0; box-shadow:2px 2px 0 var(--pc); }
-  .duel-card .d-lancer:disabled{ box-shadow:2px 2px 0 var(--line); }
   .duel-card .d-sous{ grid-column:1 / -1; grid-row:3; min-height:30px; margin-top:-0.15rem; }
   .duel-card .persos{ flex-direction:row; border-right:0; padding-right:0; margin-right:0; gap:0.2rem; }
   .duel-card .persos button{ width:40px; height:32px; border-radius:8px; }
@@ -10764,10 +10767,10 @@ function refreshUI(){
   ROOT.querySelectorAll(".d-angle, .d-vitesse, .pas").forEach(i => i.disabled = lock || world.over);
   const lancerBtn = $(".d-lancer");
   if(world.over){
-    lancerBtn.textContent = "Nouvelle partie"; lancerBtn.disabled = busy;
+    lancerBtn.textContent = "Nouvelle partie"; lancerBtn.classList.toggle("locked", busy);
     $(".d-statut").textContent = "";
   }else{
-    lancerBtn.textContent = "Lancer"; lancerBtn.disabled = lock;
+    lancerBtn.textContent = "Lancer"; lancerBtn.classList.toggle("locked", lock);
     $(".d-statut").textContent = busy || attente ? "" :
       game.solo ? (game.shots.length ? `Entraînement : l'autre faisan ne renvoie rien.` : `Entraînement : choisissez votre faisan, visez l'autre.`)
       : mine ? (game.shots.length ? `À vous de lancer ${OBJETS_ART[monObjet]}.` : `Choisissez votre faisan et lancez : l'autre prendra l'autre faisan.`)
@@ -10826,7 +10829,11 @@ function build(){
     const x = c.getContext("2d"); x.scale(2, 2); x.translate(26, 31); x.scale(0.45, 0.45); drawPheasant(x, 0, 0, 1, { kind }); b.appendChild(c); pe.appendChild(b);
     b.addEventListener("click", ()=>{ if(game.shots.length) return; haptic("tic"); persoChoix = kind; game.perso = kind === 0 ? [0, 1] : [1, 0]; refreshUI(); });
   });
-  card.querySelector(".d-lancer").addEventListener("click", ()=>{ if(world && world.over) nouvellePartie(); else lancer(); });
+  card.querySelector(".d-lancer").addEventListener("click", e => {
+    const b = e.currentTarget; b.classList.remove("appui"); void b.offsetWidth; b.classList.add("appui");   // s'enfonce et remonte, à chaque clic
+    if(b.classList.contains("locked")) return;
+    if(world && world.over) nouvellePartie(); else lancer();
+  });
   card.querySelector(".d-revoir").addEventListener("click", ()=> replayLast(false));
   card.querySelector(".d-go").addEventListener("click", ()=>{ haptic("tic"); $(".attente").classList.remove("on"); bandMode = null; setTimeout(()=> replayLast(true), 300); });
   card.querySelectorAll(".d-angle, .d-vitesse").forEach(i => i.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); lancer(); } }));
