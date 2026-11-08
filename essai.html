@@ -2697,6 +2697,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
 @media (max-width:720px){
   .chat-card .chat-log{ flex:0 1 auto; max-height:calc(10 * 1.45em); }   /* 10.61 : seul sur sa rangée, il grandit avec les messages, jusqu'à 10 lignes */
+  .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:auto; min-height:11rem; }   /* 10.69 : téléphone : pas de proportion imposée (Safari laissait alors les messages déborder sur la case suivante) ; il grandit avec eux */
 }
 /* 10.60 : message non lu (d'un autre, pas encore vu sur cet appareil) :
    l'écran sort de sa discrétion, le voyant s'allume ; ligne « nouveau » */
@@ -2797,7 +2798,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    un second l'ouvre, toucher ailleurs la referme. */
 .peek{ align-self:start; z-index:2; cursor:pointer; }
 .chat-card.peek{ align-self:stretch; }
-.chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; }   /* 10.67 : ouvert, au moins la taille de l'écran du duel (avant : fin, 3 lignes) ; plus haut si la rangée l'est */   /* 10.67 : l'écran de chat entrouvert prend la hauteur de la rangée, comme ouvert */
+@media (min-width:721px){ .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; } }   /* 10.69 : pas sur téléphone (voir plus haut) */   /* 10.67 : ouvert, au moins la taille de l'écran du duel (avant : fin, 3 lignes) ; plus haut si la rangée l'est */   /* 10.67 : l'écran de chat entrouvert prend la hauteur de la rangée, comme ouvert */
 .category.peek{ box-shadow:0 10px 28px -12px rgba(30,40,45,.28), var(--shadow); }
 .category{ transition:box-shadow .45s ease; }   /* 10.67 : l'ombre du survol arrive en douceur */
 /* 10.65 : pleine page des écrans (chat, duel), comme les listes : le bouton à deux flèches en haut à
