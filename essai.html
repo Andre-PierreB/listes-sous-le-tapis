@@ -11141,7 +11141,7 @@ function render(){
       if(state[k]) doneInCat++;
     });
     if(!courses && visibleCount && doneInCat === visibleCount) card.classList.add("done");
-    const folded = isFolded(cat.id) && fullpageCat !== cat.id;   // 10.68 : en pleine page, une case fermée s'affiche ouverte
+    const folded = isFolded(cat.id) && fullpageCat !== cat.id && addingCat !== cat.id;   // 10.68 : en pleine page, une case fermée s'affiche ouverte ; 10.69 : de même le temps d'un ajout par le +
     if(folded) card.classList.add("collapsed");
     // 10.18 : une liste de courses repliée se dépliait d'un clic ; 10.66 : toutes les cases fermées (wireFolded)
     const leftCount = visibleCount - doneInCat + eggsInCat;   // 10.64 : tâches à faire + œufs en couvaison (jamais les cochées)
@@ -11241,7 +11241,7 @@ function render(){
       addingCat = addingCat === cat.id ? null : cat.id;
       const typed = quickInp ? quickInp.value.trim() : "";
       addPrefill = addingCat && typed ? { catId: cat.id, t: typed } : null;
-      if(addingCat && isFolded(cat.id)) unfoldCat(cat.id); // 10.7
+      // 10.69 : plus de dépliage pour de bon : la case s'ouvre le temps de l'ajout puis se referme (seule la punaise punaise)
       renderAll();
     });
     if(canDeleteCat){
