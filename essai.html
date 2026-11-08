@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.67 -->
+<!-- Sous le tapis — version AUTONOME 10.68 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -2055,7 +2055,6 @@ header{
   content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:3px;
   background:var(--cat-color, var(--accent));   /* bouts droits : arrondis, elle rappelait la barre de défilement des mémos */
 }
-.category.collapsed:not(.courses)::before{ bottom:1.05rem; }   /* repliée : la barre longe le titre */
 .category.done{ opacity:0.62; }
 /* 10.15 : liste de courses — hauteur bornée (--courses-max, posé par
    fitCoursesCards) ; au-delà, seule la zone des articles défile, le titre,
@@ -2133,20 +2132,28 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
    étalon : le mémo replié (bandeau + saisie), resserré de 3 px entre le bandeau et la saisie */
 :root{ --fold-h:127px; }
 .category.collapsed{ min-height:var(--fold-h); }
-.category.courses.collapsed > ul.items, .category.courses.collapsed .courses-actions{ display:none; }
+.category.courses.collapsed > .courses-entry, .category.courses.collapsed > .courses-foot{ display:none; }   /* 10.68 : fermé, le mémo montre ses premiers articles (la saisie est en bas, ouverte) */
 /* 10.66 : fermée, une liste montre ses premières tâches en aperçu, pâles et coupées en fondu (comme le
    dernier mot du chat) ; un survol l'entrouvre en entier */
-.category.collapsed:not(.courses){ height:var(--fold-h); overflow:hidden; }
-.category.collapsed:not(.courses) > ul.items{ pointer-events:none; opacity:0.5; margin-top:0.2rem; --fade-a:25%; --fade-b:78%; }
+.category.collapsed{ overflow:hidden; }
+.category.collapsed > ul.items{ pointer-events:none; opacity:0.5; margin-top:0.2rem; --fade-a:45%; --fade-b:100%; }
+/* 10.68 : l'aperçu montre toujours une ligne entière, même quand la saisie passe sous le titre
+   (téléphone) : la case grandit d'autant au lieu de couper la ligne. Pendant le glissement
+   (.gliding), l'aperçu n'est pas borné : la case l'avale en douceur au lieu qu'il disparaisse d'un coup. */
+.category.collapsed:not(.gliding) > ul.items{ flex:none; max-height:2.3rem; overflow:hidden; }
+/* 10.68 : fermée, un bandeau blanc net en bas, au niveau de la poignée et de la punaise : l'aperçu
+   s'y fond au lieu d'être coupé par le bord (surtout sur téléphone) ; même chose pour listes et mémos */
+.category::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:2.3rem; z-index:1; pointer-events:none;
+  border-radius:0 0 14px 14px; background:linear-gradient(transparent, var(--surface) 0.75rem); opacity:0; transition:opacity .35s ease; }
+.category.collapsed::after{ opacity:1; }
+.category > .cat-grip, .category .cat-grip, .category > .cat-fold, .category > .share-chips{ z-index:2; }
 /* 10.67 : le fondu de l'aperçu se lève en douceur à l'ouverture (avant : il sautait d'un coup, « déclic ») */
 @property --fade-a{ syntax:'<percentage>'; inherits:false; initial-value:100%; }
 @property --fade-b{ syntax:'<percentage>'; inherits:false; initial-value:100%; }
-.category:not(.courses) > ul.items{ --fade-a:100%; --fade-b:100%;
+.category > ul.items{ --fade-a:100%; --fade-b:100%;
   -webkit-mask-image:linear-gradient(180deg, #000 var(--fade-a), transparent var(--fade-b)); mask-image:linear-gradient(180deg, #000 var(--fade-a), transparent var(--fade-b));
   transition:--fade-a .55s ease, --fade-b .55s ease, opacity .45s ease; }   /* pas de transition sur margin-top : elle changeait la hauteur après coup (petit cran à la fin de l'ouverture) */
-.category.collapsed:not(.courses) > ul.items > li.is-checked{ display:none; }
-/* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
-.category.courses.collapsed .courses-entry{ cursor:auto; padding-top:calc(0.55rem - 3px); }
+.category.collapsed > ul.items > li.is-checked{ display:none; }
 .category.collapsed .cat-order{ display:none; }   /* 10.45 : repliée, la flèche d'ordre se confondait avec celle qui rouvre */
 .category.courses.collapsed{ cursor:pointer; } /* 10.18 : toute la carte repliée se déplie d'un clic */
 .category.courses .cat-head{ cursor:pointer; } /* 10.19 : ouverte, un clic sur le bandeau (hors titre) la replie */
@@ -3176,9 +3183,9 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
   display:inline-flex; align-items:center; justify-content:center;
 }
 .qty-step:hover{ background:var(--accent-soft); color:var(--accent-strong); border-color:var(--accent); }
-/* saisie en haut (alignée sur les articles), Vider les rayés en bas (10.38) */
-.courses-entry{ flex:none; padding-top:0.55rem; }   /* 10.38 : la saisie sur la ligne de la 1re tâche des cartes voisines */
-.courses-entry + ul.items{ margin-top:-0.7rem; }   /* 10.38 : le 1er article, une ligne sous la saisie */
+/* 10.68 : saisie sous les articles (comme avant la 10.38), Vider les rayés tout en bas ; la saisie
+   rapide est à côté du titre, comme dans les listes */
+.courses-entry{ flex:none; }
 .courses-foot{ flex:none; display:flex; flex-direction:column; }
 .courses-add{ display:flex; align-items:flex-start; gap:0.65rem; padding:0 0.3rem; }
 .courses-add .drag-handle{ visibility:hidden; }
@@ -4349,7 +4356,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.67</span>
+    <span class="version-tag">v10.68</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -7220,6 +7227,16 @@ function writeCoursesQty(key, q){
 // de la liste, avec sa quantité s'il y en a une. Un article déjà là et rayé
 // est dé-rayé au lieu d'être doublé (avec la nouvelle quantité, ou sans) ;
 // déjà là et pas rayé : seule la quantité change, si on en a donné une.
+// 10.68 : saisie rapide d'un mémo (à côté du titre) : même chemin que la saisie du bas
+function addCoursesQuick(cat, text){
+  let res;
+  try{ res = addCoursesLines(cat, text); }
+  catch(err){ console.error("[courses] ajout rapide", err); return; }
+  if(res.already && !res.added && !res.revived && !res.qty) actionToast("coursesAlready");
+  else if(res.qty && !res.added && !res.revived) actionToast("coursesQty");
+  else if(res.added || res.revived) actionToast("add");
+  if(res.lastKey && !isFolded(cat.id)) coursesScrollTo = { catId: cat.id, key: res.lastKey };
+}
 function addCoursesLines(cat, text){
   const res = { added:0, revived:0, already:0, qty:0, lastKey:null };
   const lines = String(text || "").split(/\r?\n/).map(parseCoursesLine).filter(p => p.t);
@@ -9439,7 +9456,7 @@ function fitCoursesCards(saved){
     const ul = c.querySelector(":scope > ul.items");
     if(!ul) return;
     // 10.17 : la marge part de la première ligne sous le titre (10.38 : la saisie)
-    const first = c.querySelector(":scope > .courses-entry") || ul;
+    const first = ul;   // 10.68 : les articles d'abord, la saisie est dessous
     c.style.setProperty("--rule-top", (first ? first.offsetTop : c.offsetHeight) + "px");
     // 10.18 : barre de défilement maison, toujours visible
     let bar = c.querySelector(":scope > .courses-scroll");
@@ -11069,7 +11086,7 @@ function render(){
           ? `<input type="text" class="cat-title-input" value="${escapeAttr(cat.title)}">`
           : `${courses ? BASKET_SVG : ""}<span class="cat-title-line"><span class="cat-title">${escapeAttr(cat.title)}</span><button type="button" class="add-btn" aria-label="${courses ? "Ajouter un article avec détail" : "Ajouter une tâche"}"><span class="g">+</span></button></span>${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} ${courses ? "à prendre" : "à faire"}">${leftCount}</span>` : ""}`}
         ${renamingThisCat && !courses ? `<button type="button" class="add-btn" aria-label="Ajouter une tâche"><span class="g">+</span></button>` : ""}
-        ${renamingThisCat || courses ? "" : `<label class="cat-quick-wrap" title="Ajouter une tâche"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" placeholder="Nouvelle tâche…" aria-label="Ajouter une tâche à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
+        ${renamingThisCat ? "" : `<label class="cat-quick-wrap" title="${courses ? "Ajouter un article" : "Ajouter une tâche"}"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" placeholder="${courses ? "Nouvel article…" : "Nouvelle tâche…"}" aria-label="${courses ? "Ajouter un article" : "Ajouter une tâche"} à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
       </span>
       <span class="cat-head-right">
         <button type="button" class="cat-order${newBottom ? " reversed" : ""}${reversed ? " custom" : ""}" aria-label="${newBottom ? "Mettre les récentes en haut" : "Mettre les récentes en bas"}" data-tip="${newBottom ? "Récentes en haut ?" : "Récentes en bas ?"}"><svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true"><path d="M5 1.8 9 8.2H1z" fill="currentColor"/></svg></button>
@@ -11097,7 +11114,9 @@ function render(){
         const txt = e.clipboardData ? e.clipboardData.getData("text") : "";
         if(!txt || !/\n/.test(txt.trim())) return;
         e.preventDefault();
-        const lines = splitPastedTasks(quickInp.value.slice(0, quickInp.selectionStart) + txt + quickInp.value.slice(quickInp.selectionEnd));
+        const all = quickInp.value.slice(0, quickInp.selectionStart) + txt + quickInp.value.slice(quickInp.selectionEnd);
+        if(courses){ addCoursesQuick(cat, all); quickInp.value = ""; refocusQuickCat = cat.id; renderAll(); return; }   // 10.68
+        const lines = splitPastedTasks(all);
         if(isFolded(cat.id)) unfoldCat(cat.id);
         if(addPastedTasks(cat, lines)) actionToast("add");
         quickInp.value = "";
@@ -11108,9 +11127,12 @@ function render(){
         if(e.key === "Enter"){
           e.preventDefault();
           if(!quickInp.value.trim()) return;
+          if(courses) addCoursesQuick(cat, quickInp.value);   // 10.68 : mémo fermé, il reste fermé (sa bulle grandit), comme en 10.19
+          else{
           if(isFolded(cat.id)) unfoldCat(cat.id); // 10.7 : la liste se rouvre
           try{ if(addQuickTask(cat, quickInp.value)) actionToast("add"); }
           catch(err){ console.error("[ajout express] échec", err); }
+          }
           quickInp.value = "";
           refocusQuickCat = cat.id;
           renderAll();
@@ -11343,8 +11365,8 @@ function render(){
 
     if(courses){   // 10.15 : saisie et Vider les rayés (10.38 : saisie en haut)
       const parts = buildCoursesParts(cat);
-      card.appendChild(parts.entry);
       card.appendChild(ul);
+      card.appendChild(parts.entry);   // 10.68 : la saisie repasse sous les articles
       card.appendChild(parts.foot);
     }else card.appendChild(ul);
     // 10.7 : la flèche du volet, en bas à droite ; 10.67 : une punaise (plantée = ouverte)
@@ -11403,11 +11425,12 @@ function glideHeight(card, h0, opening){
   if(Math.abs(h1 - h0) < 2) return 0;
   const dur = Math.round(Math.min(650, Math.max(440, Math.abs(h1 - h0) * 1.7)) * (opening ? 1 : 1.25));   // 10.67 : un peu plus long, fermeture encore un peu plus posée   // 10.67 : la fermeture prend plus son temps (avant × 0.85)
   card.style.overflow = "hidden";
+  card.classList.add("gliding");   // 10.68 : aperçu non borné pendant le glissement
   const a = card.animate([{ height:h0 + "px" }, { height:h1 + "px" }], { duration:dur, easing:opening ? SOFT_EASE : SOFT_CLOSE });
   card._soft = a;
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
-  const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; if(card.classList.contains("courses")) placeCoursesScroll(card); } };
+  const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); if(card.classList.contains("courses")) placeCoursesScroll(card); } };
   a.onfinish = done; a.oncancel = done;
   return dur;
 }
