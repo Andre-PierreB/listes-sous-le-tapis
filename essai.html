@@ -14211,5 +14211,70 @@ if(DEMO && !hasAnyList()) (()=>{
   if(duel && Store.setListField(duel.id, "type", "duel")) insertItem(duel, { t: "nouvelle partie", duel: "partie", seed: (Math.random() * 2 ** 31) | 0, g: 380, vent: 10, trou: 22, decor: "pignons", at: Date.now() });
   renderAll();
 })();
+// Banc des couleurs par personne (vitrine seulement) : le chat est « partagé avec Hiske », le duel
+// « avec Lou » (personnes fictives) ; trois pistes à comparer, rien n'est enregistré dans les données.
+if(DEMO) (()=>{
+  const PAL = { ambre:"#E2A64B", gameboy:"#93B46A", bleu:"#7EA6D8", rose:"#DE8C9E", lavande:"#A48DD3", sauge:"#86B39C", gris:"#9AA3A8" };
+  const q = new URLSearchParams(location.search);
+  const st = { piste: q.get("pc") || "lcd", a: q.get("pa") || "ambre", b: q.get("pb") || "bleu", k: +(q.get("pk") || 30) };
+  const css = document.createElement("style");
+  css.textContent = `
+    #cat-chat{ --pcol:var(--pc-a); } #cat-duel{ --pcol:var(--pc-b); }
+    /* piste 1 : écran LCD teinté (multiplié sur l'écran, ouvert et fermé) */
+    body.pc-lcd #cat-chat .chat-screen::before, body.pc-lcd #cat-duel .duel-win::before{ content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none; z-index:2;
+      background:var(--pcol); mix-blend-mode:multiply; opacity:calc(var(--pc-k) / 100); }
+    body.pc-lcd #cat-chat .chat-screen{ isolation:isolate; }
+    /* piste 2 : toute la fenêtre remplie (la tôle autour de l'écran) */
+    body.pc-fill #cat-chat, body.pc-fill #cat-duel{ background:color-mix(in srgb, var(--pcol) calc(var(--pc-k) * 0.6%), transparent); border-radius:16px; }
+    body.pc-fill #cat-chat .chat-box{ padding-left:0.6rem; padding-right:0.6rem; } body.pc-fill #cat-duel .duel-stage{ padding-left:0.6rem; padding-right:0.6rem; }
+    /* piste 3 : seulement le bord de l'écran et les initiales */
+    body.pc-rim #cat-chat .chat-hole, body.pc-rim #cat-duel .duel-screen{ box-shadow:0 0 0 2px color-mix(in srgb, var(--pcol) calc(40% + var(--pc-k) * 1%), transparent); }
+    body.pc-lcd #cat-chat .chat-who, body.pc-lcd #cat-duel .chat-who, body.pc-fill #cat-chat .chat-who, body.pc-fill #cat-duel .chat-who,
+    body.pc-rim #cat-chat .chat-who, body.pc-rim #cat-duel .chat-who{ color:color-mix(in srgb, var(--pcol) 80%, var(--ink)); opacity:1; }
+    .pc-panel{ position:fixed; z-index:300; right:10px; bottom:10px; width:min(300px, calc(100vw - 20px)); padding:0.7rem 0.8rem; border-radius:14px;
+      background:var(--surface); box-shadow:var(--shadow), 0 0 0 1px var(--line); font:0.82rem/1.35 'Public Sans', system-ui, sans-serif; color:var(--ink); }
+    .pc-panel.min > :not(.pc-t){ display:none; }
+    .pc-t{ display:flex; justify-content:space-between; align-items:center; font:700 0.72rem 'Courier Prime', monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); cursor:pointer; }
+    .pc-row{ display:flex; flex-wrap:wrap; gap:0.3rem; align-items:center; margin-top:0.5rem; }
+    .pc-row b{ width:100%; font-weight:600; font-size:0.75rem; color:var(--ink-soft); }
+    .pc-panel button{ font:inherit; font-size:0.78rem; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); border-radius:999px; padding:0.25rem 0.6rem; cursor:pointer; }
+    .pc-panel button.on{ border-color:var(--ink-soft); background:var(--accent-soft); }
+    .pc-sw{ width:26px; height:26px; padding:0 !important; border-radius:50% !important; }
+    .pc-sw.on{ box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--ink-soft); }
+    .pc-panel input[type=range]{ width:100%; }`;
+  document.head.appendChild(css);
+  const box = document.createElement("div");
+  box.className = "pc-panel" + (innerWidth < 600 ? " min" : "");
+  document.body.appendChild(box);
+  box.addEventListener("click", e => e.stopPropagation());
+  box.addEventListener("pointerdown", e => e.stopPropagation());
+  const sw = who => Object.keys(PAL).map(n => `<button type="button" class="pc-sw${st[who] === n ? " on" : ""}" data-who="${who}" data-c="${n}" title="${n}" style="background:${PAL[n]}"></button>`).join("");
+  const apply = ()=>{
+    document.body.classList.remove("pc-lcd", "pc-fill", "pc-rim", "pc-off");
+    document.body.classList.add("pc-" + st.piste);
+    const r = document.documentElement.style;
+    r.setProperty("--pc-a", PAL[st.a]); r.setProperty("--pc-b", PAL[st.b]); r.setProperty("--pc-k", st.k);
+    const min = box.classList.contains("min");
+    box.innerHTML = `<div class="pc-t"><span>Couleurs par personne</span><span>${min ? "▴" : "▾"}</span></div>
+      <div class="pc-row"><b>Piste</b>${[["lcd","Écran teinté"],["fill","Fenêtre remplie"],["rim","Bord + initiales"],["off","Aucune"]].map(([k, l]) => `<button type="button" data-p="${k}" class="${st.piste === k ? "on" : ""}">${l}</button>`).join("")}</div>
+      <div class="pc-row"><b>Hiske (le chat)</b>${sw("a")}</div>
+      <div class="pc-row"><b>Lou (le duel)</b>${sw("b")}</div>
+      <div class="pc-row"><b>Intensité : ${st.k}</b><input type="range" min="5" max="80" value="${st.k}"></div>
+      <div class="pc-row"><button type="button" data-copy>Copier le lien de ces réglages</button><span data-msg style="font-size:.72rem;color:var(--ink-faint)"></span></div>`;
+  };
+  box.addEventListener("click", e=>{
+    const t = e.target;
+    if(t.closest(".pc-t")){ box.classList.toggle("min"); apply(); return; }
+    if(t.dataset.p){ st.piste = t.dataset.p; apply(); }
+    if(t.dataset.c){ st[t.dataset.who] = t.dataset.c; apply(); }
+    if(t.hasAttribute("data-copy")){
+      const url = location.origin + location.pathname + `?demo&pc=${st.piste}&pa=${st.a}&pb=${st.b}&pk=${st.k}`;
+      const msg = box.querySelector("[data-msg]");
+      (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(()=>{ msg.textContent = "Copié."; }, ()=>{ msg.textContent = url; });
+    }
+  });
+  box.addEventListener("input", e=>{ if(e.target.type === "range"){ st.k = +e.target.value; document.documentElement.style.setProperty("--pc-k", st.k); const b = e.target.previousElementSibling; if(b) b.textContent = "Intensité : " + st.k; } });
+  apply();
+})();
 if(!DEMO) Sync.start();   // 10.68 : la vitrine ne se connecte jamais
 </script>
