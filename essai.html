@@ -2706,6 +2706,14 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* voyant sur la tôle, en haut à droite de l'écran : éteint (petit creux gris),
    il s'allume en vert du faisan et luit doucement tant qu'un message n'est pas lu */
 .chat-box{ position:relative; min-width:0; }
+/* 10.69 : couleur de la personne (choisie dans Partage, carnet) : la fenêtre partagée avec elle se
+   remplit d'une teinte douce, ouverte comme fermée ; ses initiales en bas prennent la couleur */
+.chat-card.has-pcol:not(.fullpage), .duel-card.has-pcol:not(.fullpage){ background:color-mix(in srgb, var(--pcol) 15%, transparent); border-radius:14px; }
+.chat-card.has-pcol:not(.fullpage) .chat-box, .duel-card.has-pcol:not(.fullpage) .duel-stage{ padding-left:0.6rem; padding-right:0.6rem; }
+.has-pcol .chat-who{ color:color-mix(in srgb, var(--pcol) 80%, var(--ink)); opacity:1; }
+.sh-colors{ display:flex; gap:0.3rem; align-items:center; width:100%; }
+.sh-sw{ width:24px; height:24px; padding:0; border-radius:50%; border:1px solid var(--line); cursor:pointer; background:var(--surface-2); color:var(--ink-faint); font-size:0.8rem; line-height:1; }
+.sh-sw.on{ box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--ink-soft); }
 .chat-hole, .chat-screen{ min-width:0; }   /* 10.68 : l'écran de chat ne dépasse jamais la largeur de la case */
 .chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 3.5px); left:1.25rem;   /* 10.69 : en haut à gauche : le coin droit est au bouton pleine page (avant : juste à sa gauche) */ width:7px; height:7px; border-radius:50%;
   background:color-mix(in srgb, var(--ink) 18%, var(--bg)); box-shadow:inset 0 1px 1px rgba(0,0,0,0.25), 0 1px 0 var(--chat-lip); transition:background .4s ease, box-shadow .4s ease; }
@@ -6969,6 +6977,16 @@ function contactsMap(){
   const c = (()=>{ try{ return Store.userField("contacts"); }catch(e){ return undefined; } })();
   return (c && typeof c === "object" && !Array.isArray(c)) ? c : {};
 }
+// 10.69 : couleur d'une personne du carnet (teintes douces) ; une fenêtre partagée prend celle de la
+// première personne qui en a une
+const PERSON_PAL = { ambre:"#E2A64B", gameboy:"#93B46A", bleu:"#7EA6D8", rose:"#DE8C9E", lavande:"#A48DD3", sauge:"#86B39C", gris:"#9AA3A8" };
+function personColor(uid){ const c = uid ? contactsMap()[uid] : null; return (c && PERSON_PAL[c.color]) || null; }
+function cardColor(catId){ for(const u of listPeople(catId)){ const c = personColor(u); if(c) return c; } return null; }
+function paintCardColor(card, catId){
+  const c = (()=>{ try{ return cardColor(catId); }catch(e){ return null; } })();
+  card.classList.toggle("has-pcol", !!c);
+  if(c) card.style.setProperty("--pcol", c); else card.style.removeProperty("--pcol");
+}
 function personName(uid, catId){
   if(!uid) return "?";
   if(uid === myUid()) return myName();
@@ -8032,7 +8050,7 @@ function layoutRect(c){
 function handleListDragMove(x, y){
   const d = dragState;
   const dx = x - d.startX, dy = y - d.startY;
-  d.ghost.style.transform = `translate(${dx}px, ${dy}px) rotate(-1deg) scale(1.02)`;
+  d.ghost.style.transform = `translate(${dx}px, ${dy}px) scale(1.02)`;   // 10.69 : plus de petit angle
   const gx = d.ghostLeft + dx + d.w / 2, gy = d.ghostTop + dy + d.h / 2;
   // petit défilement automatique près des bords de la fenêtre
   dragPageScroll(x, y);   // 10.24
@@ -8059,7 +8077,7 @@ function handleListDragMove(x, y){
 
 function handleRowDragMove(x, y){
   const d = dragState;
-  d.ghost.style.transform = `translate(${x - d.startX}px, ${y - d.startY}px) rotate(-0.6deg)`;
+  d.ghost.style.transform = `translate(${x - d.startX}px, ${y - d.startY}px)`;   // 10.69 : plus de petit angle
   dragPageScroll(x, y);   // 10.24
   dragInnerScroll(x, y);
   const target = document.elementFromPoint(x, y);
@@ -9676,6 +9694,7 @@ function buildChatCard(cat, catIdx){
   const folded = isFolded(cat.id) && !sharing && fullpageCat !== cat.id;
   if(folded) card.classList.add("collapsed");
   if(fullpageCat === cat.id) card.classList.add("fullpage");
+  paintCardColor(card, cat.id);   // 10.69
   card.innerHTML = `<div class="chat-box"><span class="chat-led" aria-hidden="true"></span>${scrFullBtn(cat.id)}<div class="chat-hole"><div class="chat-screen">
       <div class="chat-log" role="log" aria-label="Messages"></div>
       <div class="chat-in"><textarea class="chat-field" rows="1" aria-label="Écrire un mot" autocomplete="off" enterkeyhint="send"></textarea><span class="chat-cur"></span></div>
@@ -10997,6 +11016,7 @@ function foot(cat, catIdx){
   const people = [listOwnerUid(cat.id)].concat(listPeople(cat.id)).filter((u, j, a) => u && a.indexOf(u) === j);
   const ini = u => u ? personInitials(u, cat.id) : initialOf(myName());
   ROOT.querySelector(".chat-who").textContent = (people.length ? people : [null]).map(ini).join(" ");
+  paintCardColor(ROOT, cat.id);   // 10.69
   const more = ROOT.querySelector(".chat-more"), menu = ROOT.querySelector(".chat-menu");
   const open = chatMenuOpen === cat.id;
   menu.hidden = !open; more.setAttribute("aria-expanded", open);
@@ -11911,8 +11931,10 @@ function renderShare(){
       if(shareEditUid === u) return `<li class="sh-person sh-editing" data-uid="${escapeAttr(u)}">
         <input type="text" class="sh-ini-in" maxlength="3" value="${escapeAttr(personInitials(u))}" aria-label="Initiales" autocomplete="off" autocapitalize="characters">
         <input type="text" class="sh-name-in" maxlength="30" value="${escapeAttr(cm[u].name || "")}" aria-label="Nom" autocomplete="off">
+        <span class="sh-colors" role="group" aria-label="Couleur des fenêtres partagées avec cette personne"><button type="button" class="sh-sw${PERSON_PAL[cm[u].color] ? "" : " on"}" data-c="" title="Sans couleur">×</button>${Object.keys(PERSON_PAL).map(n => `<button type="button" class="sh-sw${cm[u].color === n ? " on" : ""}" data-c="${n}" title="${n}" style="background:${PERSON_PAL[n]}"></button>`).join("")}</span>
         <span class="edit-actions"><button type="button" class="edit-cancel">Annuler</button><button type="button" class="edit-save">Enregistrer</button></span></li>`;
-      return `<li class="sh-person"><span class="share-chip">${escapeAttr(personInitials(u))}</span><span class="sh-pname" data-uid="${escapeAttr(u)}" title="Double-clic pour modifier">${escapeAttr(cm[u].name || "?")}</span><button type="button" class="sh-edit" data-uid="${escapeAttr(u)}" aria-label="Modifier le nom et les initiales" data-tip="Modifier"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg></button><span class="sh-state">${k ? k + (k > 1 ? " listes partagées" : " liste partagée") : "aucune liste partagée"}</span><button type="button" class="sh-x" data-uid="${escapeAttr(u)}" aria-label="Retirer ${escapeAttr(cm[u].name || "")} du carnet" data-tip="Retirer du carnet">&times;</button></li>`;
+      const pc = PERSON_PAL[cm[u].color];
+      return `<li class="sh-person"><span class="share-chip"${pc ? ` style="background:color-mix(in srgb, ${pc} 35%, var(--surface))"` : ""}>${escapeAttr(personInitials(u))}</span><span class="sh-pname" data-uid="${escapeAttr(u)}" title="Double-clic pour modifier">${escapeAttr(cm[u].name || "?")}</span><button type="button" class="sh-edit" data-uid="${escapeAttr(u)}" aria-label="Modifier le nom, les initiales et la couleur" data-tip="Modifier"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg></button><span class="sh-state">${k ? k + (k > 1 ? " listes partagées" : " liste partagée") : "aucune liste partagée"}</span><button type="button" class="sh-x" data-uid="${escapeAttr(u)}" aria-label="Retirer ${escapeAttr(cm[u].name || "")} du carnet" data-tip="Retirer du carnet">&times;</button></li>`;
     }).join("") + invites.map(inv=>{
       const d = inv.createdAt ? new Date(inv.createdAt) : null;
       const when = d ? shortDateFR(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0")) : "";
@@ -11959,6 +11981,8 @@ function renderShare(){
       const uid = ed.dataset.uid, nIn = ed.querySelector(".sh-name-in"), iIn = ed.querySelector(".sh-ini-in");
       const autoIni = ()=> initialOf(nIn.value.trim() || "?");
       let iniTouched = !!(contactsMap()[uid] || {}).ini;
+      let colorPick = (contactsMap()[uid] || {}).color || "";   // 10.69
+      ed.querySelectorAll(".sh-sw").forEach(b => b.addEventListener("click", e=>{ e.stopPropagation(); colorPick = b.dataset.c; ed.querySelectorAll(".sh-sw").forEach(x => x.classList.toggle("on", x === b)); }));
       iIn.addEventListener("input", ()=>{ iniTouched = true; });
       nIn.addEventListener("input", ()=>{ if(!iniTouched) iIn.value = autoIni(); });
       const save = ()=>{
@@ -11968,6 +11992,7 @@ function renderShare(){
           if(n) c[uid].name = n;
           const ini = iIn.value.trim().toLocaleUpperCase("fr").slice(0, 3);
           if(ini && ini !== initialOf(c[uid].name)) c[uid].ini = ini; else delete c[uid].ini;
+          if(PERSON_PAL[colorPick]) c[uid].color = colorPick; else delete c[uid].color;   // 10.69
           Store.setUserField("contacts", c);
         }
         shareEditUid = null; shareMsg = ""; renderAll();
@@ -14216,7 +14241,7 @@ if(DEMO && !hasAnyList()) (()=>{
 if(DEMO) (()=>{
   const PAL = { ambre:"#E2A64B", gameboy:"#93B46A", bleu:"#7EA6D8", rose:"#DE8C9E", lavande:"#A48DD3", sauge:"#86B39C", gris:"#9AA3A8" };
   const q = new URLSearchParams(location.search);
-  const st = { piste: q.get("pc") || "lcd", a: q.get("pa") || "ambre", b: q.get("pb") || "bleu", k: +(q.get("pk") || 30) };
+  const st = { piste: q.get("pc") || "off", a: q.get("pa") || "ambre", b: q.get("pb") || "bleu", k: +(q.get("pk") || 30) };
   const css = document.createElement("style");
   css.textContent = `
     #cat-chat{ --pcol:var(--pc-a); } #cat-duel{ --pcol:var(--pc-b); }
@@ -14225,7 +14250,7 @@ if(DEMO) (()=>{
       background:var(--pcol); mix-blend-mode:multiply; opacity:calc(var(--pc-k) / 100); }
     body.pc-lcd #cat-chat .chat-screen{ isolation:isolate; }
     /* piste 2 : toute la fenêtre remplie (la tôle autour de l'écran) */
-    body.pc-fill #cat-chat, body.pc-fill #cat-duel{ background:color-mix(in srgb, var(--pcol) calc(var(--pc-k) * 0.6%), transparent); border-radius:16px; }
+    body.pc-fill #cat-chat, body.pc-fill #cat-duel{ background:color-mix(in srgb, var(--pcol) calc(var(--pc-k) * 0.6%), transparent); border-radius:14px; }
     body.pc-fill #cat-chat .chat-box{ padding-left:0.6rem; padding-right:0.6rem; } body.pc-fill #cat-duel .duel-stage{ padding-left:0.6rem; padding-right:0.6rem; }
     /* piste 3 : seulement le bord de l'écran et les initiales */
     body.pc-rim #cat-chat .chat-hole, body.pc-rim #cat-duel .duel-screen{ box-shadow:0 0 0 2px color-mix(in srgb, var(--pcol) calc(40% + var(--pc-k) * 1%), transparent); }
