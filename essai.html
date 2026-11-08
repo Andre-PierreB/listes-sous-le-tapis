@@ -2126,6 +2126,16 @@ header{
 .collapsed .pin-head, .peek .pin-head{ fill:transparent; }
 .collapsed .pin-needle, .peek .pin-needle{ transform:scaleY(1); }
 .peek .cat-fold:hover svg.pin, .collapsed .cat-fold:hover svg.pin{ transform:translate(1px,-2px) rotate(-26deg); }
+/* 10.68 : au doigt, petite barre horizontale au milieu du bas d'une case ouverte (entre poignée et
+   punaise) : un tap la referme. Sur ordi, le survol suffit : pas de barre. */
+.cat-close-bar{ display:none; }
+@media (hover:none){
+  .category:not(.collapsed) > .cat-close-bar{ display:grid; place-items:center; position:absolute; z-index:2;
+    left:50%; bottom:0; transform:translateX(-50%); width:4.5rem; height:1.6rem; padding:0; margin:0;
+    appearance:none; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .cat-close-bar::before{ content:""; width:2.4rem; height:4px; border-radius:2px; background:var(--ink-faint); opacity:.45; transition:opacity .15s ease; }
+  .cat-close-bar:active::before{ opacity:.8; }
+}
 html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant une ouverture ou fermeture, le navigateur ne déplace pas la page */
 .category.collapsed{ align-self:start; padding-bottom:2.1rem; }   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
 /* 10.65 : toutes les cases repliées (liste, mémo, chat, duel) ont la même hauteur, --fold-h ;
@@ -2161,8 +2171,8 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
 /* 10.43 : liste repliée, tâches restantes dans une bulle à la couleur de la
    liste (comme « nouveau ») ; avant : chiffre gris seul, peu clair */
 .cat-count{
-  font-family:'Public Sans', system-ui, sans-serif; font-size:0.68rem; font-weight:700; flex:none;   /* 10.44 : chiffres bien centrés d'un navigateur à l'autre (ceux de Courier Prime variaient) */
-  min-width:1.3rem; height:1.1rem; box-sizing:border-box; padding:0 0.45rem; border-radius:999px; line-height:1;
+  font-family:'Public Sans', system-ui, sans-serif; font-size:0.78rem; font-weight:700; flex:none;   /* 10.68 : un peu plus grande (avant 0.68rem) */   /* 10.44 : chiffres bien centrés d'un navigateur à l'autre (ceux de Courier Prime variaient) */
+  min-width:1.55rem; height:1.3rem; box-sizing:border-box; padding:0 0.5rem; border-radius:999px; line-height:1;
   display:inline-flex; align-items:center; justify-content:center;
   background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface));
   color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
@@ -2372,6 +2382,8 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 }
 /* ajout express (7.1) : champ discret à côté du titre */
 .cat-quick-wrap{ position:relative; flex:1 0 8rem; max-width:20rem; min-width:0; display:flex; align-items:center; cursor:text; }   /* 10.31 : à côté du titre s'il tient en entier, sinon à la ligne */
+@media (max-width:720px){ .cat-quick-wrap{ flex-basis:100%; max-width:none; } }   /* 10.68 : téléphone : toujours sous le titre, un seul format */
+.category.courses:not(.collapsed):not(.peek) .cat-quick-wrap{ display:none; }   /* 10.68 : mémo ouvert : la saisie du bas suffit (entrouvert au survol, on garde celle du haut) */
 .cat-quick-pen{
   position:absolute; left:0.3rem; top:50%; transform:translateY(-50%);
   color:var(--ink-faint); opacity:.55; pointer-events:none;
@@ -11386,6 +11398,11 @@ function render(){
     fold.innerHTML = `${pinSvg()}`;
     fold.addEventListener("click", e=>{ e.stopPropagation(); toggleFold(cat.id); });
     card.appendChild(fold);
+    // 10.68 : au doigt, la barre du bas referme la case (entrouverte : elle se rabat ; punaisée : on la ferme)
+    const bar = document.createElement("button");
+    bar.type = "button"; bar.className = "cat-close-bar"; bar.setAttribute("aria-label", "Refermer");
+    bar.addEventListener("click", e=>{ e.stopPropagation(); if(card.classList.contains("peek")) peekCard(card, false); else if(!isFolded(cat.id)) toggleFold(cat.id); });
+    card.appendChild(bar);
     categoriesEl.appendChild(card);
   });
   wireFolded();   // 10.66
