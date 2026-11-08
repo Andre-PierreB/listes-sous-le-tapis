@@ -2714,10 +2714,11 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.collapsed .attente, .duel-card.collapsed .d-statut, .duel-card.collapsed .coup{ display:none; }
 /* 10.65 : le duel fermé en filigrane — le jeu lui-même, à son échelle (toits et faisans), très pâle
    derrière le papier ; seule la phrase de là où en est la partie reste en clair. Le chat fermé garde son écran. */
-.duel-card.collapsed .duel-screen{ flex:1 1 auto; display:flex; opacity:1; }   /* 10.68 : sans papier, le duel fermé garde son écran creusé, comme le chat */
-.duel-card.collapsed .duel-cv{ position:absolute; inset:2px; width:calc(100% - 4px); height:calc(100% - 4px); aspect-ratio:auto; object-fit:cover; object-position:50% 70%;
-  opacity:0.28; border-radius:16px; pointer-events:none; z-index:0;
-  -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 40%); mask-image:linear-gradient(180deg, transparent 0, #000 40%); }
+.duel-card.collapsed .duel-screen{ flex:1 1 auto; display:flex; opacity:1; overflow:hidden; }   /* 10.68 : sans papier, le duel fermé garde son écran creusé, comme le chat ; il recouvre le jeu */
+.duel-card.collapsed .duel-cv{ position:absolute; left:2px; width:calc(100% - 4px); aspect-ratio:16/9;   /* 10.68 : le jeu garde sa taille ; l'écran fermé n'en montre */
+  top:calc(2px + 0.5 * (100% - 4px - 1.3rem) - var(--d-anc, 0.6) * (100cqw - 4px) * 9 / 16);       /* qu'une bande, centrée sur les faisans (--d-anc : leur hauteur dans le jeu) */
+  opacity:0.28; border-radius:0; pointer-events:none; z-index:0; }
+.duel-cv{ transition:opacity .45s ease; }
 .duel-card.collapsed .d-mini{ position:absolute; z-index:1; left:2px; right:2px; bottom:2px; display:block; min-width:0; white-space:nowrap; }
 /* 10.68 : la phrase de l'écran fermé reprend le mince bandeau gris de l'écran ouvert (.d-statut)
    — avant (10.66) : grand bandeau bleu à filets, au nombre d'or de la case */
@@ -6072,6 +6073,7 @@ function foldSmooth(catId, fold){
   keepRoomBelow();
   html.classList.add("fold-still"); clearTimeout(foldStillT);
   peekId = null; peekHold = Date.now() + 700; peekHoldId = "cat-" + catId;
+  const pre = old && old._preGlide ? old._preGlide() : null;   // 10.68 : le duel, voir softHeight
   setFolded(catId, fold);
   renderAll();
   const card = document.getElementById("cat-" + catId);
@@ -6080,6 +6082,7 @@ function foldSmooth(catId, fold){
     const top1 = card.getBoundingClientRect().top;
     if(Math.abs(top1 - r0.top) > 0.5) window.scrollBy(0, top1 - r0.top);
     dur = glideHeight(card, r0.height, !fold);
+    if(card._postGlide) card._postGlide(pre, dur, fold ? SOFT_CLOSE : SOFT_EASE);
   }
   foldStillT = setTimeout(()=> html.classList.remove("fold-still"), dur + 80);
 }
@@ -10745,6 +10748,7 @@ function refreshUI(){
   const p = turn(), col = css(PLAYERS[p].color), attente = $(".attente").classList.contains("on");
   const mine = myTurn(), me = myUid();
   ROOT.classList.toggle("duel-new", bandMode === "decouverte");
+  if(world.ph) ROOT.style.setProperty("--d-anc", (((world.ph[0].y + world.ph[1].y) / 2 - 16) / H).toFixed(3));   // 10.68 : l'écran fermé se centre sur les faisans
   { // l'écran replié : une ligne pour savoir où en est la partie
     const last = game.shots[game.shots.length - 1];
     $(".d-mini-t").textContent = (   // 10.68 : sans « X> » devant, comme le bandeau de l'écran ouvert
@@ -10814,6 +10818,14 @@ function build(){
     </div>`;
   ROOT = card;
   card.querySelector(".cat-fold").addEventListener("click", e => { e.stopPropagation(); if(CAT) toggleFold(CAT.id); });
+  // 10.68 : à l'ouverture et à la fermeture, le jeu glisse de sa place à l'autre (pas de saut ni de zoom) :
+  // l'écran se ferme sur les faisans, qui restent visibles dans la bande de l'écran fermé
+  card._preGlide = ()=> cv.getBoundingClientRect().top;
+  card._postGlide = (top0, dur, easing)=>{
+    if(top0 == null || !dur || !cv.animate) return;
+    const dy = top0 - cv.getBoundingClientRect().top;
+    if(Math.abs(dy) > 1) cv.animate([{ transform:`translateY(${dy}px)` }, { transform:"translateY(0)" }], { duration:dur, easing });
+  };
   cv = card.querySelector(".duel-cv"); ctx = cv.getContext("2d");
   // objets et faisans à choisir
   const ob = card.querySelector(".objets");
@@ -11349,7 +11361,8 @@ document.addEventListener("pointerdown", e=>{
 function peekCard(card, on, still){
   if(on) peekId = card.id; else if(peekId === card.id) peekId = null;
   if(on === card.classList.contains("peek")) return;
-  const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); if(card.classList.contains("courses")) placeCoursesScroll(card); };   // 10.67 : la barre du mémo suit
+  const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); if(card.classList.contains("courses")) placeCoursesScroll(card);
+    const log = on && card.querySelector(".chat-log"); if(log) log.scrollTop = log.scrollHeight; };   // 10.68 : l'écran de chat entrouvert montre ses derniers messages (avant : remonté au premier)   // 10.67 : la barre du mémo suit
   if(still) change(); else softHeight(card, change, on);
 }
 // 10.66 : la case glisse d'une hauteur à l'autre (douce, sans à-coup), son contenu apparaît en fondu
@@ -11359,8 +11372,10 @@ function softHeight(card, change, opening){
   const h0 = card.getBoundingClientRect().height;   // pendant une animation : la hauteur du moment
   if(card._soft){ card._soft.cancel(); card._soft = null; }
   keepRoomBelow();
+  const pre = card._preGlide ? card._preGlide() : null;   // 10.68 : le duel note où est son jeu, pour le faire glisser sans saut
   change();
-  glideHeight(card, h0, opening);
+  const dur = glideHeight(card, h0, opening);
+  if(card._postGlide) card._postGlide(pre, dur, opening ? SOFT_EASE : SOFT_CLOSE);
 }
 // 10.67 : la case passe de la hauteur h0 à sa hauteur actuelle ; rend la durée (ms)
 function glideHeight(card, h0, opening){
