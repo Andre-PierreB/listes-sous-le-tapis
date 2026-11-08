@@ -1512,6 +1512,14 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 ::selection{background:var(--accent-soft); color:var(--ink);}
+/* 10.68 : téléphone : tout un cran plus grand (Hiske : trop petit ; standard iPhone ≈ 17 pt) — un seul
+   réglage, la taille de base (rem) : tâches ≈ 16,6 px au lieu de 14,7 ; marges de côté réduites pour
+   garder la largeur. Les champs passent à 16 px au doigt (en dessous, Safari zoome en tapant). */
+@media (max-width:720px){
+  html{ font-size:18px; }
+  :root{ --fold-h:143px; }   /* 127 × 18/16 */
+}
+@media (pointer:coarse){ .cat-quick{ font-size:16px; } }
 .wrap{
   max-width:920px;
   margin:0 auto;
@@ -1519,6 +1527,7 @@ body{
   position:relative;
   isolation:isolate;
 }
+@media (max-width:720px){ .wrap{ padding-left:1rem; padding-right:1rem; } }   /* 10.68 : téléphone : plus de largeur pour le texte agrandi */
 /* le titre et le numéro de version restent au-dessus du tapis déroulé */
 header{
   display:flex;
@@ -2156,6 +2165,7 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
    (téléphone) : la case grandit d'autant au lieu de couper la ligne. Pendant le glissement
    (.gliding), l'aperçu n'est pas borné : la case l'avale en douceur au lieu qu'il disparaisse d'un coup. */
 .category.collapsed:not(.gliding) > ul.items{ flex:none; max-height:2.3rem; overflow:hidden; }
+.category.collapsed:not(.gliding) > ul.items .item-text{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }   /* 10.68 : aperçu sur une ligne, coupé par « … » (plus de 2e ligne fantôme) */
 /* 10.68 : fermée, un bandeau blanc net en bas, au niveau de la poignée et de la punaise : l'aperçu
    s'y fond au lieu d'être coupé par le bord (surtout sur téléphone) ; même chose pour listes et mémos */
 .category::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:2.3rem; z-index:1; pointer-events:none;
@@ -2336,6 +2346,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .cat-title-line .cat-title{ display:inline; }
 .cat-title-line .add-btn{ display:inline-flex; vertical-align:middle; margin-left:0.45rem; margin-right:-1.7rem; position:relative; top:-1px; }
 .cat-title-line:has(.add-btn){ margin-right:1.7rem; }
+@media (max-width:720px){ .cat-title-line .add-btn{ margin-right:0; } .cat-title-line:has(.add-btn){ margin-right:0; } }   /* 10.68 : téléphone : sans la marge négative, le titre ne se plie plus quand il a la place (« WEEK-/END ») */
 /* initiales des personnes, en bas à droite de la carte (à gauche du repli) */
 .category > .share-chips{ position:absolute; right:2.3rem; bottom:0.35rem; }
 .category.has-people{ padding-bottom:1.7rem; }
