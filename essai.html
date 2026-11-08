@@ -2492,7 +2492,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   --facades:#261D33,#26261C,#1E2A1C,#2B2238,#2A2A1D; --facade-shadow:rgba(0,0,0,0.45);
   --win-lit:rgba(226,200,102,0.22); --win-off:rgba(255,255,255,0.035); --objet:#7FC0CC;
 }
-.duel-stage{ position:relative; padding:calc(0.35rem + 22px) 0 0.2rem; }   /* 10.68 : plus de papier blanc ; l'écran à la largeur d'une liste, poste de commande et pied posés sur la tôle (le fond) — avant : papier --surface, ombre, côtés 0.75rem */
+.duel-stage{ position:relative; padding:calc(0.35rem + 22px) 0 0.2rem; container-type:inline-size; }   /* conteneur du poste compact : suit la largeur de l'écran, même rétréci en pleine page */   /* 10.68 : plus de papier blanc ; l'écran à la largeur d'une liste, poste de commande et pied posés sur la tôle (le fond) — avant : papier --surface, ombre, côtés 0.75rem */
 /* le jeu dans un écran creusé, comme l'écran de chat : tranche de tôle arrondie, écran au fond,
    trame LCD et ombres intérieures posées par-dessus le dessin (::after) */
 .duel-screen{ position:relative; padding:2px; border-radius:18px;
@@ -2743,7 +2743,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.fullpage{ display:flex; flex-direction:column; justify-content:center; }
 .duel-card.fullpage .duel-stage > *{ opacity:1; }
 .duel-card.fullpage .duel-stage{ zoom:1.25; }   /* pleine page : le poste de commande de la carte, agrandi */
-.duel-card.fullpage .duel-screen{ max-width:100%; margin:0 auto; }   /* 10.68 : largeur posée par fitDuelFull quand la hauteur manque */
+.duel-card.fullpage .duel-stage{ width:100%; max-width:100%; margin:0 auto; }   /* 10.68 : largeur posée par fitDuelFull quand la hauteur manque : réglages et Lancer calés sur l'écran */
 @media (max-height:560px){ .duel-card.fullpage .duel-stage{ zoom:1; } }   /* téléphone à l'horizontale : pas d'agrandissement */
 @media (max-width:720px){ .duel-card.fullpage .duel-stage{ zoom:1; } }
 .chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ opacity:1; color:var(--ink-soft); }
@@ -10878,16 +10878,16 @@ let running = false, cardCat = null;
 // couché à l'horizontale) : réglages, Lancer et pied restent visibles. Hors pleine page : largeur normale.
 if(!window.fitDuelFull){
   window.fitDuelFull = function(){
-    document.querySelectorAll(".duel-card:not(.fullpage) .duel-screen[style*='width']").forEach(sc => sc.style.width = "");
+    document.querySelectorAll(".duel-card:not(.fullpage) .duel-stage[style*='width']").forEach(st => st.style.width = "");
     const card = document.querySelector(".duel-card.fullpage"); if(!card) return;
     const st = card.querySelector(".duel-stage"), sc = card.querySelector(".duel-screen"); if(!st || !sc) return;
-    sc.style.width = "";
+    st.style.width = "";   // tout le poste (écran, réglages, Lancer, pied) prend la largeur de l'écran
     for(let i = 0; i < 3; i++){   // les réglages peuvent passer sur deux lignes quand l'écran rétrécit : on remesure
       const z = parseFloat(getComputedStyle(st).zoom) || 1, cs = getComputedStyle(card);
       const avail = window.innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
       const scH = sc.getBoundingClientRect().height, extra = st.getBoundingClientRect().height - scH;
       if(extra + scH <= avail + 0.5) return;
-      sc.style.width = Math.max(200, ((avail - extra) - 4 * z) * 16 / 9 + 4 * z) / z + "px";
+      st.style.width = Math.max(200, ((avail - extra) - 4 * z) * 16 / 9 + 4 * z) / z + "px";
     }
   };
   let ft = 0; const refit = ()=>{ clearTimeout(ft); ft = setTimeout(()=> window.fitDuelFull(), 120); };
