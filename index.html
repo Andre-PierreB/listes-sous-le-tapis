@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.67 -->
+<!-- Sous le tapis — version AUTONOME 10.68 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1512,6 +1512,21 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 ::selection{background:var(--accent-soft); color:var(--ink);}
+/* 10.68 : téléphone : tout un cran plus grand (Hiske : trop petit ; standard iPhone ≈ 17 pt) — un seul
+   réglage, la taille de base (rem) : tâches ≈ 16,6 px au lieu de 14,7 ; marges de côté réduites pour
+   garder la largeur. Les champs passent à 16 px au doigt (en dessous, Safari zoome en tapant). */
+@media (max-width:720px){
+  html{ font-size:18px; }
+  :root{ --fold-h:143px; }   /* 127 × 18/16 */
+}
+@media (pointer:coarse){
+  .cat-quick{ font-size:16px; }
+  /* 10.68 : au doigt, des boutons plus confortables (Hiske) : +, pleine page, ordre, poignée */
+  .cat-head-right .add-btn{ width:28px; height:28px; font-size:1.05rem; border-radius:8px; margin-right:0.9rem; }
+  .cat-full{ padding:7px; } .cat-full svg{ width:17px; height:17px; }
+  .category > .cat-order{ padding:8px 9px; left:3.3rem; bottom:0.05rem; }
+  .category .cat-grip{ padding:6px 5px; bottom:0.02rem; }
+}
 .wrap{
   max-width:920px;
   margin:0 auto;
@@ -1519,6 +1534,7 @@ body{
   position:relative;
   isolation:isolate;
 }
+@media (max-width:720px){ .wrap{ padding-left:1rem; padding-right:1rem; } }   /* 10.68 : téléphone : plus de largeur pour le texte agrandi */
 /* le titre et le numéro de version restent au-dessus du tapis déroulé */
 header{
   display:flex;
@@ -2055,7 +2071,6 @@ header{
   content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:3px;
   background:var(--cat-color, var(--accent));   /* bouts droits : arrondis, elle rappelait la barre de défilement des mémos */
 }
-.category.collapsed:not(.courses)::before{ bottom:1.05rem; }   /* repliée : la barre longe le titre */
 .category.done{ opacity:0.62; }
 /* 10.15 : liste de courses — hauteur bornée (--courses-max, posé par
    fitCoursesCards) ; au-delà, seule la zone des articles défile, le titre,
@@ -2127,26 +2142,50 @@ header{
 .collapsed .pin-head, .peek .pin-head{ fill:transparent; }
 .collapsed .pin-needle, .peek .pin-needle{ transform:scaleY(1); }
 .peek .cat-fold:hover svg.pin, .collapsed .cat-fold:hover svg.pin{ transform:translate(1px,-2px) rotate(-26deg); }
+/* 10.68 : au doigt, petite barre horizontale au milieu du bas d'une case fermée ou entrouverte (entre
+   poignée et punaise) : un tap ou un glissé l'ouvre (vers le bas) ou la referme (vers le haut) ; punaisée,
+   plus de barre (la punaise suffit). Sur ordi, le survol suffit : pas de barre.
+   Au doigt, pas d'effets de survol (zoom des petits boutons, fond gris, punaise qui pivote) : du bruit. */
+.cat-close-bar{ display:none; }
+@media (hover:none){
+  :root{ --pop-scale:1; }
+  .cat-order:hover, .cat-full:hover, .cat-fold:hover{ background:none; }
+  .peek .cat-fold:hover svg.pin, .collapsed .cat-fold:hover svg.pin{ transform:translate(1px,-2px) rotate(-38deg); }
+  .category.collapsed > .cat-close-bar, .category.peek > .cat-close-bar{ display:grid; touch-action:none; place-items:center; position:absolute; z-index:2;
+    left:50%; bottom:0; transform:translateX(-50%); width:4.5rem; height:1.6rem; padding:0; margin:0;
+    appearance:none; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .cat-close-bar::before{ content:""; width:2.4rem; height:4px; border-radius:2px; background:var(--ink-faint); opacity:.45; transition:opacity .15s ease; }
+  .cat-close-bar:active::before{ opacity:.8; }
+}
 html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant une ouverture ou fermeture, le navigateur ne déplace pas la page */
 .category.collapsed{ align-self:start; padding-bottom:2.1rem; }   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
 /* 10.65 : toutes les cases repliées (liste, mémo, chat, duel) ont la même hauteur, --fold-h ;
    étalon : le mémo replié (bandeau + saisie), resserré de 3 px entre le bandeau et la saisie */
 :root{ --fold-h:127px; }
 .category.collapsed{ min-height:var(--fold-h); }
-.category.courses.collapsed > ul.items, .category.courses.collapsed .courses-actions{ display:none; }
+.category.courses.collapsed > .courses-entry, .category.courses.collapsed > .courses-foot{ display:none; }   /* 10.68 : fermé, le mémo montre ses premiers articles (la saisie est en bas, ouverte) */
 /* 10.66 : fermée, une liste montre ses premières tâches en aperçu, pâles et coupées en fondu (comme le
    dernier mot du chat) ; un survol l'entrouvre en entier */
-.category.collapsed:not(.courses){ height:var(--fold-h); overflow:hidden; }
-.category.collapsed:not(.courses) > ul.items{ pointer-events:none; opacity:0.5; margin-top:0.2rem; --fade-a:25%; --fade-b:78%; }
+.category.collapsed{ overflow:hidden; }
+.category.collapsed > ul.items{ pointer-events:none; opacity:0.5; margin-top:0.2rem; --fade-a:45%; --fade-b:100%; }
+/* 10.68 : l'aperçu montre toujours une ligne entière, même quand la saisie passe sous le titre
+   (téléphone) : la case grandit d'autant au lieu de couper la ligne. Pendant le glissement
+   (.gliding), l'aperçu n'est pas borné : la case l'avale en douceur au lieu qu'il disparaisse d'un coup. */
+.category.collapsed:not(.gliding) > ul.items{ flex:none; max-height:2.3rem; overflow:hidden; }
+.category.collapsed:not(.gliding) > ul.items .item-text{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }   /* 10.68 : aperçu sur une ligne, coupé par « … » (plus de 2e ligne fantôme) */
+/* 10.68 : fermée, un bandeau blanc net en bas, au niveau de la poignée et de la punaise : l'aperçu
+   s'y fond au lieu d'être coupé par le bord (surtout sur téléphone) ; même chose pour listes et mémos */
+.category::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:2.3rem; z-index:1; pointer-events:none;
+  border-radius:0 0 14px 14px; background:linear-gradient(transparent, var(--surface) 0.75rem); opacity:0; transition:opacity .35s ease; }
+.category.collapsed::after{ opacity:1; }
+.category > .cat-grip, .category .cat-grip, .category > .cat-fold, .category > .share-chips{ z-index:2; }
 /* 10.67 : le fondu de l'aperçu se lève en douceur à l'ouverture (avant : il sautait d'un coup, « déclic ») */
 @property --fade-a{ syntax:'<percentage>'; inherits:false; initial-value:100%; }
 @property --fade-b{ syntax:'<percentage>'; inherits:false; initial-value:100%; }
-.category:not(.courses) > ul.items{ --fade-a:100%; --fade-b:100%;
+.category > ul.items{ --fade-a:100%; --fade-b:100%;
   -webkit-mask-image:linear-gradient(180deg, #000 var(--fade-a), transparent var(--fade-b)); mask-image:linear-gradient(180deg, #000 var(--fade-a), transparent var(--fade-b));
   transition:--fade-a .55s ease, --fade-b .55s ease, opacity .45s ease; }   /* pas de transition sur margin-top : elle changeait la hauteur après coup (petit cran à la fin de l'ouverture) */
-.category.collapsed:not(.courses) > ul.items > li.is-checked{ display:none; }
-/* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
-.category.courses.collapsed .courses-entry{ cursor:auto; padding-top:calc(0.55rem - 3px); }
+.category.collapsed > ul.items > li.is-checked{ display:none; }
 .category.collapsed .cat-order{ display:none; }   /* 10.45 : repliée, la flèche d'ordre se confondait avec celle qui rouvre */
 .category.courses.collapsed{ cursor:pointer; } /* 10.18 : toute la carte repliée se déplie d'un clic */
 .category.courses .cat-head{ cursor:pointer; } /* 10.19 : ouverte, un clic sur le bandeau (hors titre) la replie */
@@ -2154,8 +2193,8 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
 /* 10.43 : liste repliée, tâches restantes dans une bulle à la couleur de la
    liste (comme « nouveau ») ; avant : chiffre gris seul, peu clair */
 .cat-count{
-  font-family:'Public Sans', system-ui, sans-serif; font-size:0.68rem; font-weight:700; flex:none;   /* 10.44 : chiffres bien centrés d'un navigateur à l'autre (ceux de Courier Prime variaient) */
-  min-width:1.3rem; height:1.1rem; box-sizing:border-box; padding:0 0.45rem; border-radius:999px; line-height:1;
+  font-family:'Public Sans', system-ui, sans-serif; font-size:0.78rem; font-weight:700; flex:none;   /* 10.68 : un peu plus grande (avant 0.68rem) */   /* 10.44 : chiffres bien centrés d'un navigateur à l'autre (ceux de Courier Prime variaient) */
+  min-width:1.55rem; height:1.3rem; box-sizing:border-box; padding:0 0.5rem; border-radius:999px; line-height:1;
   display:inline-flex; align-items:center; justify-content:center;
   background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface));
   color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
@@ -2182,6 +2221,7 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
   align-items:center;
   gap:0.5rem;
 }
+.cat-head-right .add-btn{ margin-right:0.6rem; }   /* 10.68 : ajouter et pleine page, deux fonctions très différentes : un peu d'écart */
 /* 10.37 : bouton pleine page (flèches en diagonale), dans la famille des petits boutons à icône */
 .cat-full{
   appearance:none; border:none; background:transparent; color:var(--ink-faint);
@@ -2314,6 +2354,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .cat-title-line .cat-title{ display:inline; }
 .cat-title-line .add-btn{ display:inline-flex; vertical-align:middle; margin-left:0.45rem; margin-right:-1.7rem; position:relative; top:-1px; }
 .cat-title-line:has(.add-btn){ margin-right:1.7rem; }
+@media (max-width:720px){ .cat-title-line .add-btn{ margin-right:0; } .cat-title-line:has(.add-btn){ margin-right:0; } }   /* 10.68 : téléphone : sans la marge négative, le titre ne se plie plus quand il a la place (« WEEK-/END ») */
 /* initiales des personnes, en bas à droite de la carte (à gauche du repli) */
 .category > .share-chips{ position:absolute; right:2.3rem; bottom:0.35rem; }
 .category.has-people{ padding-bottom:1.7rem; }
@@ -2365,6 +2406,9 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 }
 /* ajout express (7.1) : champ discret à côté du titre */
 .cat-quick-wrap{ position:relative; flex:1 0 8rem; max-width:20rem; min-width:0; display:flex; align-items:center; cursor:text; }   /* 10.31 : à côté du titre s'il tient en entier, sinon à la ligne */
+@media (max-width:720px){ .cat-quick-wrap{ flex-basis:100%; max-width:none; } .cat-head-right{ align-self:flex-start; } }   /* + et pleine page sur la ligne du titre */   /* 10.68 : téléphone : toujours sous le titre, un seul format */
+.category.courses:not(.collapsed):not(.peek) .cat-quick-wrap{ display:none; }
+@media (hover:none){ .category.courses.peek .cat-quick-wrap{ display:none; } }   /* 10.68 : au doigt, déployé = ouvert : la saisie du bas suffit */   /* 10.68 : mémo ouvert : la saisie du bas suffit (entrouvert au survol, on garde celle du haut) */
 .cat-quick-pen{
   position:absolute; left:0.3rem; top:50%; transform:translateY(-50%);
   color:var(--ink-faint); opacity:.55; pointer-events:none;
@@ -2412,6 +2456,10 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    en bas à droite (avant : en haut à droite ; 10.41 : à gauche du titre) ;
    « .category » l'emporte sur [data-tip] */
 .category .cat-grip{ position:absolute; left:0.55rem; bottom:0.12rem; }
+.category .cat-grip svg{ width:17px; height:17px; }   /* 10.68 : un peu plus grande (avant 14 px) */
+/* 10.68 : la flèche d'ordre, en bas à gauche à droite de la poignée (avant : en haut à droite, où est maintenant le +) */
+.category > .cat-order{ position:absolute; left:3.5rem; bottom:0.2rem; z-index:2; }   /* à droite de la marge des mémos (3.19rem), même place partout */
+.category.fullpage > .cat-fold, .category.fullpage > .cat-close-bar{ display:none !important; }   /* 10.68 : en pleine page, ni punaise ni barre (sans objet) ; la flèche d'ordre garde sa place */
 .category .cat-grip svg{ transform:rotate(90deg); }
 .category:hover .cat-grip{ opacity:1; }
 .cat-grip:hover{ background:var(--surface-2); color:var(--ink-soft); }
@@ -2584,7 +2632,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 @media (hover:hover){ .duel-card .d-revoir:hover{ background:color-mix(in srgb, var(--accent) 10%, transparent); } }
 /* texte d'aide : un mince bandeau dans le bas de la ville (caché quand un autre bandeau est là) */
 .duel-card .d-statut{ position:absolute; left:2px; right:2px; bottom:2px; padding:0.22rem 0.6rem; border-radius:0 0 16px 16px;
-  background:color-mix(in srgb, var(--surface) 72%, transparent); color:var(--ink-soft); font:0.72rem/1.3 'Courier Prime', monospace; text-align:center; pointer-events:none; }
+  background:color-mix(in srgb, var(--surface) 82%, transparent); color:var(--ink); font:0.86rem/1.3 'Courier Prime', monospace; text-align:center; pointer-events:none; }   /* 10.68 : plus grand et plus contrasté (avant 0.72rem, gris), sans gras */
 .duel-card .d-statut:empty, .duel-card .attente.on ~ .d-statut{ display:none; }
 /* sous Lancer : le choix du faisan (avant le 1er coup), puis Revoir, à la même place : la carte ne change pas de hauteur */
 .duel-card .d-sous{ display:grid; justify-items:center; align-items:center; }
@@ -2657,7 +2705,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* voyant sur la tôle, en haut à droite de l'écran : éteint (petit creux gris),
    il s'allume en vert du faisan et luit doucement tant qu'un message n'est pas lu */
 .chat-box{ position:relative; }
-.chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 3.5px); right:calc(1.25rem + 28px); width:7px; height:7px; border-radius:50%;
+.chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 3.5px); right:calc(1.25rem + 46px);   /* 10.68 : plus loin de la flèche pleine page (avant + 28px) */ width:7px; height:7px; border-radius:50%;
   background:color-mix(in srgb, var(--ink) 18%, var(--bg)); box-shadow:inset 0 1px 1px rgba(0,0,0,0.25), 0 1px 0 var(--chat-lip); transition:background .4s ease, box-shadow .4s ease; }
 .chat-card.unread .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
 @keyframes chat-led{ 50%{ box-shadow:0 0 2px 0 color-mix(in srgb, var(--logo-green) 50%, transparent); filter:brightness(0.85); } }
@@ -2768,6 +2816,47 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.fullpage .duel-stage{ width:100%; max-width:100%; margin:0 auto; }   /* 10.67 : largeur posée par fitDuelFull quand la hauteur manque : réglages et Lancer calés sur l'écran */
 @media (max-height:560px){ .duel-card.fullpage .duel-stage{ zoom:1; } }   /* téléphone à l'horizontale : pas d'agrandissement */
 @media (max-width:720px){ .duel-card.fullpage .duel-stage{ zoom:1; } }
+/* 10.68 : téléphone couché, pleine page : « manette » — le jeu prend toute la hauteur au centre ;
+   angle à gauche et force à droite en colonnes étroites (+ en haut, − en bas) ; en dessous, une
+   seule rangée basse : objets, Lancer, faisans. (.coup s'efface : ses éléments se rangent dans la grille) */
+/* 10.68 : au doigt, traits bleus affinés (cadres et ombres des boutons, sélection) ; plus de trait sous
+   les valeurs d'angle et de force (en trop) — placé avant la manette : ses réglages propres l'emportent */
+@media (pointer:coarse){
+  .duel-card .pas, .duel-card.fullpage .pas{ border-width:1px; box-shadow:1px 1px 0 var(--objet); }
+  .duel-card .pas:disabled{ box-shadow:1px 1px 0 var(--line); }
+  .duel-card .d-lancer, .duel-card.fullpage .d-lancer, .duel-card .poussoir{ border-width:1.5px; box-shadow:1.5px 1.5px 0 var(--pc); }
+  .duel-card .objets button.on, .duel-card .persos button.on{ box-shadow:inset 0 0 0 1.5px var(--objet); }
+  .duel-card .coup input, .duel-card .coup input:focus{ border-bottom-color:transparent; }
+}
+@media (orientation:landscape) and (max-height:560px){
+  .duel-card.fullpage{ width:100vw; padding-top:max(0.35rem, env(safe-area-inset-top, 0px)); padding-bottom:max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 0.6rem)); }   /* 10.68 : objets et faisans au-dessus de la barre d'accueil de l'iPhone */
+  .duel-card.fullpage .duel-stage{ width:100% !important; height:100%; box-sizing:border-box; padding:0;
+    display:grid; grid-template-columns:5.6rem minmax(0, 1fr) auto minmax(0, 1fr) 5.6rem; grid-template-rows:minmax(0, 1fr) auto auto minmax(0, 1fr) auto;
+    column-gap:0.6rem; row-gap:0.35rem; align-items:center; }
+  .duel-card.fullpage .duel-screen{ grid-column:2 / 5; grid-row:1 / 5; justify-self:center; align-self:center; box-sizing:border-box;
+    width:min(calc((100dvh - 1.85rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2.9rem) * 16 / 9), 100%); }
+  .duel-card.fullpage .coup{ display:contents; }
+  .duel-card.fullpage .coup > .reglage{ grid-row:2; justify-self:center; display:flex; flex-direction:column; align-items:center; gap:0.3rem; }
+  .duel-card.fullpage .coup > .reglage > span:first-child{ order:0; font-size:0.75rem; letter-spacing:0.05em; }
+  .duel-card.fullpage .coup > .reglage > .pas[data-d="1"]{ order:1; }
+  .duel-card.fullpage .coup > .reglage > input{ order:2; }
+  .duel-card.fullpage .coup > .reglage > .pas[data-d="-1"]{ order:3; }
+  .duel-card.fullpage .coup > .reglage .unite{ display:none; }
+  .duel-card.fullpage .coup > .reglage:nth-child(2){ grid-column:1; grid-row:2 / 4; }   /* angle : à gauche */
+  .duel-card.fullpage .coup > .reglage:nth-child(3){ grid-column:5; }   /* force : à droite */
+  .duel-card.fullpage .pas{ display:inline-grid; place-items:center; width:36px; height:34px; font-size:1.05rem; }
+  .duel-card.fullpage .coup input{ width:2.4em; font-size:1.05rem; min-height:0; padding:0.1rem 0; }
+  .duel-card.fullpage .objets{ grid-column:2; grid-row:5; justify-self:end; gap:0.1rem; margin-right:1rem; }
+  .duel-card.fullpage .objets button{ width:34px; height:34px; border-radius:8px; }
+  .duel-card.fullpage .objets canvas{ width:24px; height:24px; }
+  .duel-card.fullpage .d-lancer{ grid-column:5; grid-row:3; justify-self:stretch; margin:0.7rem 3px 0 0; min-width:0; min-height:42px; padding:0.3rem 0.4rem; font-size:1rem; white-space:normal; line-height:1.1; }   /* sous la force */
+  .duel-card.fullpage .d-sous{ grid-column:4; grid-row:5; justify-self:start; min-height:0; margin-left:1rem; }
+  .duel-card.fullpage .d-sous .persos{ justify-self:start; }
+  .duel-card.fullpage .persos button{ width:40px; height:32px; }
+  .duel-card.fullpage .persos canvas{ width:36px; height:30px; }
+  .duel-card.fullpage .duel-foot{ grid-column:5; grid-row:5; justify-content:flex-end; margin:0; }
+  .duel-card.fullpage .duel-foot .cat-grip{ display:none; }
+}
 .chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ opacity:1; color:var(--ink-soft); }
 .chat-card.fullpage .cat-grip, .duel-card.fullpage .cat-grip, .chat-card.fullpage .cat-fold, .duel-card.fullpage .cat-fold{ visibility:hidden; }
 /* voyant du duel : celui du chat, sur le papier en haut à droite — vert quand un coup de l'autre attend d'être vu */
@@ -3176,9 +3265,9 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
   display:inline-flex; align-items:center; justify-content:center;
 }
 .qty-step:hover{ background:var(--accent-soft); color:var(--accent-strong); border-color:var(--accent); }
-/* saisie en haut (alignée sur les articles), Vider les rayés en bas (10.38) */
-.courses-entry{ flex:none; padding-top:0.55rem; }   /* 10.38 : la saisie sur la ligne de la 1re tâche des cartes voisines */
-.courses-entry + ul.items{ margin-top:-0.7rem; }   /* 10.38 : le 1er article, une ligne sous la saisie */
+/* 10.68 : saisie sous les articles (comme avant la 10.38), Vider les rayés tout en bas ; la saisie
+   rapide est à côté du titre, comme dans les listes */
+.courses-entry{ flex:none; }
 .courses-foot{ flex:none; display:flex; flex-direction:column; }
 .courses-add{ display:flex; align-items:flex-start; gap:0.65rem; padding:0 0.3rem; }
 .courses-add .drag-handle{ visibility:hidden; }
@@ -4349,7 +4438,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.67</span>
+    <span class="version-tag">v10.68</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4399,9 +4488,16 @@ body.ios-gate-on{ overflow:hidden; }
 // qu'elle range dans le navigateur porte le préfixe « essai: », et en ligne ses
 // fiches vont dans des collections « essai_… ». L'appli elle-même n'y touche jamais.
 const ESSAI = /essai/i.test(location.pathname);
+// 10.68 : essai.html?demo : vitrine de test, listes d'exemple dans un coin à part du navigateur
+// (préfixe « demo: »), sans connexion ni synchro ; ?demo&reset remet les exemples à neuf
+const DEMO = ESSAI && /[?&]demo\b/.test(location.search);
+if(DEMO && /[?&]reset\b/.test(location.search)){
+  try{ Object.keys(localStorage).filter(k => k.startsWith("demo:")).forEach(k => localStorage.removeItem(k)); }catch(e){}
+  location.replace(location.pathname + "?demo");
+}
 const Store = (()=>{
   const LS = localStorage;
-  const LP = ESSAI ? "essai:" : "";   // préfixe réel des anciennes clés dans le navigateur
+  const LP = DEMO ? "demo:" : ESSAI ? "essai:" : "";   // préfixe réel des anciennes clés dans le navigateur
   const P = "fauconnerie-v2-";
   // anciennes clés gérées par les fiches (nom court → clé complète)
   const K = {
@@ -4426,7 +4522,7 @@ const Store = (()=>{
   // champ d'une tâche qui porte chaque clé « par tâche »
   const SLOT_FIELD = { todo:"done", overrides:"edits", checkedat:"checkedAt" };
 
-  const NS = (ESSAI ? "essai:" : "") + "sltapis:";
+  const NS = (DEMO ? "demo:" : ESSAI ? "essai:" : "") + "sltapis:";
   const META = NS+"meta", REV = NS+"rev", USER = NS+"user:moi", LOCAL = NS+"local",
         RESIDUE = NS+"residue", LISTP = NS+"list:";
 
@@ -6063,7 +6159,7 @@ let refocusQuickCat = null;
 // le formulaire détaillé ({ catId, t }, lu une fois à son ouverture)
 let addPrefill = null;
 // ---- 10.7 : volets (listes repliées), par appareil ----
-const FOLD_KEY = "sltapis-volets";
+const FOLD_KEY = (DEMO ? "demo:" : "") + "sltapis-volets";   // 10.68 : la vitrine ne touche pas aux volets des vraies listes
 function loadFolded(){ try{ const a = JSON.parse(localStorage.getItem(FOLD_KEY) || "[]"); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
 function isFolded(catId){ return loadFolded().includes(catId); }
 function setFolded(catId, on){
@@ -7220,6 +7316,16 @@ function writeCoursesQty(key, q){
 // de la liste, avec sa quantité s'il y en a une. Un article déjà là et rayé
 // est dé-rayé au lieu d'être doublé (avec la nouvelle quantité, ou sans) ;
 // déjà là et pas rayé : seule la quantité change, si on en a donné une.
+// 10.68 : saisie rapide d'un mémo (à côté du titre) : même chemin que la saisie du bas
+function addCoursesQuick(cat, text){
+  let res;
+  try{ res = addCoursesLines(cat, text); }
+  catch(err){ console.error("[courses] ajout rapide", err); return; }
+  if(res.already && !res.added && !res.revived && !res.qty) actionToast("coursesAlready");
+  else if(res.qty && !res.added && !res.revived) actionToast("coursesQty");
+  else if(res.added || res.revived) actionToast("add");
+  if(res.lastKey && !isFolded(cat.id)) coursesScrollTo = { catId: cat.id, key: res.lastKey };
+}
 function addCoursesLines(cat, text){
   const res = { added:0, revived:0, already:0, qty:0, lastKey:null };
   const lines = String(text || "").split(/\r?\n/).map(parseCoursesLine).filter(p => p.t);
@@ -9439,7 +9545,7 @@ function fitCoursesCards(saved){
     const ul = c.querySelector(":scope > ul.items");
     if(!ul) return;
     // 10.17 : la marge part de la première ligne sous le titre (10.38 : la saisie)
-    const first = c.querySelector(":scope > .courses-entry") || ul;
+    const first = ul;   // 10.68 : les articles d'abord, la saisie est dessous
     c.style.setProperty("--rule-top", (first ? first.offsetTop : c.offsetHeight) + "px");
     // 10.18 : barre de défilement maison, toujours visible
     let bar = c.querySelector(":scope > .courses-scroll");
@@ -10406,14 +10512,15 @@ function hud(){
     if(PLAYERS[k].ini) ctx.fillText(ls ? `${PLAYERS[k].ini}> ${ls.a}° · ${ls.v}` : `${PLAYERS[k].ini}>`, x, 14 + F(18));
   }
   // vent
-  ctx.textAlign = "center"; ctx.font = `700 ${F(12)}px 'Courier Prime', monospace`; ctx.fillStyle = css("--ink-soft");
-  ctx.fillText(world.wind ? `vent ${Math.abs(world.wind)}` : "pas de vent", W / 2, 12 + F(14));
+  // 10.68 : plus grand et plus contrasté (Hiske : illisible), flèche plus épaisse
+  ctx.textAlign = "center"; ctx.font = `700 ${F(16)}px 'Courier Prime', monospace`; ctx.fillStyle = css("--ink");
+  ctx.fillText(world.wind ? `vent ${Math.abs(world.wind)}` : "pas de vent", W / 2, 12 + F(17));
   if(world.wind){
-    const len = (10 + Math.abs(world.wind) * 6) * F(10) / 10, d = Math.sign(world.wind), ay = 24 + F(14);
-    ctx.strokeStyle = css("--accent"); ctx.fillStyle = css("--accent"); ctx.lineWidth = 2.5; ctx.lineCap = "round";
-    ctx.lineWidth = 2.5 * F(10) / 10;
+    const k = F(10) / 10, len = (10 + Math.abs(world.wind) * 6) * k, d = Math.sign(world.wind), ay = 12 + F(17) + F(11);
+    ctx.strokeStyle = css("--accent"); ctx.fillStyle = css("--accent"); ctx.lineCap = "round";
+    ctx.lineWidth = 4 * k;
     ctx.beginPath(); ctx.moveTo(W / 2 - d * len / 2, ay); ctx.lineTo(W / 2 + d * len / 2, ay); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(W / 2 + d * (len / 2 + 6), ay); ctx.lineTo(W / 2 + d * len / 2 - d, ay - 5); ctx.lineTo(W / 2 + d * len / 2 - d, ay + 5); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(W / 2 + d * (len / 2 + 9 * k), ay); ctx.lineTo(W / 2 + d * len / 2 - d, ay - 7 * k); ctx.lineTo(W / 2 + d * len / 2 - d, ay + 7 * k); ctx.fill();
   }
   // bandeau de fin
   if(banner){
@@ -10931,7 +11038,8 @@ if(!window.fitDuelFull){
     document.querySelectorAll(".duel-card:not(.fullpage) .duel-stage[style*='width']").forEach(st => st.style.width = "");
     const card = document.querySelector(".duel-card.fullpage"); if(!card) return;
     const st = card.querySelector(".duel-stage"), sc = card.querySelector(".duel-screen"); if(!st || !sc) return;
-    st.style.width = "";   // tout le poste (écran, réglages, Lancer, pied) prend la largeur de l'écran
+    st.style.width = "";
+    if(matchMedia("(orientation:landscape) and (max-height:560px)").matches) return;   // 10.68 : téléphone couché : la « manette » (CSS) s'en charge   // tout le poste (écran, réglages, Lancer, pied) prend la largeur de l'écran
     for(let i = 0; i < 3; i++){   // les réglages peuvent passer sur deux lignes quand l'écran rétrécit : on remesure
       const z = parseFloat(getComputedStyle(st).zoom) || 1, cs = getComputedStyle(card);
       const avail = window.innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
@@ -11031,7 +11139,7 @@ function render(){
       if(state[k]) doneInCat++;
     });
     if(!courses && visibleCount && doneInCat === visibleCount) card.classList.add("done");
-    const folded = isFolded(cat.id);
+    const folded = isFolded(cat.id) && fullpageCat !== cat.id;   // 10.68 : en pleine page, une case fermée s'affiche ouverte
     if(folded) card.classList.add("collapsed");
     // 10.18 : une liste de courses repliée se dépliait d'un clic ; 10.66 : toutes les cases fermées (wireFolded)
     const leftCount = visibleCount - doneInCat + eggsInCat;   // 10.64 : tâches à faire + œufs en couvaison (jamais les cochées)
@@ -11067,11 +11175,12 @@ function render(){
       <span class="cat-title-group">
         ${renamingThisCat
           ? `<input type="text" class="cat-title-input" value="${escapeAttr(cat.title)}">`
-          : `${courses ? BASKET_SVG : ""}<span class="cat-title-line"><span class="cat-title">${escapeAttr(cat.title)}</span><button type="button" class="add-btn" aria-label="${courses ? "Ajouter un article avec détail" : "Ajouter une tâche"}"><span class="g">+</span></button></span>${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} ${courses ? "à prendre" : "à faire"}">${leftCount}</span>` : ""}`}
+          : `${courses ? BASKET_SVG : ""}<span class="cat-title-line"><span class="cat-title">${escapeAttr(cat.title)}</span></span>${folded && leftCount ? `<span class="cat-count" aria-label="${leftCount} ${courses ? "à prendre" : "à faire"}">${leftCount}</span>` : ""}`}
         ${renamingThisCat && !courses ? `<button type="button" class="add-btn" aria-label="Ajouter une tâche"><span class="g">+</span></button>` : ""}
-        ${renamingThisCat || courses ? "" : `<label class="cat-quick-wrap" title="Ajouter une tâche"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" placeholder="Nouvelle tâche…" aria-label="Ajouter une tâche à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
+        ${renamingThisCat ? "" : `<label class="cat-quick-wrap" title="${courses ? "Ajouter un article" : "Ajouter une tâche"}"><svg class="cat-quick-pen" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/></svg><input type="text" class="cat-quick" placeholder="${courses ? "Nouvel article…" : "Nouvelle tâche…"}" aria-label="${courses ? "Ajouter un article" : "Ajouter une tâche"} à ${escapeAttr(cat.title)}" enterkeyhint="done" autocomplete="off"></label>`}
       </span>
       <span class="cat-head-right">
+        ${renamingThisCat ? "" : `<button type="button" class="add-btn" aria-label="${courses ? "Ajouter un article avec détail" : "Ajouter une tâche"}"><span class="g">+</span></button>`}
         <button type="button" class="cat-order${newBottom ? " reversed" : ""}${reversed ? " custom" : ""}" aria-label="${newBottom ? "Mettre les récentes en haut" : "Mettre les récentes en bas"}" data-tip="${newBottom ? "Récentes en haut ?" : "Récentes en bas ?"}"><svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true"><path d="M5 1.8 9 8.2H1z" fill="currentColor"/></svg></button>
         <button type="button" class="cat-full" aria-label="${fullpageCat === cat.id ? "Revenir aux listes" : "Ouvrir en pleine page"}" data-tip="${fullpageCat === cat.id ? "Réduire" : "Pleine page"}">${fullpageCat === cat.id ? FULL_OUT_SVG : FULL_IN_SVG}</button>
         ${canDeleteCat ? `<button type="button" class="cat-delete-btn" aria-label="Supprimer cette case vide" title="Supprimer cette case vide"><span class="g">&times;</span></button>` : ""}
@@ -11097,7 +11206,9 @@ function render(){
         const txt = e.clipboardData ? e.clipboardData.getData("text") : "";
         if(!txt || !/\n/.test(txt.trim())) return;
         e.preventDefault();
-        const lines = splitPastedTasks(quickInp.value.slice(0, quickInp.selectionStart) + txt + quickInp.value.slice(quickInp.selectionEnd));
+        const all = quickInp.value.slice(0, quickInp.selectionStart) + txt + quickInp.value.slice(quickInp.selectionEnd);
+        if(courses){ addCoursesQuick(cat, all); quickInp.value = ""; refocusQuickCat = cat.id; renderAll(); return; }   // 10.68
+        const lines = splitPastedTasks(all);
         if(isFolded(cat.id)) unfoldCat(cat.id);
         if(addPastedTasks(cat, lines)) actionToast("add");
         quickInp.value = "";
@@ -11108,9 +11219,12 @@ function render(){
         if(e.key === "Enter"){
           e.preventDefault();
           if(!quickInp.value.trim()) return;
+          if(courses) addCoursesQuick(cat, quickInp.value);   // 10.68 : mémo fermé, il reste fermé (sa bulle grandit), comme en 10.19
+          else{
           if(isFolded(cat.id)) unfoldCat(cat.id); // 10.7 : la liste se rouvre
           try{ if(addQuickTask(cat, quickInp.value)) actionToast("add"); }
           catch(err){ console.error("[ajout express] échec", err); }
+          }
           quickInp.value = "";
           refocusQuickCat = cat.id;
           renderAll();
@@ -11343,8 +11457,8 @@ function render(){
 
     if(courses){   // 10.15 : saisie et Vider les rayés (10.38 : saisie en haut)
       const parts = buildCoursesParts(cat);
-      card.appendChild(parts.entry);
       card.appendChild(ul);
+      card.appendChild(parts.entry);   // 10.68 : la saisie repasse sous les articles
       card.appendChild(parts.foot);
     }else card.appendChild(ul);
     // 10.7 : la flèche du volet, en bas à droite ; 10.67 : une punaise (plantée = ouverte)
@@ -11357,6 +11471,24 @@ function render(){
     fold.innerHTML = `${pinSvg()}`;
     fold.addEventListener("click", e=>{ e.stopPropagation(); toggleFold(cat.id); });
     card.appendChild(fold);
+    // 10.68 : la flèche d'ordre descend en bas à gauche, à droite de la poignée (le + a pris sa place en haut)
+    const orderBtn = head.querySelector(".cat-order");
+    if(orderBtn) card.appendChild(orderBtn);
+    // 10.68 : au doigt, la barre du bas ouvre ou referme la case (tap : bascule ; glissé : vers le bas
+    // ouvre, vers le haut referme) ; elle ne prend le doigt que sur elle-même, le défilement reste libre
+    const bar = document.createElement("button");
+    bar.type = "button"; bar.className = "cat-close-bar"; bar.setAttribute("aria-label", "Ouvrir ou refermer");
+    let barY = null;
+    const barSet = open=>{ if(open === card.classList.contains("peek")) return; peekCard(card, open); };
+    bar.addEventListener("pointerdown", e=>{ barY = e.clientY; try{ bar.setPointerCapture(e.pointerId); }catch(err){} });
+    bar.addEventListener("pointerup", e=>{
+      if(barY == null) return;
+      const dy = e.clientY - barY; barY = null;
+      barSet(dy > 12 ? true : dy < -12 ? false : !card.classList.contains("peek"));
+    });
+    bar.addEventListener("pointercancel", ()=>{ barY = null; });
+    bar.addEventListener("click", e=>{ e.stopPropagation(); e.preventDefault(); if(e.detail === 0) barSet(!card.classList.contains("peek")); });   // clavier
+    card.appendChild(bar);
     categoriesEl.appendChild(card);
   });
   wireFolded();   // 10.66
@@ -11403,11 +11535,12 @@ function glideHeight(card, h0, opening){
   if(Math.abs(h1 - h0) < 2) return 0;
   const dur = Math.round(Math.min(650, Math.max(440, Math.abs(h1 - h0) * 1.7)) * (opening ? 1 : 1.25));   // 10.67 : un peu plus long, fermeture encore un peu plus posée   // 10.67 : la fermeture prend plus son temps (avant × 0.85)
   card.style.overflow = "hidden";
+  card.classList.add("gliding");   // 10.68 : aperçu non borné pendant le glissement
   const a = card.animate([{ height:h0 + "px" }, { height:h1 + "px" }], { duration:dur, easing:opening ? SOFT_EASE : SOFT_CLOSE });
   card._soft = a;
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
-  const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; if(card.classList.contains("courses")) placeCoursesScroll(card); } };
+  const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); if(card.classList.contains("courses")) placeCoursesScroll(card); } };
   a.onfinish = done; a.oncancel = done;
   return dur;
 }
@@ -11434,7 +11567,7 @@ function wireFolded(){
     });
     card.addEventListener("click", e=>{   // 10.67 : un clic sur une case fermée l'entrouvre seulement (au doigt, ou avant la fin du survol) ; seule la punaise la garde ouverte
       if(!card.classList.contains("collapsed")) return;
-      if(e.target.closest(".cat-fold, .cat-grip, .scr-full, .chat-more, .chat-menu, .chat-share, input, textarea")) return;
+      if(e.target.closest(".cat-fold, .cat-close-bar, .cat-grip, .scr-full, .cat-full, .add-btn, .chat-more, .chat-menu, .chat-share, input, textarea")) return;
       e.stopPropagation(); e.preventDefault();
       clearTimeout(t); t = null;
       peekCard(card, true);
@@ -13995,7 +14128,7 @@ function showIosBand(){
     b.remove();
   });
 }
-if(Store.mode === "doc" && !isStandaloneApp()){
+if(Store.mode === "doc" && !isStandaloneApp() && !DEMO){   // 10.68 : vitrine : pas de bandeau d'installation
   if(isIOSDevice()){ if(neverHereBefore()) showIosGate(ESSAI); else showIosBand(); }   // 10.63 : sur le banc d'essai, on peut continuer dans Safari
   else if(neverHereBefore() && pendingInvite() && installKind() !== "none") showIosGate(true);
 }else if(Store.mode === "doc" && isStandaloneApp() && neverHereBefore() && !pendingInvite()){
@@ -14051,5 +14184,24 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
   };
   apply();
 })();
-Sync.start();
+// 10.68 : vitrine (?demo) : quelques listes remplies, fermées et ouvertes, pour tester sur téléphone
+if(DEMO && !hasAnyList()) (()=>{
+  const mk = (t, items, o = {})=>{
+    const c = addCategory(t);
+    if(o.memo) Store.setListField(c.id, "type", "courses");
+    items.forEach(x => insertItem(c, typeof x === "string" ? { t:x } : x));
+    if(o.folded) setFolded(c.id, true);
+  };
+  mk("Courses", ["Lait", "Pain complet", "2 Tomates", "Beurre demi-sel", "Café", "Pommes"], { memo:true, folded:true });
+  mk("Bricolage", ["Ampoules E27", "Vis 4×40", "Mastic blanc"], { memo:true, folded:true });
+  mk("Maison", [{ t:"Appeler le chauffagiste", urgent:true }, "Changer le filtre de la hotte", { t:"Repeindre la cage d'escalier", egg:true }, "Trier la cave"], { folded:true });
+  mk("Admin & finances", [{ t:"Liste des prestations médicales — à envoyer à la mutuelle", note:"Avec les attestations de soins" }, "Déclaration fiscale", "Renouveler l'assurance auto"], { folded:true });
+  mk("Projets", [{ t:"Esquisse de la terrasse", egg:true }, { t:"Créer un compte Notion et y inscrire les idées", egg:true }], { folded:true });
+  mk("Week-end", ["Réserver le resto", "Acheter un cadeau pour Lou", "Vélo au garage", "Marché de Boitsfort"]);
+  mk("Lectures", ["Rendre les livres à la bibliothèque", "Finir le roman"]);
+  const duel = addCategory("Duel");
+  if(duel && Store.setListField(duel.id, "type", "duel")) insertItem(duel, { t: "nouvelle partie", duel: "partie", seed: (Math.random() * 2 ** 31) | 0, g: 380, vent: 10, trou: 22, decor: "pignons", at: Date.now() });
+  renderAll();
+})();
+if(!DEMO) Sync.start();   // 10.68 : la vitrine ne se connecte jamais
 </script>
