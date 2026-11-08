@@ -9748,9 +9748,9 @@ const makeDuel = ()=>{   // 10.63 : une instance par duel (chacun sa carte, son 
 const W = 960, H = 540;
 const REGLES = { g:380, vent:10, trou:22, decor:"pignons" };   // réglages retenus au banc le 6/11/2026
 const S = { trace:1, get son(){ try{ return localStorage.getItem("sous-le-tapis-duel-son") !== "0"; }catch(e){ return true; } } };
-const OBJETS = { stylo:"Stylo plume", roue:"Roue de vélo", reveil:"Réveil", coeur:"Cœur" };
-const OBJ_SIZE = { stylo: 1.15, roue: 1, reveil: 1.1, coeur: 1 };
-const OBJETS_ART = { stylo:"un stylo plume", roue:"une roue de vélo", reveil:"un réveil", coeur:"un cœur" };
+const OBJETS = { stylo:"Stylo plume", roue:"Vélo", reveil:"Réveil", coeur:"Cœur" };
+const OBJ_SIZE = { stylo: 1.15, roue: 1.05, reveil: 1.1, coeur: 1 };
+const OBJETS_ART = { stylo:"un stylo plume", roue:"un vélo", reveil:"un réveil", coeur:"un cœur" };
 const DANCE_BEAT = 0.32, DANCE_BEATS = 14;
 const de = n => (/^[aeiouyéèêâîôû]/i.test(n) ? "d'" : "de ") + n;
 let ROOT = null, CAT = null;   // la carte du duel affiché, et sa liste
@@ -10070,14 +10070,25 @@ function drawObjet(c, type, x, y, rot = 0, sc = 1){
   // or du trèfle) — pas de dégradés ni de reflets : on reste loin des émoticônes
   c.save(); c.translate(x, y); c.rotate(rot); c.scale(sc, sc);
   c.lineJoin = "round"; c.lineCap = "round";
-  if(type === "roue"){
-    c.strokeStyle = "#A39C94"; c.lineWidth = 0.5;                                            // rayons croisés
-    for(let i = 0; i < 16; i++){ const a0 = i / 16 * Math.PI * 2, a1 = a0 + (i % 2 ? 0.5 : -0.5);
-      c.beginPath(); c.moveTo(Math.cos(a0) * 1.6, Math.sin(a0) * 1.6); c.lineTo(Math.cos(a1) * 10, Math.sin(a1) * 10); c.stroke(); }
-    c.strokeStyle = "#C9C2B8"; c.lineWidth = 1.3; c.beginPath(); c.arc(0, 0, 10.2, 0, 7); c.stroke();   // jante
-    c.strokeStyle = "#4A5E6E"; c.lineWidth = 2.8; c.beginPath(); c.arc(0, 0, 12, 0, 7); c.stroke();     // pneu ardoise
-    c.fillStyle = "#2F6F7C"; c.beginPath(); c.arc(0, 0, 2.1, 0, 7); c.fill();                           // moyeu bleu-vert
-    c.fillStyle = "#E3B53C"; c.fillRect(-0.7, -10.6, 1.4, 2.3);                                         // valve
+  if(type === "roue"){   // 10.68 : un vélo entier (avant : une roue seule ; nom interne « roue » gardé pour les parties en cours)
+    for(const wx of [-9, 9]){                                                                  // deux roues
+      c.strokeStyle = "#A39C94"; c.lineWidth = 0.45;                                           // rayons
+      for(let i = 0; i < 8; i++){ const a = i / 8 * Math.PI; c.beginPath(); c.moveTo(wx + Math.cos(a) * 5.6, 4 + Math.sin(a) * 5.6); c.lineTo(wx - Math.cos(a) * 5.6, 4 - Math.sin(a) * 5.6); c.stroke(); }
+      c.strokeStyle = "#4A5E6E"; c.lineWidth = 1.8; c.beginPath(); c.arc(wx, 4, 6.4, 0, 7); c.stroke();   // pneu
+      c.fillStyle = "#4A5E6E"; c.beginPath(); c.arc(wx, 4, 1, 0, 7); c.fill();                            // moyeu
+    }
+    c.strokeStyle = "#2F6F7C"; c.lineWidth = 1.7; c.beginPath();                               // cadre en losange
+    c.moveTo(-9, 4); c.lineTo(-1, 4.4); c.lineTo(-3.4, -4.2); c.closePath();                    // bases, tube de selle, haubans
+    c.moveTo(-3.4, -4.2); c.lineTo(5.8, -4.2); c.lineTo(-1, 4.4);                              // tube horizontal, tube oblique
+    c.moveTo(5.8, -4.2); c.lineTo(9, 4);                                                       // fourche
+    c.moveTo(-3.4, -4.2); c.lineTo(-3.9, -6); c.moveTo(5.8, -4.2); c.lineTo(5.2, -7);          // tige de selle, potence
+    c.stroke();
+    c.strokeStyle = "#2A2725"; c.lineWidth = 1.6;
+    c.beginPath(); c.moveTo(-6.2, -6.4); c.lineTo(-2.2, -6.4); c.stroke();                     // selle
+    c.beginPath(); c.moveTo(5.2, -7); c.lineTo(8, -7.6); c.stroke();                           // guidon
+    c.lineWidth = 1; c.beginPath(); c.moveTo(-1, 4.4); c.lineTo(1.2, 6.6); c.stroke();          // manivelle
+    c.lineWidth = 1.4; c.beginPath(); c.moveTo(0.2, 6.8); c.lineTo(2.4, 6.8); c.stroke();       // pédale
+    c.fillStyle = "#4A5E6E"; c.beginPath(); c.arc(-1, 4.4, 1.6, 0, 7); c.fill();               // plateau
   }else if(type === "coeur"){
     c.fillStyle = "#D98DA1"; heartPath(c); c.fill();
     c.strokeStyle = "#C24F6E"; c.lineWidth = 1.2; heartPath(c); c.stroke();
@@ -10157,8 +10168,8 @@ const clouds = Array.from({ length: 5 }, (_, i) => ({ x: i * 220 + Math.random()
 function burst(type, x, y, big, color){
   // éclats propres à l'objet : verre et mousse, bisous, écriture
   const n = big ? 34 : 22, LETTRES = "aébdçfgèhlmnpqrstuvz&?!~";
-  const kinds = { roue:["spoke","spoke","rubber"], coeur:["lips","lips","miniheart"], stylo:["letter","letter","letter","ink"], reveil:["gear","gear","spring","digit"] }[type];
-  const colors = { gear:["#E3B53C","#4993A2"], spring:["#4A5E6E"], digit:["#2A2725","#2F6F7C"], spoke:["#A39C94","#C9C2B8"], rubber:["#4A5E6E"], lips:["#C24F6E","#D98DA1"], miniheart:["#D98DA1","#C24F6E"],
+  const kinds = { roue:["spoke","spoke","rubber","tube"], coeur:["lips","lips","miniheart"], stylo:["letter","letter","letter","ink"], reveil:["gear","gear","spring","digit"] }[type];
+  const colors = { gear:["#E3B53C","#4993A2"], spring:["#4A5E6E"], digit:["#2A2725","#2F6F7C"], spoke:["#A39C94","#C9C2B8"], tube:["#2F6F7C"], rubber:["#4A5E6E"], lips:["#C24F6E","#D98DA1"], miniheart:["#D98DA1","#C24F6E"],
                    letter:["#562F96","#4A5E6E","#9558D0"], ink:["#562F96","#9558D0"] };
   for(let i = 0; i < n; i++){
     const a = Math.random() * Math.PI * 2, sp = 60 + Math.random() * (big ? 260 : 170), k = kinds[i % kinds.length];
@@ -10204,6 +10215,7 @@ function drawParticle(p){
   switch(p.kind){
     case "smoke": ctx.globalAlpha *= 0.11; ctx.fillStyle = css("--ink-faint"); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 7); ctx.fill(); break;
     case "chunk": ctx.fillRect(-2.2, -1.6, 4.4, 3.2); break;
+    case "tube": ctx.strokeStyle = p.color; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-3.5, 0); ctx.lineTo(3.5, 0); ctx.stroke(); break;   // bout de cadre du vélo
     case "spoke": ctx.strokeStyle = p.color; ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.stroke(); break;
     case "rubber": ctx.beginPath(); ctx.ellipse(0, 0, 2.6, 1.1, 0, 0, 7); ctx.fill(); break;
     case "lips":   // petite bouche en bisou
