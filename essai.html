@@ -4406,9 +4406,16 @@ body.ios-gate-on{ overflow:hidden; }
 // qu'elle range dans le navigateur porte le préfixe « essai: », et en ligne ses
 // fiches vont dans des collections « essai_… ». L'appli elle-même n'y touche jamais.
 const ESSAI = /essai/i.test(location.pathname);
+// 10.68 : essai.html?demo : vitrine de test, listes d'exemple dans un coin à part du navigateur
+// (préfixe « demo: »), sans connexion ni synchro ; ?demo&reset remet les exemples à neuf
+const DEMO = ESSAI && /[?&]demo\b/.test(location.search);
+if(DEMO && /[?&]reset\b/.test(location.search)){
+  try{ Object.keys(localStorage).filter(k => k.startsWith("demo:")).forEach(k => localStorage.removeItem(k)); }catch(e){}
+  location.replace(location.pathname + "?demo");
+}
 const Store = (()=>{
   const LS = localStorage;
-  const LP = ESSAI ? "essai:" : "";   // préfixe réel des anciennes clés dans le navigateur
+  const LP = DEMO ? "demo:" : ESSAI ? "essai:" : "";   // préfixe réel des anciennes clés dans le navigateur
   const P = "fauconnerie-v2-";
   // anciennes clés gérées par les fiches (nom court → clé complète)
   const K = {
@@ -4433,7 +4440,7 @@ const Store = (()=>{
   // champ d'une tâche qui porte chaque clé « par tâche »
   const SLOT_FIELD = { todo:"done", overrides:"edits", checkedat:"checkedAt" };
 
-  const NS = (ESSAI ? "essai:" : "") + "sltapis:";
+  const NS = (DEMO ? "demo:" : ESSAI ? "essai:" : "") + "sltapis:";
   const META = NS+"meta", REV = NS+"rev", USER = NS+"user:moi", LOCAL = NS+"local",
         RESIDUE = NS+"residue", LISTP = NS+"list:";
 
@@ -6070,7 +6077,7 @@ let refocusQuickCat = null;
 // le formulaire détaillé ({ catId, t }, lu une fois à son ouverture)
 let addPrefill = null;
 // ---- 10.7 : volets (listes repliées), par appareil ----
-const FOLD_KEY = "sltapis-volets";
+const FOLD_KEY = (DEMO ? "demo:" : "") + "sltapis-volets";   // 10.68 : la vitrine ne touche pas aux volets des vraies listes
 function loadFolded(){ try{ const a = JSON.parse(localStorage.getItem(FOLD_KEY) || "[]"); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
 function isFolded(catId){ return loadFolded().includes(catId); }
 function setFolded(catId, on){
@@ -14018,7 +14025,7 @@ function showIosBand(){
     b.remove();
   });
 }
-if(Store.mode === "doc" && !isStandaloneApp()){
+if(Store.mode === "doc" && !isStandaloneApp() && !DEMO){   // 10.68 : vitrine : pas de bandeau d'installation
   if(isIOSDevice()){ if(neverHereBefore()) showIosGate(ESSAI); else showIosBand(); }   // 10.63 : sur le banc d'essai, on peut continuer dans Safari
   else if(neverHereBefore() && pendingInvite() && installKind() !== "none") showIosGate(true);
 }else if(Store.mode === "doc" && isStandaloneApp() && neverHereBefore() && !pendingInvite()){
@@ -14074,5 +14081,22 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
   };
   apply();
 })();
-Sync.start();
+// 10.68 : vitrine (?demo) : quelques listes remplies, fermées et ouvertes, pour tester sur téléphone
+if(DEMO && !hasAnyList()) (()=>{
+  const mk = (t, items, o = {})=>{
+    const c = addCategory(t);
+    if(o.memo) Store.setListField(c.id, "type", "courses");
+    items.forEach(x => insertItem(c, typeof x === "string" ? { t:x } : x));
+    if(o.folded) setFolded(c.id, true);
+  };
+  mk("Courses", ["Lait", "Pain complet", "2 Tomates", "Beurre demi-sel", "Café", "Pommes"], { memo:true, folded:true });
+  mk("Bricolage", ["Ampoules E27", "Vis 4×40", "Mastic blanc"], { memo:true, folded:true });
+  mk("Maison", [{ t:"Appeler le chauffagiste", urgent:true }, "Changer le filtre de la hotte", { t:"Repeindre la cage d'escalier", egg:true }, "Trier la cave"], { folded:true });
+  mk("Admin & finances", [{ t:"Liste des prestations médicales — à envoyer à la mutuelle", note:"Avec les attestations de soins" }, "Déclaration fiscale", "Renouveler l'assurance auto"], { folded:true });
+  mk("Projets", [{ t:"Esquisse de la terrasse", egg:true }, { t:"Créer un compte Notion et y inscrire les idées", egg:true }], { folded:true });
+  mk("Week-end", ["Réserver le resto", "Acheter un cadeau pour Lou", "Vélo au garage", "Marché de Boitsfort"]);
+  mk("Lectures", ["Rendre les livres à la bibliothèque", "Finir le roman"]);
+  renderAll();
+})();
+if(!DEMO) Sync.start();   // 10.68 : la vitrine ne se connecte jamais
 </script>
