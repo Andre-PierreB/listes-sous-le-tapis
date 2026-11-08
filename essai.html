@@ -2126,11 +2126,16 @@ header{
 .collapsed .pin-head, .peek .pin-head{ fill:transparent; }
 .collapsed .pin-needle, .peek .pin-needle{ transform:scaleY(1); }
 .peek .cat-fold:hover svg.pin, .collapsed .cat-fold:hover svg.pin{ transform:translate(1px,-2px) rotate(-26deg); }
-/* 10.68 : au doigt, petite barre horizontale au milieu du bas d'une case ouverte (entre poignée et
-   punaise) : un tap la referme. Sur ordi, le survol suffit : pas de barre. */
+/* 10.68 : au doigt, petite barre horizontale au milieu du bas d'une case fermée ou entrouverte (entre
+   poignée et punaise) : un tap ou un glissé l'ouvre (vers le bas) ou la referme (vers le haut) ; punaisée,
+   plus de barre (la punaise suffit). Sur ordi, le survol suffit : pas de barre.
+   Au doigt, pas d'effets de survol (zoom des petits boutons, fond gris, punaise qui pivote) : du bruit. */
 .cat-close-bar{ display:none; }
 @media (hover:none){
-  .category:not(.collapsed) > .cat-close-bar{ display:grid; place-items:center; position:absolute; z-index:2;
+  :root{ --pop-scale:1; }
+  .cat-order:hover, .cat-full:hover, .cat-fold:hover{ background:none; }
+  .peek .cat-fold:hover svg.pin, .collapsed .cat-fold:hover svg.pin{ transform:translate(1px,-2px) rotate(-38deg); }
+  .category.collapsed > .cat-close-bar, .category.peek > .cat-close-bar{ display:grid; touch-action:none; place-items:center; position:absolute; z-index:2;
     left:50%; bottom:0; transform:translateX(-50%); width:4.5rem; height:1.6rem; padding:0; margin:0;
     appearance:none; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .cat-close-bar::before{ content:""; width:2.4rem; height:4px; border-radius:2px; background:var(--ink-faint); opacity:.45; transition:opacity .15s ease; }
@@ -11398,10 +11403,20 @@ function render(){
     fold.innerHTML = `${pinSvg()}`;
     fold.addEventListener("click", e=>{ e.stopPropagation(); toggleFold(cat.id); });
     card.appendChild(fold);
-    // 10.68 : au doigt, la barre du bas referme la case (entrouverte : elle se rabat ; punaisée : on la ferme)
+    // 10.68 : au doigt, la barre du bas ouvre ou referme la case (tap : bascule ; glissé : vers le bas
+    // ouvre, vers le haut referme) ; elle ne prend le doigt que sur elle-même, le défilement reste libre
     const bar = document.createElement("button");
-    bar.type = "button"; bar.className = "cat-close-bar"; bar.setAttribute("aria-label", "Refermer");
-    bar.addEventListener("click", e=>{ e.stopPropagation(); if(card.classList.contains("peek")) peekCard(card, false); else if(!isFolded(cat.id)) toggleFold(cat.id); });
+    bar.type = "button"; bar.className = "cat-close-bar"; bar.setAttribute("aria-label", "Ouvrir ou refermer");
+    let barY = null;
+    const barSet = open=>{ if(open === card.classList.contains("peek")) return; peekCard(card, open); };
+    bar.addEventListener("pointerdown", e=>{ barY = e.clientY; try{ bar.setPointerCapture(e.pointerId); }catch(err){} });
+    bar.addEventListener("pointerup", e=>{
+      if(barY == null) return;
+      const dy = e.clientY - barY; barY = null;
+      barSet(dy > 12 ? true : dy < -12 ? false : !card.classList.contains("peek"));
+    });
+    bar.addEventListener("pointercancel", ()=>{ barY = null; });
+    bar.addEventListener("click", e=>{ e.stopPropagation(); e.preventDefault(); if(e.detail === 0) barSet(!card.classList.contains("peek")); });   // clavier
     card.appendChild(bar);
     categoriesEl.appendChild(card);
   });
@@ -11481,7 +11496,7 @@ function wireFolded(){
     });
     card.addEventListener("click", e=>{   // 10.67 : un clic sur une case fermée l'entrouvre seulement (au doigt, ou avant la fin du survol) ; seule la punaise la garde ouverte
       if(!card.classList.contains("collapsed")) return;
-      if(e.target.closest(".cat-fold, .cat-grip, .scr-full, .chat-more, .chat-menu, .chat-share, input, textarea")) return;
+      if(e.target.closest(".cat-fold, .cat-close-bar, .cat-grip, .scr-full, .chat-more, .chat-menu, .chat-share, input, textarea")) return;
       e.stopPropagation(); e.preventDefault();
       clearTimeout(t); t = null;
       peekCard(card, true);
