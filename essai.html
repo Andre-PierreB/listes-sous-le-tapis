@@ -1517,7 +1517,6 @@ body{
    garder la largeur. Les champs passent à 16 px au doigt (en dessous, Safari zoome en tapant). */
 @media (max-width:720px){
   html{ font-size:18px; }
-  :root{ --fold-h:143px; }   /* 127 × 18/16 */
 }
 @media (pointer:coarse){
   .cat-quick{ font-size:16px; }
@@ -2162,6 +2161,7 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
 /* 10.65 : toutes les cases repliées (liste, mémo, chat, duel) ont la même hauteur, --fold-h ;
    étalon : le mémo replié (bandeau + saisie), resserré de 3 px entre le bandeau et la saisie */
 :root{ --fold-h:127px; }
+@media (max-width:720px){ :root{ --fold-h:143px; } }   /* 10.69 : téléphone, texte agrandi : 127 × 18/16 (placé après, sinon sans effet) */
 .category.collapsed{ min-height:var(--fold-h); }
 .category.courses.collapsed > .courses-entry, .category.courses.collapsed > .courses-foot{ display:none; }   /* 10.68 : fermé, le mémo montre ses premiers articles (la saisie est en bas, ouverte) */
 /* 10.66 : fermée, une liste montre ses premières tâches en aperçu, pâles et coupées en fondu (comme le
