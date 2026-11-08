@@ -1522,9 +1522,9 @@ body{
 @media (pointer:coarse){
   .cat-quick{ font-size:16px; }
   /* 10.68 : au doigt, des boutons plus confortables (Hiske) : +, pleine page, ordre, poignée */
-  .cat-head-right .add-btn{ width:28px; height:28px; font-size:1.05rem; border-radius:8px; }
+  .cat-head-right .add-btn{ width:28px; height:28px; font-size:1.05rem; border-radius:8px; margin-right:0.9rem; }
   .cat-full{ padding:7px; } .cat-full svg{ width:17px; height:17px; }
-  .category > .cat-order{ padding:8px 9px; left:2.6rem; bottom:0.05rem; }
+  .category > .cat-order{ padding:8px 9px; left:3.3rem; bottom:0.05rem; }
   .category .cat-grip{ padding:6px 5px; bottom:0.02rem; }
 }
 .wrap{
@@ -2221,6 +2221,7 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
   align-items:center;
   gap:0.5rem;
 }
+.cat-head-right .add-btn{ margin-right:0.6rem; }   /* 10.68 : ajouter et pleine page, deux fonctions très différentes : un peu d'écart */
 /* 10.37 : bouton pleine page (flèches en diagonale), dans la famille des petits boutons à icône */
 .cat-full{
   appearance:none; border:none; background:transparent; color:var(--ink-faint);
@@ -2406,7 +2407,8 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* ajout express (7.1) : champ discret à côté du titre */
 .cat-quick-wrap{ position:relative; flex:1 0 8rem; max-width:20rem; min-width:0; display:flex; align-items:center; cursor:text; }   /* 10.31 : à côté du titre s'il tient en entier, sinon à la ligne */
 @media (max-width:720px){ .cat-quick-wrap{ flex-basis:100%; max-width:none; } .cat-head-right{ align-self:flex-start; } }   /* + et pleine page sur la ligne du titre */   /* 10.68 : téléphone : toujours sous le titre, un seul format */
-.category.courses:not(.collapsed):not(.peek) .cat-quick-wrap{ display:none; }   /* 10.68 : mémo ouvert : la saisie du bas suffit (entrouvert au survol, on garde celle du haut) */
+.category.courses:not(.collapsed):not(.peek) .cat-quick-wrap{ display:none; }
+@media (hover:none){ .category.courses.peek .cat-quick-wrap{ display:none; } }   /* 10.68 : au doigt, déployé = ouvert : la saisie du bas suffit */   /* 10.68 : mémo ouvert : la saisie du bas suffit (entrouvert au survol, on garde celle du haut) */
 .cat-quick-pen{
   position:absolute; left:0.3rem; top:50%; transform:translateY(-50%);
   color:var(--ink-faint); opacity:.55; pointer-events:none;
@@ -2456,8 +2458,8 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .category .cat-grip{ position:absolute; left:0.55rem; bottom:0.12rem; }
 .category .cat-grip svg{ width:17px; height:17px; }   /* 10.68 : un peu plus grande (avant 14 px) */
 /* 10.68 : la flèche d'ordre, en bas à gauche à droite de la poignée (avant : en haut à droite, où est maintenant le +) */
-.category > .cat-order{ position:absolute; left:2.4rem; bottom:0.2rem; z-index:2; }
-.category.fullpage > .cat-order{ left:0.6rem; }   /* pleine page : pas de poignée */
+.category > .cat-order{ position:absolute; left:3.5rem; bottom:0.2rem; z-index:2; }   /* à droite de la marge des mémos (3.19rem), même place partout */
+.category.fullpage > .cat-fold, .category.fullpage > .cat-close-bar{ display:none !important; }   /* 10.68 : en pleine page, ni punaise ni barre (sans objet) ; la flèche d'ordre garde sa place */
 .category .cat-grip svg{ transform:rotate(90deg); }
 .category:hover .cat-grip{ opacity:1; }
 .cat-grip:hover{ background:var(--surface-2); color:var(--ink-soft); }
@@ -11094,7 +11096,7 @@ function render(){
       if(state[k]) doneInCat++;
     });
     if(!courses && visibleCount && doneInCat === visibleCount) card.classList.add("done");
-    const folded = isFolded(cat.id);
+    const folded = isFolded(cat.id) && fullpageCat !== cat.id;   // 10.68 : en pleine page, une case fermée s'affiche ouverte
     if(folded) card.classList.add("collapsed");
     // 10.18 : une liste de courses repliée se dépliait d'un clic ; 10.66 : toutes les cases fermées (wireFolded)
     const leftCount = visibleCount - doneInCat + eggsInCat;   // 10.64 : tâches à faire + œufs en couvaison (jamais les cochées)
@@ -11522,7 +11524,7 @@ function wireFolded(){
     });
     card.addEventListener("click", e=>{   // 10.67 : un clic sur une case fermée l'entrouvre seulement (au doigt, ou avant la fin du survol) ; seule la punaise la garde ouverte
       if(!card.classList.contains("collapsed")) return;
-      if(e.target.closest(".cat-fold, .cat-close-bar, .cat-grip, .scr-full, .chat-more, .chat-menu, .chat-share, input, textarea")) return;
+      if(e.target.closest(".cat-fold, .cat-close-bar, .cat-grip, .scr-full, .cat-full, .add-btn, .chat-more, .chat-menu, .chat-share, input, textarea")) return;
       e.stopPropagation(); e.preventDefault();
       clearTimeout(t); t = null;
       peekCard(card, true);
