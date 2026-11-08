@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.66 -->
+<!-- Sous le tapis — version AUTONOME 10.67 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1277,6 +1277,19 @@
   - 10.63 : duel de faisans (voir DUEL DE FAISANS) : petit jeu à deux en
     tour par tour, créé par « + Ajouter un duel de faisans » ; entraînement
     seul. Papier des mémos en blanc (--memo-a/b/c #FFFFFF, avant blanc chaud).
+  - 10.67 : duel et écran de chat SANS PAPIER BLANC, à la largeur d'une liste ; poste de
+    commande du duel posé sur la tôle ; Lancer et − / + taillés dans le métal (fond de la
+    tôle, cadre et ombre dure), Lancer jamais grisé : il s'enfonce et remonte à chaque clic
+    (.appui ; .locked = sans effet). Choix du faisan à gauche sous Lancer. Duel fermé : écran
+    creusé, mince bandeau gris (celui de l'écran ouvert), fenêtre (.duel-win) centrée sur les
+    faisans (--d-anc) ; ouverture/fermeture : le jeu garde sa taille et glisse (_preGlide /
+    _postGlide, appelés par softHeight et foldSmooth), masqué par la fenêtre arrondie.
+    Estompage : net seulement pendant un vol, la fête (jusqu'à la chute des plumes), un coup
+    à découvrir ou quand c'est à nous de jouer. Pleine page : l'écran se rétrécit pour que
+    tout tienne en hauteur (fitDuelFull, téléphone à l'horizontale). Vélo entier à la place
+    de la roue (nom interne « roue » gardé). Punaise des écrans pleine seulement à son
+    survol. Écran de chat : ouvert, au moins la taille de l'écran du duel (16/9), entrouvert
+    à la hauteur de la rangée, sur ses derniers messages.
   - 10.66 : PUNAISE à la place de la flèche du volet (en bas à droite, et au pied des
     écrans de chat et de duel). Plantée droite (grise et discrète comme Agrandir et Trier, pleine au survol) = ouverte pour de bon ;
     retirée (clic) = la case se ferme. Fermée, la punaise attend couchée de travers, grise ;
@@ -2103,7 +2116,7 @@ header{
    Fermée ou entrouverte au survol : couchée de travers, grise, l'aiguille sortie, elle attend
    qu'on l'enfonce. Seule la punaise ouvre ou ferme pour de bon. */
 .cat-fold{ color:var(--ink-faint); opacity:0.5; }   /* grise et discrète comme Agrandir et Trier ; pleine au survol de la carte */
-.category:hover .cat-fold{ opacity:1; }   /* 10.68 : écrans de chat et de duel : pleine seulement à son propre survol (elle ne bouge pas pendant qu'on joue) */
+.category:hover .cat-fold{ opacity:1; }   /* 10.67 : écrans de chat et de duel : pleine seulement à son propre survol (elle ne bouge pas pendant qu'on joue) */
 .cat-fold:hover, .cat-fold:focus-visible{ background:var(--surface-2); color:var(--ink-soft); opacity:1; }
 .cat-fold svg.pin{ overflow:visible; transform-box:fill-box; transform-origin:50% 100%;
   transition:transform .38s cubic-bezier(.3,1.35,.5,1); }
@@ -2492,7 +2505,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   --facades:#261D33,#26261C,#1E2A1C,#2B2238,#2A2A1D; --facade-shadow:rgba(0,0,0,0.45);
   --win-lit:rgba(226,200,102,0.22); --win-off:rgba(255,255,255,0.035); --objet:#7FC0CC;
 }
-.duel-stage{ position:relative; padding:calc(0.35rem + 22px) 0 0.2rem; container-type:inline-size; }   /* conteneur du poste compact : suit la largeur de l'écran, même rétréci en pleine page */   /* 10.68 : plus de papier blanc ; l'écran à la largeur d'une liste, poste de commande et pied posés sur la tôle (le fond) — avant : papier --surface, ombre, côtés 0.75rem */
+.duel-stage{ position:relative; padding:calc(0.35rem + 22px) 0 0.2rem; container-type:inline-size; }   /* conteneur du poste compact : suit la largeur de l'écran, même rétréci en pleine page */   /* 10.67 : plus de papier blanc ; l'écran à la largeur d'une liste, poste de commande et pied posés sur la tôle (le fond) — avant : papier --surface, ombre, côtés 0.75rem */
 /* le jeu dans un écran creusé, comme l'écran de chat : tranche de tôle arrondie, écran au fond,
    trame LCD et ombres intérieures posées par-dessus le dessin (::after) */
 .duel-screen{ position:relative; padding:2px; border-radius:18px;
@@ -2506,7 +2519,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
     inset 5.4px 0 7.8px -4.2px rgba(42,39,37,0.16),
     inset -5.4px 0 7.8px -4.2px rgba(42,39,37,0.10),
     inset 0 -5.4px 7.2px -3.6px var(--chat-lip); }
-.duel-win{ position:relative; border-radius:16px; overflow:hidden; }   /* 10.68 : la fenêtre de l'écran, dans la tranche de tôle : elle masque le jeu, arrondi compris */
+.duel-win{ position:relative; border-radius:16px; overflow:hidden; }   /* 10.67 : la fenêtre de l'écran, dans la tranche de tôle : elle masque le jeu, arrondi compris */
 .duel-cv{ display:block; width:100%; aspect-ratio:16/9; touch-action:manipulation; }
 .duel-card .attente, .duel-card .d-statut{ z-index:0; }   /* sur le plan de la ville : les ombres de l'écran passent par-dessus */
 .duel-screen::after{ z-index:3; }
@@ -2534,12 +2547,12 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   border:2px solid var(--pc); border-radius:3px; padding:0.38rem 1.1rem; letter-spacing:0.02em; line-height:1.2;
   box-shadow:3px 3px 0 var(--pc); transform:translate(0, 0); transition:transform .06s, box-shadow .06s, background .12s;
 }
-.duel-card .d-lancer{ min-width:7.5em; order:2; background:transparent; }   /* 10.68 : sur la tôle, le bouton est taillé dans le métal (fond de la tôle, cadre et ombre dure) ; le poussoir des bandeaux, sur l'écran, garde son fond */
+.duel-card .d-lancer{ min-width:7.5em; order:2; background:transparent; }   /* 10.67 : sur la tôle, le bouton est taillé dans le métal (fond de la tôle, cadre et ombre dure) ; le poussoir des bandeaux, sur l'écran, garde son fond */
 .duel-card .poussoir::before{ content:"> "; }
 @media (hover:hover){ .duel-card .poussoir:hover{ background:color-mix(in srgb, var(--pc) 9%, var(--surface)); }
   .duel-card .d-lancer:not(.locked):hover, .duel-card .pas:not(:disabled):hover{ background:color-mix(in srgb, var(--pc, var(--objet)) 8%, transparent); } }
 .duel-card .poussoir:active, .duel-card .d-lancer:active{ transform:translate(3px, 3px); box-shadow:0 0 0 var(--pc); }
-/* 10.68 : Lancer n'est jamais grisé : à chaque clic il s'enfonce dans la tôle et remonte (.appui) ;
+/* 10.67 : Lancer n'est jamais grisé : à chaque clic il s'enfonce dans la tôle et remonte (.appui) ;
    quand ce n'est pas le moment (.locked : vol en cours, tour de l'autre), le clic ne fait rien d'autre */
 .duel-card .d-lancer.appui{ animation:d-appui .26s ease-out; }
 @keyframes d-appui{ 0%, 40%{ transform:translate(3px, 3px); box-shadow:0 0 0 var(--pc); } 100%{ transform:translate(0, 0); } }
@@ -2576,7 +2589,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* sous Lancer : le choix du faisan (avant le 1er coup), puis Revoir, à la même place : la carte ne change pas de hauteur */
 .duel-card .d-sous{ display:grid; justify-items:center; align-items:center; }
 .duel-card .d-sous > *{ grid-area:1 / 1; }
-.duel-card .d-sous .persos{ justify-self:var(--persos-pos, start); }   /* 10.68 : à gauche, loin de « … » et des initiales (essayé centré ; avant : à droite, choisi au banc le 6/11/2026 ; trop chargé avec « … » et les initiales) */
+.duel-card .d-sous .persos{ justify-self:var(--persos-pos, start); }   /* 10.67 : à gauche, loin de « … » et des initiales (essayé centré ; avant : à droite, choisi au banc le 6/11/2026 ; trop chargé avec « … » et les initiales) */
 .duel-card .persos.gone, .duel-card .d-revoir.gone{ visibility:hidden; }
 /* pied dans la carte, comme les listes : poignée à gauche, « … » et initiales à droite */
 .duel-card .duel-foot{ margin-top:0; padding:0 0.15rem; }
@@ -2632,7 +2645,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   --chat-rim:2px; --chat-bev:6px; --chat-d:0.42; --chat-pix:0.017; --chat-sh:0.14; --chat-dim:0.34;
   --chat-scr:color-mix(in srgb, var(--ink) 5%, var(--bg));
 }
-.chat-box{ width:100%;   /* 10.68 : à la largeur d'une liste (avant : − 1,5rem) */ padding-top:calc(0.35rem + 22px);   /* autant d'air au-dessus que sous l'écran (marge + poignée) */ display:flex; flex-direction:column; opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
+.chat-box{ width:100%;   /* 10.67 : à la largeur d'une liste (avant : − 1,5rem) */ padding-top:calc(0.35rem + 22px);   /* autant d'air au-dessus que sous l'écran (marge + poignée) */ display:flex; flex-direction:column; opacity:calc(1 - var(--chat-dim)); transition:opacity .35s ease; }
 .chat-card:hover .chat-box, .chat-card:focus-within .chat-box, .chat-card.chat-open .chat-box{ opacity:1; }
 @media (max-width:720px){
   .chat-card .chat-log{ flex:0 1 auto; max-height:calc(10 * 1.45em); }   /* 10.61 : seul sur sa rangée, il grandit avec les messages, jusqu'à 10 lignes */
@@ -2715,14 +2728,14 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.collapsed .attente, .duel-card.collapsed .d-statut, .duel-card.collapsed .coup{ display:none; }
 /* 10.65 : le duel fermé en filigrane — le jeu lui-même, à son échelle (toits et faisans), très pâle
    derrière le papier ; seule la phrase de là où en est la partie reste en clair. Le chat fermé garde son écran. */
-.duel-card.collapsed .duel-screen{ flex:1 1 auto; display:flex; opacity:1; }   /* 10.68 : sans papier, le duel fermé garde son écran creusé, comme le chat ; il recouvre le jeu */
+.duel-card.collapsed .duel-screen{ flex:1 1 auto; display:flex; opacity:1; }   /* 10.67 : sans papier, le duel fermé garde son écran creusé, comme le chat ; il recouvre le jeu */
 .duel-card.collapsed .duel-win{ position:absolute; inset:2px; }
-.duel-card.collapsed .duel-cv{ position:absolute; left:0; width:100%;   /* 10.68 : le jeu garde sa taille ; la fenêtre fermée n'en montre qu'une bande, */
+.duel-card.collapsed .duel-cv{ position:absolute; left:0; width:100%;   /* 10.67 : le jeu garde sa taille ; la fenêtre fermée n'en montre qu'une bande, */
   top:calc(0.5 * (100% - 1.3rem) - var(--d-anc, 0.6) * (100cqw - 4px) * 9 / 16);   /* centrée sur les faisans (--d-anc), au-dessus du bandeau gris */
   opacity:0.28; border-radius:0; pointer-events:none; z-index:0; }
 .duel-cv{ transition:opacity .45s ease; }
 .duel-card.collapsed .d-mini{ position:absolute; z-index:1; left:2px; right:2px; bottom:2px; display:block; min-width:0; white-space:nowrap; }
-/* 10.68 : la phrase de l'écran fermé reprend le mince bandeau gris de l'écran ouvert (.d-statut)
+/* 10.67 : la phrase de l'écran fermé reprend le mince bandeau gris de l'écran ouvert (.d-statut)
    — avant (10.66) : grand bandeau bleu à filets, au nombre d'or de la case */
 .duel-card.collapsed .d-mini-t{ display:block; padding:0.22rem 0.6rem; border-radius:0 0 16px 16px;
   background:color-mix(in srgb, var(--surface) 72%, transparent); color:var(--ink-soft); font:0.72rem/1.3 'Courier Prime', monospace; text-align:center; }
@@ -2735,7 +2748,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    un second l'ouvre, toucher ailleurs la referme. */
 .peek{ align-self:start; z-index:2; cursor:pointer; }
 .chat-card.peek{ align-self:stretch; }
-.chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; }   /* 10.68 : ouvert, au moins la taille de l'écran du duel (avant : fin, 3 lignes) ; plus haut si la rangée l'est */   /* 10.68 : l'écran de chat entrouvert prend la hauteur de la rangée, comme ouvert */
+.chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; }   /* 10.67 : ouvert, au moins la taille de l'écran du duel (avant : fin, 3 lignes) ; plus haut si la rangée l'est */   /* 10.67 : l'écran de chat entrouvert prend la hauteur de la rangée, comme ouvert */
 .category.peek{ box-shadow:0 10px 28px -12px rgba(30,40,45,.28), var(--shadow); }
 .category{ transition:box-shadow .45s ease; }   /* 10.67 : l'ombre du survol arrive en douceur */
 /* 10.65 : pleine page des écrans (chat, duel), comme les listes : le bouton à deux flèches en haut à
@@ -2752,7 +2765,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.fullpage{ display:flex; flex-direction:column; justify-content:center; }
 .duel-card.fullpage .duel-stage > *{ opacity:1; }
 .duel-card.fullpage .duel-stage{ zoom:1.25; }   /* pleine page : le poste de commande de la carte, agrandi */
-.duel-card.fullpage .duel-stage{ width:100%; max-width:100%; margin:0 auto; }   /* 10.68 : largeur posée par fitDuelFull quand la hauteur manque : réglages et Lancer calés sur l'écran */
+.duel-card.fullpage .duel-stage{ width:100%; max-width:100%; margin:0 auto; }   /* 10.67 : largeur posée par fitDuelFull quand la hauteur manque : réglages et Lancer calés sur l'écran */
 @media (max-height:560px){ .duel-card.fullpage .duel-stage{ zoom:1; } }   /* téléphone à l'horizontale : pas d'agrandissement */
 @media (max-width:720px){ .duel-card.fullpage .duel-stage{ zoom:1; } }
 .chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ opacity:1; color:var(--ink-soft); }
@@ -4336,7 +4349,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.66</span>
+    <span class="version-tag">v10.67</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6077,7 +6090,7 @@ function foldSmooth(catId, fold){
   keepRoomBelow();
   html.classList.add("fold-still"); clearTimeout(foldStillT);
   peekId = null; peekHold = Date.now() + 700; peekHoldId = "cat-" + catId;
-  const pre = old && old._preGlide ? old._preGlide() : null;   // 10.68 : le duel, voir softHeight
+  const pre = old && old._preGlide ? old._preGlide() : null;   // 10.67 : le duel, voir softHeight
   setFolded(catId, fold);
   renderAll();
   const card = document.getElementById("cat-" + catId);
@@ -10081,7 +10094,7 @@ function drawObjet(c, type, x, y, rot = 0, sc = 1){
   // or du trèfle) — pas de dégradés ni de reflets : on reste loin des émoticônes
   c.save(); c.translate(x, y); c.rotate(rot); c.scale(sc, sc);
   c.lineJoin = "round"; c.lineCap = "round";
-  if(type === "roue"){   // 10.68 : un vélo entier (avant : une roue seule ; nom interne « roue » gardé pour les parties en cours)
+  if(type === "roue"){   // 10.67 : un vélo entier (avant : une roue seule ; nom interne « roue » gardé pour les parties en cours)
     for(const wx of [-9, 9]){                                                                  // deux roues
       c.strokeStyle = "#A39C94"; c.lineWidth = 0.45;                                           // rayons
       for(let i = 0; i < 8; i++){ const a = i / 8 * Math.PI; c.beginPath(); c.moveTo(wx + Math.cos(a) * 5.6, 4 + Math.sin(a) * 5.6); c.lineTo(wx - Math.cos(a) * 5.6, 4 - Math.sin(a) * 5.6); c.stroke(); }
@@ -10260,7 +10273,7 @@ function frame(now){
   }
   dt = lastNow ? Math.min(0.05, (now - lastNow) / 1000) : 1 / 60; lastNow = now;
   const k60 = dt * 60;   // nombre d'« images à 60/s » écoulées
-  // comme un message non lu au chat : l'écran sort de sa discrétion — 10.68 : seulement pendant un vol,
+  // comme un message non lu au chat : l'écran sort de sa discrétion — 10.67 : seulement pendant un vol,
   // la fête (jusqu'à la fin de la danse et la chute des dernières plumes), quand un coup de l'autre attend
   // d'être vu ou quand c'est à nous de jouer (plus devant « Nouvelle partie », ni à l'entraînement)
   const fete = !!dance && (dance.t < DANCE_BEATS * DANCE_BEAT || particles.length > 0);
@@ -10752,10 +10765,10 @@ function refreshUI(){
   const p = turn(), col = css(PLAYERS[p].color), attente = $(".attente").classList.contains("on");
   const mine = myTurn(), me = myUid();
   ROOT.classList.toggle("duel-new", bandMode === "decouverte");
-  if(world.ph) ROOT.style.setProperty("--d-anc", (((world.ph[0].y + world.ph[1].y) / 2 - 16) / H).toFixed(3));   // 10.68 : l'écran fermé se centre sur les faisans
+  if(world.ph) ROOT.style.setProperty("--d-anc", (((world.ph[0].y + world.ph[1].y) / 2 - 16) / H).toFixed(3));   // 10.67 : l'écran fermé se centre sur les faisans
   { // l'écran replié : une ligne pour savoir où en est la partie
     const last = game.shots[game.shots.length - 1];
-    $(".d-mini-t").textContent = (   // 10.68 : sans « X> » devant, comme le bandeau de l'écran ouvert
+    $(".d-mini-t").textContent = (   // 10.67 : sans « X> » devant, comme le bandeau de l'écran ouvert
       bandMode === "decouverte" ? `${PLAYERS[last.p].nom} a joué !`
       : bandMode === "attente" ? `En attente ${de(PLAYERS[p].nom)}…`
       : world.over ? `${PLAYERS[world.winner].nom} a gagné.`
@@ -10822,7 +10835,7 @@ function build(){
     </div>`;
   ROOT = card;
   card.querySelector(".cat-fold").addEventListener("click", e => { e.stopPropagation(); if(CAT) toggleFold(CAT.id); });
-  // 10.68 : à l'ouverture et à la fermeture, le jeu glisse de sa place à l'autre (pas de saut ni de zoom) :
+  // 10.67 : à l'ouverture et à la fermeture, le jeu glisse de sa place à l'autre (pas de saut ni de zoom) :
   // l'écran se ferme sur les faisans, qui restent visibles dans la bande de l'écran fermé
   card._preGlide = ()=> cv.getBoundingClientRect().top;
   card._postGlide = (top0, dur, easing)=>{
@@ -10911,7 +10924,7 @@ function foot(cat, catIdx){
   }
 }
 let running = false, cardCat = null;
-// 10.68 : en pleine page, l'écran du jeu se rétrécit pour que tout tienne en hauteur (téléphone
+// 10.67 : en pleine page, l'écran du jeu se rétrécit pour que tout tienne en hauteur (téléphone
 // couché à l'horizontale) : réglages, Lancer et pied restent visibles. Hors pleine page : largeur normale.
 if(!window.fitDuelFull){
   window.fitDuelFull = function(){
@@ -11367,7 +11380,7 @@ function peekCard(card, on, still){
   if(on) peekId = card.id; else if(peekId === card.id) peekId = null;
   if(on === card.classList.contains("peek")) return;
   const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); if(card.classList.contains("courses")) placeCoursesScroll(card);
-    const log = on && card.querySelector(".chat-log"); if(log) log.scrollTop = log.scrollHeight; };   // 10.68 : l'écran de chat entrouvert montre ses derniers messages (avant : remonté au premier)   // 10.67 : la barre du mémo suit
+    const log = on && card.querySelector(".chat-log"); if(log) log.scrollTop = log.scrollHeight; };   // 10.67 : l'écran de chat entrouvert montre ses derniers messages (avant : remonté au premier)   // 10.67 : la barre du mémo suit
   if(still) change(); else softHeight(card, change, on);
 }
 // 10.66 : la case glisse d'une hauteur à l'autre (douce, sans à-coup), son contenu apparaît en fondu
@@ -11377,7 +11390,7 @@ function softHeight(card, change, opening){
   const h0 = card.getBoundingClientRect().height;   // pendant une animation : la hauteur du moment
   if(card._soft){ card._soft.cancel(); card._soft = null; }
   keepRoomBelow();
-  const pre = card._preGlide ? card._preGlide() : null;   // 10.68 : le duel note où est son jeu, pour le faire glisser sans saut
+  const pre = card._preGlide ? card._preGlide() : null;   // 10.67 : le duel note où est son jeu, pour le faire glisser sans saut
   change();
   const dur = glideHeight(card, h0, opening);
   if(card._postGlide) card._postGlide(pre, dur, opening ? SOFT_EASE : SOFT_CLOSE);
@@ -13993,7 +14006,7 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 // ---- banc d'essai (essai.html?glow) : couleur du rétroéclairage, message simulé ----
 // ---- banc d'essai (essai.html?duel) : place du choix des faisans, lien des réglages ----
 (()=>{
-  const K = "sltapis-essai-duel-persos-3", q = new URLSearchParams(location.search);   // 10.68 : nouvelle clé, l'ancien choix « à droite » ne s'impose plus
+  const K = "sltapis-essai-duel-persos-3", q = new URLSearchParams(location.search);   // 10.67 : nouvelle clé, l'ancien choix « à droite » ne s'impose plus
   let v = q.get("persos") || (()=>{ try{ return localStorage.getItem(K); }catch(e){ return null; } })() || "start";
   const apply = ()=> document.documentElement.style.setProperty("--persos-pos", v);
   apply();
