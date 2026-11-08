@@ -2495,7 +2495,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-stage{ position:relative; padding:calc(0.35rem + 22px) 0 0.2rem; container-type:inline-size; }   /* conteneur du poste compact : suit la largeur de l'écran, même rétréci en pleine page */   /* 10.68 : plus de papier blanc ; l'écran à la largeur d'une liste, poste de commande et pied posés sur la tôle (le fond) — avant : papier --surface, ombre, côtés 0.75rem */
 /* le jeu dans un écran creusé, comme l'écran de chat : tranche de tôle arrondie, écran au fond,
    trame LCD et ombres intérieures posées par-dessus le dessin (::after) */
-.duel-screen{ position:relative; padding:2px; border-radius:18px;
+.duel-screen{ position:relative; padding:2px; border-radius:18px; overflow:hidden;   /* 10.68 : masque du jeu, aussi pendant qu'il glisse (ouverture, fermeture) */
   background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--bg)) 0%, color-mix(in srgb, var(--ink) 6%, var(--bg)) 35%, var(--bg) 60%, var(--chat-lip) 100%);
   box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px var(--chat-lip); }
 .duel-screen::after{ content:""; position:absolute; inset:2px; border-radius:16px; pointer-events:none; z-index:1;
@@ -2714,7 +2714,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.collapsed .attente, .duel-card.collapsed .d-statut, .duel-card.collapsed .coup{ display:none; }
 /* 10.65 : le duel fermé en filigrane — le jeu lui-même, à son échelle (toits et faisans), très pâle
    derrière le papier ; seule la phrase de là où en est la partie reste en clair. Le chat fermé garde son écran. */
-.duel-card.collapsed .duel-screen{ flex:1 1 auto; display:flex; opacity:1; overflow:hidden; }   /* 10.68 : sans papier, le duel fermé garde son écran creusé, comme le chat ; il recouvre le jeu */
+.duel-card.collapsed .duel-screen{ flex:1 1 auto; display:flex; opacity:1; }   /* 10.68 : sans papier, le duel fermé garde son écran creusé, comme le chat ; il recouvre le jeu */
 .duel-card.collapsed .duel-cv{ position:absolute; left:2px; width:calc(100% - 4px); aspect-ratio:16/9;   /* 10.68 : le jeu garde sa taille ; l'écran fermé n'en montre */
   top:calc(2px + 0.5 * (100% - 4px - 1.3rem) - var(--d-anc, 0.6) * (100cqw - 4px) * 9 / 16);       /* qu'une bande, centrée sur les faisans (--d-anc : leur hauteur dans le jeu) */
   opacity:0.28; border-radius:0; pointer-events:none; z-index:0; }
