@@ -2743,6 +2743,8 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.fullpage{ display:flex; flex-direction:column; justify-content:center; }
 .duel-card.fullpage .duel-stage > *{ opacity:1; }
 .duel-card.fullpage .duel-stage{ zoom:1.25; }   /* pleine page : le poste de commande de la carte, agrandi */
+.duel-card.fullpage .duel-screen{ max-width:100%; margin:0 auto; }   /* 10.68 : largeur posée par fitDuelFull quand la hauteur manque */
+@media (max-height:560px){ .duel-card.fullpage .duel-stage{ zoom:1; } }   /* téléphone à l'horizontale : pas d'agrandissement */
 @media (max-width:720px){ .duel-card.fullpage .duel-stage{ zoom:1; } }
 .chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ opacity:1; color:var(--ink-soft); }
 .chat-card.fullpage .cat-grip, .duel-card.fullpage .cat-grip, .chat-card.fullpage .cat-fold, .duel-card.fullpage .cat-fold{ visibility:hidden; }
@@ -10872,6 +10874,25 @@ function foot(cat, catIdx){
   }
 }
 let running = false, cardCat = null;
+// 10.68 : en pleine page, l'écran du jeu se rétrécit pour que tout tienne en hauteur (téléphone
+// couché à l'horizontale) : réglages, Lancer et pied restent visibles. Hors pleine page : largeur normale.
+if(!window.fitDuelFull){
+  window.fitDuelFull = function(){
+    document.querySelectorAll(".duel-card:not(.fullpage) .duel-screen[style*='width']").forEach(sc => sc.style.width = "");
+    const card = document.querySelector(".duel-card.fullpage"); if(!card) return;
+    const st = card.querySelector(".duel-stage"), sc = card.querySelector(".duel-screen"); if(!st || !sc) return;
+    sc.style.width = "";
+    for(let i = 0; i < 3; i++){   // les réglages peuvent passer sur deux lignes quand l'écran rétrécit : on remesure
+      const z = parseFloat(getComputedStyle(st).zoom) || 1, cs = getComputedStyle(card);
+      const avail = window.innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      const scH = sc.getBoundingClientRect().height, extra = st.getBoundingClientRect().height - scH;
+      if(extra + scH <= avail + 0.5) return;
+      sc.style.width = Math.max(200, ((avail - extra) - 4 * z) * 16 / 9 + 4 * z) / z + "px";
+    }
+  };
+  let ft = 0; const refit = ()=>{ clearTimeout(ft); ft = setTimeout(()=> window.fitDuelFull(), 120); };
+  window.addEventListener("resize", refit); window.addEventListener("orientationchange", refit);
+}
 function card(cat, catIdx){
   if(ROOT && cardCat !== cat.id){ ROOT = null; lastSig = null; }   // un autre duel : nouvelle carte
   if(!ROOT){ build(); cardCat = cat.id; ROOT.id = "cat-" + cat.id; }
@@ -10896,6 +10917,7 @@ function card(cat, catIdx){
   wireDragCard(ROOT, g2, catIdx);
   requestAnimationFrame(()=>{
     if(!ROOT || !ROOT.isConnected) return;
+    fitDuelFull();
     cssCache.clear(); sync(cat);
     if(focusEl && focusEl.isConnected && document.activeElement !== focusEl) focusEl.focus({ preventScroll:true });
   });
