@@ -14201,6 +14201,12 @@ if(DEMO && !hasAnyList()) (()=>{
   mk("Projets", [{ t:"Esquisse de la terrasse", egg:true }, { t:"Créer un compte Notion et y inscrire les idées", egg:true }], { folded:true });
   mk("Week-end", ["Réserver le resto", "Acheter un cadeau pour Lou", "Vélo au garage", "Marché de Boitsfort"]);
   mk("Lectures", ["Rendre les livres à la bibliothèque", "Finir le roman"]);
+  const chat = addCategory("Chat");
+  if(chat && Store.setListField(chat.id, "type", "chat")){
+    const t0 = Date.now() - 2 * 864e5;
+    ["j'étais distrait", "😘", "Bonne nuitsje", "Tot morgen", "x", "Jajajaaa what een mooie dag !", "On se voit ce soir ?", "Oui vers 19h", "J'apporte le pain", "Parfait, bisou"]
+      .forEach((t, i) => insertItem(chat, { t, by: i % 3 === 2 ? "demo-autre" : "moi", at: t0 + i * 36e5 }));
+  }
   const duel = addCategory("Duel");
   if(duel && Store.setListField(duel.id, "type", "duel")) insertItem(duel, { t: "nouvelle partie", duel: "partie", seed: (Math.random() * 2 ** 31) | 0, g: 380, vent: 10, trou: 22, decor: "pignons", at: Date.now() });
   renderAll();
