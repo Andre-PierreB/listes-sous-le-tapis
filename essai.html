@@ -2571,7 +2571,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* sous Lancer : le choix du faisan (avant le 1er coup), puis Revoir, à la même place : la carte ne change pas de hauteur */
 .duel-card .d-sous{ display:grid; justify-items:center; align-items:center; }
 .duel-card .d-sous > *{ grid-area:1 / 1; }
-.duel-card .d-sous .persos{ justify-self:var(--persos-pos, center); }   /* 10.68 : centré (avant : à droite, choisi au banc le 6/11/2026 ; trop chargé avec « … » et les initiales) */
+.duel-card .d-sous .persos{ justify-self:var(--persos-pos, start); }   /* 10.68 : à gauche, loin de « … » et des initiales (essayé centré ; avant : à droite, choisi au banc le 6/11/2026 ; trop chargé avec « … » et les initiales) */
 .duel-card .persos.gone, .duel-card .d-revoir.gone{ visibility:hidden; }
 /* pied dans la carte, comme les listes : poignée à gauche, « … » et initiales à droite */
 .duel-card .duel-foot{ margin-top:0; padding:0 0.15rem; }
@@ -13966,8 +13966,8 @@ if(Store.mode === "doc" && !isStandaloneApp()){
 // ---- banc d'essai (essai.html?glow) : couleur du rétroéclairage, message simulé ----
 // ---- banc d'essai (essai.html?duel) : place du choix des faisans, lien des réglages ----
 (()=>{
-  const K = "sltapis-essai-duel-persos-2", q = new URLSearchParams(location.search);   // 10.68 : nouvelle clé, l'ancien choix « à droite » ne s'impose plus
-  let v = q.get("persos") || (()=>{ try{ return localStorage.getItem(K); }catch(e){ return null; } })() || "center";
+  const K = "sltapis-essai-duel-persos-3", q = new URLSearchParams(location.search);   // 10.68 : nouvelle clé, l'ancien choix « à droite » ne s'impose plus
+  let v = q.get("persos") || (()=>{ try{ return localStorage.getItem(K); }catch(e){ return null; } })() || "start";
   const apply = ()=> document.documentElement.style.setProperty("--persos-pos", v);
   apply();
   if(!(ESSAI && q.has("duel"))) return;
