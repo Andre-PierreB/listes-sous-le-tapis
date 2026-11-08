@@ -1284,7 +1284,7 @@
     referme en partant. Au doigt : toucher la case l'entrouvre, toucher la punaise la garde.
     Plus aucun autre clic n'ouvre ni ne ferme (bandeau des mémos compris). foldSmooth : le
     haut de la case reste fixe, seul le bas glisse, la page ne saute plus (fold-still,
-    keepRoomBelow). Survol : départ en douceur (SOFT_EASE .33,0,.2,1, 440–650 ms, 110 ms d'attente), fondu de l'aperçu et ombre en transition (plus de déclic). Repères « 10.66 » dans le code = même chantier (la 10.66 publiée n’a que
+    keepRoomBelow). Survol : départ en douceur (SOFT_EASE .33,0,.2,1, 440–650 ms, 110 ms d'attente), fondu de l'aperçu et ombre en transition (plus de déclic). Survol aussi au mouvement de la souris (après un rendu, plus besoin de ressortir) ; l'attente après la punaise ne vaut que pour sa case. Barre du mémo cachée quand il est fermé, recalée au survol. Repères « 10.66 » dans le code = même chantier (la 10.66 publiée n’a que
     les mémos sombres). Avant la punaise : la pile est abandonnée, et les cases ne se déplacent
     jamais seules (essayé puis écarté : fermées rangées en bas, remontée à
     l'ouverture). Survol souris = la case fermée s'entrouvre (.peek, sans
@@ -2085,7 +2085,7 @@ header{
   position:absolute; right:0.5rem; width:3px; border-radius:2px;
   background:var(--paper-rule); pointer-events:none;
 }
-.courses-scroll[hidden]{ display:none; }
+.courses-scroll[hidden], .category.collapsed > .courses-scroll{ display:none; }   /* 10.67 : fermée (même après un survol), la barre du mémo ne dépasse plus */
 .courses-scroll > span{
   position:absolute; left:0; right:0; border-radius:2px;
   background:color-mix(in srgb, var(--cat-color, var(--accent)) 70%, var(--paper));
@@ -6072,7 +6072,7 @@ function foldSmooth(catId, fold){
   if(old && old._soft){ old._soft.cancel(); old._soft = null; }
   keepRoomBelow();
   html.classList.add("fold-still"); clearTimeout(foldStillT);
-  peekId = null; peekHold = Date.now() + 700;
+  peekId = null; peekHold = Date.now() + 700; peekHoldId = "cat-" + catId;
   setFolded(catId, fold);
   renderAll();
   const card = document.getElementById("cat-" + catId);
@@ -11302,7 +11302,7 @@ function render(){
 
 // 10.66 : rouvrir une case fermée (elle reste à sa place ; essai abandonné : la faire remonter)
 function unfoldCat(catId){ setFolded(catId, false); }
-let lastPointerType = "mouse", peekHold = 0, peekId = null;   // peekHold : juste après une ouverture, la case qui se retrouve sous la souris ne s'entrouvre pas
+let lastPointerType = "mouse", peekHold = 0, peekHoldId = null, peekId = null;   // peekHold : juste après un clic sur la punaise, CETTE case ne s'entrouvre pas tout de suite (10.67 : les autres, si)
 document.addEventListener("pointerdown", e=>{
   lastPointerType = e.pointerType || "mouse";
   if(!e.target.closest(".peek")) document.querySelectorAll(".peek").forEach(c => peekCard(c, false));
@@ -11310,7 +11310,7 @@ document.addEventListener("pointerdown", e=>{
 function peekCard(card, on, still){
   if(on) peekId = card.id; else if(peekId === card.id) peekId = null;
   if(on === card.classList.contains("peek")) return;
-  const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); };
+  const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); if(card.classList.contains("courses")) placeCoursesScroll(card); };   // 10.67 : la barre du mémo suit
   if(still) change(); else softHeight(card, change, on);
 }
 // 10.66 : la case glisse d'une hauteur à l'autre (douce, sans à-coup), son contenu apparaît en fondu
@@ -11335,7 +11335,7 @@ function glideHeight(card, h0, opening){
   card._soft = a;
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
-  const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; } };
+  const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; if(card.classList.contains("courses")) placeCoursesScroll(card); } };
   a.onfinish = done; a.oncancel = done;
   return dur;
 }
@@ -11346,19 +11346,25 @@ function wireFolded(){
     card._fw = true;
     const id = card.id.replace(/^cat-/, "");
     let t = null;
-    card.addEventListener("pointerenter", e=>{
-      if(e.pointerType !== "mouse" || dragState || Date.now() < peekHold || !(card.classList.contains("collapsed") || card.classList.contains("peek"))) return;
-      clearTimeout(t); t = setTimeout(()=> peekCard(card, true), 110);   // 10.67 : moins de contretemps (avant 160 ms)
-    });
+    // 10.67 : aussi au simple mouvement de la souris : après un rendu (punaise, coche…), la case
+    // sous la souris est neuve et le navigateur ne signale pas d'« entrée » ; il fallait ressortir
+    const want = e=>{
+      if(e.pointerType !== "mouse" || dragState || t || card.classList.contains("peek") || !card.classList.contains("collapsed")) return;
+      if(card.id === peekHoldId && Date.now() < peekHold) return;
+      t = setTimeout(()=>{ t = null; if(card.matches(":hover")) peekCard(card, true); }, 110);   // moins de contretemps (avant 160 ms)
+    };
+    card.addEventListener("pointerenter", want);
+    card.addEventListener("pointermove", want);
     card.addEventListener("pointerleave", e=>{
       if(e.pointerType !== "mouse") return;
-      clearTimeout(t); t = setTimeout(()=> peekCard(card, false), 260);   // un temps de grâce : on peut ressortir et revenir
+      clearTimeout(t); t = null;
+      if(card.classList.contains("peek")) t = setTimeout(()=>{ t = null; if(!card.matches(":hover")) peekCard(card, false); }, 260);   // un temps de grâce : on peut ressortir et revenir
     });
     card.addEventListener("click", e=>{   // 10.67 : un clic sur une case fermée l'entrouvre seulement (au doigt, ou avant la fin du survol) ; seule la punaise la garde ouverte
       if(!card.classList.contains("collapsed")) return;
       if(e.target.closest(".cat-fold, .cat-grip, .scr-full, .chat-more, .chat-menu, .chat-share, input, textarea")) return;
       e.stopPropagation(); e.preventDefault();
-      clearTimeout(t);
+      clearTimeout(t); t = null;
       peekCard(card, true);
     }, true);
   });
