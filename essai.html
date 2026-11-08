@@ -2714,14 +2714,11 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card.collapsed .duel-cv{ position:absolute; inset:2px; width:calc(100% - 4px); height:calc(100% - 4px); aspect-ratio:auto; object-fit:cover; object-position:50% 70%;
   opacity:0.28; border-radius:16px; pointer-events:none; z-index:0;
   -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 40%); mask-image:linear-gradient(180deg, transparent 0, #000 40%); }
-.duel-card.collapsed .d-mini{ position:relative; z-index:1; flex:1 1 auto; display:flex; align-items:center; min-width:0; padding:0 0.25rem; white-space:nowrap; }
-/* 10.66 : la phrase dans le bandeau de l'écran du jeu (celui de « X a joué ! ») : voile clair, filets
-   bleus dessus et dessous, à bords perdus, texte calé à droite ; posé au nombre d'or de la case */
-.duel-card.collapsed .d-mini-t{ flex:1 1 auto; text-align:right; font:700 1rem/1.2 'Courier Prime', 'Courier New', monospace; color:var(--objet);
-  background:color-mix(in srgb, var(--objet) 7%, color-mix(in srgb, var(--surface) 62%, transparent));
-  border-top:2px solid color-mix(in srgb, var(--objet) 40%, transparent); border-bottom:2px solid color-mix(in srgb, var(--objet) 40%, transparent);
-  padding:0.45rem 1.25rem; margin:0 -0.25rem; }   /* 10.68 : d'un bord à l'autre de l'écran (avant −1rem, à bords perdus sur le papier) */
-.duel-card.collapsed .d-mini{ padding-top:var(--d-mini-down, 1.7rem) !important; }
+.duel-card.collapsed .d-mini{ position:absolute; z-index:1; left:2px; right:2px; bottom:2px; display:block; min-width:0; white-space:nowrap; }
+/* 10.68 : la phrase de l'écran fermé reprend le mince bandeau gris de l'écran ouvert (.d-statut)
+   — avant (10.66) : grand bandeau bleu à filets, au nombre d'or de la case */
+.duel-card.collapsed .d-mini-t{ display:block; padding:0.22rem 0.6rem; border-radius:0 0 16px 16px;
+  background:color-mix(in srgb, var(--surface) 72%, transparent); color:var(--ink-soft); font:0.72rem/1.3 'Courier Prime', monospace; text-align:center; }
 .d-mini-t{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .duel-card.collapsed .duel-foot{ z-index:1; }
 .duel-card.collapsed .chat-led{ z-index:2; }
@@ -10238,7 +10235,10 @@ function frame(now){
   }
   dt = lastNow ? Math.min(0.05, (now - lastNow) / 1000) : 1 / 60; lastNow = now;
   const k60 = dt * 60;   // nombre d'« images à 60/s » écoulées
-  const live = busy || !!dance || bandMode === "decouverte";   // comme un message non lu au chat : l'écran sort de sa discrétion
+  // comme un message non lu au chat : l'écran sort de sa discrétion — 10.68 : seulement pendant un vol,
+  // quand un coup de l'autre attend d'être vu ou quand c'est à nous de jouer (plus pendant la fête ni
+  // devant « Nouvelle partie », ni à l'entraînement)
+  const live = busy || bandMode === "decouverte" || (!game.solo && !world.over && myTurn() && bandMode !== "attente");
   if(live !== ROOT._live){ ROOT._live = live; ROOT.classList.toggle("duel-live", live); }
   cssCache.clear(); cvW = cv.clientWidth || W;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -10728,7 +10728,7 @@ function refreshUI(){
   ROOT.classList.toggle("duel-new", bandMode === "decouverte");
   { // l'écran replié : une ligne pour savoir où en est la partie
     const last = game.shots[game.shots.length - 1];
-    $(".d-mini-t").textContent = (PLAYERS[p].ini ? PLAYERS[p].ini + "> " : "> ") + (
+    $(".d-mini-t").textContent = (   // 10.68 : sans « X> » devant, comme le bandeau de l'écran ouvert
       bandMode === "decouverte" ? `${PLAYERS[last.p].nom} a joué !`
       : bandMode === "attente" ? `En attente ${de(PLAYERS[p].nom)}…`
       : world.over ? `${PLAYERS[world.winner].nom} a gagné.`
