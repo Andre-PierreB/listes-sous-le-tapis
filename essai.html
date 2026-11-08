@@ -10843,6 +10843,7 @@ function build(){
   });
   card.querySelector(".d-lancer").addEventListener("click", e => {
     const b = e.currentTarget; b.classList.remove("appui"); void b.offsetWidth; b.classList.add("appui");   // s'enfonce et remonte, à chaque clic
+    b.addEventListener("animationend", ()=> b.classList.remove("appui"), { once:true });   // sinon l'appui se rejoue quand la carte est remise en place (fin du coup)
     if(b.classList.contains("locked")) return;
     if(world && world.over) nouvellePartie(); else lancer();
   });
