@@ -2533,11 +2533,12 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   border:2px solid var(--pc); border-radius:3px; padding:0.38rem 1.1rem; letter-spacing:0.02em; line-height:1.2;
   box-shadow:3px 3px 0 var(--pc); transform:translate(0, 0); transition:transform .06s, box-shadow .06s, background .12s;
 }
-.duel-card .d-lancer{ min-width:7.5em; order:2; }
+.duel-card .d-lancer{ min-width:7.5em; order:2; background:transparent; }   /* 10.68 : sur la tôle, le bouton est taillé dans le métal (fond de la tôle, cadre et ombre dure) ; le poussoir des bandeaux, sur l'écran, garde son fond */
 .duel-card .poussoir::before{ content:"> "; }
-@media (hover:hover){ .duel-card .poussoir:hover, .duel-card .d-lancer:not(:disabled):hover{ background:color-mix(in srgb, var(--pc) 9%, var(--surface)); } }
+@media (hover:hover){ .duel-card .poussoir:hover{ background:color-mix(in srgb, var(--pc) 9%, var(--surface)); }
+  .duel-card .d-lancer:not(:disabled):hover, .duel-card .pas:not(:disabled):hover{ background:color-mix(in srgb, var(--pc, var(--objet)) 8%, transparent); } }
 .duel-card .poussoir:active, .duel-card .d-lancer:not(:disabled):active{ transform:translate(3px, 3px); box-shadow:0 0 0 var(--pc); }
-.duel-card .d-lancer:disabled{ cursor:default; color:var(--ink-faint); border-color:var(--line); box-shadow:3px 3px 0 var(--line); background:var(--surface); }
+.duel-card .d-lancer:disabled{ cursor:default; color:var(--ink-faint); border-color:var(--line); box-shadow:3px 3px 0 var(--line); background:transparent; }
 /* ligne du coup (esprit invite C:\ de l'écran de chat) */
 .duel-card .coup{ display:flex; flex-wrap:wrap; align-items:center; gap:0.6rem 1.1rem; padding:0.75rem 0.5rem 0.35rem; font-family:'Courier Prime', monospace; font-size:1.05rem; }
 .duel-card .invite{ font-weight:700; min-width:2.6em; }
@@ -2545,7 +2546,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .duel-card .coup input{ width:3.3em; font:700 1.1rem 'Courier Prime', monospace; color:var(--ink); background:transparent; border:0; border-bottom:2px solid var(--line); padding:0.1rem 0.15rem; text-align:center; outline:none; }
 .duel-card .coup input:focus{ border-bottom-color:currentColor; }
 .duel-card .coup input::-webkit-inner-spin-button{ opacity:0.4; }
-.duel-card .pas{ display:none; width:38px; height:36px; border-radius:3px; border:2px solid var(--objet); background:var(--surface); color:var(--objet);
+.duel-card .pas{ display:none; width:38px; height:36px; border-radius:3px; border:2px solid var(--objet); background:transparent; color:var(--objet);
   font:700 1.2rem/1 'Courier Prime', monospace; padding:0; cursor:pointer; touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
   box-shadow:2px 2px 0 var(--objet); transform:translate(0, 0); transition:transform .05s, box-shadow .05s; }
 .duel-card .pas:active{ transform:translate(2px, 2px); box-shadow:0 0 0 var(--objet); }
