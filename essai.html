@@ -1277,7 +1277,7 @@
   - 10.63 : duel de faisans (voir DUEL DE FAISANS) : petit jeu à deux en
     tour par tour, créé par « + Ajouter un duel de faisans » ; entraînement
     seul. Papier des mémos en blanc (--memo-a/b/c #FFFFFF, avant blanc chaud).
-  - 10.66 (banc) : la pile est abandonnée, et les cases ne se déplacent
+  - 10.67 (banc ; repères « 10.66 » dans le code — la 10.66 publiée n’a que les mémos sombres) : la pile est abandonnée, et les cases ne se déplacent
     jamais seules (essayé puis écarté : fermées rangées en bas, remontée à
     l'ouverture). Survol souris = la case fermée s'entrouvre (.peek, sans
     toucher aux données), clic = ouverte pour de bon, à sa place. Au doigt :
@@ -1286,7 +1286,7 @@
     Chat replié : la feuille de style cache les lignes (plus retirées).
     Duel fermé : la phrase dans le bandeau de l'écran du jeu (celui de « X a
     joué ! »), à bords perdus, texte à droite, au nombre d'or. Ouvertures
-    douces : softHeight (la hauteur glisse, 380–620 ms, SOFT_EASE). Mémos en sombre : papier des listes (#1C2125).
+    douces : softHeight (la hauteur glisse, 380–620 ms, SOFT_EASE). Fermetures plus lentes (× 1,3, 560–780 ms au bouton) avec SOFT_CLOSE, qui démarre en douceur. Mémos en sombre : papier des listes (#1C2125).
   - 10.65 : volet des écrans de chat et de duel (repli sur une ligne,
     voyant vert du duel) ; toutes les cases repliées à la même hauteur
     (--fold-h, 127px : le mémo replié, resserré de 3 px, sert d'étalon) ;
@@ -6038,7 +6038,7 @@ function toggleFold(catId){
     if(reduce || !ul || !ul.animate){ setFolded(catId, true); renderAll(); return; }
     const h = ul.offsetHeight;
     ul.style.overflow = "hidden";
-    const a = ul.animate([{ height:h + "px", opacity:1, marginTop:"0px" }, { height:"0px", opacity:0, marginTop:"-0.65rem" }], ease);
+    const a = ul.animate([{ height:h + "px", opacity:1, marginTop:"0px" }, { height:"0px", opacity:0, marginTop:"-0.65rem" }], { duration:Math.round(Math.min(780, Math.max(560, h * 1.4))), easing:SOFT_CLOSE });   // 10.67 : fermeture plus douce (avant 420 ms, départ sec)
     a.onfinish = ()=>{ setFolded(catId, true); renderAll(); };
     return;
   }
@@ -11274,6 +11274,7 @@ function peekCard(card, on, still){
 }
 // 10.66 : la case glisse d'une hauteur à l'autre (douce, sans à-coup), son contenu apparaît en fondu
 const SOFT_EASE = "cubic-bezier(.25,.8,.25,1)";
+const SOFT_CLOSE = "cubic-bezier(.45,0,.25,1)";   // 10.67 : fermeture plus douce, sans départ sec (lente au début et à la fin)
 function softHeight(card, change, opening){
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const h0 = card.getBoundingClientRect().height;   // pendant une animation : la hauteur du moment
@@ -11282,9 +11283,9 @@ function softHeight(card, change, opening){
   if(reduce || !card.animate) return;
   const h1 = card.getBoundingClientRect().height;
   if(Math.abs(h1 - h0) < 2) return;
-  const dur = Math.round(Math.min(620, Math.max(380, Math.abs(h1 - h0) * 1.6)) * (opening ? 1 : 0.85));
+  const dur = Math.round(Math.min(620, Math.max(380, Math.abs(h1 - h0) * 1.6)) * (opening ? 1 : 1.3));   // 10.67 : la fermeture prend plus son temps (avant × 0.85)
   card.style.overflow = "hidden";
-  const a = card.animate([{ height:h0 + "px" }, { height:h1 + "px" }], { duration:dur, easing:SOFT_EASE });
+  const a = card.animate([{ height:h0 + "px" }, { height:h1 + "px" }], { duration:dur, easing:opening ? SOFT_EASE : SOFT_CLOSE });
   card._soft = a;
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }));
