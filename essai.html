@@ -10236,9 +10236,10 @@ function frame(now){
   dt = lastNow ? Math.min(0.05, (now - lastNow) / 1000) : 1 / 60; lastNow = now;
   const k60 = dt * 60;   // nombre d'« images à 60/s » écoulées
   // comme un message non lu au chat : l'écran sort de sa discrétion — 10.68 : seulement pendant un vol,
-  // quand un coup de l'autre attend d'être vu ou quand c'est à nous de jouer (plus pendant la fête ni
-  // devant « Nouvelle partie », ni à l'entraînement)
-  const live = busy || bandMode === "decouverte" || (!game.solo && !world.over && myTurn() && bandMode !== "attente");
+  // la fête (jusqu'à la fin de la danse et la chute des dernières plumes), quand un coup de l'autre attend
+  // d'être vu ou quand c'est à nous de jouer (plus devant « Nouvelle partie », ni à l'entraînement)
+  const fete = !!dance && (dance.t < DANCE_BEATS * DANCE_BEAT || particles.length > 0);
+  const live = busy || fete || bandMode === "decouverte" || (!game.solo && !world.over && myTurn() && bandMode !== "attente");
   if(live !== ROOT._live){ ROOT._live = live; ROOT.classList.toggle("duel-live", live); }
   cssCache.clear(); cvW = cv.clientWidth || W;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
