@@ -1284,7 +1284,7 @@
     referme en partant. Au doigt : toucher la case l'entrouvre, toucher la punaise la garde.
     Plus aucun autre clic n'ouvre ni ne ferme (bandeau des mémos compris). foldSmooth : le
     haut de la case reste fixe, seul le bas glisse, la page ne saute plus (fold-still,
-    keepRoomBelow). Survol : départ en douceur (SOFT_EASE .33,0,.2,1, 440–650 ms, 110 ms d'attente), fondu de l'aperçu et ombre en transition (plus de déclic). Survol aussi au mouvement de la souris (après un rendu, plus besoin de ressortir) ; l'attente après la punaise ne vaut que pour sa case. Barre du mémo cachée quand il est fermé, recalée au survol. Repères « 10.66 » dans le code = même chantier (la 10.66 publiée n’a que
+    keepRoomBelow). Survol : départ en douceur (SOFT_EASE .33,0,.2,1, 440–650 ms, 110 ms d'attente), fondu de l'aperçu et ombre en transition (plus de déclic). Survol aussi au mouvement de la souris (après un rendu, plus besoin de ressortir) ; l'attente après la punaise ne vaut que pour sa case. Barre du mémo cachée quand il est fermé, recalée au survol. Plus de transition sur la marge des tâches (cran en fin d'ouverture). Repères « 10.66 » dans le code = même chantier (la 10.66 publiée n’a que
     les mémos sombres). Avant la punaise : la pile est abandonnée, et les cases ne se déplacent
     jamais seules (essayé puis écarté : fermées rangées en bas, remontée à
     l'ouverture). Survol souris = la case fermée s'entrouvre (.peek, sans
@@ -2132,7 +2132,7 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
 @property --fade-b{ syntax:'<percentage>'; inherits:false; initial-value:100%; }
 .category:not(.courses) > ul.items{ --fade-a:100%; --fade-b:100%;
   -webkit-mask-image:linear-gradient(180deg, #000 var(--fade-a), transparent var(--fade-b)); mask-image:linear-gradient(180deg, #000 var(--fade-a), transparent var(--fade-b));
-  transition:--fade-a .55s ease, --fade-b .55s ease, opacity .45s ease, margin-top .45s ease; }
+  transition:--fade-a .55s ease, --fade-b .55s ease, opacity .45s ease; }   /* pas de transition sur margin-top : elle changeait la hauteur après coup (petit cran à la fin de l'ouverture) */
 .category.collapsed:not(.courses) > ul.items > li.is-checked{ display:none; }
 /* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
 .category.courses.collapsed .courses-entry{ cursor:auto; padding-top:calc(0.55rem - 3px); }
