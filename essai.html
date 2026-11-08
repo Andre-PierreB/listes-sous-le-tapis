@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.65 -->
+<!-- Sous le tapis — version AUTONOME 10.66 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1277,15 +1277,14 @@
   - 10.63 : duel de faisans (voir DUEL DE FAISANS) : petit jeu à deux en
     tour par tour, créé par « + Ajouter un duel de faisans » ; entraînement
     seul. Papier des mémos en blanc (--memo-a/b/c #FFFFFF, avant blanc chaud).
-  - 10.67 (banc) : PUNAISE à la place de la flèche du volet (en bas à droite, et au pied des
+  - 10.66 : PUNAISE à la place de la flèche du volet (en bas à droite, et au pied des
     écrans de chat et de duel). Plantée droite (grise et discrète comme Agrandir et Trier, pleine au survol) = ouverte pour de bon ;
     retirée (clic) = la case se ferme. Fermée, la punaise attend couchée de travers, grise ;
     au survol la case s'entrouvre, un clic sur la punaise la garde ouverte, sinon elle se
     referme en partant. Au doigt : toucher la case l'entrouvre, toucher la punaise la garde.
     Plus aucun autre clic n'ouvre ni ne ferme (bandeau des mémos compris). foldSmooth : le
     haut de la case reste fixe, seul le bas glisse, la page ne saute plus (fold-still,
-    keepRoomBelow). Survol : départ en douceur (SOFT_EASE .33,0,.2,1, 440–650 ms, 110 ms d'attente), fondu de l'aperçu et ombre en transition (plus de déclic). Survol aussi au mouvement de la souris (après un rendu, plus besoin de ressortir) ; l'attente après la punaise ne vaut que pour sa case. Barre du mémo cachée quand il est fermé, recalée au survol. Plus de transition sur la marge des tâches (cran en fin d'ouverture). Repères « 10.66 » dans le code = même chantier (la 10.66 publiée n’a que
-    les mémos sombres). Avant la punaise : la pile est abandonnée, et les cases ne se déplacent
+    keepRoomBelow). Survol : départ en douceur (SOFT_EASE .33,0,.2,1, 440–650 ms, 110 ms d'attente), fondu de l'aperçu et ombre en transition (plus de déclic). Survol aussi au mouvement de la souris (après un rendu, plus besoin de ressortir) ; l'attente après la punaise ne vaut que pour sa case. Barre du mémo cachée quand il est fermé, recalée au survol. Plus de transition sur la marge des tâches (cran en fin d'ouverture). Avant la punaise (même version) : la pile est abandonnée, et les cases ne se déplacent
     jamais seules (essayé puis écarté : fermées rangées en bas, remontée à
     l'ouverture). Survol souris = la case fermée s'entrouvre (.peek, sans
     toucher aux données), clic = ouverte pour de bon, à sa place. Au doigt :
@@ -4331,7 +4330,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.65</span>
+    <span class="version-tag">v10.66</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
