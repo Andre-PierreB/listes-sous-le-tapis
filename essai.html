@@ -2707,7 +2707,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    il s'allume en vert du faisan et luit doucement tant qu'un message n'est pas lu */
 .chat-box{ position:relative; min-width:0; }
 .chat-hole, .chat-screen{ min-width:0; }   /* 10.68 : l'écran de chat ne dépasse jamais la largeur de la case */
-.chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 3.5px); right:calc(1.25rem + 46px);   /* 10.68 : plus loin de la flèche pleine page (avant + 28px) */ width:7px; height:7px; border-radius:50%;
+.chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 3.5px); left:1.25rem;   /* 10.69 : en haut à gauche : le coin droit est au bouton pleine page (avant : juste à sa gauche) */ width:7px; height:7px; border-radius:50%;
   background:color-mix(in srgb, var(--ink) 18%, var(--bg)); box-shadow:inset 0 1px 1px rgba(0,0,0,0.25), 0 1px 0 var(--chat-lip); transition:background .4s ease, box-shadow .4s ease; }
 .chat-card.unread .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
 @keyframes chat-led{ 50%{ box-shadow:0 0 2px 0 color-mix(in srgb, var(--logo-green) 50%, transparent); filter:brightness(0.85); } }
@@ -2812,7 +2812,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 }
 .chat-card.fullpage .chat-box{ width:100%; opacity:1; }
 .chat-card.fullpage .chat-log{ flex:1 1 0; max-height:none; }
-.duel-card.fullpage{ display:flex; flex-direction:column; justify-content:center; }
+.duel-card.fullpage{ display:flex; flex-direction:column; justify-content:flex-start; }   /* 10.69 : en haut de l'écran comme les listes (avant : centré) ; bouton pleine page en haut à droite */
 .duel-card.fullpage .duel-stage > *{ opacity:1; }
 .duel-card.fullpage .duel-stage{ zoom:1.25; }   /* pleine page : le poste de commande de la carte, agrandi */
 .duel-card.fullpage .duel-stage{ width:100%; max-width:100%; margin:0 auto; }   /* 10.67 : largeur posée par fitDuelFull quand la hauteur manque : réglages et Lancer calés sur l'écran */
@@ -2862,7 +2862,7 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ opacity:1; color:var(--ink-soft); }
 .chat-card.fullpage .cat-grip, .duel-card.fullpage .cat-grip, .chat-card.fullpage .cat-fold, .duel-card.fullpage .cat-fold{ visibility:hidden; }
 /* voyant du duel : celui du chat, sur le papier en haut à droite — vert quand un coup de l'autre attend d'être vu */
-.duel-card .chat-led{ top:calc((0.35rem + 22px) / 2 - 3.5px); right:calc(1.25rem + 28px); }
+.duel-card .chat-led{ top:calc((0.35rem + 22px) / 2 - 3.5px); left:1.25rem; }   /* 10.69 : comme le chat, en haut à gauche */
 .duel-card.duel-new .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
 @media (prefers-reduced-motion:reduce){ .duel-card.duel-new .chat-led{ animation:none; } }
 .chat-foot{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; padding:0 0.2rem; position:relative; }
