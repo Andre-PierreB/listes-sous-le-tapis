@@ -1277,7 +1277,15 @@
   - 10.63 : duel de faisans (voir DUEL DE FAISANS) : petit jeu à deux en
     tour par tour, créé par « + Ajouter un duel de faisans » ; entraînement
     seul. Papier des mémos en blanc (--memo-a/b/c #FFFFFF, avant blanc chaud).
-  - 10.67 (banc ; repères « 10.66 » dans le code — la 10.66 publiée n’a que les mémos sombres) : la pile est abandonnée, et les cases ne se déplacent
+  - 10.67 (banc) : PUNAISE à la place de la flèche du volet (en bas à droite, et au pied des
+    écrans de chat et de duel). Plantée droite à la couleur de la liste = ouverte pour de bon ;
+    retirée (clic) = la case se ferme. Fermée, la punaise attend couchée de travers, grise ;
+    au survol la case s'entrouvre, un clic sur la punaise la garde ouverte, sinon elle se
+    referme en partant. Au doigt : toucher la case l'entrouvre, toucher la punaise la garde.
+    Plus aucun autre clic n'ouvre ni ne ferme (bandeau des mémos compris). foldSmooth : le
+    haut de la case reste fixe, seul le bas glisse, la page ne saute plus (fold-still,
+    keepRoomBelow). Repères « 10.66 » dans le code = même chantier (la 10.66 publiée n’a que
+    les mémos sombres). Avant la punaise : la pile est abandonnée, et les cases ne se déplacent
     jamais seules (essayé puis écarté : fermées rangées en bas, remontée à
     l'ouverture). Survol souris = la case fermée s'entrouvre (.peek, sans
     toucher aux données), clic = ouverte pour de bon, à sa place. Au doigt :
@@ -2093,6 +2101,22 @@ header{
 .cat-fold:hover, .cat-fold:focus-visible{ opacity:1; color:var(--cat-color, var(--accent)); background:color-mix(in srgb, var(--cat-color, var(--accent)) 10%, transparent); }
 .cat-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 .cat-fold svg{ display:block; transition:transform .25s ease; }
+/* 10.67 : la punaise. Plantée droite, à la couleur de la liste : la case reste ouverte.
+   Fermée ou entrouverte au survol : couchée de travers, grise, l'aiguille sortie, elle attend
+   qu'on l'enfonce. Seule la punaise ouvre ou ferme pour de bon. */
+.cat-fold{ color:var(--cat-color, var(--accent)); opacity:0.7; }
+.cat-fold svg.pin{ overflow:visible; transform-box:fill-box; transform-origin:50% 100%;
+  transition:transform .38s cubic-bezier(.3,1.35,.5,1); }
+.pin-head{ fill:currentColor; stroke:currentColor; stroke-width:1.2; stroke-linejoin:round; transition:fill .3s ease; }
+.pin-needle{ stroke:currentColor; stroke-width:1.3; stroke-linecap:round; transform-box:fill-box; transform-origin:50% 0;
+  transform:scaleY(.3); transition:transform .38s ease; }
+.collapsed .cat-fold, .peek .cat-fold{ color:var(--ink-faint); opacity:0.75; }
+.collapsed .cat-fold svg.pin, .peek .cat-fold svg.pin{ transform:translate(1px,-2px) rotate(-38deg); }
+.collapsed .pin-head, .peek .pin-head{ fill:transparent; }
+.collapsed .pin-needle, .peek .pin-needle{ transform:scaleY(1); }
+.peek .cat-fold:hover, .collapsed .cat-fold:hover{ color:var(--cat-color, var(--accent)); opacity:1; }
+.peek .cat-fold:hover svg.pin, .collapsed .cat-fold:hover svg.pin{ transform:translate(1px,-2px) rotate(-26deg); }
+html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant une ouverture ou fermeture, le navigateur ne déplace pas la page */
 .category.collapsed{ align-self:start; padding-bottom:2.1rem; }   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
 /* 10.65 : toutes les cases repliées (liste, mémo, chat, duel) ont la même hauteur, --fold-h ;
    étalon : le mémo replié (bandeau + saisie), resserré de 3 px entre le bandeau et la saisie */
@@ -2107,7 +2131,6 @@ header{
 .category.collapsed:not(.courses) > ul.items > li.is-checked{ display:none; }
 /* 10.19 : repliée, une liste de courses garde sa saisie ; le reste de la carte la déplie */
 .category.courses.collapsed .courses-entry{ cursor:auto; padding-top:calc(0.55rem - 3px); }
-.category.collapsed .cat-fold svg{ transform:rotate(180deg); }
 .category.collapsed .cat-order{ display:none; }   /* 10.45 : repliée, la flèche d'ordre se confondait avec celle qui rouvre */
 .category.courses.collapsed{ cursor:pointer; } /* 10.18 : toute la carte repliée se déplie d'un clic */
 .category.courses .cat-head{ cursor:pointer; } /* 10.19 : ouverte, un clic sur le bandeau (hors titre) la replie */
@@ -2121,7 +2144,7 @@ header{
   background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface));
   color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink));
 }
-@media (prefers-reduced-motion: reduce){ .cat-fold svg{ transition:none; } }
+@media (prefers-reduced-motion: reduce){ .cat-fold svg, .pin-needle{ transition:none; } }
 .cat-head{
   display:flex;
   justify-content:space-between;
@@ -2672,7 +2695,6 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* 10.65 : volet des écrans (chat, duel), comme les listes : la flèche au bout du pied replie l'écran
    sur une ligne (dernier message / où en est la partie) ; un clic sur l'écran replié le rouvre */
 .chat-foot .cat-fold{ position:static; flex:none; margin-left:0.15rem; }
-.chat-card.collapsed .cat-fold svg, .duel-card.collapsed .cat-fold svg{ transform:rotate(180deg); }
 .chat-card.collapsed, .duel-card.collapsed{ align-self:start; cursor:pointer; height:var(--fold-h); }
 .duel-card.collapsed .duel-stage{ height:100%; display:flex; flex-direction:column; }
 .chat-card.collapsed .chat-in{ display:none; }
@@ -6028,31 +6050,47 @@ function setFolded(catId, on){
     localStorage.setItem(FOLD_KEY, JSON.stringify(a));
   }catch(e){}
 }
-function toggleFold(catId){
-  const card = document.getElementById("cat-" + catId);
-  const ul = card && card.querySelector(":scope > ul.items");
-  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const closing = !isFolded(catId);
-  const ease = { duration:420, easing:SOFT_EASE };   // 10.66 : plus doux (avant 220 ms)
-  if(closing){
-    if(reduce || !ul || !ul.animate){ setFolded(catId, true); renderAll(); return; }
-    const h = ul.offsetHeight;
-    ul.style.overflow = "hidden";
-    const a = ul.animate([{ height:h + "px", opacity:1, marginTop:"0px" }, { height:"0px", opacity:0, marginTop:"-0.65rem" }], { duration:Math.round(Math.min(780, Math.max(560, h * 1.4))), easing:SOFT_CLOSE });   // 10.67 : fermeture plus douce (avant 420 ms, départ sec)
-    a.onfinish = ()=>{ setFolded(catId, true); renderAll(); };
-    return;
-  }
-  unfoldCat(catId);   // 10.66 : remonte en bas des ouvertes
-  renderAll();
-  if(reduce) return;
-  const card2 = document.getElementById("cat-" + catId);
-  const ul2 = card2 && card2.querySelector(":scope > ul.items");
-  if(!ul2 || !ul2.animate) return;
-  const h2 = ul2.offsetHeight;
-  ul2.style.overflow = "hidden";
-  const a2 = ul2.animate([{ height:"0px", opacity:0, marginTop:"-0.65rem" }, { height:h2 + "px", opacity:1, marginTop:"0px" }], ease);
-  a2.onfinish = ()=>{ ul2.style.overflow = ""; };
+// 10.67 : la punaise. Ouvrir ou fermer pour de bon : la case garde son haut à la même place à
+// l'écran, seul son bas glisse (doucement), et ce qui est dessous suit. Le rendu est refait
+// d'un coup puis la hauteur part de l'ancienne (pas de saccade à la fin), la page ne saute pas
+// (overflow-anchor coupé, haut recalé, place gardée en bas tant qu'on n'est pas remonté).
+function pinSvg(){
+  return `<svg class="pin" viewBox="0 0 16 16" width="17" height="17" aria-hidden="true"><line class="pin-needle" x1="8" y1="9.6" x2="8" y2="15.4"/><path class="pin-head" d="M5 1.2h6l-1.3 1.4v3.2L12 8.1v1.3H4V8.1l2.3-2.3V2.6z"/></svg>`;
 }
+function toggleFold(catId){ foldSmooth(catId, !isFolded(catId)); }
+let foldStillT = null;
+function foldSmooth(catId, fold){
+  const html = document.documentElement;
+  const old = document.getElementById("cat-" + catId);
+  const r0 = old ? old.getBoundingClientRect() : null;
+  if(old && old._soft){ old._soft.cancel(); old._soft = null; }
+  keepRoomBelow();
+  html.classList.add("fold-still"); clearTimeout(foldStillT);
+  peekId = null; peekHold = Date.now() + 700;
+  setFolded(catId, fold);
+  renderAll();
+  const card = document.getElementById("cat-" + catId);
+  let dur = 0;
+  if(card && r0){
+    const top1 = card.getBoundingClientRect().top;
+    if(Math.abs(top1 - r0.top) > 0.5) window.scrollBy(0, top1 - r0.top);
+    dur = glideHeight(card, r0.height, !fold);
+  }
+  foldStillT = setTimeout(()=> html.classList.remove("fold-still"), dur + 80);
+}
+// place gardée en bas : la page ne raccourcit pas sous les yeux (sinon le navigateur remonte d'un coup) ;
+// cette place se rend d'elle-même quand on remonte
+function keepRoomBelow(){
+  const html = document.documentElement, need = window.scrollY + window.innerHeight;
+  html.style.minHeight = Math.max(need, parseFloat(html.style.minHeight) || 0) + "px";
+}
+window.addEventListener("scroll", ()=>{
+  const html = document.documentElement;
+  if(!html.style.minHeight) return;
+  const need = window.scrollY + window.innerHeight;
+  const natural = document.body.getBoundingClientRect().bottom + window.scrollY + (parseFloat(getComputedStyle(document.body).marginBottom) || 0);
+  html.style.minHeight = natural >= need - 1 ? "" : need + "px";
+}, { passive:true });
 
 // ---- Sauvegarde / restauration du contenu (export / import) ----
 // La synchro multi-appareils (capacité "db" de Claude) a été retirée :
@@ -9513,7 +9551,7 @@ function buildChatCard(cat, catIdx){
       <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
       <button type="button" class="chat-more" aria-label="Options de l'écran" aria-expanded="${chatMenuOpen === cat.id}">…</button>
       <span class="chat-who">${(people.length ? people : [null]).map(u => escapeAttr(ini(u))).join(" ")}</span>
-      <button type="button" class="cat-fold" aria-expanded="${!folded}" aria-label="${folded ? "Déplier l'écran" : "Replier l'écran"}" title="${folded ? "Déplier" : "Replier"}"><svg viewBox="0 0 12 8" width="12" height="8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 6.2 6 1.8l4.5 4.4"/></svg></button>
+      <button type="button" class="cat-fold" aria-expanded="${!folded}" aria-label="${folded ? "Punaiser l'écran : il reste ouvert" : "Retirer la punaise : l'écran se ferme"}" title="${folded ? "Garder ouvert" : "Fermer"}">${pinSvg()}</button>
       <div class="chat-menu"${chatMenuOpen === cat.id ? "" : " hidden"}>${own
         ? `<button type="button" data-a="share"><span class="ic">+</span>Inviter</button><button type="button" data-a="share"><span class="ic">−</span>Retirer</button><button type="button" class="danger" data-a="del"><span class="ic">×</span>Supprimer cet écran</button>`
         : `<div class="chat-menu-note">Écran ${escapeAttr(deName(personName(listOwnerUid(cat.id), cat.id)))}, en partage.</div>`}</div>
@@ -10748,7 +10786,7 @@ function build(){
       <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
       <button type="button" class="chat-more" aria-label="Options du duel">…</button>
       <span class="chat-who"></span>
-      <button type="button" class="cat-fold"><svg viewBox="0 0 12 8" width="12" height="8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 6.2 6 1.8l4.5 4.4"/></svg></button>
+      <button type="button" class="cat-fold">${pinSvg()}</button>
       <div class="chat-menu" hidden></div>
     </div>
     <span class="chat-led" aria-hidden="true"></span><button type="button" class="cat-full scr-full"></button>
@@ -10848,7 +10886,7 @@ function card(cat, catIdx){
     sf.replaceWith(nb);
   }
   const fb = ROOT.querySelector(".cat-fold");
-  fb.setAttribute("aria-expanded", !folded); fb.setAttribute("aria-label", folded ? "Déplier le duel" : "Replier le duel"); fb.title = folded ? "Déplier" : "Replier";
+  fb.setAttribute("aria-expanded", !folded); fb.setAttribute("aria-label", folded ? "Punaiser le duel : il reste ouvert" : "Retirer la punaise : le duel se ferme"); fb.title = folded ? "Garder ouvert" : "Fermer";
   foot(cat, catIdx);
   // la poignée : celle des listes (remise à chaque rendu, l'ordre a pu changer)
   const grip = ROOT.querySelector(".cat-grip"), g2 = grip.cloneNode(true); grip.replaceWith(g2);
@@ -10971,10 +11009,7 @@ function render(){
     head.querySelector(".cat-full").addEventListener("click", e=>{ e.stopPropagation(); setFullpage(fullpageCat === cat.id ? null : cat.id); });
     // 10.19 : liste de courses ouverte : un clic sur le bandeau, à côté du
     // titre, la replie (le titre garde son double-clic qui le renomme)
-    if(courses && !folded && !renamingThisCat) head.addEventListener("click", e=>{
-      if(e.target.closest("button, a, input, textarea, .cat-grip, .cat-title, .share-chips")) return;
-      toggleFold(cat.id);
-    });
+    // 10.67 : plus de repli d'un clic sur le bandeau : seule la punaise ferme
     head.querySelector(".cat-order").addEventListener("click", (e)=>{
       e.stopPropagation();
       toggleCatReversed(cat.id);
@@ -11237,14 +11272,14 @@ function render(){
       card.appendChild(ul);
       card.appendChild(parts.foot);
     }else card.appendChild(ul);
-    // 10.7 : la flèche du volet, en bas à droite
+    // 10.7 : la flèche du volet, en bas à droite ; 10.67 : une punaise (plantée = ouverte)
     const fold = document.createElement("button");
     fold.type = "button";
     fold.className = "cat-fold";
     fold.setAttribute("aria-expanded", folded ? "false" : "true");
-    fold.setAttribute("aria-label", folded ? "Déplier la liste" : "Replier la liste");
-    fold.title = folded ? "Déplier" : "Replier";
-    fold.innerHTML = `<svg viewBox="0 0 12 8" width="12" height="8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 6.2 6 1.8l4.5 4.4"/></svg>`;
+    fold.setAttribute("aria-label", folded ? "Punaiser la liste : elle reste ouverte" : "Retirer la punaise : la liste se ferme");
+    fold.title = folded ? "Garder ouverte" : "Fermer";
+    fold.innerHTML = `${pinSvg()}`;
     fold.addEventListener("click", e=>{ e.stopPropagation(); toggleFold(cat.id); });
     card.appendChild(fold);
     categoriesEl.appendChild(card);
@@ -11276,13 +11311,18 @@ function peekCard(card, on, still){
 const SOFT_EASE = "cubic-bezier(.25,.8,.25,1)";
 const SOFT_CLOSE = "cubic-bezier(.45,0,.25,1)";   // 10.67 : fermeture plus douce, sans départ sec (lente au début et à la fin)
 function softHeight(card, change, opening){
-  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const h0 = card.getBoundingClientRect().height;   // pendant une animation : la hauteur du moment
   if(card._soft){ card._soft.cancel(); card._soft = null; }
+  keepRoomBelow();
   change();
-  if(reduce || !card.animate) return;
+  glideHeight(card, h0, opening);
+}
+// 10.67 : la case passe de la hauteur h0 à sa hauteur actuelle ; rend la durée (ms)
+function glideHeight(card, h0, opening){
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce || !card.animate) return 0;
   const h1 = card.getBoundingClientRect().height;
-  if(Math.abs(h1 - h0) < 2) return;
+  if(Math.abs(h1 - h0) < 2) return 0;
   const dur = Math.round(Math.min(620, Math.max(380, Math.abs(h1 - h0) * 1.6)) * (opening ? 1 : 1.3));   // 10.67 : la fermeture prend plus son temps (avant × 0.85)
   card.style.overflow = "hidden";
   const a = card.animate([{ height:h0 + "px" }, { height:h1 + "px" }], { duration:dur, easing:opening ? SOFT_EASE : SOFT_CLOSE });
@@ -11291,6 +11331,7 @@ function softHeight(card, change, opening){
   if(opening) kids.forEach(k => k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }));
   const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; } };
   a.onfinish = done; a.oncancel = done;
+  return dur;
 }
 function wireFolded(){
   categoriesEl.querySelectorAll(":scope > .collapsed").forEach(card=>{
@@ -11307,14 +11348,12 @@ function wireFolded(){
       if(e.pointerType !== "mouse") return;
       clearTimeout(t); t = setTimeout(()=> peekCard(card, false), 260);   // un temps de grâce : on peut ressortir et revenir
     });
-    card.addEventListener("click", e=>{
-      if(!(card.classList.contains("collapsed") || card.classList.contains("peek"))) return;
+    card.addEventListener("click", e=>{   // 10.67 : un clic sur une case fermée l'entrouvre seulement (au doigt, ou avant la fin du survol) ; seule la punaise la garde ouverte
+      if(!card.classList.contains("collapsed")) return;
       if(e.target.closest(".cat-fold, .cat-grip, .scr-full, .chat-more, .chat-menu, .chat-share, input, textarea")) return;
       e.stopPropagation(); e.preventDefault();
-      if(lastPointerType !== "mouse" && !card.classList.contains("peek")){ peekCard(card, true); return; }   // au doigt : d'abord entrouvrir
       clearTimeout(t);
-      peekHold = Date.now() + 700; peekId = null;
-      unfoldCat(id); renderAll();
+      peekCard(card, true);
     }, true);
   });
 }
