@@ -1522,7 +1522,7 @@ body{
 @media (pointer:coarse){
   .cat-quick{ font-size:16px; }
   /* 10.68 : au doigt, des boutons plus confortables (Hiske) : +, pleine page, ordre, poignée */
-  .cat-head-right .add-btn{ width:30px; height:30px; font-size:1.1rem; border-radius:8px; margin-right:0.9rem; }
+  .cat-head-right .add-btn{ width:30px; height:30px; margin-block:-1px; font-size:1.1rem; border-radius:8px; margin-right:0.9rem; }
   .cat-full{ padding:7px; } .cat-full svg{ width:17px; height:17px; }
   .category > .cat-order{ padding:8px 9px; left:3.3rem; bottom:0.05rem; }
   .category .cat-grip{ padding:6px 5px; bottom:0.02rem; }
@@ -2222,7 +2222,7 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
   align-items:center;
   gap:0.5rem;
 }
-.cat-head-right .add-btn{ margin-right:0.6rem; width:24px; height:24px; font-size:1rem; border-radius:7px; }   /* 10.71 : un peu plus grand (avant : 20 px) */   /* 10.68 : ajouter et pleine page, deux fonctions très différentes : un peu d'écart */
+.cat-head-right .add-btn{ margin-right:0.6rem; width:24px; height:24px; margin-block:-2px; font-size:1rem; border-radius:7px; }   /* 10.71 : un peu plus grand (avant : 20 px) ; 10.72 : sans agrandir le bandeau du titre (marges négatives) : rien ne bouge dans la liste */   /* 10.68 : ajouter et pleine page, deux fonctions très différentes : un peu d'écart */
 /* 10.37 : bouton pleine page (flèches en diagonale), dans la famille des petits boutons à icône */
 .cat-full{
   appearance:none; border:none; background:transparent; color:var(--ink-faint);
@@ -2232,8 +2232,8 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
 }
 .category:hover .cat-full{ opacity:1; }
 .cat-full svg{ width:17px; height:17px; }   /* 10.71 : un peu plus grand (avant : 14) */
-.cat-head-right .cat-full{ margin-right:-10.5px; }   /* 10.71 : centré sur l'axe de la punaise (avant : 10 px plus à gauche) */
-@media (pointer:coarse){ .cat-full svg{ width:20px; height:20px; } .cat-head-right .cat-full{ margin-right:-13.6px; } }
+.cat-head-right .cat-full{ margin-right:-10.5px; margin-block:-1.5px; }   /* 10.72 : icône agrandie sans agrandir le bandeau du titre */   /* 10.71 : centré sur l'axe de la punaise (avant : 10 px plus à gauche) */
+@media (pointer:coarse){ .cat-full svg{ width:20px; height:20px; } .cat-head-right .cat-full{ margin-right:-13.6px; margin-block:0; } }
 .cat-full svg{ display:block; transition:scale .3s var(--pop-ease); }
 /* 10.39 : zones de toucher agrandies sans changer le dessin : rond des mémos
    (≈ 35 px, comme les cases), pleine page et flèche d'ordre (≈ 40 px de haut,
