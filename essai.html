@@ -2240,7 +2240,7 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
    un peu moins en largeur pour ne pas mordre sur le bouton voisin) */
 .strike-dot, .cat-full, .cat-order{ position:relative; z-index:1; }   /* z-index : la zone passe au-dessus de la ligne suivante */
 .strike-dot::after{ content:""; position:absolute; inset:-12px; }
-.cat-full::after, .cat-order::after{ content:""; position:absolute; inset:-10px -4px; }
+.cat-full::before, .cat-order::before{ content:""; position:absolute; inset:-10px -4px; }   /* 10.71 : la zone de toucher passe sur ::before ; ::after est l'infobulle (avant : les deux se mélangeaient, l'infobulle était écrasée en une petite pastille) */
 .haptic-wrap:has(> .strike-dot) > .haptic-tap{ inset:-12px; }   /* iPhone : la zone qui fait vibrer suit */
 .cat-full:hover{ background:var(--surface-2); color:var(--ink-soft); opacity:1; }
 .cat-full:hover svg{ scale:var(--pop-scale); }
@@ -2476,7 +2476,9 @@ body.has-fullpage > .fp-back{ display:grid; }
 .category .cat-grip{ position:absolute; left:0.55rem; bottom:0.12rem; }
 .category .cat-grip svg{ width:17px; height:17px; }   /* 10.68 : un peu plus grande (avant 14 px) */
 /* 10.68 : la flèche d'ordre, en bas à gauche à droite de la poignée (avant : en haut à droite, où est maintenant le +) */
-.category > .cat-order{ position:absolute; left:3.5rem; bottom:0.2rem; z-index:2; }   /* à droite de la marge des mémos (3.19rem), même place partout */
+.category > .cat-order{ position:absolute; left:3.5rem; bottom:0.2rem; z-index:2; }
+.category > .cat-order{ left:calc(3.5rem + 12.2px); } .category.courses > .cat-order{ left:calc(3.5rem + 15.2px); }   /* 10.71 : flèche (11 px, avant 9) centrée sur l'axe des cases et des ronds */
+@media (pointer:coarse){ .category > .cat-order{ left:calc(3.3rem + 13.6px); } .category.courses > .cat-order{ left:calc(3.3rem + 16.6px); } }   /* à droite de la marge des mémos (3.19rem), même place partout */
 .category.fullpage > .cat-fold, .category.fullpage > .cat-close-bar{ display:none !important; }   /* 10.68 : en pleine page, ni punaise ni barre (sans objet) ; la flèche d'ordre garde sa place */
 .category .cat-grip svg{ transform:rotate(90deg); }
 .category:hover .cat-grip{ opacity:1; }
@@ -2733,7 +2735,7 @@ body.has-fullpage > .fp-back{ display:grid; }
 .sh-sw{ width:24px; height:24px; padding:0; border-radius:50%; border:1px solid var(--line); cursor:pointer; background:var(--surface-2); color:var(--ink-faint); font-size:0.8rem; line-height:1; }
 .sh-sw.on{ box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--ink-soft); }
 .chat-hole, .chat-screen{ min-width:0; }   /* 10.68 : l'écran de chat ne dépasse jamais la largeur de la case */
-.chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 3.5px); left:1.25rem;   /* 10.69 : en haut à gauche : le coin droit est au bouton pleine page (avant : juste à sa gauche) */ width:7px; height:7px; border-radius:50%;
+.chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 4.5px); left:1.25rem;   /* 10.69 : en haut à gauche : le coin droit est au bouton pleine page (avant : juste à sa gauche) */ width:9px; height:9px; border-radius:50%;   /* 10.71 : un peu plus grand (avant : 7) */
   background:color-mix(in srgb, var(--ink) 18%, var(--bg)); box-shadow:inset 0 1px 1px rgba(0,0,0,0.25), 0 1px 0 var(--chat-lip); transition:background .4s ease, box-shadow .4s ease; }
 .chat-card.unread .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
 @keyframes chat-led{ 50%{ box-shadow:0 0 2px 0 color-mix(in srgb, var(--logo-green) 50%, transparent); filter:brightness(0.85); } }
@@ -2903,7 +2905,7 @@ body.has-fullpage > .fp-back{ display:grid; }
 }
 .chat-card.fullpage .cat-grip, .duel-card.fullpage .cat-grip, .chat-card.fullpage .cat-fold, .duel-card.fullpage .cat-fold{ visibility:hidden; }
 /* voyant du duel : celui du chat, sur le papier en haut à droite — vert quand un coup de l'autre attend d'être vu */
-.duel-card .chat-led{ top:calc((0.35rem + 22px) / 2 - 3.5px); left:1.25rem; }   /* 10.69 : comme le chat, en haut à gauche */
+.duel-card .chat-led{ top:calc((0.35rem + 22px) / 2 - 4.5px); left:1.25rem; }   /* 10.69 : comme le chat, en haut à gauche */
 .duel-card.duel-new .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
 @media (prefers-reduced-motion:reduce){ .duel-card.duel-new .chat-led{ animation:none; } }
 .chat-foot{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; padding:0 0.2rem; position:relative; }
@@ -11271,7 +11273,7 @@ function render(){
       </span>
       <span class="cat-head-right">
         ${renamingThisCat ? "" : `<button type="button" class="add-btn" aria-label="${courses ? "Ajouter un article avec détail" : "Ajouter une tâche"}"><span class="g">+</span></button>`}
-        <button type="button" class="cat-order${newBottom ? " reversed" : ""}${reversed ? " custom" : ""}" aria-label="${newBottom ? "Mettre les récentes en haut" : "Mettre les récentes en bas"}" data-tip="${newBottom ? "Récentes en haut ?" : "Récentes en bas ?"}"><svg viewBox="0 0 10 10" width="9" height="9" aria-hidden="true"><path d="M5 1.8 9 8.2H1z" fill="currentColor"/></svg></button>
+        <button type="button" class="cat-order${newBottom ? " reversed" : ""}${reversed ? " custom" : ""}" aria-label="${newBottom ? "Mettre les récentes en haut" : "Mettre les récentes en bas"}" data-tip="${newBottom ? "Récentes en haut ?" : "Récentes en bas ?"}"><svg viewBox="0 0 10 10" width="11" height="11" aria-hidden="true"><path d="M5 1.8 9 8.2H1z" fill="currentColor"/></svg></button>
         <button type="button" class="cat-full" aria-label="${fullpageCat === cat.id ? "Revenir aux listes" : "Ouvrir en pleine page"}" data-tip="${fullpageCat === cat.id ? "Réduire" : "Pleine page"}">${fullpageCat === cat.id ? FULL_OUT_SVG : FULL_IN_SVG}</button>
         ${canDeleteCat ? `<button type="button" class="cat-delete-btn" aria-label="Supprimer cette case vide" title="Supprimer cette case vide"><span class="g">&times;</span></button>` : ""}
       </span>
