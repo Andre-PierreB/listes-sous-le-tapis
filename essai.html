@@ -3295,6 +3295,7 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 .courses-edit-btn:hover{ background:var(--surface-2); color:var(--ink-soft); }
 /* modifier un article : nom, puis quantité avec − / + */
 .courses-item.editing{ align-items:center; }
+.category.courses .add-form-row, .category.courses .courses-item.editing{ position:relative; z-index:1; background:var(--memo-b); box-shadow:0 -8px 0 var(--memo-b); }   /* 10.71 : les champs d'ajout et de modification masquent la marge du mémo (elle passait devant) */
 .courses-item.editing .drag-handle, .courses-item.editing .strike-dot{ visibility:hidden; }
 .courses-edit{ flex:1; min-width:0; display:flex; flex-wrap:wrap; align-items:center; gap:0.4rem; } /* 10.19 : le détail passe dessous */
 .courses-edit input{
@@ -9640,7 +9641,7 @@ function fitCoursesCards(saved){
     if(!ul) return;
     // 10.17 : la marge part de la première ligne sous le titre (10.38 : la saisie)
     const first = ul;   // 10.68 : les articles d'abord, la saisie est dessous
-    c.style.setProperty("--rule-top", (first ? first.offsetTop : c.offsetHeight) + "px");
+    c.style.setProperty("--rule-top", (first ? first.offsetTop + (ul.querySelector(":scope > .add-form-row") ? 2 : 0) : c.offsetHeight) + "px");   // 10.71 : sous les champs d'ajout, pas un pixel de marge qui dépasse
     // 10.18 : barre de défilement maison, toujours visible
     let bar = c.querySelector(":scope > .courses-scroll");
     if(!bar){
