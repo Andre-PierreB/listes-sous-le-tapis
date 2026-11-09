@@ -2264,36 +2264,23 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 .category.fullpage:not(.courses){ overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .category.fullpage .cat-grip{ display:none; }
 .category.fullpage .cat-full{ display:none; }   /* 10.71 : en pleine page, on sort par le grand bouton rond (avant : ce bouton, en haut à droite) */
-/* 10.71 : bouton de retour de la pleine page, en haut à gauche au-dessus du titre : une flèche seule,
-   dans un rond liseré de la famille des boutons du bas (Corbeille, Partage). Variantes à l'essai sur la
-   vitrine (classes fb-… sur body) : forme, flèche, taille. */
+/* 10.71 : bouton de retour de la pleine page, en haut à gauche au-dessus du titre : une flèche (avec trait)
+   dans un carré arrondi comme le + (choisi sur la vitrine : carré, flèche à trait, 36 px) */
 body > .fp-back{ display:none; position:fixed; z-index:160;
   top:max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem));
   left:max(calc(50vw - 410px + 1.1rem), calc(env(safe-area-inset-left, 0px) + 0.9rem));
-  width:var(--fb-size, 40px); height:var(--fb-size, 40px); padding:0; align-items:center; justify-content:center; cursor:pointer;
-  appearance:none; border:none; border-radius:50%; background:var(--surface); color:var(--btn-ink);
-  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--btn-ink) 28%, transparent);
-  transition:background .15s ease, color .15s ease, transform .15s ease; }
-.fp-back svg{ width:calc(var(--fb-size, 40px) * 0.48); height:calc(var(--fb-size, 40px) * 0.48); display:block; flex:none; transition:transform .25s var(--pop-ease); }
-.fp-back .fb-chev{ display:none; }
-body.fb-a-chev .fp-back .fb-arrow{ display:none; } body.fb-a-chev .fp-back .fb-chev{ display:block; }
-.fp-back:hover{ background:var(--btn-ink); color:var(--surface); transform:translateY(-1px); }
+  width:var(--fb-size); height:var(--fb-size); padding:0; align-items:center; justify-content:center; cursor:pointer;
+  appearance:none; border:none; border-radius:9px; background:var(--surface-2); color:var(--ink-soft);
+  box-shadow:inset 0 0 0 1px var(--line);
+  transition:background .15s ease, color .15s ease, box-shadow .15s ease; }
+:root{ --fb-size:36px; }
+.fp-back svg{ width:18px; height:18px; display:block; flex:none; transition:transform .25s var(--pop-ease); }
+.fp-back:hover{ background:var(--accent-soft); color:var(--accent-strong); box-shadow:inset 0 0 0 1px var(--accent); }
 .fp-back:hover svg{ transform:translateX(-2px); }
 .fp-back:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-/* variantes de forme */
-body.fb-s-carre > .fp-back{ border-radius:calc(var(--fb-size, 40px) * 0.25); background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line); color:var(--ink-soft); }   /* comme le + */
-body.fb-s-carre > .fp-back:hover{ background:var(--accent-soft); color:var(--accent-strong); box-shadow:inset 0 0 0 1px var(--accent); }
-body.fb-s-nu > .fp-back{ background:transparent; box-shadow:none; color:var(--ink-soft); border-radius:10px; }   /* flèche seule, fond au survol comme les petits boutons */
-body.fb-s-nu > .fp-back:hover{ background:var(--surface-2); color:var(--ink); }
-body.fb-s-insta > .fp-back{ background:color-mix(in srgb, var(--ink) 55%, transparent); color:#fff; box-shadow:none; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }   /* rond translucide façon Instagram */
-body.fb-s-insta > .fp-back:hover{ background:color-mix(in srgb, var(--ink) 70%, transparent); color:#fff; }
-@media (hover:none){ .fp-back:hover{ transform:none; } .fp-back:hover svg{ transform:none; }
-  body > .fp-back:hover{ background:var(--surface); color:var(--btn-ink); }
-  body.fb-s-carre > .fp-back:hover{ background:var(--surface-2); color:var(--ink-soft); box-shadow:inset 0 0 0 1px var(--line); }
-  body.fb-s-nu > .fp-back:hover{ background:transparent; color:var(--ink-soft); }
-  body.fb-s-insta > .fp-back:hover{ background:color-mix(in srgb, var(--ink) 55%, transparent); color:#fff; } }
+@media (hover:none){ body > .fp-back:hover{ background:var(--surface-2); color:var(--ink-soft); box-shadow:inset 0 0 0 1px var(--line); } .fp-back:hover svg{ transform:none; } }
 body.has-fullpage > .fp-back{ display:inline-flex; }
-.category.fullpage{ padding-top:calc(max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) + var(--fb-size, 40px) + 0.9rem); }
+.category.fullpage{ padding-top:calc(max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) + var(--fb-size) + 0.9rem); }
 @media (max-width:820px){ .category.fullpage{ box-shadow:none; } }
 
 
@@ -2914,7 +2901,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   .duel-card.fullpage .duel-foot .cat-grip{ display:none; }
 }
 .chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ display:none; }   /* 10.71 : on sort par le grand bouton rond */
-.chat-card.fullpage, .duel-card.fullpage{ padding-top:calc(max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) + var(--fb-size, 40px) + 0.4rem); }
+.chat-card.fullpage, .duel-card.fullpage{ padding-top:calc(max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) + var(--fb-size) + 0.4rem); }
 @media (orientation:landscape) and (max-height:560px){
   .duel-card.fullpage{ padding-top:max(0.35rem, env(safe-area-inset-top, 0px)); }   /* manette : le rond se pose dans le coin vide au-dessus de l'angle */
   body.has-fullpage > .fp-back{ top:max(0.5rem, env(safe-area-inset-top, 0px)); }   /* manette : dans le coin au-dessus de l'angle */
@@ -7935,7 +7922,7 @@ function scrFullBtn(id){
 // 10.71 : le grand bouton rond de retour (un seul, visible tant qu'une case est en pleine page)
 const fpBack = document.createElement("button");
 fpBack.type = "button"; fpBack.className = "fp-back"; fpBack.setAttribute("aria-label", "Revenir aux listes");
-fpBack.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>`.replace('<svg ', '<svg class="fb-arrow" ') + `<svg class="fb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>`;
+fpBack.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>`;
 fpBack.addEventListener("click", e=>{ e.stopPropagation(); setFullpage(null); });
 document.body.appendChild(fpBack);
 function setFullpage(id){
@@ -14323,55 +14310,6 @@ if(DEMO && !hasAnyList()) (()=>{
   if(duel && Store.setListField(duel.id, "type", "duel")) insertItem(duel, { t: "nouvelle partie", duel: "partie", seed: (Math.random() * 2 ** 31) | 0, g: 380, vent: 10, trou: 22, decor: "pignons", at: Date.now() });
   renderAll();
 })();
-// 10.71 : banc du bouton de retour de la pleine page (vitrine seulement) — forme, flèche, taille.
-// (Le banc des couleurs par personne, 10.69, est retiré : « fenêtre remplie » est en place dans l'appli.)
-if(DEMO) (()=>{
-  const q = new URLSearchParams(location.search);
-  const st = { s: q.get("fs") || "rond", a: q.get("fa") || "trait", z: +(q.get("fz") || 40) };
-  const css = document.createElement("style");
-  css.textContent = `
-    .pc-panel{ position:fixed; z-index:300; right:10px; bottom:10px; width:min(300px, calc(100vw - 20px)); padding:0.7rem 0.8rem; border-radius:14px;
-      background:var(--surface); box-shadow:var(--shadow), 0 0 0 1px var(--line); font:0.82rem/1.35 'Public Sans', system-ui, sans-serif; color:var(--ink); }
-    .pc-panel.min > :not(.pc-t){ display:none; }
-    .pc-t{ display:flex; justify-content:space-between; align-items:center; font:700 0.72rem 'Courier Prime', monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); cursor:pointer; }
-    .pc-row{ display:flex; flex-wrap:wrap; gap:0.3rem; align-items:center; margin-top:0.5rem; }
-    .pc-row b{ width:100%; font-weight:600; font-size:0.75rem; color:var(--ink-soft); }
-    .pc-panel button{ font:inherit; font-size:0.78rem; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); border-radius:999px; padding:0.25rem 0.6rem; cursor:pointer; }
-    .pc-panel button.on{ border-color:var(--ink-soft); background:var(--accent-soft); }
-    .pc-panel input[type=range]{ width:100%; }`;
-  document.head.appendChild(css);
-  const box = document.createElement("div");
-  box.className = "pc-panel" + (innerWidth < 600 ? " min" : "");
-  document.body.appendChild(box);
-  box.addEventListener("click", e => e.stopPropagation());
-  box.addEventListener("pointerdown", e => e.stopPropagation());
-  const btns = (key, list) => list.map(([k, l]) => `<button type="button" data-k="${key}" data-v="${k}" class="${st[key] === k ? "on" : ""}">${l}</button>`).join("");
-  const apply = ()=>{
-    document.body.classList.remove("fb-s-carre", "fb-s-nu", "fb-s-insta", "fb-a-chev");
-    if(st.s !== "rond") document.body.classList.add("fb-s-" + st.s);
-    if(st.a === "chev") document.body.classList.add("fb-a-chev");
-    document.documentElement.style.setProperty("--fb-size", st.z + "px");
-    const min = box.classList.contains("min");
-    box.innerHTML = `<div class="pc-t"><span>Bouton retour</span><span>${min ? "▴" : "▾"}</span></div>
-      <div class="pc-row"><b>Forme</b>${btns("s", [["rond","Rond liseré"],["carre","Carré comme le +"],["nu","Sans fond"],["insta","Rond translucide"]])}</div>
-      <div class="pc-row"><b>Flèche</b>${btns("a", [["trait","Avec trait"],["chev","Chevron seul"]])}</div>
-      <div class="pc-row"><b>Taille : ${st.z} px</b><input type="range" min="30" max="52" step="2" value="${st.z}"></div>
-      <div class="pc-row"><button type="button" data-open>Ouvrir une liste en pleine page</button></div>
-      <div class="pc-row"><button type="button" data-copy>Copier le lien de ces réglages</button><span data-msg style="font-size:.72rem;color:var(--ink-faint)"></span></div>`;
-  };
-  box.addEventListener("click", e=>{
-    const t = e.target;
-    if(t.closest(".pc-t")){ box.classList.toggle("min"); apply(); return; }
-    if(t.dataset.k){ st[t.dataset.k] = t.dataset.v; apply(); }
-    if(t.hasAttribute("data-open")){ const c = document.querySelector(".category:not(.collapsed), .chat-card, .duel-card"); if(c) setFullpage(c.id.replace(/^cat-/, "")); }
-    if(t.hasAttribute("data-copy")){
-      const url = location.origin + location.pathname + `?demo&fs=${st.s}&fa=${st.a}&fz=${st.z}`;
-      const msg = box.querySelector("[data-msg]");
-      (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(()=>{ msg.textContent = "Copié."; }, ()=>{ msg.textContent = url; });
-    }
-  });
-  box.addEventListener("input", e=>{ if(e.target.type === "range"){ st.z = +e.target.value; document.documentElement.style.setProperty("--fb-size", st.z + "px"); const b = e.target.previousElementSibling; if(b) b.textContent = "Taille : " + st.z + " px"; } });
-  apply();
-})();
+// (10.69-10.71 : les bancs de la vitrine — couleurs par personne, bouton retour — sont retirés, choix faits.)
 if(!DEMO) Sync.start();   // 10.68 : la vitrine ne se connecte jamais
 </script>
