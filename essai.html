@@ -284,8 +284,9 @@
     commitCoursesEdit) — nom, quantité, − / + pour un nombre seul, détail
     (10.19, champ note comme les autres tâches : sigle à côté de l'article,
     seul le sigle déplie le détail) ; Entrée ou clic ailleurs enregistre,
-    Échap annule. Sur écran tactile, crayon et
-    croix restent visibles (toucher la ligne raye, pas de « dévoilement »).
+    Échap annule. 10.71 : un clic sur la ligne raye (le sigle déplie le
+    détail) ; modifier = double-clic (souris) ou appui long (doigt) ; la
+    modification a un bouton Retirer (croix au survol, à la souris).
   - Suggestions dès 2 lettres : champ history de la fiche (300 au plus,
     partagé avec la liste ; fusion en ligne = union, SyncMerge.list) + les
     articles rayés. Article déjà là : rayé → dé-rayé, pas rayé → rien.
@@ -3548,6 +3549,10 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 }
 .cat-edit-actions{ margin:0.5rem 0 0.2rem; justify-content:flex-end; }   /* 10.53 : bas de la modification d'une liste */
 .courses-edit .edit-actions{ flex-basis:100%; margin-top:0.1rem; }
+.courses-edit .edit-remove{ margin-right:auto; color:var(--ink-faint); border-color:transparent; background:none; }   /* 10.71 : à gauche, discret */
+.courses-item{ -webkit-touch-callout:none; }   /* 10.71 : l'appui long ouvre la modification (pas le menu de l'iPhone) */
+.courses-item:not(.editing) .item-text{ cursor:pointer; -webkit-user-select:none; user-select:none; }
+.courses-item.pressing{ background:color-mix(in srgb, var(--ink) 5%, transparent); transition:background .45s ease; }
 .edit-actions{
   display:flex;
   gap:0.5rem;
@@ -9094,11 +9099,14 @@ function buildItemLi(cat, idx, base, key, opts){
         </span>
         <input type="text" class="courses-edit-note" value="${escapeAttr(eff.note || "")}" placeholder="Détail (optionnel)" aria-label="Détail" autocomplete="off" enterkeyhint="done">
         <span class="edit-actions">
+          <button type="button" class="edit-remove">Retirer</button>
           <button type="button" class="edit-cancel">Annuler</button>
           <button type="button" class="edit-save">Enregistrer</button>
         </span>
       </span>
     `;
+    // 10.71 : Retirer l'article depuis sa modification (au doigt, on y arrive par un appui long)
+    li.querySelector(".edit-remove").addEventListener("click", e=>{ e.stopPropagation(); editingCoursesKey = null; removeCoursesItem(key); actionToast("coursesErase"); renderAll(); });
     // 10.53 : boutons comme dans la modification d'une tâche
     li.querySelector(".edit-cancel").addEventListener("click", e=>{ e.stopPropagation(); editingCoursesKey = null; renderAll(); });
     li.querySelector(".edit-save").addEventListener("click", e=>{ e.stopPropagation(); commitCoursesEdit(); });
@@ -9147,21 +9155,27 @@ function buildItemLi(cat, idx, base, key, opts){
     const dot = li.querySelector(".strike-dot");
     dot.addEventListener("click", e=>{ e.stopPropagation(); setStruck(key, !struck); });
     haptic.attach(dot);
-    // 10.39 : on raye seulement par le rond (comme on coche par la case) ;
-    // toucher la ligne dévoile crayon et croix, comme dans les autres listes
+    // 10.71 : retour au clic sur la ligne pour rayer / dé-rayer (avant, 10.39 : seulement par le rond ;
+    // la ligne dévoilait crayon et croix). Le détail se déplie par son sigle. Modifier : double-clic
+    // (souris) ou appui long (doigt) ; Retirer est dans la modification (et la croix au survol, à la souris).
+    let longFired = 0;
     li.addEventListener("click", e=>{
+      if(Date.now() - longFired < 700) return;   // la fin d'un appui long n'est pas un clic
       if(e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap")) return;
-      revealRow(li, true);
+      if(e.target.closest(".note-toggle")){ e.stopPropagation(); toggleNoteOpen(key); return; }
+      setStruck(key, !struck);
     });
-    // 10.19 : détail (comme dans les autres listes) ; 10.39 : un clic sur la
-    // ligne le déplie / replie aussi, comme ailleurs
-    if(eff.note){
-      markNoteHolder(li, key);
-      li.addEventListener("click", e=>{
-        if(e.detail > 1 || e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap")) return;
-        toggleNoteOpen(key);
-      });
-    }
+    if(eff.note) markNoteHolder(li, key);
+    li.addEventListener("pointerdown", e=>{
+      if(e.pointerType === "mouse" || e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap")) return;
+      const x0 = e.clientX, y0 = e.clientY, id = e.pointerId;
+      const end = ()=>{ clearTimeout(t); li.classList.remove("pressing"); document.removeEventListener("pointermove", mv, true); document.removeEventListener("pointerup", end, true); document.removeEventListener("pointercancel", end, true); };
+      const mv = ev=>{ if(ev.pointerId === id && (Math.abs(ev.clientX - x0) > 10 || Math.abs(ev.clientY - y0) > 10)) end(); };
+      const t = setTimeout(()=>{ end(); longFired = Date.now(); haptic.tick(); editingCoursesKey = key; renderAll(); }, 480);
+      li.classList.add("pressing");
+      document.addEventListener("pointermove", mv, true); document.addEventListener("pointerup", end, true); document.addEventListener("pointercancel", end, true);
+    });
+    li.addEventListener("contextmenu", e=>{ if(Date.now() - longFired < 1500 || li.classList.contains("pressing")) e.preventDefault(); });
     li.querySelector(".courses-edit-btn").addEventListener("click", e=>{
       e.stopPropagation();
       editingCoursesKey = key;
@@ -9170,7 +9184,7 @@ function buildItemLi(cat, idx, base, key, opts){
     // 10.53 : double-clic pour modifier, comme une tâche
     li.querySelector(".item-text").addEventListener("dblclick", e=>{
       e.stopPropagation();
-      if(eff.note) toggleNoteOpen(key);   // rend l'état d'avant le 1er clic du double-clic
+      if(!!state[key] !== struck) setStruck(key, struck);   // 10.71 : les deux clics du double-clic ont rayé puis dé-rayé : on garde l'état d'avant
       editingCoursesKey = key;
       renderAll();
     });
