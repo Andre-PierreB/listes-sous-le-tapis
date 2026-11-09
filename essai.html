@@ -2829,10 +2829,12 @@ body.has-fullpage > .fp-back{ display:grid; }
 .peek{ align-self:start; z-index:2; cursor:pointer; }
 .chat-card.peek{ align-self:stretch; }
 @media (min-width:721px){ .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; } }
-.has-duel-h .chat-card:not(.collapsed):not(.fullpage){ min-height:var(--duel-open-h); }
-@media (min-width:721px){ .has-duel-h .category:not(.collapsed):not(.fullpage):not(.peek){ min-height:var(--duel-open-h); } }   /* 10.71 : une hauteur de base commune : une liste ouverte a au moins la hauteur du duel ouvert (plus si elle est longue) ; sur ordi seulement : au téléphone, une colonne, pas de voisine qui sursaute */   /* 10.71 : même hauteur que le duel ouvert (syncChatHeight) ; l'écran du chat s'allonge */
-.has-duel-h .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:auto; }
-.has-duel-h .chat-card:not(.collapsed):not(.fullpage) .chat-log{ flex:1 1 0; max-height:none; }   /* la hauteur vient de la case (au moins celle de l'écran du duel) */   /* 10.69 : pas sur téléphone (voir plus haut) */   /* 10.67 : ouvert, au moins la taille de l'écran du duel (avant : fin, 3 lignes) ; plus haut si la rangée l'est */   /* 10.67 : l'écran de chat entrouvert prend la hauteur de la rangée, comme ouvert */
+:root{ --base-k:166px; }   /* 10.71 : hauteur du poste de commande du duel (réglages, Lancer, faisans, pied) + marge du haut */
+@media (pointer:coarse){ :root{ --base-k:176px; } }   /* boutons agrandis au doigt */
+.has-base-h .chat-card:not(.collapsed):not(.fullpage), .has-base-h .duel-card:not(.collapsed):not(.fullpage){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); }   /* 10.71 : hauteur de base commune (voir syncColW) */
+@media (min-width:721px){ .has-base-h .category:not(.collapsed):not(.fullpage):not(.peek){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); } }   /* une liste ouverte en a au moins la hauteur (plus si elle est longue) ; sur ordi seulement : au téléphone, une colonne, pas de voisine qui sursaute */
+.has-base-h .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:auto; }   /* la hauteur vient de la case */
+.has-base-h .chat-card:not(.collapsed):not(.fullpage) .chat-log{ flex:1 1 0; max-height:none; }
 .category.peek{ box-shadow:0 10px 28px -12px rgba(30,40,45,.28), var(--shadow); }
 .category{ transition:box-shadow .45s ease; }   /* 10.67 : l'ombre du survol arrive en douceur */
 /* 10.65 : pleine page des écrans (chat, duel), comme les listes : le bouton à deux flèches en haut à
@@ -9383,29 +9385,21 @@ const RENDERERS = [render, renderWaitingSection, renderAddCategoryRow, updatePro
 // pendant une édition ou une petite fenêtre n'est plus perdu : il est
 // appliqué au rendu suivant (avant, il n'apparaissait qu'au rechargement)
 let externalPending = false;
-// 10.71 : hauteur de base commune — la fenêtre de chat ouverte (et sur ordi toute liste ouverte, au minimum) a la hauteur de celle du duel ouvert (même case, même fond
-// coloré) : sinon, côte à côte, l'entrouverture de l'une faisait sursauter l'autre. On mesure le
-// contenu du duel (son poste, pas la rangée qui peut l'étirer) et l'écran du chat s'allonge d'autant.
-let chatHRef = 0, chatHObs = null, chatHObserved = null;
-function syncChatHeight(){
-  const duel = document.querySelector(".duel-card:not(.collapsed):not(.fullpage):not(.peek) .duel-stage");
-  if(duel){
-    const card = duel.closest(".duel-card"), cs = getComputedStyle(card);
-    const h = Math.round(duel.getBoundingClientRect().height + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth));
-    if(h > 0 && h !== chatHRef){
-      chatHRef = h;
-      requestAnimationFrame(()=> document.querySelectorAll(".chat-card:not(.collapsed) .chat-log").forEach(l => l.scrollTop = l.scrollHeight));   // l'écran a changé de taille : on garde les derniers messages en vue
-    }
-    if("ResizeObserver" in window && chatHObserved !== duel){
-      if(!chatHObs) chatHObs = new ResizeObserver(()=> requestAnimationFrame(syncChatHeight));
-      if(chatHObserved) chatHObs.unobserve(chatHObserved);
-      chatHObs.observe(duel); chatHObserved = duel;
-    }
+// 10.71 : hauteur de base commune — celle de la fenêtre du duel ouvert (la plus contrainte), qu'il y
+// ait un duel ou pas : largeur d'une case × 9/16 (l'écran du jeu) + son poste de commande (--base-k,
+// en CSS). Ici, on ne fait que relever la largeur d'une case (--col-w), au rendu et quand la fenêtre change.
+function syncColW(){
+  const c = document.querySelector(".category:not(.fullpage), .chat-card:not(.fullpage), .duel-card:not(.fullpage)");
+  if(!c) return;
+  const w = Math.round(c.getBoundingClientRect().width);
+  if(w > 0 && w !== syncColW.w){
+    syncColW.w = w;
+    document.documentElement.style.setProperty("--col-w", w + "px");
+    document.documentElement.classList.add("has-base-h");
+    requestAnimationFrame(()=> document.querySelectorAll(".chat-card:not(.collapsed) .chat-log").forEach(l => l.scrollTop = l.scrollHeight));   // l'écran du chat a changé de taille : derniers messages en vue
   }
-  if(chatHRef) document.documentElement.style.setProperty("--duel-open-h", chatHRef + "px");
-  document.documentElement.classList.toggle("has-duel-h", !!chatHRef);
 }
-window.addEventListener("resize", ()=> requestAnimationFrame(syncChatHeight));
+window.addEventListener("resize", ()=> requestAnimationFrame(syncColW));
 function renderAll(){
   if(externalPending && !hasActiveEdit()){
     externalPending = false;
@@ -9417,7 +9411,7 @@ function renderAll(){
   try{
     document.body.classList.toggle("has-editing", !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle || !!editingCoursesKey);
     RENDERERS.forEach(fn => fn());
-    syncChatHeight();
+    syncColW();
   }catch(err){
     // Filet de sécurité : une erreur de rendu (ex : donnée mal formée dans
     // une sauvegarde) ne doit jamais laisser un formulaire (édition, ajout…)
