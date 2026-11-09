@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.70 -->
+<!-- Sous le tapis — version AUTONOME 10.71 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -2230,6 +2230,9 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
   transition:opacity .15s ease, background .15s ease, color .15s ease;
 }
 .category:hover .cat-full{ opacity:1; }
+.cat-full svg{ width:17px; height:17px; }   /* 10.71 : un peu plus grand (avant : 14) */
+.cat-head-right .cat-full{ margin-right:-10.5px; }   /* 10.71 : centré sur l'axe de la punaise (avant : 10 px plus à gauche) */
+@media (pointer:coarse){ .cat-full svg{ width:20px; height:20px; } .cat-head-right .cat-full{ margin-right:-13.6px; } }
 .cat-full svg{ display:block; transition:scale .3s var(--pop-ease); }
 /* 10.39 : zones de toucher agrandies sans changer le dessin : rond des mémos
    (≈ 35 px, comme les cases), pleine page et flèche d'ordre (≈ 40 px de haut,
@@ -2259,7 +2262,21 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 }
 .category.fullpage:not(.courses){ overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .category.fullpage .cat-grip{ display:none; }
-.category.fullpage .cat-full{ color:var(--ink-soft); opacity:1; }   /* en pleine page, c'est le bouton de retour : bien visible */
+.category.fullpage .cat-full{ display:none; }   /* 10.71 : en pleine page, on sort par le grand bouton rond (avant : ce bouton, en haut à droite) */
+/* 10.71 : bouton de retour de la pleine page : grand rond à flèche, en haut à gauche, au-dessus du titre */
+body > .fp-back{ display:none; position:fixed; z-index:160;
+  top:max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem));
+  left:max(calc(50vw - 410px + 1.1rem), calc(env(safe-area-inset-left, 0px) + 0.9rem));
+  width:44px; height:44px; padding:0; border-radius:50%; place-items:center; cursor:pointer;
+  appearance:none; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft);
+  box-shadow:0 2px 8px -3px rgba(30,40,45,.25); transition:background .15s ease, color .15s ease, box-shadow .2s ease; }
+.fp-back svg{ display:block; width:22px; height:22px; transition:transform .25s var(--pop-ease); }
+.fp-back:hover{ background:var(--surface-2); color:var(--ink); }
+.fp-back:hover svg{ transform:translateX(-2px); }
+.fp-back:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+@media (hover:none){ .fp-back:hover svg{ transform:none; } }
+body.has-fullpage > .fp-back{ display:grid; }
+.category.fullpage{ padding-top:calc(max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) + 44px + 0.9rem); }
 @media (max-width:820px){ .category.fullpage{ box-shadow:none; } }
 
 
@@ -2773,7 +2790,11 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
 /* sous l'écran, posés sur le fond : poignée des listes ; « … » et initiales */
 /* 10.65 : volet des écrans (chat, duel), comme les listes : la flèche au bout du pied replie l'écran
    sur une ligne (dernier message / où en est la partie) ; un clic sur l'écran replié le rouvre */
-.chat-foot .cat-fold{ position:static; flex:none; margin-left:0.15rem; }
+.chat-foot .cat-fold{ position:static; flex:none; margin-left:0.15rem; margin-right:0.35rem; }   /* 10.71 : punaise à la même place que sur les listes (0.55rem du bord) */
+.has-pcol:not(.fullpage) .chat-foot .cat-fold{ margin-right:-0.25rem; }   /* fenêtre remplie : la marge intérieure de 0.6rem compensée */
+@media (pointer:coarse){ .chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ right:calc(0.55rem - 1px); } }
+.duel-card .duel-foot .cat-fold{ margin-right:calc(0.35rem + 0.8px); }   /* son pied est un peu moins rentré (0.15rem) */
+.duel-card.has-pcol:not(.fullpage) .duel-foot .cat-fold{ margin-right:calc(-0.25rem + 0.8px); }
 .chat-card.collapsed, .duel-card.collapsed{ align-self:start; cursor:pointer; height:var(--fold-h); }
 .duel-card.collapsed .duel-stage{ height:100%; display:flex; flex-direction:column; }
 .chat-card.collapsed .chat-in{ display:none; }
@@ -2806,12 +2827,16 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
    un second l'ouvre, toucher ailleurs la referme. */
 .peek{ align-self:start; z-index:2; cursor:pointer; }
 .chat-card.peek{ align-self:stretch; }
-@media (min-width:721px){ .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; } }   /* 10.69 : pas sur téléphone (voir plus haut) */   /* 10.67 : ouvert, au moins la taille de l'écran du duel (avant : fin, 3 lignes) ; plus haut si la rangée l'est */   /* 10.67 : l'écran de chat entrouvert prend la hauteur de la rangée, comme ouvert */
+@media (min-width:721px){ .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; } }
+.has-duel-h .chat-card:not(.collapsed):not(.fullpage){ min-height:var(--duel-open-h); }
+@media (min-width:721px){ .has-duel-h .category:not(.collapsed):not(.fullpage):not(.peek){ min-height:var(--duel-open-h); } }   /* 10.71 : une hauteur de base commune : une liste ouverte a au moins la hauteur du duel ouvert (plus si elle est longue) ; sur ordi seulement : au téléphone, une colonne, pas de voisine qui sursaute */   /* 10.71 : même hauteur que le duel ouvert (syncChatHeight) ; l'écran du chat s'allonge */
+.has-duel-h .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:auto; }
+.has-duel-h .chat-card:not(.collapsed):not(.fullpage) .chat-log{ flex:1 1 0; max-height:none; }   /* la hauteur vient de la case (au moins celle de l'écran du duel) */   /* 10.69 : pas sur téléphone (voir plus haut) */   /* 10.67 : ouvert, au moins la taille de l'écran du duel (avant : fin, 3 lignes) ; plus haut si la rangée l'est */   /* 10.67 : l'écran de chat entrouvert prend la hauteur de la rangée, comme ouvert */
 .category.peek{ box-shadow:0 10px 28px -12px rgba(30,40,45,.28), var(--shadow); }
 .category{ transition:box-shadow .45s ease; }   /* 10.67 : l'ombre du survol arrive en douceur */
 /* 10.65 : pleine page des écrans (chat, duel), comme les listes : le bouton à deux flèches en haut à
    droite, à la place du voyant, qui se décale à sa gauche ; même bouton ou Échap pour revenir */
-.chat-box > .scr-full, .duel-stage > .scr-full{ position:absolute; z-index:2; right:1.25rem;   /* aligné sur celui des listes */ top:calc((0.35rem + 22px) / 2 - 10px); }
+.chat-box > .scr-full, .duel-stage > .scr-full{ position:absolute; z-index:2; right:calc(0.55rem + 0.5px);   /* 10.71 : centré sur l'axe de la punaise, comme les listes (avant : 1.25rem) */ top:calc((0.35rem + 22px) / 2 - 10px); }
 .chat-card:hover .scr-full, .duel-card:hover .scr-full, .scr-full:focus-visible{ opacity:1; }
 .chat-card.fullpage, .duel-card.fullpage{
   position:fixed; z-index:150; top:0; bottom:0; left:50%; transform:translateX(-50%);
@@ -2867,7 +2892,12 @@ body.has-fullpage::after{ content:""; position:fixed; inset:0; z-index:140; back
   .duel-card.fullpage .duel-foot{ grid-column:5; grid-row:5; justify-content:flex-end; margin:0; }
   .duel-card.fullpage .duel-foot .cat-grip{ display:none; }
 }
-.chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ opacity:1; color:var(--ink-soft); }
+.chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ display:none; }   /* 10.71 : on sort par le grand bouton rond */
+.chat-card.fullpage, .duel-card.fullpage{ padding-top:calc(max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) + 44px + 0.4rem); }
+@media (orientation:landscape) and (max-height:560px){
+  .duel-card.fullpage{ padding-top:max(0.35rem, env(safe-area-inset-top, 0px)); }   /* manette : le rond se pose dans le coin vide au-dessus de l'angle */
+  body.has-fullpage > .fp-back{ top:max(0.5rem, env(safe-area-inset-top, 0px)); width:40px; height:40px; }
+}
 .chat-card.fullpage .cat-grip, .duel-card.fullpage .cat-grip, .chat-card.fullpage .cat-fold, .duel-card.fullpage .cat-fold{ visibility:hidden; }
 /* voyant du duel : celui du chat, sur le papier en haut à droite — vert quand un coup de l'autre attend d'être vu */
 .duel-card .chat-led{ top:calc((0.35rem + 22px) / 2 - 3.5px); left:1.25rem; }   /* 10.69 : comme le chat, en haut à gauche */
@@ -4448,7 +4478,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.70</span>
+    <span class="version-tag">v10.71</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -7876,6 +7906,12 @@ function scrFullBtn(id){
   const on = fullpageCat === id;
   return `<button type="button" class="cat-full scr-full" aria-label="${on ? "Revenir aux listes" : "Ouvrir en pleine page"}" data-tip="${on ? "Réduire" : "Pleine page"}">${on ? FULL_OUT_SVG : FULL_IN_SVG}</button>`;
 }
+// 10.71 : le grand bouton rond de retour (un seul, visible tant qu'une case est en pleine page)
+const fpBack = document.createElement("button");
+fpBack.type = "button"; fpBack.className = "fp-back"; fpBack.setAttribute("aria-label", "Revenir aux listes"); fpBack.dataset.tip = "Revenir aux listes";
+fpBack.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>`;
+fpBack.addEventListener("click", e=>{ e.stopPropagation(); setFullpage(null); });
+document.body.appendChild(fpBack);
 function setFullpage(id){
   fullpageCat = id;
   document.body.classList.toggle("has-fullpage", !!id);
@@ -9333,6 +9369,29 @@ const RENDERERS = [render, renderWaitingSection, renderAddCategoryRow, updatePro
 // pendant une édition ou une petite fenêtre n'est plus perdu : il est
 // appliqué au rendu suivant (avant, il n'apparaissait qu'au rechargement)
 let externalPending = false;
+// 10.71 : hauteur de base commune — la fenêtre de chat ouverte (et sur ordi toute liste ouverte, au minimum) a la hauteur de celle du duel ouvert (même case, même fond
+// coloré) : sinon, côte à côte, l'entrouverture de l'une faisait sursauter l'autre. On mesure le
+// contenu du duel (son poste, pas la rangée qui peut l'étirer) et l'écran du chat s'allonge d'autant.
+let chatHRef = 0, chatHObs = null, chatHObserved = null;
+function syncChatHeight(){
+  const duel = document.querySelector(".duel-card:not(.collapsed):not(.fullpage):not(.peek) .duel-stage");
+  if(duel){
+    const card = duel.closest(".duel-card"), cs = getComputedStyle(card);
+    const h = Math.round(duel.getBoundingClientRect().height + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth));
+    if(h > 0 && h !== chatHRef){
+      chatHRef = h;
+      requestAnimationFrame(()=> document.querySelectorAll(".chat-card:not(.collapsed) .chat-log").forEach(l => l.scrollTop = l.scrollHeight));   // l'écran a changé de taille : on garde les derniers messages en vue
+    }
+    if("ResizeObserver" in window && chatHObserved !== duel){
+      if(!chatHObs) chatHObs = new ResizeObserver(()=> requestAnimationFrame(syncChatHeight));
+      if(chatHObserved) chatHObs.unobserve(chatHObserved);
+      chatHObs.observe(duel); chatHObserved = duel;
+    }
+  }
+  if(chatHRef) document.documentElement.style.setProperty("--duel-open-h", chatHRef + "px");
+  document.documentElement.classList.toggle("has-duel-h", !!chatHRef);
+}
+window.addEventListener("resize", ()=> requestAnimationFrame(syncChatHeight));
 function renderAll(){
   if(externalPending && !hasActiveEdit()){
     externalPending = false;
@@ -9344,6 +9403,7 @@ function renderAll(){
   try{
     document.body.classList.toggle("has-editing", !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle || !!editingCoursesKey);
     RENDERERS.forEach(fn => fn());
+    syncChatHeight();
   }catch(err){
     // Filet de sécurité : une erreur de rendu (ex : donnée mal formée dans
     // une sauvegarde) ne doit jamais laisser un formulaire (édition, ajout…)
