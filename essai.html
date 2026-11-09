@@ -2276,7 +2276,7 @@ body > .fp-back{ display:none; position:fixed; z-index:160;
 :root{ --fb-size:36px; }
 .fp-back svg{ width:18px; height:18px; display:block; flex:none; transition:transform .25s var(--pop-ease); }
 .fp-back:hover{ background:var(--accent-soft); color:var(--accent-strong); box-shadow:inset 0 0 0 1px var(--accent); }
-.fp-back:hover svg{ transform:translateX(-2px); }
+.fp-back:hover svg{ transform:scale(var(--pop-scale)); }   /* 10.72 : petit zoom comme les autres boutons (avant : glissait à gauche, asymétrique dans le cadre) */
 .fp-back:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 @media (hover:none){ body > .fp-back:hover{ background:var(--surface-2); color:var(--ink-soft); box-shadow:inset 0 0 0 1px var(--line); } .fp-back:hover svg{ transform:none; } }
 body.has-fullpage > .fp-back{ display:inline-flex; }
