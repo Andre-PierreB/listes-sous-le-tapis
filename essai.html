@@ -2831,8 +2831,8 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .chat-card.peek{ align-self:stretch; }
 @media (min-width:721px){ .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; } }
 .has-base-h .gliding{ min-height:0 !important; }   /* 10.72 : pendant le glissement d'ouverture / fermeture, la hauteur de base ne fige pas la case (le chat et le duel s'ouvraient d'un coup) */
-:root{ --base-k:192px; }   /* 10.71 : hauteur du poste de commande du duel (réglages, Lancer, faisans, pied) + marge du haut */
-@media (pointer:coarse){ :root{ --base-k:207px; } }   /* boutons agrandis au doigt */
+:root{ --base-k:166px; }   /* 10.71 : hauteur du poste de commande du duel (réglages, Lancer, faisans, pied) + marge du haut */
+@media (pointer:coarse){ :root{ --base-k:176px; } }   /* boutons agrandis au doigt */
 .has-base-h .chat-card:not(.collapsed):not(.fullpage), .has-base-h .duel-card:not(.collapsed):not(.fullpage){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); }   /* 10.71 : hauteur de base commune (voir syncColW) */
 @media (min-width:721px){ .has-base-h .category:not(.collapsed):not(.fullpage):not(.peek){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); } }   /* une liste ouverte en a au moins la hauteur (plus si elle est longue) ; sur ordi seulement : au téléphone, une colonne, pas de voisine qui sursaute */
 .has-base-h .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:auto; }   /* la hauteur vient de la case */
@@ -2912,7 +2912,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 /* 10.72 : le pied des écrans calé sur celui des listes et des mémos : une bande de la largeur de la case,
    collée au bas ; poignée (même taille) et punaise exactement aux mêmes places ; « … » et initiales au
    même niveau, juste avant la punaise. Plus d'air entre l'écran et le pied. */
-.chat-foot, .duel-card .duel-foot{ height:29px; margin-top:0.35rem; padding:0 calc(0.55rem + 24px + 0.3rem) 0 0; justify-content:flex-end; }
+.chat-foot, .duel-card .duel-foot{ height:29px; margin-top:3px; padding:0 calc(0.55rem + 24px + 0.3rem) 0 0; justify-content:flex-end; }
 .chat-card.has-pcol:not(.fullpage) .chat-foot, .duel-card.has-pcol:not(.fullpage) .duel-foot{ margin-left:-0.6rem; margin-right:-0.6rem; }   /* fenêtre remplie : la bande garde la largeur de la case */
 .chat-foot .cat-grip{ position:absolute; left:0.55rem; bottom:0.12rem; }
 .chat-foot .cat-grip svg{ width:17px; height:17px; }
@@ -2922,15 +2922,10 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .duel-card:not(.collapsed):not(.fullpage){ display:flex; flex-direction:column; }   /* 10.72 : case plus haute que son contenu (hauteur de base, rangée) : le pied reste collé au bas, comme sur les listes */
 .duel-card:not(.collapsed):not(.fullpage) > .duel-stage{ flex:1 1 auto; display:flex; flex-direction:column; }
 .duel-card:not(.collapsed):not(.fullpage) .duel-stage > .duel-foot{ margin-top:auto; }
-.duel-card:not(.collapsed):not(.fullpage) .duel-stage > :has(+ .duel-foot){ margin-bottom:0.35rem; }
-/* 10.72 : haut des écrans équilibré avec le bas : bouton pleine page et voyant à la hauteur du bouton
-   pleine page des listes (--scr-head-y), l'écran commence en dessous (avant : coincés contre le bord) */
-:root{ --scr-head-y:30.4px; }
-@media (max-width:720px){ :root{ --scr-head-y:33.7px; } }
-.chat-card:not(.fullpage) .chat-box, .duel-card:not(.fullpage) .duel-stage{ padding-top:calc(var(--scr-head-y) + 14px); }
-.chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ top:calc(var(--scr-head-y) - 11.5px); }
-@media (pointer:coarse){ .chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ top:calc(var(--scr-head-y) - 13px); } }
-.chat-card .chat-led, .duel-card .chat-led{ top:calc(var(--scr-head-y) - 4.5px); }
+.duel-card:not(.collapsed):not(.fullpage) .duel-stage > :has(+ .duel-foot){ margin-bottom:0; }
+.duel-card:not(.collapsed):not(.fullpage) .duel-stage > .coup{ padding-top:0; padding-bottom:0; }   /* 10.72 : 4 px de moins entre l'écran et les réglages : la case garde sa hauteur malgré le pied aligné sur les listes */
+/* 10.72 : haut des écrans équilibré avec le bas, sans changer la hauteur des cases */
+.chat-card:not(.fullpage) .chat-box, .duel-card:not(.fullpage) .duel-stage{ padding-top:31px; }   /* 10.72 : le bouton pleine page et le voyant restent à leur place ; un rien d'air sous eux (avant : 27,6 px) */
 .chat-foot .cat-grip svg{ transform:rotate(90deg); }
 .chat-more{ margin-left:auto; appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
 .chat-more:hover, .chat-more[aria-expanded="true"]{ background:var(--surface-2); color:var(--ink-soft); }
@@ -10751,6 +10746,14 @@ function sound(kind){
       const o = AC.createOscillator(), g = env(t, 0.005, 1.2, 0.45);
       o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.4);
       o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
+    }else if(kind === "dring"){
+      // 10.72 : sonnette de vélo « dring dring » : deux coups de timbre métallique (partiels inharmoniques)
+      [0, 0.17].forEach(d => [[2650, 1], [3980, 0.55], [5270, 0.3]].forEach(([f, a]) => {
+        const o = AC.createOscillator(); o.type = "sine"; o.frequency.value = f;
+        const g = AC.createGain(); g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(0.5 * a, t + d + 0.004); g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.42);
+        const vib = AC.createOscillator(), vg = AC.createGain(); vib.frequency.value = 38; vg.gain.value = f * 0.004; vib.connect(vg); vg.connect(o.frequency);   // le timbre qui vibre
+        o.connect(g); g.connect(out); o.start(t + d); vib.start(t + d); o.stop(t + d + 0.45); vib.stop(t + d + 0.45);
+      }));
     }else if(kind === "reveil"){
       // réveil qui sonne par paquets « drrrin… drrrin… drrrrrin ! » (le marteau entre deux cloches),
       // chaque paquet un peu plus aigu et plus long, puis le ressort qui lâche : « boïng »
@@ -10986,6 +10989,15 @@ function refreshUI(){
   const p = turn(), col = css(PLAYERS[p].color), attente = $(".attente").classList.contains("on");
   const mine = myTurn(), me = myUid();
   ROOT.classList.toggle("duel-new", bandMode === "decouverte");
+  // 10.72 : « dring dring » quand l'autre faisan a joué et attend notre coup — une fois par coup reçu
+  if(bandMode === "decouverte" && CAT){
+    const k = "sltapis-dring:" + CAT.id, n = game.shots.length;
+    let done = 0; try{ done = +localStorage.getItem(k) || 0; }catch(e){}
+    if(n > done){ try{ localStorage.setItem(k, String(n)); }catch(e){}
+      const ring = ()=> sound("dring");
+      if(AC && AC.state === "running") ring(); else document.addEventListener("pointerdown", ring, { once:true, capture:true });   // le navigateur ne laisse sonner qu'après un premier geste
+    }
+  }
   if(world.ph) ROOT.style.setProperty("--d-anc", (((world.ph[0].y + world.ph[1].y) / 2 - 16) / H).toFixed(3));   // 10.67 : l'écran fermé se centre sur les faisans
   { // l'écran replié : une ligne pour savoir où en est la partie
     const last = game.shots[game.shots.length - 1];
