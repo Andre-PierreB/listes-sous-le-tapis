@@ -2576,7 +2576,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   --facades:#261D33,#26261C,#1E2A1C,#2B2238,#2A2A1D; --facade-shadow:rgba(0,0,0,0.45);
   --win-lit:rgba(226,200,102,0.22); --win-off:rgba(255,255,255,0.035); --objet:#7FC0CC;
 }
-.duel-stage{ position:relative; padding:calc(0.35rem + 22px) 0 0.2rem; container-type:inline-size; }   /* conteneur du poste compact : suit la largeur de l'écran, même rétréci en pleine page */   /* 10.67 : plus de papier blanc ; l'écran à la largeur d'une liste, poste de commande et pied posés sur la tôle (le fond) — avant : papier --surface, ombre, côtés 0.75rem */
+.duel-stage{ position:relative; padding:calc(0.35rem + 22px) 0 0; container-type:inline-size; }   /* 10.72 : pied collé au bas (avant : 0.2rem dessous) */   /* conteneur du poste compact : suit la largeur de l'écran, même rétréci en pleine page */   /* 10.67 : plus de papier blanc ; l'écran à la largeur d'une liste, poste de commande et pied posés sur la tôle (le fond) — avant : papier --surface, ombre, côtés 0.75rem */
 /* le jeu dans un écran creusé, comme l'écran de chat : tranche de tôle arrondie, écran au fond,
    trame LCD et ombres intérieures posées par-dessus le dessin (::after) */
 .duel-screen{ position:relative; padding:2px; border-radius:18px;
@@ -2796,11 +2796,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 /* sous l'écran, posés sur le fond : poignée des listes ; « … » et initiales */
 /* 10.65 : volet des écrans (chat, duel), comme les listes : la flèche au bout du pied replie l'écran
    sur une ligne (dernier message / où en est la partie) ; un clic sur l'écran replié le rouvre */
-.chat-foot .cat-fold{ position:static; flex:none; margin-left:0.15rem; margin-right:0.35rem; }   /* 10.71 : punaise à la même place que sur les listes (0.55rem du bord) */
-.has-pcol:not(.fullpage) .chat-foot .cat-fold{ margin-right:-0.25rem; }   /* fenêtre remplie : la marge intérieure de 0.6rem compensée */
 @media (pointer:coarse){ .chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ right:calc(0.55rem - 1px); } }
-.duel-card .duel-foot .cat-fold{ margin-right:calc(0.35rem + 0.8px); }   /* son pied est un peu moins rentré (0.15rem) */
-.duel-card.has-pcol:not(.fullpage) .duel-foot .cat-fold{ margin-right:calc(-0.25rem + 0.8px); }
 .chat-card.collapsed, .duel-card.collapsed{ align-self:start; cursor:pointer; height:var(--fold-h); }
 .duel-card.collapsed .duel-stage{ height:100%; display:flex; flex-direction:column; }
 .chat-card.collapsed .chat-in{ display:none; }
@@ -2827,15 +2823,16 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .d-mini-t{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .duel-card.collapsed .duel-foot{ z-index:1; }
 .duel-card.collapsed .chat-led{ z-index:2; }
-.duel-card.collapsed .duel-stage{ padding-bottom:0.2rem; }
+.duel-card.collapsed .duel-stage{ padding-bottom:0; }
 /* 10.66 : au survol (souris), une case fermée s'entrouvre (classe peek) et se referme quand
    on s'en va ; un clic l'ouvre pour de bon, à sa place. Au doigt : un toucher l'entrouvre,
    un second l'ouvre, toucher ailleurs la referme. */
 .peek{ align-self:start; z-index:2; cursor:pointer; }
 .chat-card.peek{ align-self:stretch; }
 @media (min-width:721px){ .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; } }
-:root{ --base-k:166px; }   /* 10.71 : hauteur du poste de commande du duel (réglages, Lancer, faisans, pied) + marge du haut */
-@media (pointer:coarse){ :root{ --base-k:176px; } }   /* boutons agrandis au doigt */
+.has-base-h .gliding{ min-height:0 !important; }   /* 10.72 : pendant le glissement d'ouverture / fermeture, la hauteur de base ne fige pas la case (le chat et le duel s'ouvraient d'un coup) */
+:root{ --base-k:178px; }   /* 10.71 : hauteur du poste de commande du duel (réglages, Lancer, faisans, pied) + marge du haut */
+@media (pointer:coarse){ :root{ --base-k:190px; } }   /* boutons agrandis au doigt */
 .has-base-h .chat-card:not(.collapsed):not(.fullpage), .has-base-h .duel-card:not(.collapsed):not(.fullpage){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); }   /* 10.71 : hauteur de base commune (voir syncColW) */
 @media (min-width:721px){ .has-base-h .category:not(.collapsed):not(.fullpage):not(.peek){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); } }   /* une liste ouverte en a au moins la hauteur (plus si elle est longue) ; sur ordi seulement : au téléphone, une colonne, pas de voisine qui sursaute */
 .has-base-h .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:auto; }   /* la hauteur vient de la case */
@@ -2912,6 +2909,20 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .duel-card.duel-new .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
 @media (prefers-reduced-motion:reduce){ .duel-card.duel-new .chat-led{ animation:none; } }
 .chat-foot{ display:flex; align-items:center; gap:0.4rem; margin-top:0.35rem; padding:0 0.2rem; position:relative; }
+/* 10.72 : le pied des écrans calé sur celui des listes et des mémos : une bande de la largeur de la case,
+   collée au bas ; poignée (même taille) et punaise exactement aux mêmes places ; « … » et initiales au
+   même niveau, juste avant la punaise. Plus d'air entre l'écran et le pied. */
+.chat-foot, .duel-card .duel-foot{ height:29px; margin-top:0.55rem; padding:0 calc(0.55rem + 24px + 0.3rem) 0 0; justify-content:flex-end; }
+.chat-card.has-pcol:not(.fullpage) .chat-foot, .duel-card.has-pcol:not(.fullpage) .duel-foot{ margin-left:-0.6rem; margin-right:-0.6rem; }   /* fenêtre remplie : la bande garde la largeur de la case */
+.chat-foot .cat-grip{ position:absolute; left:0.55rem; bottom:0.12rem; }
+.chat-foot .cat-grip svg{ width:17px; height:17px; }
+.chat-foot .cat-fold{ position:absolute; right:0.55rem; bottom:0.3rem; margin:0; }
+@media (pointer:coarse){ .chat-foot .cat-grip{ padding:6px 5px; bottom:calc(0.02rem + 1.8px); } }
+.chat-foot .chat-more{ margin-left:0; }
+.duel-card:not(.collapsed):not(.fullpage){ display:flex; flex-direction:column; }   /* 10.72 : case plus haute que son contenu (hauteur de base, rangée) : le pied reste collé au bas, comme sur les listes */
+.duel-card:not(.collapsed):not(.fullpage) > .duel-stage{ flex:1 1 auto; display:flex; flex-direction:column; }
+.duel-card:not(.collapsed):not(.fullpage) .duel-stage > .duel-foot{ margin-top:auto; }
+.duel-card:not(.collapsed):not(.fullpage) .duel-stage > :has(+ .duel-foot){ margin-bottom:0.55rem; }
 .chat-foot .cat-grip svg{ transform:rotate(90deg); }
 .chat-more{ margin-left:auto; appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
 .chat-more:hover, .chat-more[aria-expanded="true"]{ background:var(--surface-2); color:var(--ink-soft); }
