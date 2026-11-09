@@ -2162,7 +2162,7 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
 /* 10.65 : toutes les cases repliées (liste, mémo, chat, duel) ont la même hauteur, --fold-h ;
    étalon : le mémo replié (bandeau + saisie), resserré de 3 px entre le bandeau et la saisie */
 :root{ --fold-h:127px; }
-@media (max-width:720px){ :root{ --fold-h:143px; } }   /* 10.69 : téléphone, texte agrandi : 127 × 18/16 (placé après, sinon sans effet) */
+@media (max-width:720px){ :root{ --fold-h:172px; } }   /* 10.72 : téléphone : la hauteur d'une liste repliée (avec sa ligne « Nouvelle tâche… ») — avant 143 px, le chat et le duel fermés étaient plus bas */   /* 10.69 : téléphone, texte agrandi : 127 × 18/16 (placé après, sinon sans effet) */
 .category.collapsed{ min-height:var(--fold-h); }
 .category.courses.collapsed > .courses-entry, .category.courses.collapsed > .courses-foot{ display:none; }   /* 10.68 : fermé, le mémo montre ses premiers articles (la saisie est en bas, ouverte) */
 /* 10.66 : fermée, une liste montre ses premières tâches en aperçu, pâles et coupées en fondu (comme le
@@ -2831,8 +2831,8 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .chat-card.peek{ align-self:stretch; }
 @media (min-width:721px){ .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; } }
 .has-base-h .gliding{ min-height:0 !important; }   /* 10.72 : pendant le glissement d'ouverture / fermeture, la hauteur de base ne fige pas la case (le chat et le duel s'ouvraient d'un coup) */
-:root{ --base-k:178px; }   /* 10.71 : hauteur du poste de commande du duel (réglages, Lancer, faisans, pied) + marge du haut */
-@media (pointer:coarse){ :root{ --base-k:190px; } }   /* boutons agrandis au doigt */
+:root{ --base-k:190px; }   /* 10.71 : hauteur du poste de commande du duel (réglages, Lancer, faisans, pied) + marge du haut */
+@media (pointer:coarse){ :root{ --base-k:205px; } }   /* boutons agrandis au doigt */
 .has-base-h .chat-card:not(.collapsed):not(.fullpage), .has-base-h .duel-card:not(.collapsed):not(.fullpage){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); }   /* 10.71 : hauteur de base commune (voir syncColW) */
 @media (min-width:721px){ .has-base-h .category:not(.collapsed):not(.fullpage):not(.peek){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); } }   /* une liste ouverte en a au moins la hauteur (plus si elle est longue) ; sur ordi seulement : au téléphone, une colonne, pas de voisine qui sursaute */
 .has-base-h .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:auto; }   /* la hauteur vient de la case */
@@ -2912,7 +2912,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 /* 10.72 : le pied des écrans calé sur celui des listes et des mémos : une bande de la largeur de la case,
    collée au bas ; poignée (même taille) et punaise exactement aux mêmes places ; « … » et initiales au
    même niveau, juste avant la punaise. Plus d'air entre l'écran et le pied. */
-.chat-foot, .duel-card .duel-foot{ height:29px; margin-top:0.55rem; padding:0 calc(0.55rem + 24px + 0.3rem) 0 0; justify-content:flex-end; }
+.chat-foot, .duel-card .duel-foot{ height:29px; margin-top:0.35rem; padding:0 calc(0.55rem + 24px + 0.3rem) 0 0; justify-content:flex-end; }
 .chat-card.has-pcol:not(.fullpage) .chat-foot, .duel-card.has-pcol:not(.fullpage) .duel-foot{ margin-left:-0.6rem; margin-right:-0.6rem; }   /* fenêtre remplie : la bande garde la largeur de la case */
 .chat-foot .cat-grip{ position:absolute; left:0.55rem; bottom:0.12rem; }
 .chat-foot .cat-grip svg{ width:17px; height:17px; }
@@ -2922,7 +2922,15 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .duel-card:not(.collapsed):not(.fullpage){ display:flex; flex-direction:column; }   /* 10.72 : case plus haute que son contenu (hauteur de base, rangée) : le pied reste collé au bas, comme sur les listes */
 .duel-card:not(.collapsed):not(.fullpage) > .duel-stage{ flex:1 1 auto; display:flex; flex-direction:column; }
 .duel-card:not(.collapsed):not(.fullpage) .duel-stage > .duel-foot{ margin-top:auto; }
-.duel-card:not(.collapsed):not(.fullpage) .duel-stage > :has(+ .duel-foot){ margin-bottom:0.55rem; }
+.duel-card:not(.collapsed):not(.fullpage) .duel-stage > :has(+ .duel-foot){ margin-bottom:0.35rem; }
+/* 10.72 : haut des écrans équilibré avec le bas : bouton pleine page et voyant à la hauteur du bouton
+   pleine page des listes (--scr-head-y), l'écran commence en dessous (avant : coincés contre le bord) */
+:root{ --scr-head-y:30.4px; }
+@media (max-width:720px){ :root{ --scr-head-y:33.7px; } }
+.chat-card:not(.fullpage) .chat-box, .duel-card:not(.fullpage) .duel-stage{ padding-top:calc(var(--scr-head-y) + 14px); }
+.chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ top:calc(var(--scr-head-y) - 11.5px); }
+@media (pointer:coarse){ .chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ top:calc(var(--scr-head-y) - 13px); } }
+.chat-card .chat-led, .duel-card .chat-led{ top:calc(var(--scr-head-y) - 4.5px); }
 .chat-foot .cat-grip svg{ transform:rotate(90deg); }
 .chat-more{ margin-left:auto; appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
 .chat-more:hover, .chat-more[aria-expanded="true"]{ background:var(--surface-2); color:var(--ink-soft); }
