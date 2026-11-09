@@ -2831,8 +2831,8 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .chat-card.peek{ align-self:stretch; }
 @media (min-width:721px){ .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; } }
 .has-base-h .gliding{ min-height:0 !important; }   /* 10.72 : pendant le glissement d'ouverture / fermeture, la hauteur de base ne fige pas la case (le chat et le duel s'ouvraient d'un coup) */
-:root{ --base-k:190px; }   /* 10.71 : hauteur du poste de commande du duel (réglages, Lancer, faisans, pied) + marge du haut */
-@media (pointer:coarse){ :root{ --base-k:205px; } }   /* boutons agrandis au doigt */
+:root{ --base-k:192px; }   /* 10.71 : hauteur du poste de commande du duel (réglages, Lancer, faisans, pied) + marge du haut */
+@media (pointer:coarse){ :root{ --base-k:207px; } }   /* boutons agrandis au doigt */
 .has-base-h .chat-card:not(.collapsed):not(.fullpage), .has-base-h .duel-card:not(.collapsed):not(.fullpage){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); }   /* 10.71 : hauteur de base commune (voir syncColW) */
 @media (min-width:721px){ .has-base-h .category:not(.collapsed):not(.fullpage):not(.peek){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); } }   /* une liste ouverte en a au moins la hauteur (plus si elle est longue) ; sur ordi seulement : au téléphone, une colonne, pas de voisine qui sursaute */
 .has-base-h .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:auto; }   /* la hauteur vient de la case */
