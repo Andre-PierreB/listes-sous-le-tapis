@@ -2519,6 +2519,10 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   justify-content:center;
   flex:none;
 }
+/* 10.73 : liste vide : la croix prend exactement la place du bouton pleine page (masqué), le + ne bouge pas */
+.category.can-delete:not(.fullpage) .cat-head-right .cat-full{ display:none; }
+.category.can-delete:not(.fullpage) .cat-head-right .cat-delete-btn{ width:23px; height:23px; margin-right:-10.5px; margin-block:-1.5px; }
+@media (pointer:coarse){ .category.can-delete:not(.fullpage) .cat-head-right .cat-delete-btn{ width:26px; height:26px; margin-right:-13.6px; margin-block:0; } }
 .cat-delete-btn:hover{
   background:var(--urgent-soft);
   color:var(--urgent-ink);
@@ -11302,6 +11306,7 @@ function render(){
     // meilleure façon d'éviter d'effacer une liste pleine par mégarde.
     // 10.2 : une liste partagée par quelqu'un d'autre ne se supprime pas d'ici
     const canDeleteCat = isCategoryEmpty(cat) && iOwnList(cat.id);
+    if(canDeleteCat) card.classList.add("can-delete");   // 10.73 : la croix prend la place de la pleine page
     // 10.2 : pastilles des personnes qui voient aussi cette liste
     const people = listPeople(cat.id);
     let shareChips = "";
