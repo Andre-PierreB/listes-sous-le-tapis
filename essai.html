@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.72 -->
+<!-- Sous le tapis — version AUTONOME 10.73 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -2210,6 +2210,19 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
 .category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:0.35rem; }   /* 10.35 : plus d'air entre le titre et les tâches */
 .category.courses .cat-head{ margin-top:0.11rem; }   /* 10.36 : titre des mémos sur la même ligne que les autres titres */
 .category.courses:not(.collapsed) .cat-head{ margin-bottom:0.12rem; }   /* 10.36 : 1er article sur la même ligne que la 1re tâche des listes voisines */
+/* 10.73 : la ligne du titre (titre, chiffre, saisie, +, pleine page) monte de --hd-lift : la flèche
+   pleine page tombe à la hauteur de celle du chat et du jeu (dans l'angle). Ce qui est monté est rendu
+   sous le titre : tâches, articles, poignée, punaise et hauteur des cases ne bougent pas. Marges
+   seulement (pas de position/transform : rien ne change pour les menus et infobulles). */
+.category{ --hd-lift:9px; }
+@media (pointer:coarse){ .category{ --hd-lift:12px; } }
+.category.fullpage{ --hd-lift:0px; }
+.category .cat-head{ margin-top:calc(0px - var(--hd-lift)); margin-bottom:var(--hd-lift); }
+.category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:calc(0.35rem + var(--hd-lift)); }
+.category.courses .cat-head{ margin-top:calc(0.11rem - var(--hd-lift)); }
+.category.courses:not(.collapsed) .cat-head{ margin-bottom:calc(0.12rem + var(--hd-lift)); }
+.category:not(.courses)::before{ top:calc(1.05rem - var(--hd-lift)); }   /* la barre de couleur part toujours du titre */
+.category.courses:not(.fullpage) .cat-head-right{ position:relative; top:-0.11rem; }   /* mémos : titre 0.11rem plus bas (10.36) ; + et pleine page à la même hauteur que partout */
 .cat-title-group{
   display:flex;
   align-items:center;
@@ -4515,7 +4528,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.72</span>
+    <span class="version-tag">v10.73</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
