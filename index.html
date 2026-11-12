@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.74 -->
+<!-- Sous le tapis — version AUTONOME 10.75 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1103,6 +1103,14 @@ header{
       0 var(--rule-top, 0) / 100% 100% no-repeat,
     linear-gradient(160deg, var(--memo-a) 10%, var(--memo-b) 60%, var(--memo-c) 100%);   /* 10.25 : nacre légère */
 }
+/* 10.75 : mémo reconnaissable même fermé (choisi au banc) : coin corné en haut à gauche (à droite, la
+   pleine page) ; papier blanc ouvert, gris très clair fermé (le fondu du bas suit) */
+.category.courses::before{ content:""; position:absolute; top:0; left:0; width:20px; height:20px; border-top-left-radius:14px; pointer-events:none;
+  background:linear-gradient(135deg, var(--bg) 0 50%, color-mix(in srgb, var(--ink) 10%, var(--surface)) 50% 100%);
+  box-shadow:1px 1px 2px rgba(30,40,45,.12); border-bottom-right-radius:4px; }
+.category.courses{ --memo-grey:var(--surface); --memo-a:var(--memo-grey); --memo-b:var(--memo-grey); --memo-c:var(--memo-grey); }
+.category.courses.collapsed{ --memo-grey:color-mix(in srgb, var(--ink) 2%, var(--surface)); }
+.category.courses::after{ background:linear-gradient(transparent, var(--memo-grey) 0.75rem); }
 .category.courses > ul.items{
   flex:0 1 auto; min-height:0;
   overflow-y:auto;   /* 10.39 : plus de contain : au bout du mémo, la page reprend le défilement */
@@ -1343,6 +1351,15 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 }
 .cat-swatch:hover{ transform:scale(1.12); }
 .cat-swatch.selected{ outline:2px solid var(--sw); outline-offset:2px; }
+/* 10.75 : fond de la liste à la couleur d'une personne du partage (comme les fenêtres de chat et de duel) */
+.cat-tint-sw{ appearance:none; width:auto; min-width:24px; height:20px; padding:0 5px; border-radius:6px; border:1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  background:var(--sw, var(--surface)); font:700 0.6rem/18px 'Public Sans', sans-serif; letter-spacing:0.02em; color:var(--ink-soft); cursor:pointer; transition:transform .12s ease; }
+.cat-tint-sw:hover{ transform:scale(1.08); }
+.cat-tint-sw.selected{ outline:2px solid color-mix(in srgb, var(--sw, var(--ink)) 80%, var(--ink)); outline-offset:2px; }
+.category.has-ptint{ --ptint-bg:color-mix(in srgb, var(--pcol) 15%, var(--surface)); }
+.category.has-ptint:not(.courses){ background:var(--ptint-bg); }
+:root .category.courses.has-ptint, :root .category.courses.collapsed.has-ptint{ --memo-grey:var(--ptint-bg); --memo-a:var(--ptint-bg); --memo-b:var(--ptint-bg); --memo-c:var(--ptint-bg); }
+:root .category.has-ptint::after{ background:linear-gradient(transparent, var(--ptint-bg) 0.75rem); }   /* le fondu du bas suit le fond */
 /* 10.2 : pastilles des personnes avec qui la liste est partagée (à côté du titre) */
 .share-chips{ display:inline-flex; flex:none; }
 .share-chip{
@@ -1521,30 +1538,33 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .nl-hint{ font-size:0.8rem; color:var(--ink-soft); margin:0.1rem 0 0.2rem; }   /* 10.53 */
 .add-category-btn{
   appearance:none;
-  /* 10.45 : citron givré du trèfle, pointillés citron, petit zoom au survol
-     (avant : blanc et gris, peu engageant) */
-  border:1px dashed color-mix(in srgb, var(--lucky-lemon) 70%, transparent);
-  background:var(--lucky-bg);
-  color:var(--phrase);
+  /* 10.75 : case fantôme en pointillés, à la taille d'une colonne (choisie au banc ; avant, 10.45 :
+     pastille citron givré aux pointillés citron) */
+  border:1.5px dashed color-mix(in srgb, var(--ink) 18%, transparent);
+  background:transparent;
+  color:var(--ink-soft);
   font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.7rem;
   font-weight:600;
   letter-spacing:0.04em;
   text-transform:uppercase;
+  width:min(100%, calc((100% - 1.25rem) / 2));
+  height:3.4rem;
   padding:0.5rem 1rem;
-  border-radius:999px;
+  border-radius:14px;
   cursor:pointer;
   display:inline-flex;
   align-items:center;
+  justify-content:center;
   gap:0.4rem;
   transition:transform .2s var(--pop-ease), border-color .15s ease, box-shadow .2s ease;
 }
+/* 10.75 : survol d'« Une petite en passant ? » : halo citron, léger soulèvement ; plus de pointillés, couleurs inchangées */
 .add-category-btn:hover, .add-category-btn:focus-visible{
   outline:none;
-  border-style:solid;
-  border-color:var(--lucky-lemon);
-  box-shadow:0 0 0 3px color-mix(in srgb, var(--lucky-lemon) 30%, transparent);
-  transform:scale(1.06);
+  border-color:transparent;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--lucky-lemon) 40%, transparent), 0 6px 20px -4px color-mix(in srgb, var(--lucky-lemon) 70%, transparent);
+  transform:translateY(-1px);
 }
 
 /* ---------- 10.63 : duel de faisans (petit jeu à deux, tour par tour) ----------
@@ -1662,7 +1682,8 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 /* sous Lancer : le choix du faisan (avant le 1er coup), puis Revoir, à la même place : la carte ne change pas de hauteur */
 .duel-card .d-sous{ display:grid; justify-items:center; align-items:center; }
 .duel-card .d-sous > *{ grid-area:1 / 1; }
-.duel-card .d-sous .persos{ justify-self:var(--persos-pos, start); }   /* 10.67 : à gauche, loin de « … » et des initiales (essayé centré ; avant : à droite, choisi au banc le 6/11/2026 ; trop chargé avec « … » et les initiales) */
+.duel-card .d-sous .persos{ justify-self:var(--persos-pos, start); }
+.duel-card:not(.fullpage) .d-sous .d-revoir{ justify-self:start; margin-left:0; }   /* 10.75 : fenêtre ouverte : Revoir à gauche, à la place des faisans */   /* 10.67 : à gauche, loin de « … » et des initiales (essayé centré ; avant : à droite, choisi au banc le 6/11/2026 ; trop chargé avec « … » et les initiales) */
 .duel-card .persos.gone, .duel-card .d-revoir.gone{ visibility:hidden; }
 /* pied dans la carte, comme les listes : poignée à gauche, « … » et initiales à droite */
 .duel-card .duel-foot{ margin-top:0; padding:0 0.15rem; }
@@ -1734,7 +1755,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 /* 10.69 : couleur de la personne (choisie dans Partage, carnet) : la fenêtre partagée avec elle se
    remplit d'une teinte douce, ouverte comme fermée ; ses initiales en bas prennent la couleur */
 .chat-card.has-pcol:not(.fullpage), .duel-card.has-pcol:not(.fullpage){ background:color-mix(in srgb, var(--pcol) 15%, transparent); border-radius:14px; }
-.chat-card.has-pcol:not(.fullpage) .chat-box, .duel-card.has-pcol:not(.fullpage) .duel-stage{ padding-left:0.6rem; padding-right:0.6rem; }
+.chat-card.has-pcol:not(.fullpage) .chat-box, .duel-card:not(.fullpage) .duel-stage{ padding-left:0.6rem; padding-right:0.6rem; }   /* 10.75 : le duel a toujours ce retrait, en couleur ou non : même écran partout (le plus petit) */
 .has-pcol .chat-who{ color:color-mix(in srgb, var(--pcol) 80%, var(--ink)); opacity:1; }
 .sh-colors{ display:flex; gap:0.3rem; align-items:center; width:100%; }
 .sh-sw{ width:24px; height:24px; padding:0; border-radius:50%; border:1px solid var(--line); cursor:pointer; background:var(--surface-2); color:var(--ink-faint); font-size:0.8rem; line-height:1; }
@@ -1747,8 +1768,6 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 @media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-led{ animation:none; } }
 /* 10.65 : le voyant laisse le coin au bouton pleine page (avant : dans l'axe du trèfle) */
 .chat-new{ text-align:center; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink-faint); margin:0.25rem 0 0.15rem; white-space:nowrap; overflow:hidden; }
-.chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
-.chat-card.dragging-card > *{ visibility:hidden; }
 .chat-hole{ flex:1 1 auto; display:flex; flex-direction:column; padding:var(--chat-rim); border-radius:calc(16px + var(--chat-rim));
   background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--bg)) 0%, color-mix(in srgb, var(--ink) 6%, var(--bg)) 35%, var(--bg) 60%, var(--chat-lip) 100%);
   box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px var(--chat-lip); }
@@ -1856,6 +1875,10 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .duel-card.fullpage .duel-stage{ zoom:1.25; width:100%; max-width:100%; margin:0 auto; }   /* pleine page : le poste de commande de la carte, agrandi */
 @media (max-height:560px){ .duel-card.fullpage .duel-stage{ zoom:1; } }   /* téléphone à l'horizontale : pas d'agrandissement */
 @media (max-width:720px){ .duel-card.fullpage .duel-stage{ zoom:1; } }
+/* 10.75 : fenêtre ouverte : bandeaux à la même taille (« En attente… » était plus petit) et toujours sur une ligne */
+.duel-card:not(.fullpage) .attente:not(.decouverte), .duel-card:not(.fullpage) .d-statut{ font-size:min(0.86rem, 3.6cqw); }   /* rétréci au besoin (téléphone) pour tenir sur une ligne */
+.duel-card:not(.fullpage) .d-statut{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
 /* 10.68 : téléphone couché, pleine page : « manette » — le jeu prend toute la hauteur au centre ;
    angle à gauche et force à droite en colonnes étroites (+ en haut, − en bas) ; en dessous, une
    seule rangée basse : objets, Lancer, faisans. (.coup s'efface : ses éléments se rangent dans la grille) */
@@ -1913,7 +1936,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
    collée au bas ; poignée (même taille) et punaise exactement aux mêmes places ; « … » et initiales au
    même niveau, juste avant la punaise. Plus d'air entre l'écran et le pied. */
 .chat-foot, .duel-card .duel-foot{ height:29px; margin-top:0; padding:0 calc(0.55rem + 24px + 0.3rem) 0 0; justify-content:flex-end; }
-.chat-card.has-pcol:not(.fullpage) .chat-foot, .duel-card.has-pcol:not(.fullpage) .duel-foot{ margin-left:-0.6rem; margin-right:-0.6rem; }   /* fenêtre remplie : la bande garde la largeur de la case */
+.chat-card.has-pcol:not(.fullpage) .chat-foot, .duel-card:not(.fullpage) .duel-foot{ margin-left:-0.6rem; margin-right:-0.6rem; }   /* fenêtre remplie : la bande garde la largeur de la case */
 .chat-foot .cat-grip{ position:absolute; left:0.55rem; bottom:0.12rem; }
 .chat-foot .cat-grip svg{ width:17px; height:17px; transform:rotate(90deg); }
 .chat-foot .cat-fold{ position:absolute; right:0.55rem; bottom:0.3rem; margin:0; }
@@ -1923,17 +1946,19 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .duel-card:not(.collapsed):not(.fullpage) > .duel-stage{ flex:1 1 auto; display:flex; flex-direction:column; }
 .duel-card:not(.collapsed):not(.fullpage) .duel-stage > .duel-foot{ margin-top:auto; }
 .duel-card:not(.collapsed):not(.fullpage) .duel-stage > :has(+ .duel-foot){ margin-bottom:0; }
-.duel-card:not(.collapsed):not(.fullpage) .duel-stage > .coup{ padding-top:0; padding-bottom:0; }   /* 10.72 : 4 px de moins entre l'écran et les réglages : la case garde sa hauteur malgré le pied aligné sur les listes */
+.duel-card:not(.collapsed):not(.fullpage) .duel-stage > .coup{ padding-top:6px; padding-bottom:0; }   /* 10.75 : 6 px d'air sous l'écran, pris sur la place libérée par l'écran plus petit */   /* 10.72 : 4 px de moins entre l'écran et les réglages : la case garde sa hauteur malgré le pied aligné sur les listes */
 /* 10.72 : haut des écrans équilibré avec le bas, sans changer la hauteur des cases */
 /* le bouton pleine page tombe dans l'angle de la case : autant d'écart avec le haut qu'avec le bord droit
    (il ne bouge pas latéralement) ; le voyant à sa hauteur ; l'écran commence un rien sous eux */
 .chat-card:not(.fullpage) .chat-box, .duel-card:not(.fullpage) .duel-stage{ padding-top:34px; }
 .chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ top:calc(0.55rem + 12px - 11.5px); }
 .chat-card .chat-led, .duel-card .chat-led{ top:calc(0.55rem + 12px - 4.5px); }
+.chat-card.fullpage .chat-led, .duel-card.fullpage .chat-led{ top:calc(0.9rem - 4.5px); }   /* 10.75 : pleine page : même écart avec l'écran que fenêtre ouverte (il y était collé) */
 @media (pointer:coarse){
   .chat-card:not(.fullpage) .chat-box, .duel-card:not(.fullpage) .duel-stage{ padding-top:36px; }
   .chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ top:calc(0.55rem + 12px - 13px); }
   .chat-card .chat-led, .duel-card .chat-led{ top:calc(0.55rem + 12px - 4.5px); }
+  .chat-card.fullpage .chat-led, .duel-card.fullpage .chat-led{ top:calc(0.9rem - 6.5px); }
   .chat-foot, .duel-card .duel-foot{ margin-top:-2px; }
 }
 .chat-more{ margin-left:auto; appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
@@ -2583,6 +2608,7 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 .courses-edit .edit-remove{ margin-right:auto; color:var(--ink-faint); border-color:transparent; background:none; }   /* 10.71 : à gauche, discret */
 .courses-item{ -webkit-touch-callout:none; }   /* 10.71 : l'appui long ouvre la modification (pas le menu de l'iPhone) */
 .courses-item:not(.editing) .item-text{ cursor:pointer; -webkit-user-select:none; user-select:none; }
+@media (hover:hover) and (pointer:fine){ .courses-item .item-text, .courses-item:not(.editing) .item-text{ -webkit-user-select:text; user-select:text; } }   /* 10.75 : à la souris, le texte des mémos se sélectionne (glisser) ; au doigt, l'appui long modifie */
 .courses-item.pressing{ background:color-mix(in srgb, var(--ink) 5%, transparent); transition:background .45s ease; }
 .edit-actions{
   display:flex;
@@ -2921,6 +2947,7 @@ footer:has(#shareLink:not([hidden])) #trashLink{ margin-right:0; }
 .share-link:hover, .share-link.open{ background:var(--share-hover); color:#2A2725; box-shadow:inset 0 0 0 1px var(--share-hover); }
 #importBtn:hover{ background:var(--accent); color:var(--surface); }
 .share-link svg{ width:16px; height:16px; display:block; flex:none; }
+.share-link{ padding-inline:0.7rem; }   /* 10.75 : picto seul, bouton plus étroit (même hauteur) */
 .trash-link svg{ width:15px; height:15px; display:block; flex:none; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 .trash-link svg .lid{ transform-box:fill-box; transform-origin:right bottom; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 .trash-link:hover svg .lid, .trash-link.open svg .lid{ transform:rotate(-18deg) translateY(-1px); }
@@ -3172,6 +3199,7 @@ body.no-list .add-category-row{
 }
 /* bouton d'accueil (7.9) — 10.30 : aux couleurs de « Une petite en passant ? » */
 .add-category-btn.onboarding{
+  width:auto; height:auto;   /* 10.75 : pas la taille de la case fantôme */
   flex-direction:column;
   gap:0.35rem;
   padding:1.6rem 2.6rem;
@@ -3304,13 +3332,13 @@ body.tapis-out .plume-tag, body.tapis-out .plume-login{ visibility:hidden; }   /
 
 /* ---------- glisser-déposer : listes (5.17) et tâches (7.1) ---------- */
 body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-select:none; }
-.category.dragging-card{
+.category.dragging-card, .chat-card.dragging-card, .duel-card.dragging-card{   /* 10.75 : chat et duel comme les listes (le duel n'avait pas de pointillés) */
   background:transparent;
   box-shadow:none;
   outline:2px dashed color-mix(in srgb, var(--cat-color, var(--accent)) 55%, transparent);
   outline-offset:-2px;
 }
-.category.dragging-card > *{ visibility:hidden; }
+.category.dragging-card > *, .chat-card.dragging-card > *, .duel-card.dragging-card > *{ visibility:hidden; }
 .card-ghost{
   position:fixed !important;
   margin:0 !important;
@@ -3514,7 +3542,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.74</span>
+    <span class="version-tag">v10.75</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5650,6 +5678,7 @@ function cancelCatEdit(){
   try{
     const cat = DATA.find(c => c.id === snap.id);
     if(cat && snap.color && cat.color !== snap.color) recolorCategory(cat.id, snap.color);
+    if("tint" in snap && listTintUid(snap.id) !== snap.tint) setListTint(snap.id, snap.tint);   // 10.75
     const now = ((listInfo(snap.id) || { members:[] }).members || []).slice();
     if(iOwnList(snap.id)){
       now.filter(u => !snap.members.includes(u) && u !== myUid()).forEach(u => setListSharedWith(snap.id, u, false));
@@ -6047,6 +6076,23 @@ function contactsMap(){
 // première personne qui en a une
 const PERSON_PAL = { ambre:"#E2A64B", gameboy:"#93B46A", bleu:"#7EA6D8", rose:"#DE8C9E", lavande:"#A48DD3", sauge:"#86B39C", gris:"#9AA3A8" };
 function personColor(uid){ const c = uid ? contactsMap()[uid] : null; return (c && PERSON_PAL[c.color]) || null; }
+// 10.75 : fond d'une liste à la couleur d'une personne du partage — choix propre à chacun (fiche « moi »,
+// champ listTint { idListe: uid }), suivi sur tous ses appareils ; plusieurs personnes : on choisit
+function listTintUid(catId){
+  const m = (()=>{ try{ return Store.userField("listTint"); }catch(e){ return undefined; } })();
+  const u = m && typeof m === "object" ? m[catId] : null;
+  return u && listPeople(catId).includes(u) && personColor(u) ? u : null;
+}
+function setListTint(catId, uid){
+  const m = Object.assign({}, (()=>{ try{ return Store.userField("listTint"); }catch(e){ return undefined; } })() || {});
+  if(uid) m[catId] = uid; else delete m[catId];
+  Store.setUserField("listTint", Object.keys(m).length ? m : undefined);
+}
+function paintListTint(card, catId){
+  const u = (()=>{ try{ return listTintUid(catId); }catch(e){ return null; } })();
+  card.classList.toggle("has-ptint", !!u);
+  if(u) card.style.setProperty("--pcol", personColor(u)); else card.style.removeProperty("--pcol");
+}
 function cardColor(catId){ for(const u of listPeople(catId)){ const c = personColor(u); if(c) return c; } return null; }
 function paintCardColor(card, catId){
   const c = (()=>{ try{ return cardColor(catId); }catch(e){ return null; } })();
@@ -7122,6 +7168,7 @@ function layoutRect(c){
   const top = pr.top + (op ? op.clientTop : 0) + c.offsetTop - sy;
   return { left, top, width:c.offsetWidth, height:c.offsetHeight };
 }
+const DRAG_SWAP_MARGIN = 40;   // 10.75 : px d'avance qu'une carte doit avoir sur la place actuelle pour l'échange
 function handleListDragMove(x, y){
   const d = dragState;
   const dx = x - d.startX, dy = y - d.startY;
@@ -7139,6 +7186,12 @@ function handleListDragMove(x, y){
   if(!best || best === d.el) return;
   const r = layoutRect(best);
   if(bestDist > Math.max(r.width, r.height) * 0.7) return; // trop loin : pas encore aimanté
+  // 10.75 : on ne change de place que si l'autre carte est NETTEMENT plus proche que la place
+  // actuelle : après un échange, la grille se recompose (cases de hauteurs différentes) et une
+  // troisième carte pouvait devenir « la plus proche » — l'emplacement vibrait d'une carte à l'autre
+  const sr = layoutRect(d.el);
+  const selfDist = Math.hypot(gx - (sr.left + sr.width/2), gy - (sr.top + sr.height/2));
+  if(bestDist > selfDist - DRAG_SWAP_MARGIN) return;
   // 10.24 : pas de retour immédiat vers la carte qu'on vient d'échanger
   // (c'était le va-et-vient qui faisait vibrer l'emplacement)
   const ls = d.lastSwap;
@@ -8193,11 +8246,22 @@ function buildItemLi(cat, idx, base, key, opts){
     // la ligne dévoilait crayon et croix). Le détail se déplie par son sigle. Modifier : double-clic
     // (souris) ou appui long (doigt) ; Retirer est dans la modification (et la croix au survol, à la souris).
     let longFired = 0;
+    // 10.75 : à la souris, le clic attend la fin d'un éventuel double-clic avant de rayer : un
+    // double-clic ouvre la modification sans rien rayer (avant : le 1er clic rayait et redessinait la
+    // ligne, et l'article pouvait rester rayé après la modification). Au doigt : rayé tout de suite
+    // (pas de double-clic, l'appui long modifie). Texte sélectionné à la souris : pas de rayure.
+    let pType = "mouse", strikeTimer = 0;
+    li.addEventListener("pointerdown", e => { pType = e.pointerType || "mouse"; });
     li.addEventListener("click", e=>{
       if(Date.now() - longFired < 700) return;   // la fin d'un appui long n'est pas un clic
       if(e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap")) return;
       if(e.target.closest(".note-toggle")){ e.stopPropagation(); toggleNoteOpen(key); return; }
-      setStruck(key, !struck);
+      if(pType !== "mouse"){ setStruck(key, !struck); return; }
+      const sel = window.getSelection && window.getSelection();
+      if(sel && !sel.isCollapsed && li.contains(sel.anchorNode)) return;   // on sélectionnait du texte
+      clearTimeout(strikeTimer);
+      if(e.detail > 1) return;   // 2e clic d'un double-clic : le double-clic s'en occupe
+      strikeTimer = setTimeout(()=> setStruck(key, !state[key]), COURSES_DBL_MS);
     });
     if(eff.note) markNoteHolder(li, key);
     li.addEventListener("pointerdown", e=>{
@@ -8218,7 +8282,8 @@ function buildItemLi(cat, idx, base, key, opts){
     // 10.53 : double-clic pour modifier, comme une tâche
     li.querySelector(".item-text").addEventListener("dblclick", e=>{
       e.stopPropagation();
-      if(!!state[key] !== struck) setStruck(key, struck);   // 10.71 : les deux clics du double-clic ont rayé puis dé-rayé : on garde l'état d'avant
+      clearTimeout(strikeTimer);   // 10.75 : le clic en attente ne raye pas
+      try{ window.getSelection().removeAllRanges(); }catch(err){}
       editingCoursesKey = key;
       renderAll();
     });
@@ -8698,6 +8763,17 @@ window.addEventListener("resize", ()=> fitCoursesCards());
 // depuis le dernier défilement de la page) ; il faut une pause pour faire
 // défiler le mémo lui-même.
 const PAGE_SCROLL_KEEP_MS = 400;
+// 10.75 : champs d'ajout du + : curseur dedans (fin du texte) et, s'ils sont hors de vue (haut d'une
+// longue liste, d'un mémo qui défile), l'écran glisse doucement jusqu'à eux ; visibles : rien ne bouge
+function revealAddField(f){
+  requestAnimationFrame(()=>{
+    if(!f.isConnected) return;
+    try{ if(document.activeElement !== f) f.focus({ preventScroll:true }); const n = f.value.length; f.setSelectionRange(n, n); }catch(e){}
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    try{ f.scrollIntoView({ block:"nearest", behavior: still ? "auto" : "smooth" }); }catch(e){}
+  });
+}
+const COURSES_DBL_MS = 260;   // 10.75 : attente d'un éventuel double-clic avant de rayer un article (souris)
 let lastPageScroll = 0;
 window.addEventListener("scroll", ()=>{ lastPageScroll = Date.now(); }, { passive:true });
 function wireCoursesWheel(ul){
@@ -9760,13 +9836,15 @@ function sound(kind){
       o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.4);
       o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
     }else if(kind === "dring"){
-      // 10.72 : sonnette de vélo « dring dring » : deux coups de timbre métallique (partiels inharmoniques)
-      [0, 0.17].forEach(d => [[2650, 1], [3980, 0.55], [5270, 0.3]].forEach(([f, a]) => {
-        const o = AC.createOscillator(); o.type = "sine"; o.frequency.value = f;
-        const g = AC.createGain(); g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(0.5 * a, t + d + 0.004); g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.42);
-        const vib = AC.createOscillator(), vg = AC.createGain(); vib.frequency.value = 38; vg.gain.value = f * 0.004; vib.connect(vg); vg.connect(o.frequency);   // le timbre qui vibre
-        o.connect(g); g.connect(out); o.start(t + d); vib.start(t + d); o.stop(t + d + 0.45); vib.stop(t + d + 0.45);
-      }));
+      // 10.72 : « dring dring » quand l'autre faisan a joué ; 10.75 : la sonnette du vélo du jeu
+      // (celle de « roulibre », sans le cliquetis de la roue) — même timbre, même rythme
+      const timbre = (dd, amp, len) => {
+        for(const [ratio, a] of [[1, 1], [2.76, 0.55], [5.4, 0.28], [8.9, 0.12]]){
+          const o = AC.createOscillator(); o.type = "sine"; o.frequency.value = 2150 * ratio;
+          const g = env(t + dd, 0.002, amp * a, len / ratio ** 0.4); o.connect(g); g.connect(out); o.start(t + dd); o.stop(t + dd + len + 0.05);
+        }
+      };
+      for(const st of [0.03, 0.23]) for(let i = 0; i < 6; i++) timbre(st + i * 0.022, i === 5 ? 0.32 : 0.2, i === 5 ? 0.45 : 0.06);
     }else if(kind === "reveil"){
       // réveil qui sonne par paquets « drrrin… drrrin… drrrrrin ! » (le marteau entre deux cloches),
       // chaque paquet un peu plus aigu et plus long, puis le ressort qui lâche : « boïng »
@@ -10039,9 +10117,9 @@ function refreshUI(){
   }else{
     lancerBtn.textContent = "Lancer"; lancerBtn.classList.toggle("locked", lock);
     $(".d-statut").textContent = busy || attente ? "" :
-      game.solo ? (game.shots.length ? `Entraînement : l'autre faisan ne renvoie rien.` : `Entraînement : choisissez votre faisan, visez l'autre.`)
-      : mine ? (game.shots.length ? `À vous de lancer ${OBJETS_ART[monObjet]}.` : `Choisissez votre faisan et lancez : l'autre prendra l'autre faisan.`)
-      : !PLAYERS[p].uid && me ? "Invitez quelqu'un avec « … » pour jouer à deux." : `À ${PLAYERS[p].nom} de jouer.`;
+      game.solo ? (game.shots.length ? `Entraînement : l'autre ne renvoie rien.` : `Entraînement : visez l'autre faisan.`)
+      : mine ? (game.shots.length ? `À vous de lancer ${OBJETS_ART[monObjet]}.` : `Choisissez votre faisan, puis lancez.`)
+      : !PLAYERS[p].uid && me ? "Invitez quelqu'un avec « … »." : `À ${PLAYERS[p].nom} de jouer.`;
   }
   const last = game.shots[game.shots.length - 1];
   $(".d-revoir").classList.toggle("gone", !last || bandMode === "decouverte" || hideLast);   // en attente de l'autre, on peut revoir son propre coup
@@ -10289,6 +10367,7 @@ function render(){
     // 10.2 : une liste partagée par quelqu'un d'autre ne se supprime pas d'ici
     const canDeleteCat = isCategoryEmpty(cat) && iOwnList(cat.id);
     if(canDeleteCat) card.classList.add("can-delete");   // 10.73 : la croix prend la place de la pleine page
+    paintListTint(card, cat.id);   // 10.75 : fond à la couleur d'une personne du partage (si choisi)
     // 10.2 : pastilles des personnes qui voient aussi cette liste
     const people = listPeople(cat.id);
     let shareChips = "";
@@ -10306,7 +10385,7 @@ function render(){
     const renamingThisCat = editingCategoryTitle === cat.id;
     // 10.53 : état de la liste à l'ouverture de la modification (pour Annuler)
     if(renamingThisCat && (!catEditSnap || catEditSnap.id !== cat.id))
-      catEditSnap = { id: cat.id, color: cat.color, members: ((listInfo(cat.id) || { members:[] }).members || []).slice() };
+      catEditSnap = { id: cat.id, color: cat.color, members: ((listInfo(cat.id) || { members:[] }).members || []).slice(), tint: listTintUid(cat.id) };
     const reversed = isCatReversed(cat.id);
     const newBottom = newestAtBottom(cat.id);
     const head = document.createElement("div");
@@ -10441,6 +10520,25 @@ function render(){
         });
       });
       card.appendChild(sw);
+      // 10.75 : fond de la liste à la couleur d'une personne du partage (comme le chat et le duel) ;
+      // plusieurs personnes : une pastille chacune ; « aucun » = blanc
+      const tintPeople = listPeople(cat.id).filter(u => personColor(u));
+      if(tintPeople.length){
+        const tr = document.createElement("div");
+        tr.className = "cat-share cat-tint";
+        const cur = listTintUid(cat.id);
+        tr.innerHTML = `<span class="cat-share-label">Fond</span><button type="button" class="cat-tint-sw${cur ? "" : " selected"}" data-u="" aria-label="Fond blanc" data-tip="Blanc"></button>` +
+          tintPeople.map(u => { const who = escapeAttr(personName(u, cat.id)); return `<button type="button" class="cat-tint-sw${cur === u ? " selected" : ""}" data-u="${escapeAttr(u)}" style="--sw:${personColor(u)}" aria-label="Fond à la couleur de ${who}" data-tip="Couleur de ${who}">${escapeAttr(personInitials(u, cat.id))}</button>`; }).join("");
+        tr.addEventListener("mousedown", e => e.preventDefault());   // le titre garde ce qu'on a tapé
+        tr.addEventListener("click", e=>{
+          const bt = e.target.closest(".cat-tint-sw"); if(!bt) return;
+          e.stopPropagation();
+          setListTint(cat.id, bt.dataset.u || null);
+          paintListTint(card, cat.id);
+          tr.querySelectorAll(".cat-tint-sw").forEach(o => o.classList.toggle("selected", o === bt));
+        });
+        card.appendChild(tr);
+      }
       const shareRow = buildCatShareRow(cat);
       if(shareRow) card.appendChild(shareRow);
       const convRow = buildCatConvertRow(cat, head);
@@ -10531,7 +10629,7 @@ function render(){
         if(e.key === "Escape"){ addingCat = null; renderAll(); }
       }));
       ul.insertBefore(li, ul.firstChild);
-      requestAnimationFrame(()=> tIn.focus());
+      revealAddField(tIn);
     }
     if(addingCat === cat.id && !courses){
       const li = document.createElement("li");
@@ -10599,7 +10697,7 @@ function render(){
       });
       if(addPrefill && addPrefill.catId === cat.id){ titleInput.value = addPrefill.t; addPrefill = null; }
       if(reversed) ul.appendChild(li); else ul.insertBefore(li, ul.firstChild);
-      requestAnimationFrame(()=>{ titleInput.focus(); const n = titleInput.value.length; titleInput.setSelectionRange(n, n); });
+      revealAddField(titleInput);
     }
 
     if(courses){   // 10.15 : saisie et Vider les rayés (10.38 : saisie en haut)
@@ -11038,7 +11136,8 @@ function renderShare(){
   const n = Object.keys(cm).length;
   link.classList.toggle("open", shareOpen);
   link.setAttribute("aria-label", "Partage : " + n + (n > 1 ? " personnes dans le carnet" : " personne dans le carnet"));
-  link.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><circle cx="17" cy="9" r="2.4"/><path d="M15.6 14.4c2.3.1 4.2 1.6 4.8 4.1"/></svg><span>Partage</span>${n ? `<span class="trash-link-badge">${n}</span>` : ""}`;
+  link.dataset.tip = "Partage";
+  link.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><circle cx="17" cy="9" r="2.4"/><path d="M15.6 14.4c2.3.1 4.2 1.6 4.8 4.1"/></svg>`;   // 10.75 : le picto seul (titre en infobulle, plus de chiffre) : usage rare, plus discret que Corbeille
   panel.hidden = !shareOpen;
   if(!shareOpen){ panel.innerHTML = ""; return; }
   const S = syncApi();
@@ -11641,6 +11740,7 @@ document.addEventListener("keydown", (e)=>{
 
 try{ runWeeklyPurge(); }catch(err){ console.error("[corbeille] échec de la purge hebdomadaire", err); }
 renderAll();
+
 // 7.43 : demande au navigateur de ne jamais vider de lui-même ce stockage
 // (par manque de place, par exemple). Silencieux ; refusé = rien ne change.
 try{
@@ -13373,5 +13473,15 @@ if(DEMO && !hasAnyList()) (()=>{
   renderAll();
 })();
 // (10.69-10.71 : les bancs de la vitrine — couleurs par personne, bouton retour — sont retirés, choix faits.)
+// 10.75 : vitrine : « Week-end » fait comme si elle était partagée avec Hiske (bleu) et Léon-John (rose),
+// pour essayer les couleurs des personnes dans la modification d'une liste (rien ne part en ligne)
+if(DEMO) (()=>{
+  const W = DATA.find(c => c.title === "Week-end"); if(!W) return;
+  const FAKE = { "demo-h": { name:"Hiske", ini:"H", color:"bleu" }, "demo-lj": { name:"Léon-John", ini:"LJ", color:"rose" } };
+  const lp = listPeople, cm = contactsMap, pn = personName;
+  listPeople = id => id === W.id ? Object.keys(FAKE) : lp(id);
+  contactsMap = () => Object.assign({}, cm(), FAKE);
+  personName = (u, id) => FAKE[u] ? FAKE[u].name : pn(u, id);
+})();
 if(!DEMO) Sync.start();   // 10.68 : la vitrine ne se connecte jamais
 </script>

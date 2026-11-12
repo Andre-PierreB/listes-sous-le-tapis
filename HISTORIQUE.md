@@ -1036,4 +1036,11 @@ Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours ch
   - 10.74 : grand ménage, sans changement à l'écran : anciennes versions dans archives/,
     historique sorti vers ce fichier, 15 règles CSS en double fusionnées ; synchro : une salve
     de listes arrivées d'un coup (ouverture) ne donne plus qu'un seul rendu au lieu d'un par liste.
+  - 10.75 : mémos — double-clic pour modifier sans rien rayer (le clic attend la fin d'un double-clic,
+    souris), texte sélectionnable à la souris, coin corné en haut à gauche, papier gris très clair fermé ;
+    champs du + ramenés en vue ; Partage en picto seul ; « Nouvelle liste » en case fantôme (halo citron
+    au survol) ; fond d'une liste à la couleur d'une personne du partage (« Fond », choix propre à chacun,
+    fiche « moi » listTint) ; jeu fenêtre ouverte : écran unique (le plus petit), bandeaux sur une ligne,
+    phrases raccourcies, Revoir à gauche ; voyant en pleine page décollé de l'écran ; glisser : mêmes
+    pointillés pour chat et duel, plus de vibration (marge DRAG_SWAP_MARGIN) ; dring dring = sonnette du vélo.
 ```
