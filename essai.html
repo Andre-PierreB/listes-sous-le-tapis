@@ -1343,8 +1343,15 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 }
 .cat-swatch:hover{ transform:scale(1.12); }
 .cat-swatch.selected{ outline:2px solid var(--sw); outline-offset:2px; }
-.cat-swatch-sep{ width:1px; align-self:stretch; margin:0 3px; background:var(--line); }   /* 10.75 : sépare les couleurs des personnes */
-.cat-swatch-person{ width:auto; min-width:18px; padding:0 4px; font:700 0.6rem/18px 'Public Sans', sans-serif; letter-spacing:0.02em; color:#fff; }
+/* 10.75 : fond de la liste à la couleur d'une personne du partage (comme les fenêtres de chat et de duel) */
+.cat-tint-sw{ appearance:none; width:auto; min-width:24px; height:20px; padding:0 5px; border-radius:6px; border:1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  background:var(--sw, var(--surface)); font:700 0.6rem/18px 'Public Sans', sans-serif; letter-spacing:0.02em; color:var(--ink-soft); cursor:pointer; transition:transform .12s ease; }
+.cat-tint-sw:hover{ transform:scale(1.08); }
+.cat-tint-sw.selected{ outline:2px solid color-mix(in srgb, var(--sw, var(--ink)) 80%, var(--ink)); outline-offset:2px; }
+.category.has-ptint{ --ptint-bg:color-mix(in srgb, var(--pcol) 15%, var(--surface)); }
+.category.has-ptint:not(.courses){ background:var(--ptint-bg); }
+:root .category.courses.has-ptint, :root .category.courses.collapsed.has-ptint{ --memo-grey:var(--ptint-bg); --memo-a:var(--ptint-bg); --memo-b:var(--ptint-bg); --memo-c:var(--ptint-bg); }
+:root .category.has-ptint::after{ background:linear-gradient(transparent, var(--ptint-bg) 0.75rem); }   /* le fondu du bas suit le fond */
 /* 10.2 : pastilles des personnes avec qui la liste est partagée (à côté du titre) */
 .share-chips{ display:inline-flex; flex:none; }
 .share-chip{
@@ -4473,13 +4480,9 @@ const NEW_CATEGORY_PALETTE = ["#4993A2","#D9A63A","#5E9C86","#C24F6E","#D9774A",
 // enregistrée, mais on l'affiche dans la nouvelle gamme, case pour case.
 // Rien n'est réécrit dans les données.
 const OLD_CATEGORY_PALETTE = ["#4B7BA6","#7A5C3E","#5C8A6B","#9C5A8C","#A87F3F","#3F7A7A","#8A5A5A","#5A6B8A","#6B7A3F","#7A3F5C"];
-// 10.75 : la même teinte, plus franche, pour une LISTE prise à la couleur d'une personne (barre, titre) ;
-// copiée dans la liste (elle ne suit pas un changement fait ensuite dans Partage)
-const PERSON_LIST_PAL = { ambre:"#C98A2E", gameboy:"#74974A", bleu:"#5C86BC", rose:"#C46A80", lavande:"#8670B8", sauge:"#63967D", gris:"#79848A" };
 function displayCatColor(col){
   const c = String(col || "").toUpperCase();
   if(NEW_CATEGORY_PALETTE.includes(c)) return c;
-  if(Object.values(PERSON_LIST_PAL).includes(c)) return c;   // 10.75 : couleur d'une personne
   const i = OLD_CATEGORY_PALETTE.indexOf(c);
   if(i > -1) return NEW_CATEGORY_PALETTE[i];
   let h = 0; for(const ch of c) h = (h*31 + ch.charCodeAt(0)) >>> 0;
@@ -5696,6 +5699,7 @@ function cancelCatEdit(){
   try{
     const cat = DATA.find(c => c.id === snap.id);
     if(cat && snap.color && cat.color !== snap.color) recolorCategory(cat.id, snap.color);
+    if("tint" in snap && listTintUid(snap.id) !== snap.tint) setListTint(snap.id, snap.tint);   // 10.75
     const now = ((listInfo(snap.id) || { members:[] }).members || []).slice();
     if(iOwnList(snap.id)){
       now.filter(u => !snap.members.includes(u) && u !== myUid()).forEach(u => setListSharedWith(snap.id, u, false));
@@ -6093,6 +6097,23 @@ function contactsMap(){
 // première personne qui en a une
 const PERSON_PAL = { ambre:"#E2A64B", gameboy:"#93B46A", bleu:"#7EA6D8", rose:"#DE8C9E", lavande:"#A48DD3", sauge:"#86B39C", gris:"#9AA3A8" };
 function personColor(uid){ const c = uid ? contactsMap()[uid] : null; return (c && PERSON_PAL[c.color]) || null; }
+// 10.75 : fond d'une liste à la couleur d'une personne du partage — choix propre à chacun (fiche « moi »,
+// champ listTint { idListe: uid }), suivi sur tous ses appareils ; plusieurs personnes : on choisit
+function listTintUid(catId){
+  const m = (()=>{ try{ return Store.userField("listTint"); }catch(e){ return undefined; } })();
+  const u = m && typeof m === "object" ? m[catId] : null;
+  return u && listPeople(catId).includes(u) && personColor(u) ? u : null;
+}
+function setListTint(catId, uid){
+  const m = Object.assign({}, (()=>{ try{ return Store.userField("listTint"); }catch(e){ return undefined; } })() || {});
+  if(uid) m[catId] = uid; else delete m[catId];
+  Store.setUserField("listTint", Object.keys(m).length ? m : undefined);
+}
+function paintListTint(card, catId){
+  const u = (()=>{ try{ return listTintUid(catId); }catch(e){ return null; } })();
+  card.classList.toggle("has-ptint", !!u);
+  if(u) card.style.setProperty("--pcol", personColor(u)); else card.style.removeProperty("--pcol");
+}
 function cardColor(catId){ for(const u of listPeople(catId)){ const c = personColor(u); if(c) return c; } return null; }
 function paintCardColor(card, catId){
   const c = (()=>{ try{ return cardColor(catId); }catch(e){ return null; } })();
@@ -10367,6 +10388,7 @@ function render(){
     // 10.2 : une liste partagée par quelqu'un d'autre ne se supprime pas d'ici
     const canDeleteCat = isCategoryEmpty(cat) && iOwnList(cat.id);
     if(canDeleteCat) card.classList.add("can-delete");   // 10.73 : la croix prend la place de la pleine page
+    paintListTint(card, cat.id);   // 10.75 : fond à la couleur d'une personne du partage (si choisi)
     // 10.2 : pastilles des personnes qui voient aussi cette liste
     const people = listPeople(cat.id);
     let shareChips = "";
@@ -10384,7 +10406,7 @@ function render(){
     const renamingThisCat = editingCategoryTitle === cat.id;
     // 10.53 : état de la liste à l'ouverture de la modification (pour Annuler)
     if(renamingThisCat && (!catEditSnap || catEditSnap.id !== cat.id))
-      catEditSnap = { id: cat.id, color: cat.color, members: ((listInfo(cat.id) || { members:[] }).members || []).slice() };
+      catEditSnap = { id: cat.id, color: cat.color, members: ((listInfo(cat.id) || { members:[] }).members || []).slice(), tint: listTintUid(cat.id) };
     const reversed = isCatReversed(cat.id);
     const newBottom = newestAtBottom(cat.id);
     const head = document.createElement("div");
@@ -10506,13 +10528,6 @@ function render(){
       sw.setAttribute("aria-label", "Couleur de la liste");
       sw.innerHTML = NEW_CATEGORY_PALETTE.map(col =>
         `<button type="button" class="cat-swatch${col === shown ? " selected" : ""}" role="radio" aria-checked="${col === shown}" aria-label="Couleur ${col}" data-color="${col}" style="--sw:${col}"></button>`).join("");
-      // 10.75 : liste partagée : une pastille par personne qui a une couleur (Partage), à ses initiales
-      const cmap = contactsMap();
-      const pers = listPeople(cat.id).map(u => ({ u, k: cmap[u] && cmap[u].color })).filter(x => x.k && PERSON_LIST_PAL[x.k]);
-      if(pers.length) sw.insertAdjacentHTML("beforeend", `<span class="cat-swatch-sep" aria-hidden="true"></span>` + pers.map(({ u, k }) => {
-        const col = PERSON_LIST_PAL[k], who = escapeAttr(personName(u, cat.id));
-        return `<button type="button" class="cat-swatch cat-swatch-person${col === shown ? " selected" : ""}" role="radio" aria-checked="${col === shown}" aria-label="Couleur de ${who}" data-tip="Couleur de ${who}" data-color="${col}" style="--sw:${col}">${escapeAttr(personInitials(u, cat.id))}</button>`;
-      }).join(""));
       sw.querySelectorAll(".cat-swatch").forEach(b=>{
         b.addEventListener("mousedown", e=> e.preventDefault()); // le curseur reste dans le titre
         b.addEventListener("click", e=>{
@@ -10526,6 +10541,25 @@ function render(){
         });
       });
       card.appendChild(sw);
+      // 10.75 : fond de la liste à la couleur d'une personne du partage (comme le chat et le duel) ;
+      // plusieurs personnes : une pastille chacune ; « aucun » = blanc
+      const tintPeople = listPeople(cat.id).filter(u => personColor(u));
+      if(tintPeople.length){
+        const tr = document.createElement("div");
+        tr.className = "cat-share cat-tint";
+        const cur = listTintUid(cat.id);
+        tr.innerHTML = `<span class="cat-share-label">Fond</span><button type="button" class="cat-tint-sw${cur ? "" : " selected"}" data-u="" aria-label="Fond blanc" data-tip="Blanc"></button>` +
+          tintPeople.map(u => { const who = escapeAttr(personName(u, cat.id)); return `<button type="button" class="cat-tint-sw${cur === u ? " selected" : ""}" data-u="${escapeAttr(u)}" style="--sw:${personColor(u)}" aria-label="Fond à la couleur de ${who}" data-tip="Couleur de ${who}">${escapeAttr(personInitials(u, cat.id))}</button>`; }).join("");
+        tr.addEventListener("mousedown", e => e.preventDefault());   // le titre garde ce qu'on a tapé
+        tr.addEventListener("click", e=>{
+          const bt = e.target.closest(".cat-tint-sw"); if(!bt) return;
+          e.stopPropagation();
+          setListTint(cat.id, bt.dataset.u || null);
+          paintListTint(card, cat.id);
+          tr.querySelectorAll(".cat-tint-sw").forEach(o => o.classList.toggle("selected", o === bt));
+        });
+        card.appendChild(tr);
+      }
       const shareRow = buildCatShareRow(cat);
       if(shareRow) card.appendChild(shareRow);
       const convRow = buildCatConvertRow(cat, head);
