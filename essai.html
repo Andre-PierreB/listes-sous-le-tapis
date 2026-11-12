@@ -1560,8 +1560,8 @@ body.pm-A .category.courses::before{ content:""; position:absolute; top:0; left:
   background:linear-gradient(135deg, var(--bg) 0 50%, color-mix(in srgb, var(--ink) 10%, var(--surface)) 50% 100%);
   box-shadow:1px 1px 2px rgba(30,40,45,.12); border-bottom-right-radius:4px; }
 /* papier des mémos très légèrement grisé, un peu plus quand ils sont fermés (le fondu du bas suit) */
-body.pm-A .category.courses{ --memo-grey:color-mix(in srgb, var(--ink) 2%, var(--surface)); --memo-a:var(--memo-grey); --memo-b:var(--memo-grey); --memo-c:var(--memo-grey); }
-body.pm-A .category.courses.collapsed{ --memo-grey:color-mix(in srgb, var(--ink) 4.5%, var(--surface)); }
+body.pm-A .category.courses{ --memo-grey:var(--surface); --memo-a:var(--memo-grey); --memo-b:var(--memo-grey); --memo-c:var(--memo-grey); }   /* ouvert : blanc comme avant */
+body.pm-A .category.courses.collapsed{ --memo-grey:color-mix(in srgb, var(--ink) 2%, var(--surface)); }   /* fermé : gris très clair */
 body.pm-A .category.courses::after{ background:linear-gradient(transparent, var(--memo-grey) 0.75rem); }
 /* mémo B : papier ligné (lignes très pâles sous le texte) */
 body.pm-B .category.courses{ isolation:isolate; }
@@ -1574,7 +1574,8 @@ body.pm-C .category.courses::before{ content:""; position:absolute; left:14px; r
 /* Nouvelle liste 1 : case fantôme, en pointillés, à la taille d'une colonne */
 body.pnl-1 .add-category-btn{ width:min(100%, calc((100% - 1.25rem) / 2)); justify-content:center; height:3.4rem; border-radius:14px;
   border:1.5px dashed color-mix(in srgb, var(--ink) 18%, transparent); background:transparent; color:var(--ink-soft); }
-body.pnl-1 .add-category-btn:hover, body.pnl-1 .add-category-btn:focus-visible{ background:var(--share-hover); border-color:var(--share-hover); box-shadow:none; transform:none; color:#2A2725; }   /* survol de Partage : jaune plein, sans liseré, texte foncé */
+body.pnl-1 .add-category-btn:hover, body.pnl-1 .add-category-btn:focus-visible{ outline:none; border-style:dashed; border-color:color-mix(in srgb, var(--ink) 18%, transparent); background:transparent; color:var(--ink-soft);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--lucky-lemon) 40%, transparent), 0 6px 20px -4px color-mix(in srgb, var(--lucky-lemon) 70%, transparent); transform:translateY(-1px); }   /* survol d'« Une petite en passant ? » : halo citron, léger soulèvement ; couleurs inchangées */
 /* Nouvelle liste 2 : sobre, de la famille des boutons du bas (Corbeille) */
 body.pnl-2 .add-category-btn{ background:var(--surface); border:0; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--btn-ink) 28%, transparent); color:var(--btn-ink); letter-spacing:0.08em; padding:0.5rem 0.95rem; }
 body.pnl-2 .add-category-btn:hover{ background:var(--btn-ink); color:var(--surface); box-shadow:none; transform:translateY(-1px); }
@@ -13481,5 +13482,15 @@ if(DEMO && !hasAnyList()) (()=>{
   renderAll();
 })();
 // (10.69-10.71 : les bancs de la vitrine — couleurs par personne, bouton retour — sont retirés, choix faits.)
+// 10.75 : vitrine : « Week-end » fait comme si elle était partagée avec Hiske (bleu) et Léon-John (rose),
+// pour essayer les couleurs des personnes dans la modification d'une liste (rien ne part en ligne)
+if(DEMO) (()=>{
+  const W = DATA.find(c => c.title === "Week-end"); if(!W) return;
+  const FAKE = { "demo-h": { name:"Hiske", ini:"H", color:"bleu" }, "demo-lj": { name:"Léon-John", ini:"LJ", color:"rose" } };
+  const lp = listPeople, cm = contactsMap, pn = personName;
+  listPeople = id => id === W.id ? Object.keys(FAKE) : lp(id);
+  contactsMap = () => Object.assign({}, cm(), FAKE);
+  personName = (u, id) => FAKE[u] ? FAKE[u].name : pn(u, id);
+})();
 if(!DEMO) Sync.start();   // 10.68 : la vitrine ne se connecte jamais
 </script>
