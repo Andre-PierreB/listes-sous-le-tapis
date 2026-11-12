@@ -1747,8 +1747,6 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 @media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-led{ animation:none; } }
 /* 10.65 : le voyant laisse le coin au bouton pleine page (avant : dans l'axe du trèfle) */
 .chat-new{ text-align:center; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink-faint); margin:0.25rem 0 0.15rem; white-space:nowrap; overflow:hidden; }
-.chat-card.dragging-card{ outline:2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset:-2px; }
-.chat-card.dragging-card > *{ visibility:hidden; }
 .chat-hole{ flex:1 1 auto; display:flex; flex-direction:column; padding:var(--chat-rim); border-radius:calc(16px + var(--chat-rim));
   background:linear-gradient(180deg, color-mix(in srgb, var(--ink) 16%, var(--bg)) 0%, color-mix(in srgb, var(--ink) 6%, var(--bg)) 35%, var(--bg) 60%, var(--chat-lip) 100%);
   box-shadow:0 -1px 0 rgba(42,39,37,0.06), 0 1px 1px var(--chat-lip); }
@@ -1856,10 +1854,6 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .duel-card.fullpage .duel-stage{ zoom:1.25; width:100%; max-width:100%; margin:0 auto; }   /* pleine page : le poste de commande de la carte, agrandi */
 @media (max-height:560px){ .duel-card.fullpage .duel-stage{ zoom:1; } }   /* téléphone à l'horizontale : pas d'agrandissement */
 @media (max-width:720px){ .duel-card.fullpage .duel-stage{ zoom:1; } }
-@media not ((orientation:landscape) and (max-height:560px)){   /* 10.75 : pleine page (pas la manette du téléphone couché) : le poste de commande respire, toujours près de l'écran */
-  .duel-card.fullpage .coup{ row-gap:0.85rem; padding-top:0.9rem; }
-  .duel-card.fullpage .duel-stage > .duel-foot{ margin-top:0.7rem; }
-}
 /* 10.68 : téléphone couché, pleine page : « manette » — le jeu prend toute la hauteur au centre ;
    angle à gauche et force à droite en colonnes étroites (+ en haut, − en bas) ; en dessous, une
    seule rangée basse : objets, Lancer, faisans. (.coup s'efface : ses éléments se rangent dans la grille) */
@@ -1934,10 +1928,12 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .chat-card:not(.fullpage) .chat-box, .duel-card:not(.fullpage) .duel-stage{ padding-top:34px; }
 .chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ top:calc(0.55rem + 12px - 11.5px); }
 .chat-card .chat-led, .duel-card .chat-led{ top:calc(0.55rem + 12px - 4.5px); }
+.chat-card.fullpage .chat-led, .duel-card.fullpage .chat-led{ top:calc(0.9rem - 4.5px); }   /* 10.75 : pleine page : même écart avec l'écran que fenêtre ouverte (il y était collé) */
 @media (pointer:coarse){
   .chat-card:not(.fullpage) .chat-box, .duel-card:not(.fullpage) .duel-stage{ padding-top:36px; }
   .chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ top:calc(0.55rem + 12px - 13px); }
   .chat-card .chat-led, .duel-card .chat-led{ top:calc(0.55rem + 12px - 4.5px); }
+  .chat-card.fullpage .chat-led, .duel-card.fullpage .chat-led{ top:calc(0.9rem - 6.5px); }
   .chat-foot, .duel-card .duel-foot{ margin-top:-2px; }
 }
 .chat-more{ margin-left:auto; appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
@@ -3310,13 +3306,13 @@ body.tapis-out .plume-tag, body.tapis-out .plume-login{ visibility:hidden; }   /
 
 /* ---------- glisser-déposer : listes (5.17) et tâches (7.1) ---------- */
 body.dragging-lists, body.dragging-lists *{ cursor:grabbing !important; user-select:none; }
-.category.dragging-card{
+.category.dragging-card, .chat-card.dragging-card, .duel-card.dragging-card{   /* 10.75 : chat et duel comme les listes (le duel n'avait pas de pointillés) */
   background:transparent;
   box-shadow:none;
   outline:2px dashed color-mix(in srgb, var(--cat-color, var(--accent)) 55%, transparent);
   outline-offset:-2px;
 }
-.category.dragging-card > *{ visibility:hidden; }
+.category.dragging-card > *, .chat-card.dragging-card > *, .duel-card.dragging-card > *{ visibility:hidden; }
 .card-ghost{
   position:fixed !important;
   margin:0 !important;
