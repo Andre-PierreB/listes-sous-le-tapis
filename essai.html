@@ -11526,11 +11526,22 @@ function applyExternalChange(key){
   if(key === LAST_BACKUP_KEY){ renderBackupNudge(); return; }
   if(!BACKUP_KEYS.includes(key)) return;
   if(hasActiveEdit()){ externalPending = true; return; } // on ne casse jamais un formulaire ouvert ici (10.8 : appliqué ensuite)
-  DATA.length = 0; // 10.1 : une liste peut aussi disparaître (synchro, restauration ailleurs)
-  reloadAllFromStorage();
-  undoCurrent = null; // un autre onglet a écrit : son changement n'est pas un geste d'ici à annuler
-  renderAll();
+  // 10.74 : une seule relecture et un seul rendu pour toute une salve (à l'ouverture, la synchro
+  // apporte toutes les listes changées d'un coup : avant, un rendu complet par liste, d'affilée —
+  // l'appli restait figée, vide au défilement sur téléphone). Fait juste après la salve, avant
+  // le prochain affichage et le prochain geste.
+  if(externalScheduled) return;
+  externalScheduled = true;
+  Promise.resolve().then(()=>{
+    externalScheduled = false;
+    if(hasActiveEdit()){ externalPending = true; return; }
+    DATA.length = 0; // 10.1 : une liste peut aussi disparaître (synchro, restauration ailleurs)
+    reloadAllFromStorage();
+    undoCurrent = null; // un autre onglet a écrit : son changement n'est pas un geste d'ici à annuler
+    renderAll();
+  });
 }
+let externalScheduled = false;
 // 10.0 : un autre onglet écrit dans les fiches (sltapis:…) ; Store relit et
 // dit quelles anciennes clés ont changé de contenu.
 // 10.1 : même chemin pour ce qui arrive d'en ligne (Sync, en fin de script).
