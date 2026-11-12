@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.74 -->
+<!-- Sous le tapis — version AUTONOME 10.75 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -2583,6 +2583,7 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 .courses-edit .edit-remove{ margin-right:auto; color:var(--ink-faint); border-color:transparent; background:none; }   /* 10.71 : à gauche, discret */
 .courses-item{ -webkit-touch-callout:none; }   /* 10.71 : l'appui long ouvre la modification (pas le menu de l'iPhone) */
 .courses-item:not(.editing) .item-text{ cursor:pointer; -webkit-user-select:none; user-select:none; }
+@media (hover:hover) and (pointer:fine){ .courses-item .item-text, .courses-item:not(.editing) .item-text{ -webkit-user-select:text; user-select:text; } }   /* 10.75 : à la souris, le texte des mémos se sélectionne (glisser) ; au doigt, l'appui long modifie */
 .courses-item.pressing{ background:color-mix(in srgb, var(--ink) 5%, transparent); transition:background .45s ease; }
 .edit-actions{
   display:flex;
@@ -2921,6 +2922,7 @@ footer:has(#shareLink:not([hidden])) #trashLink{ margin-right:0; }
 .share-link:hover, .share-link.open{ background:var(--share-hover); color:#2A2725; box-shadow:inset 0 0 0 1px var(--share-hover); }
 #importBtn:hover{ background:var(--accent); color:var(--surface); }
 .share-link svg{ width:16px; height:16px; display:block; flex:none; }
+.share-link{ padding-inline:0.7rem; }   /* 10.75 : picto seul, bouton plus étroit (même hauteur) */
 .trash-link svg{ width:15px; height:15px; display:block; flex:none; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 .trash-link svg .lid{ transform-box:fill-box; transform-origin:right bottom; transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 .trash-link:hover svg .lid, .trash-link.open svg .lid{ transform:rotate(-18deg) translateY(-1px); }
@@ -3514,7 +3516,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.74</span>
+    <span class="version-tag">v10.75</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -8193,11 +8195,22 @@ function buildItemLi(cat, idx, base, key, opts){
     // la ligne dévoilait crayon et croix). Le détail se déplie par son sigle. Modifier : double-clic
     // (souris) ou appui long (doigt) ; Retirer est dans la modification (et la croix au survol, à la souris).
     let longFired = 0;
+    // 10.75 : à la souris, le clic attend la fin d'un éventuel double-clic avant de rayer : un
+    // double-clic ouvre la modification sans rien rayer (avant : le 1er clic rayait et redessinait la
+    // ligne, et l'article pouvait rester rayé après la modification). Au doigt : rayé tout de suite
+    // (pas de double-clic, l'appui long modifie). Texte sélectionné à la souris : pas de rayure.
+    let pType = "mouse", strikeTimer = 0;
+    li.addEventListener("pointerdown", e => { pType = e.pointerType || "mouse"; });
     li.addEventListener("click", e=>{
       if(Date.now() - longFired < 700) return;   // la fin d'un appui long n'est pas un clic
       if(e.target.closest(".drag-handle, .item-controls, .strike-dot, .haptic-tap")) return;
       if(e.target.closest(".note-toggle")){ e.stopPropagation(); toggleNoteOpen(key); return; }
-      setStruck(key, !struck);
+      if(pType !== "mouse"){ setStruck(key, !struck); return; }
+      const sel = window.getSelection && window.getSelection();
+      if(sel && !sel.isCollapsed && li.contains(sel.anchorNode)) return;   // on sélectionnait du texte
+      clearTimeout(strikeTimer);
+      if(e.detail > 1) return;   // 2e clic d'un double-clic : le double-clic s'en occupe
+      strikeTimer = setTimeout(()=> setStruck(key, !state[key]), COURSES_DBL_MS);
     });
     if(eff.note) markNoteHolder(li, key);
     li.addEventListener("pointerdown", e=>{
@@ -8218,7 +8231,8 @@ function buildItemLi(cat, idx, base, key, opts){
     // 10.53 : double-clic pour modifier, comme une tâche
     li.querySelector(".item-text").addEventListener("dblclick", e=>{
       e.stopPropagation();
-      if(!!state[key] !== struck) setStruck(key, struck);   // 10.71 : les deux clics du double-clic ont rayé puis dé-rayé : on garde l'état d'avant
+      clearTimeout(strikeTimer);   // 10.75 : le clic en attente ne raye pas
+      try{ window.getSelection().removeAllRanges(); }catch(err){}
       editingCoursesKey = key;
       renderAll();
     });
@@ -8698,6 +8712,17 @@ window.addEventListener("resize", ()=> fitCoursesCards());
 // depuis le dernier défilement de la page) ; il faut une pause pour faire
 // défiler le mémo lui-même.
 const PAGE_SCROLL_KEEP_MS = 400;
+// 10.75 : champs d'ajout du + : curseur dedans (fin du texte) et, s'ils sont hors de vue (haut d'une
+// longue liste, d'un mémo qui défile), l'écran glisse doucement jusqu'à eux ; visibles : rien ne bouge
+function revealAddField(f){
+  requestAnimationFrame(()=>{
+    if(!f.isConnected) return;
+    try{ if(document.activeElement !== f) f.focus({ preventScroll:true }); const n = f.value.length; f.setSelectionRange(n, n); }catch(e){}
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    try{ f.scrollIntoView({ block:"nearest", behavior: still ? "auto" : "smooth" }); }catch(e){}
+  });
+}
+const COURSES_DBL_MS = 260;   // 10.75 : attente d'un éventuel double-clic avant de rayer un article (souris)
 let lastPageScroll = 0;
 window.addEventListener("scroll", ()=>{ lastPageScroll = Date.now(); }, { passive:true });
 function wireCoursesWheel(ul){
@@ -9760,13 +9785,15 @@ function sound(kind){
       o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.4);
       o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
     }else if(kind === "dring"){
-      // 10.72 : sonnette de vélo « dring dring » : deux coups de timbre métallique (partiels inharmoniques)
-      [0, 0.17].forEach(d => [[2650, 1], [3980, 0.55], [5270, 0.3]].forEach(([f, a]) => {
-        const o = AC.createOscillator(); o.type = "sine"; o.frequency.value = f;
-        const g = AC.createGain(); g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(0.5 * a, t + d + 0.004); g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.42);
-        const vib = AC.createOscillator(), vg = AC.createGain(); vib.frequency.value = 38; vg.gain.value = f * 0.004; vib.connect(vg); vg.connect(o.frequency);   // le timbre qui vibre
-        o.connect(g); g.connect(out); o.start(t + d); vib.start(t + d); o.stop(t + d + 0.45); vib.stop(t + d + 0.45);
-      }));
+      // 10.72 : « dring dring » quand l'autre faisan a joué ; 10.75 : la sonnette du vélo du jeu
+      // (celle de « roulibre », sans le cliquetis de la roue) — même timbre, même rythme
+      const timbre = (dd, amp, len) => {
+        for(const [ratio, a] of [[1, 1], [2.76, 0.55], [5.4, 0.28], [8.9, 0.12]]){
+          const o = AC.createOscillator(); o.type = "sine"; o.frequency.value = 2150 * ratio;
+          const g = env(t + dd, 0.002, amp * a, len / ratio ** 0.4); o.connect(g); g.connect(out); o.start(t + dd); o.stop(t + dd + len + 0.05);
+        }
+      };
+      for(const st of [0.03, 0.23]) for(let i = 0; i < 6; i++) timbre(st + i * 0.022, i === 5 ? 0.32 : 0.2, i === 5 ? 0.45 : 0.06);
     }else if(kind === "reveil"){
       // réveil qui sonne par paquets « drrrin… drrrin… drrrrrin ! » (le marteau entre deux cloches),
       // chaque paquet un peu plus aigu et plus long, puis le ressort qui lâche : « boïng »
@@ -10531,7 +10558,7 @@ function render(){
         if(e.key === "Escape"){ addingCat = null; renderAll(); }
       }));
       ul.insertBefore(li, ul.firstChild);
-      requestAnimationFrame(()=> tIn.focus());
+      revealAddField(tIn);
     }
     if(addingCat === cat.id && !courses){
       const li = document.createElement("li");
@@ -10599,7 +10626,7 @@ function render(){
       });
       if(addPrefill && addPrefill.catId === cat.id){ titleInput.value = addPrefill.t; addPrefill = null; }
       if(reversed) ul.appendChild(li); else ul.insertBefore(li, ul.firstChild);
-      requestAnimationFrame(()=>{ titleInput.focus(); const n = titleInput.value.length; titleInput.setSelectionRange(n, n); });
+      revealAddField(titleInput);
     }
 
     if(courses){   // 10.15 : saisie et Vider les rayés (10.38 : saisie en haut)
@@ -11038,7 +11065,8 @@ function renderShare(){
   const n = Object.keys(cm).length;
   link.classList.toggle("open", shareOpen);
   link.setAttribute("aria-label", "Partage : " + n + (n > 1 ? " personnes dans le carnet" : " personne dans le carnet"));
-  link.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><circle cx="17" cy="9" r="2.4"/><path d="M15.6 14.4c2.3.1 4.2 1.6 4.8 4.1"/></svg><span>Partage</span>${n ? `<span class="trash-link-badge">${n}</span>` : ""}`;
+  link.dataset.tip = "Partage";
+  link.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8"/><circle cx="17" cy="9" r="2.4"/><path d="M15.6 14.4c2.3.1 4.2 1.6 4.8 4.1"/></svg>`;   // 10.75 : le picto seul (titre en infobulle, plus de chiffre) : usage rare, plus discret que Corbeille
   panel.hidden = !shareOpen;
   if(!shareOpen){ panel.innerHTML = ""; return; }
   const S = syncApi();
