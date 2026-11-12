@@ -1662,7 +1662,8 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 /* sous Lancer : le choix du faisan (avant le 1er coup), puis Revoir, à la même place : la carte ne change pas de hauteur */
 .duel-card .d-sous{ display:grid; justify-items:center; align-items:center; }
 .duel-card .d-sous > *{ grid-area:1 / 1; }
-.duel-card .d-sous .persos{ justify-self:var(--persos-pos, start); }   /* 10.67 : à gauche, loin de « … » et des initiales (essayé centré ; avant : à droite, choisi au banc le 6/11/2026 ; trop chargé avec « … » et les initiales) */
+.duel-card .d-sous .persos{ justify-self:var(--persos-pos, start); }
+.duel-card:not(.fullpage) .d-sous .d-revoir{ justify-self:start; margin-left:0; }   /* 10.75 : fenêtre ouverte : Revoir à gauche, à la place des faisans */   /* 10.67 : à gauche, loin de « … » et des initiales (essayé centré ; avant : à droite, choisi au banc le 6/11/2026 ; trop chargé avec « … » et les initiales) */
 .duel-card .persos.gone, .duel-card .d-revoir.gone{ visibility:hidden; }
 /* pied dans la carte, comme les listes : poignée à gauche, « … » et initiales à droite */
 .duel-card .duel-foot{ margin-top:0; padding:0 0.15rem; }
@@ -7128,6 +7129,7 @@ function layoutRect(c){
   const top = pr.top + (op ? op.clientTop : 0) + c.offsetTop - sy;
   return { left, top, width:c.offsetWidth, height:c.offsetHeight };
 }
+const DRAG_SWAP_MARGIN = 40;   // 10.75 : px d'avance qu'une carte doit avoir sur la place actuelle pour l'échange
 function handleListDragMove(x, y){
   const d = dragState;
   const dx = x - d.startX, dy = y - d.startY;
@@ -7145,6 +7147,12 @@ function handleListDragMove(x, y){
   if(!best || best === d.el) return;
   const r = layoutRect(best);
   if(bestDist > Math.max(r.width, r.height) * 0.7) return; // trop loin : pas encore aimanté
+  // 10.75 : on ne change de place que si l'autre carte est NETTEMENT plus proche que la place
+  // actuelle : après un échange, la grille se recompose (cases de hauteurs différentes) et une
+  // troisième carte pouvait devenir « la plus proche » — l'emplacement vibrait d'une carte à l'autre
+  const sr = layoutRect(d.el);
+  const selfDist = Math.hypot(gx - (sr.left + sr.width/2), gy - (sr.top + sr.height/2));
+  if(bestDist > selfDist - DRAG_SWAP_MARGIN) return;
   // 10.24 : pas de retour immédiat vers la carte qu'on vient d'échanger
   // (c'était le va-et-vient qui faisait vibrer l'emplacement)
   const ls = d.lastSwap;
