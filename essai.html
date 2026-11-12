@@ -391,6 +391,9 @@
   --paper-rule:#DCE7F1;
   --paper-shadow: 0 1px 3px rgba(30,40,45,0.07), 0 10px 26px -12px rgba(30,40,45,0.2);
   --qty-ink:#CE4F8A;
+  --fold-h:127px;
+  --fb-size:36px;
+  --base-k:166px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -623,6 +626,7 @@ header{
   font-size:4.2em;
   letter-spacing:-0.03em;
   line-height:0.85;
+  color:var(--urgent);
 }
 /* 1re ligne à la largeur du bloc : un éventuel surplus va avant « accomplies » */
 .count-line{
@@ -634,7 +638,6 @@ header{
 }
 .count-week{ margin-top:-0.1rem; line-height:1.1; }
 .progress-count{ grid-column:1; grid-row:1; padding-right:1.6rem; margin-bottom:-0.28rem; /* plus près de la barre (8.38, un chouïa remonté en 9.1) */ }
-.progress-count b{ color:var(--urgent); } /* 10.19 : améthyste, la teinte des urgences (avant : framboise --relance) */
 .progress-total{
   grid-column:3; grid-row:1;  /* tout au bout, juste au-dessus de la barre (8.13) */
   align-self:end;
@@ -731,9 +734,9 @@ header{
   border-radius:8px;
   position:relative;
   transition:background .12s ease;
+  --uhover:color-mix(in srgb, var(--urgent) 8%, var(--ub-bg));
 }
 /* un seul survol par ligne (7.40) ; 14 % dès que le thème n'est pas forcé en clair */
-.urgent-list li{ --uhover:color-mix(in srgb, var(--urgent) 8%, var(--ub-bg)); }
 :root:not([data-theme="light"]) .urgent-list li{ --uhover:color-mix(in srgb, var(--urgent) 14%, var(--ub-bg)); }
 .urgent-list li:hover{ background:var(--uhover); }
 .urgent-list li.dragging{opacity:0.4;}
@@ -1043,13 +1046,16 @@ header{
   flex-direction:column;
   gap:0.65rem;
   min-width:0;   /* 10.20 : un contenu large ne pousse plus la carte */
+  --hd-lift:9px;   /* 10.73 : de combien la ligne du titre monte (flèche pleine page dans l'angle, comme le chat et le jeu) ; marges seulement, rien ne change pour les menus */
 }
+@media (pointer:coarse){ .category{ --hd-lift:12px; } }
+.category.fullpage{ --hd-lift:0px; }
 /* 10.53 : barre franche à la couleur de la liste, détachée des coins : elle
    part du titre et s'arrête deux lignes avant le bas (choisie au banc parmi
    bord plein, bande en haut, sans bord, arc du coin…). Pas sur les mémos,
    qui ont leur marge de cahier. */
 .category:not(.courses)::before{
-  content:""; position:absolute; left:0; top:1.05rem; bottom:2.2rem; width:3px;
+  content:""; position:absolute; left:0; top:calc(1.05rem - var(--hd-lift)); bottom:2.2rem; width:3px;   /* part toujours du titre */
   background:var(--cat-color, var(--accent));   /* bouts droits : arrondis, elle rappelait la barre de défilement des mémos */
 }
 .category.done{ opacity:0.62; }
@@ -1103,7 +1109,7 @@ header{
 .cat-fold{
   position:absolute; right:0.55rem; bottom:0.3rem; width:24px; height:18px;
   display:grid; place-items:center; appearance:none; border:0; background:none; padding:0;
-  border-radius:6px; cursor:pointer; color:var(--ink-faint); opacity:0.55;
+  border-radius:6px; cursor:pointer; color:var(--ink-faint); opacity:0.5;
   transition:opacity .15s ease, color .15s ease, background .15s ease;
 }
 .cat-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
@@ -1111,7 +1117,6 @@ header{
 /* 10.67 : la punaise. Plantée droite, à la couleur de la liste : la case reste ouverte.
    Fermée ou entrouverte au survol : couchée de travers, grise, l'aiguille sortie, elle attend
    qu'on l'enfonce. Seule la punaise ouvre ou ferme pour de bon. */
-.cat-fold{ color:var(--ink-faint); opacity:0.5; }   /* grise et discrète comme Agrandir et Trier ; pleine au survol de la carte */
 .category:hover .cat-fold{ opacity:1; }   /* 10.67 : écrans de chat et de duel : pleine seulement à son propre survol (elle ne bouge pas pendant qu'on joue) */
 .cat-fold:hover, .cat-fold:focus-visible{ background:var(--surface-2); color:var(--ink-soft); opacity:1; }
 .cat-fold svg.pin{ overflow:visible; transform-box:fill-box; transform-origin:50% 100%;
@@ -1139,16 +1144,13 @@ header{
   .cat-close-bar:active::before{ opacity:.8; }
 }
 html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant une ouverture ou fermeture, le navigateur ne déplace pas la page */
-.category.collapsed{ align-self:start; padding-bottom:2.1rem; }   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
+.category.collapsed{ align-self:start; padding-bottom:2.1rem; min-height:var(--fold-h); overflow:hidden; }   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
 /* 10.65 : toutes les cases repliées (liste, mémo, chat, duel) ont la même hauteur, --fold-h ;
    étalon : le mémo replié (bandeau + saisie), resserré de 3 px entre le bandeau et la saisie */
-:root{ --fold-h:127px; }
 @media (max-width:720px){ :root{ --fold-h:172px; } }   /* 10.72 : téléphone : la hauteur d'une liste repliée (avec sa ligne « Nouvelle tâche… ») — avant 143 px, le chat et le duel fermés étaient plus bas */   /* 10.69 : téléphone, texte agrandi : 127 × 18/16 (placé après, sinon sans effet) */
-.category.collapsed{ min-height:var(--fold-h); }
 .category.courses.collapsed > .courses-entry, .category.courses.collapsed > .courses-foot{ display:none; }   /* 10.68 : fermé, le mémo montre ses premiers articles (la saisie est en bas, ouverte) */
 /* 10.66 : fermée, une liste montre ses premières tâches en aperçu, pâles et coupées en fondu (comme le
    dernier mot du chat) ; un survol l'entrouvre en entier */
-.category.collapsed{ overflow:hidden; }
 .category.collapsed > ul.items{ pointer-events:none; opacity:0.5; margin-top:0.2rem; --fade-a:45%; --fade-b:100%; }
 /* 10.68 : l'aperçu montre toujours une ligne entière, même quand la saisie passe sous le titre
    (téléphone) : la case grandit d'autant au lieu de couper la ligne. Pendant le glissement
@@ -1188,21 +1190,10 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
   align-items:center;
   gap:0.75rem;
 }
-.category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:0.35rem; }   /* 10.35 : plus d'air entre le titre et les tâches */
-.category.courses .cat-head{ margin-top:0.11rem; }   /* 10.36 : titre des mémos sur la même ligne que les autres titres */
-.category.courses:not(.collapsed) .cat-head{ margin-bottom:0.12rem; }   /* 10.36 : 1er article sur la même ligne que la 1re tâche des listes voisines */
-/* 10.73 : la ligne du titre (titre, chiffre, saisie, +, pleine page) monte de --hd-lift : la flèche
-   pleine page tombe à la hauteur de celle du chat et du jeu (dans l'angle). Ce qui est monté est rendu
-   sous le titre : tâches, articles, poignée, punaise et hauteur des cases ne bougent pas. Marges
-   seulement (pas de position/transform : rien ne change pour les menus et infobulles). */
-.category{ --hd-lift:9px; }
-@media (pointer:coarse){ .category{ --hd-lift:12px; } }
-.category.fullpage{ --hd-lift:0px; }
-.category .cat-head{ margin-top:calc(0px - var(--hd-lift)); margin-bottom:var(--hd-lift); }
-.category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:calc(0.35rem + var(--hd-lift)); }
-.category.courses .cat-head{ margin-top:calc(0.11rem - var(--hd-lift)); }
-.category.courses:not(.collapsed) .cat-head{ margin-bottom:calc(0.12rem + var(--hd-lift)); }
-.category:not(.courses)::before{ top:calc(1.05rem - var(--hd-lift)); }   /* la barre de couleur part toujours du titre */
+.category .cat-head{ margin-top:calc(0px - var(--hd-lift)); margin-bottom:var(--hd-lift); }   /* 10.73 : la ligne du titre monte de --hd-lift (voir .category) ; ce qui est monté est rendu dessous : rien d'autre ne bouge */
+.category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:calc(0.35rem + var(--hd-lift)); }   /* 10.35 : plus d'air entre le titre et les tâches */
+.category.courses .cat-head{ margin-top:calc(0.11rem - var(--hd-lift)); }   /* 10.36 : titre des mémos sur la même ligne que les autres titres */
+.category.courses:not(.collapsed) .cat-head{ margin-bottom:calc(0.12rem + var(--hd-lift)); }   /* 10.36 : 1er article sur la même ligne que la 1re tâche des listes voisines */
 .category.courses:not(.fullpage) .cat-head-right{ position:relative; top:-0.11rem; }   /* mémos : titre 0.11rem plus bas (10.36) ; + et pleine page à la même hauteur que partout */
 .cat-title-group{
   display:flex;
@@ -1225,10 +1216,9 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
   transition:opacity .15s ease, background .15s ease, color .15s ease;
 }
 .category:hover .cat-full{ opacity:1; }
-.cat-full svg{ width:17px; height:17px; }   /* 10.71 : un peu plus grand (avant : 14) */
+.cat-full svg{ width:17px; height:17px; display:block; transition:scale .3s var(--pop-ease); }   /* 10.71 : un peu plus grand (avant : 14) */
 .cat-head-right .cat-full{ margin-right:-10.5px; margin-block:-1.5px; }   /* 10.72 : icône agrandie sans agrandir le bandeau du titre */   /* 10.71 : centré sur l'axe de la punaise (avant : 10 px plus à gauche) */
 @media (pointer:coarse){ .cat-full svg{ width:20px; height:20px; } .cat-head-right .cat-full{ margin-right:-13.6px; margin-block:0; } }
-.cat-full svg{ display:block; transition:scale .3s var(--pop-ease); }
 /* 10.39 : zones de toucher agrandies sans changer le dessin : rond des mémos
    (≈ 35 px, comme les cases), pleine page et flèche d'ordre (≈ 40 px de haut,
    un peu moins en largeur pour ne pas mordre sur le bouton voisin) */
@@ -1267,7 +1257,6 @@ body > .fp-back{ display:none; position:fixed; z-index:160;
   appearance:none; border:none; border-radius:9px; background:var(--surface-2); color:var(--ink-soft);
   box-shadow:inset 0 0 0 1px var(--line);
   transition:background .15s ease, color .15s ease, box-shadow .15s ease; }
-:root{ --fb-size:36px; }
 .fp-back svg{ width:18px; height:18px; display:block; flex:none; transition:transform .25s var(--pop-ease); }
 .fp-back:hover{ background:var(--accent-soft); color:var(--accent-strong); box-shadow:inset 0 0 0 1px var(--accent); }
 .fp-back:hover svg{ transform:scale(var(--pop-scale)); }   /* 10.72 : petit zoom comme les autres boutons (avant : glissait à gauche, asymétrique dans le cadre) */
@@ -1390,11 +1379,10 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 }
 .cat-share-person .box svg{ width:0.65rem; height:0.65rem; display:none; }
 .cat-share-person[aria-checked="true"]{ border-color:var(--cat-color, var(--accent)); color:var(--ink); background:color-mix(in srgb, var(--cat-color, var(--accent)) 10%, var(--surface)); }
-.cat-share-person:disabled{ opacity:0.38; cursor:default; }   /* 10.63 : duel, l'adversaire est déjà choisi */
+.cat-share-person:disabled{ opacity:.5; cursor:default; }   /* 10.63 : duel, l'adversaire est déjà choisi */
 .cat-share-person[aria-checked="true"] .box{ background:var(--cat-color, var(--accent)); border-color:var(--cat-color, var(--accent)); color:var(--surface); }
 .cat-share-person[aria-checked="true"] .box svg{ display:block; }
 .cat-share-person:hover{ border-color:var(--cat-color, var(--accent)); }
-.cat-share-person:disabled{ opacity:.5; cursor:default; }
 .cat-share-link{ appearance:none; border:0; background:none; padding:0; font:inherit; font-size:0.8rem; color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
 /* 10.15 : « Convertir en liste de courses / normale », sous « Partagée avec » */
 .cat-convert{ margin-top:0.4rem; font-size:0.8rem; }
@@ -1471,13 +1459,12 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
    en bas à droite (avant : en haut à droite ; 10.41 : à gauche du titre) ;
    « .category » l'emporte sur [data-tip] */
 .category .cat-grip{ position:absolute; left:0.55rem; bottom:0.12rem; }
-.category .cat-grip svg{ width:17px; height:17px; }   /* 10.68 : un peu plus grande (avant 14 px) */
+.category .cat-grip svg{ width:17px; height:17px; transform:rotate(90deg); }   /* 10.68 : un peu plus grande (avant 14 px) */
 /* 10.68 : la flèche d'ordre, en bas à gauche à droite de la poignée (avant : en haut à droite, où est maintenant le +) */
-.category > .cat-order{ position:absolute; left:3.5rem; bottom:0.2rem; z-index:2; }
-.category > .cat-order{ left:calc(3.5rem - 4px); } .category.courses > .cat-order{ left:calc(3.5rem - 1px); }   /* 10.71 : flèche (11 px, avant 9) centrée sur l'axe des cases, des œufs et des ronds (mesuré avec les vraies polices) */
+.category > .cat-order{ position:absolute; bottom:0.2rem; z-index:2; left:calc(3.5rem - 4px); }
+.category.courses > .cat-order{ left:calc(3.5rem - 1px); }   /* 10.71 : flèche (11 px, avant 9) centrée sur l'axe des cases, des œufs et des ronds (mesuré avec les vraies polices) */
 @media (pointer:coarse){ .category > .cat-order{ left:calc(3.3rem - 4.6px); } .category.courses > .cat-order{ left:calc(3.3rem - 1.6px); } }   /* à droite de la marge des mémos (3.19rem), même place partout */
 .category.fullpage > .cat-fold, .category.fullpage > .cat-close-bar{ display:none !important; }   /* 10.68 : en pleine page, ni punaise ni barre (sans objet) ; la flèche d'ordre garde sa place */
-.category .cat-grip svg{ transform:rotate(90deg); }
 .category:hover .cat-grip{ opacity:1; }
 .cat-grip:hover{ background:var(--surface-2); color:var(--ink-soft); }
 /* Volontairement distincte du × discret d'une tâche (.delete-btn) : cette
@@ -1829,7 +1816,6 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .chat-card.peek{ align-self:stretch; }
 @media (min-width:721px){ .chat-card:not(.collapsed):not(.fullpage) .chat-hole{ aspect-ratio:16/9; } }
 .has-base-h .gliding{ min-height:0 !important; }   /* 10.72 : pendant le glissement d'ouverture / fermeture, la hauteur de base ne fige pas la case (le chat et le duel s'ouvraient d'un coup) */
-:root{ --base-k:166px; }   /* 10.71 : hauteur du poste de commande du duel (réglages, Lancer, faisans, pied) + marge du haut */
 @media (pointer:coarse){ :root{ --base-k:177px; } }   /* boutons agrandis au doigt */
 .has-base-h .chat-card:not(.collapsed):not(.fullpage), .has-base-h .duel-card:not(.collapsed):not(.fullpage){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); }   /* 10.71 : hauteur de base commune (voir syncColW) */
 @media (min-width:721px){ .has-base-h .category:not(.collapsed):not(.fullpage):not(.peek){ min-height:calc(var(--col-w) * 9 / 16 + var(--base-k)); } }   /* une liste ouverte en a au moins la hauteur (plus si elle est longue) ; sur ordi seulement : au téléphone, une colonne, pas de voisine qui sursaute */
@@ -1850,8 +1836,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .chat-card.fullpage .chat-log{ flex:1 1 0; max-height:none; }
 .duel-card.fullpage{ display:flex; flex-direction:column; justify-content:flex-start; }   /* 10.69 : en haut de l'écran comme les listes (avant : centré) ; bouton pleine page en haut à droite */
 .duel-card.fullpage .duel-stage > *{ opacity:1; }
-.duel-card.fullpage .duel-stage{ zoom:1.25; }   /* pleine page : le poste de commande de la carte, agrandi */
-.duel-card.fullpage .duel-stage{ width:100%; max-width:100%; margin:0 auto; }   /* 10.67 : largeur posée par fitDuelFull quand la hauteur manque : réglages et Lancer calés sur l'écran */
+.duel-card.fullpage .duel-stage{ zoom:1.25; width:100%; max-width:100%; margin:0 auto; }   /* pleine page : le poste de commande de la carte, agrandi */
 @media (max-height:560px){ .duel-card.fullpage .duel-stage{ zoom:1; } }   /* téléphone à l'horizontale : pas d'agrandissement */
 @media (max-width:720px){ .duel-card.fullpage .duel-stage{ zoom:1; } }
 /* 10.68 : téléphone couché, pleine page : « manette » — le jeu prend toute la hauteur au centre ;
@@ -1913,7 +1898,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .chat-foot, .duel-card .duel-foot{ height:29px; margin-top:0; padding:0 calc(0.55rem + 24px + 0.3rem) 0 0; justify-content:flex-end; }
 .chat-card.has-pcol:not(.fullpage) .chat-foot, .duel-card.has-pcol:not(.fullpage) .duel-foot{ margin-left:-0.6rem; margin-right:-0.6rem; }   /* fenêtre remplie : la bande garde la largeur de la case */
 .chat-foot .cat-grip{ position:absolute; left:0.55rem; bottom:0.12rem; }
-.chat-foot .cat-grip svg{ width:17px; height:17px; }
+.chat-foot .cat-grip svg{ width:17px; height:17px; transform:rotate(90deg); }
 .chat-foot .cat-fold{ position:absolute; right:0.55rem; bottom:0.3rem; margin:0; }
 @media (pointer:coarse){ .chat-foot .cat-grip{ padding:6px 5px; bottom:calc(0.02rem + 1.8px); } }
 .chat-foot .chat-more{ margin-left:0; }
@@ -1934,7 +1919,6 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   .chat-card .chat-led, .duel-card .chat-led{ top:calc(0.55rem + 12px - 4.5px); }
   .chat-foot, .duel-card .duel-foot{ margin-top:-2px; }
 }
-.chat-foot .cat-grip svg{ transform:rotate(90deg); }
 .chat-more{ margin-left:auto; appearance:none; border:0; background:none; padding:1px 5px 4px; border-radius:6px; font:700 0.9rem/1 'Public Sans', sans-serif; letter-spacing:1px; color:var(--ink-faint); cursor:pointer; }
 .chat-more:hover, .chat-more[aria-expanded="true"]{ background:var(--surface-2); color:var(--ink-soft); }
 .chat-who{ font-family:'Courier Prime', 'Courier New', Courier, monospace; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; color:var(--ink-faint); opacity:0.7; }
