@@ -1856,6 +1856,10 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .duel-card.fullpage .duel-stage{ zoom:1.25; width:100%; max-width:100%; margin:0 auto; }   /* pleine page : le poste de commande de la carte, agrandi */
 @media (max-height:560px){ .duel-card.fullpage .duel-stage{ zoom:1; } }   /* téléphone à l'horizontale : pas d'agrandissement */
 @media (max-width:720px){ .duel-card.fullpage .duel-stage{ zoom:1; } }
+@media not ((orientation:landscape) and (max-height:560px)){   /* 10.75 : pleine page (pas la manette du téléphone couché) : le poste de commande respire, toujours près de l'écran */
+  .duel-card.fullpage .coup{ row-gap:0.85rem; padding-top:0.9rem; }
+  .duel-card.fullpage .duel-stage > .duel-foot{ margin-top:0.7rem; }
+}
 /* 10.68 : téléphone couché, pleine page : « manette » — le jeu prend toute la hauteur au centre ;
    angle à gauche et force à droite en colonnes étroites (+ en haut, − en bas) ; en dessous, une
    seule rangée basse : objets, Lancer, faisans. (.coup s'efface : ses éléments se rangent dans la grille) */
