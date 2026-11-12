@@ -1547,6 +1547,34 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   transform:scale(1.06);
 }
 
+
+/* ---------- 10.75 : BANC — propositions (mémo reconnaissable fermé, bouton Nouvelle liste) ; essai.html seulement ---------- */
+.prop-panel{ position:fixed; left:10px; bottom:10px; z-index:900; background:var(--surface); border-radius:12px; box-shadow:0 8px 24px rgba(40,50,60,.18); padding:0.55rem 0.7rem; font:0.72rem/1.4 'Courier Prime', monospace; color:var(--ink-soft); display:grid; gap:0.35rem; }
+.prop-panel b{ color:var(--ink); font-weight:700; margin-right:0.3rem; }
+.prop-panel button{ appearance:none; border:1px solid var(--line); background:var(--surface); border-radius:6px; padding:0.15rem 0.45rem; font:inherit; cursor:pointer; color:var(--ink); }
+.prop-panel button.on{ background:var(--accent); border-color:var(--accent); color:var(--surface); }
+/* mémo A : coin corné en haut à gauche (à droite, il y a la pleine page) */
+body.pm-A .category.courses::before{ content:""; position:absolute; top:0; left:0; width:20px; height:20px; border-top-left-radius:14px; pointer-events:none;
+  background:linear-gradient(135deg, var(--bg) 0 50%, color-mix(in srgb, var(--ink) 10%, var(--surface)) 50% 100%);
+  box-shadow:1px 1px 2px rgba(30,40,45,.12); border-bottom-right-radius:4px; }
+/* mémo B : papier ligné (lignes très pâles sous le texte) */
+body.pm-B .category.courses{ isolation:isolate; }
+body.pm-B .category.courses::before{ content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; pointer-events:none;
+  background:repeating-linear-gradient(180deg, transparent 0 calc(1.7rem - 1px), color-mix(in srgb, var(--accent) 11%, transparent) calc(1.7rem - 1px) 1.7rem);
+  background-position:0 0.9rem; }
+/* mémo C : bord perforé en haut, comme une feuille de carnet */
+body.pm-C .category.courses::before{ content:""; position:absolute; left:14px; right:14px; top:5px; height:8px; pointer-events:none;
+  background:radial-gradient(circle, color-mix(in srgb, var(--ink) 14%, var(--bg)) 0 2.6px, transparent 3.2px) 0 0 / 18px 8px repeat-x; }
+/* Nouvelle liste 1 : case fantôme, en pointillés, à la taille d'une colonne */
+body.pnl-1 .add-category-btn{ width:min(100%, calc((100% - 1.25rem) / 2)); justify-content:center; height:3.4rem; border-radius:14px;
+  border:1.5px dashed color-mix(in srgb, var(--ink) 18%, transparent); background:transparent; color:var(--ink-soft); }
+body.pnl-1 .add-category-btn:hover{ background:var(--lucky-bg); border-color:var(--lucky-lemon); box-shadow:none; transform:none; color:var(--phrase); }
+/* Nouvelle liste 2 : sobre, de la famille des boutons du bas (Corbeille) */
+body.pnl-2 .add-category-btn{ background:var(--surface); border:0; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--btn-ink) 28%, transparent); color:var(--btn-ink); letter-spacing:0.08em; padding:0.5rem 0.95rem; }
+body.pnl-2 .add-category-btn:hover{ background:var(--btn-ink); color:var(--surface); box-shadow:none; transform:translateY(-1px); }
+/* Nouvelle liste 3 : un rond « + » seul (le libellé en infobulle) */
+body.pnl-3 .add-category-btn{ font-size:0; width:44px; height:44px; padding:0; justify-content:center; border-radius:50%; }
+body.pnl-3 .add-category-btn::before{ content:"+"; font-size:1.35rem; font-weight:700; line-height:1; }
 /* ---------- 10.63 : duel de faisans (petit jeu à deux, tour par tour) ----------
    Une liste de type "duel", posée dans la grille sur toute la largeur. Réglages
    choisis au banc du jeu (essai-jeu.html) le 6/11/2026 : ciel neutre, façades
@@ -11681,6 +11709,29 @@ document.addEventListener("keydown", (e)=>{
 
 try{ runWeeklyPurge(); }catch(err){ console.error("[corbeille] échec de la purge hebdomadaire", err); }
 renderAll();
+// 10.75 : BANC — panneau de propositions (essai.html seulement) : mémo fermé reconnaissable, bouton Nouvelle liste
+if(ESSAI){
+  const PK = "sltapis-essai-props", q = new URLSearchParams(location.search);
+  let st = {}; try{ st = JSON.parse(localStorage.getItem(PK) || "{}") || {}; }catch(e){}
+  if(q.has("pm")) st.pm = q.get("pm"); if(q.has("pnl")) st.pnl = q.get("pnl");
+  const apply = ()=>{
+    document.body.classList.remove("pm-A", "pm-B", "pm-C", "pnl-1", "pnl-2", "pnl-3");
+    if(st.pm) document.body.classList.add("pm-" + st.pm); if(st.pnl) document.body.classList.add("pnl-" + st.pnl);
+    try{ localStorage.setItem(PK, JSON.stringify(st)); }catch(e){}
+    panel.querySelectorAll("button[data-k]").forEach(b => b.classList.toggle("on", (st[b.dataset.k] || "") === b.dataset.v));
+  };
+  const panel = document.createElement("div"); panel.className = "prop-panel";
+  panel.innerHTML = `<div><b>Mémo</b>${["", "A", "B", "C"].map(v => `<button type="button" data-k="pm" data-v="${v}">${v || "actuel"}</button>`).join(" ")}</div>
+    <div><b>Nouvelle liste</b>${["", "1", "2", "3"].map(v => `<button type="button" data-k="pnl" data-v="${v}">${v || "actuel"}</button>`).join(" ")}</div>
+    <div><button type="button" class="prop-copy">Copier le lien des réglages</button></div>`;
+  panel.addEventListener("click", e=>{
+    const b = e.target.closest("button"); if(!b) return; e.stopPropagation();
+    if(b.classList.contains("prop-copy")){ const u = location.origin + location.pathname + "?pm=" + (st.pm || "") + "&pnl=" + (st.pnl || ""); copyText(u).then(ok => { b.textContent = ok ? "Copié !" : "Copie impossible"; setTimeout(()=>{ b.textContent = "Copier le lien des réglages"; }, 1500); }); return; }
+    st[b.dataset.k] = b.dataset.v; apply();
+  });
+  document.body.appendChild(panel); apply();
+}
+
 // 7.43 : demande au navigateur de ne jamais vider de lui-même ce stockage
 // (par manque de place, par exemple). Silencieux ; refusé = rien ne change.
 try{
