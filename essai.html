@@ -1734,7 +1734,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 /* 10.69 : couleur de la personne (choisie dans Partage, carnet) : la fenêtre partagée avec elle se
    remplit d'une teinte douce, ouverte comme fermée ; ses initiales en bas prennent la couleur */
 .chat-card.has-pcol:not(.fullpage), .duel-card.has-pcol:not(.fullpage){ background:color-mix(in srgb, var(--pcol) 15%, transparent); border-radius:14px; }
-.chat-card.has-pcol:not(.fullpage) .chat-box, .duel-card.has-pcol:not(.fullpage) .duel-stage{ padding-left:0.6rem; padding-right:0.6rem; }
+.chat-card.has-pcol:not(.fullpage) .chat-box, .duel-card:not(.fullpage) .duel-stage{ padding-left:0.6rem; padding-right:0.6rem; }   /* 10.75 : le duel a toujours ce retrait, en couleur ou non : même écran partout (le plus petit) */
 .has-pcol .chat-who{ color:color-mix(in srgb, var(--pcol) 80%, var(--ink)); opacity:1; }
 .sh-colors{ display:flex; gap:0.3rem; align-items:center; width:100%; }
 .sh-sw{ width:24px; height:24px; padding:0; border-radius:50%; border:1px solid var(--line); cursor:pointer; background:var(--surface-2); color:var(--ink-faint); font-size:0.8rem; line-height:1; }
@@ -1854,6 +1854,10 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .duel-card.fullpage .duel-stage{ zoom:1.25; width:100%; max-width:100%; margin:0 auto; }   /* pleine page : le poste de commande de la carte, agrandi */
 @media (max-height:560px){ .duel-card.fullpage .duel-stage{ zoom:1; } }   /* téléphone à l'horizontale : pas d'agrandissement */
 @media (max-width:720px){ .duel-card.fullpage .duel-stage{ zoom:1; } }
+/* 10.75 : fenêtre ouverte : bandeaux à la même taille (« En attente… » était plus petit) et toujours sur une ligne */
+.duel-card:not(.fullpage) .attente:not(.decouverte), .duel-card:not(.fullpage) .d-statut{ font-size:min(0.86rem, 3.6cqw); }   /* rétréci au besoin (téléphone) pour tenir sur une ligne */
+.duel-card:not(.fullpage) .d-statut{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
 /* 10.68 : téléphone couché, pleine page : « manette » — le jeu prend toute la hauteur au centre ;
    angle à gauche et force à droite en colonnes étroites (+ en haut, − en bas) ; en dessous, une
    seule rangée basse : objets, Lancer, faisans. (.coup s'efface : ses éléments se rangent dans la grille) */
@@ -1911,7 +1915,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
    collée au bas ; poignée (même taille) et punaise exactement aux mêmes places ; « … » et initiales au
    même niveau, juste avant la punaise. Plus d'air entre l'écran et le pied. */
 .chat-foot, .duel-card .duel-foot{ height:29px; margin-top:0; padding:0 calc(0.55rem + 24px + 0.3rem) 0 0; justify-content:flex-end; }
-.chat-card.has-pcol:not(.fullpage) .chat-foot, .duel-card.has-pcol:not(.fullpage) .duel-foot{ margin-left:-0.6rem; margin-right:-0.6rem; }   /* fenêtre remplie : la bande garde la largeur de la case */
+.chat-card.has-pcol:not(.fullpage) .chat-foot, .duel-card:not(.fullpage) .duel-foot{ margin-left:-0.6rem; margin-right:-0.6rem; }   /* fenêtre remplie : la bande garde la largeur de la case */
 .chat-foot .cat-grip{ position:absolute; left:0.55rem; bottom:0.12rem; }
 .chat-foot .cat-grip svg{ width:17px; height:17px; transform:rotate(90deg); }
 .chat-foot .cat-fold{ position:absolute; right:0.55rem; bottom:0.3rem; margin:0; }
@@ -1921,7 +1925,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .duel-card:not(.collapsed):not(.fullpage) > .duel-stage{ flex:1 1 auto; display:flex; flex-direction:column; }
 .duel-card:not(.collapsed):not(.fullpage) .duel-stage > .duel-foot{ margin-top:auto; }
 .duel-card:not(.collapsed):not(.fullpage) .duel-stage > :has(+ .duel-foot){ margin-bottom:0; }
-.duel-card:not(.collapsed):not(.fullpage) .duel-stage > .coup{ padding-top:0; padding-bottom:0; }   /* 10.72 : 4 px de moins entre l'écran et les réglages : la case garde sa hauteur malgré le pied aligné sur les listes */
+.duel-card:not(.collapsed):not(.fullpage) .duel-stage > .coup{ padding-top:6px; padding-bottom:0; }   /* 10.75 : 6 px d'air sous l'écran, pris sur la place libérée par l'écran plus petit */   /* 10.72 : 4 px de moins entre l'écran et les réglages : la case garde sa hauteur malgré le pied aligné sur les listes */
 /* 10.72 : haut des écrans équilibré avec le bas, sans changer la hauteur des cases */
 /* le bouton pleine page tombe dans l'angle de la case : autant d'écart avec le haut qu'avec le bord droit
    (il ne bouge pas latéralement) ; le voyant à sa hauteur ; l'écran commence un rien sous eux */
@@ -10066,9 +10070,9 @@ function refreshUI(){
   }else{
     lancerBtn.textContent = "Lancer"; lancerBtn.classList.toggle("locked", lock);
     $(".d-statut").textContent = busy || attente ? "" :
-      game.solo ? (game.shots.length ? `Entraînement : l'autre faisan ne renvoie rien.` : `Entraînement : choisissez votre faisan, visez l'autre.`)
-      : mine ? (game.shots.length ? `À vous de lancer ${OBJETS_ART[monObjet]}.` : `Choisissez votre faisan et lancez : l'autre prendra l'autre faisan.`)
-      : !PLAYERS[p].uid && me ? "Invitez quelqu'un avec « … » pour jouer à deux." : `À ${PLAYERS[p].nom} de jouer.`;
+      game.solo ? (game.shots.length ? `Entraînement : l'autre ne renvoie rien.` : `Entraînement : visez l'autre faisan.`)
+      : mine ? (game.shots.length ? `À vous de lancer ${OBJETS_ART[monObjet]}.` : `Choisissez votre faisan, puis lancez.`)
+      : !PLAYERS[p].uid && me ? "Invitez quelqu'un avec « … »." : `À ${PLAYERS[p].nom} de jouer.`;
   }
   const last = game.shots[game.shots.length - 1];
   $(".d-revoir").classList.toggle("gone", !last || bandMode === "decouverte" || hideLast);   // en attente de l'autre, on peut revoir son propre coup
