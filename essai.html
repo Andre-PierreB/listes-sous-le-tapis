@@ -1343,6 +1343,8 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 }
 .cat-swatch:hover{ transform:scale(1.12); }
 .cat-swatch.selected{ outline:2px solid var(--sw); outline-offset:2px; }
+.cat-swatch-sep{ width:1px; align-self:stretch; margin:0 3px; background:var(--line); }   /* 10.75 : sépare les couleurs des personnes */
+.cat-swatch-person{ width:auto; min-width:18px; padding:0 4px; font:700 0.6rem/18px 'Public Sans', sans-serif; letter-spacing:0.02em; color:#fff; }
 /* 10.2 : pastilles des personnes avec qui la liste est partagée (à côté du titre) */
 .share-chips{ display:inline-flex; flex:none; }
 .share-chip{
@@ -4470,9 +4472,13 @@ const NEW_CATEGORY_PALETTE = ["#4993A2","#D9A63A","#5E9C86","#C24F6E","#D9774A",
 // enregistrée, mais on l'affiche dans la nouvelle gamme, case pour case.
 // Rien n'est réécrit dans les données.
 const OLD_CATEGORY_PALETTE = ["#4B7BA6","#7A5C3E","#5C8A6B","#9C5A8C","#A87F3F","#3F7A7A","#8A5A5A","#5A6B8A","#6B7A3F","#7A3F5C"];
+// 10.75 : la même teinte, plus franche, pour une LISTE prise à la couleur d'une personne (barre, titre) ;
+// copiée dans la liste (elle ne suit pas un changement fait ensuite dans Partage)
+const PERSON_LIST_PAL = { ambre:"#C98A2E", gameboy:"#74974A", bleu:"#5C86BC", rose:"#C46A80", lavande:"#8670B8", sauge:"#63967D", gris:"#79848A" };
 function displayCatColor(col){
   const c = String(col || "").toUpperCase();
   if(NEW_CATEGORY_PALETTE.includes(c)) return c;
+  if(Object.values(PERSON_LIST_PAL).includes(c)) return c;   // 10.75 : couleur d'une personne
   const i = OLD_CATEGORY_PALETTE.indexOf(c);
   if(i > -1) return NEW_CATEGORY_PALETTE[i];
   let h = 0; for(const ch of c) h = (h*31 + ch.charCodeAt(0)) >>> 0;
@@ -10499,6 +10505,13 @@ function render(){
       sw.setAttribute("aria-label", "Couleur de la liste");
       sw.innerHTML = NEW_CATEGORY_PALETTE.map(col =>
         `<button type="button" class="cat-swatch${col === shown ? " selected" : ""}" role="radio" aria-checked="${col === shown}" aria-label="Couleur ${col}" data-color="${col}" style="--sw:${col}"></button>`).join("");
+      // 10.75 : liste partagée : une pastille par personne qui a une couleur (Partage), à ses initiales
+      const cmap = contactsMap();
+      const pers = listPeople(cat.id).map(u => ({ u, k: cmap[u] && cmap[u].color })).filter(x => x.k && PERSON_LIST_PAL[x.k]);
+      if(pers.length) sw.insertAdjacentHTML("beforeend", `<span class="cat-swatch-sep" aria-hidden="true"></span>` + pers.map(({ u, k }) => {
+        const col = PERSON_LIST_PAL[k], who = escapeAttr(personName(u, cat.id));
+        return `<button type="button" class="cat-swatch cat-swatch-person${col === shown ? " selected" : ""}" role="radio" aria-checked="${col === shown}" aria-label="Couleur de ${who}" data-tip="Couleur de ${who}" data-color="${col}" style="--sw:${col}">${escapeAttr(personInitials(u, cat.id))}</button>`;
+      }).join(""));
       sw.querySelectorAll(".cat-swatch").forEach(b=>{
         b.addEventListener("mousedown", e=> e.preventDefault()); // le curseur reste dans le titre
         b.addEventListener("click", e=>{
