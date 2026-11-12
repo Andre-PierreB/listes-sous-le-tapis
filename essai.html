@@ -7137,7 +7137,10 @@ function noteShown(){
     if(i !== seenMap.c[c.id]){ seenMap.c[c.id] = i; changed = true; }
   });
   // ménage : modifications vues depuis plus de 24 h
-  Object.keys(seenMap.m).forEach(k => { if(now - seenMap.m[k].s >= NEW_FOR_MS){ delete seenMap.m[k]; changed = true; } });
+  // 10.73 : on n'oublie une modification vue que quand elle n'existe plus (tâche effacée, ou modifiée à
+  // nouveau : nouvelle date ; pas tant que les données ne sont pas chargées). Avant : oubliée après 24 h — la tâche redevenait « modif » aussitôt, pour
+  // 24 h de plus, et ainsi de suite : l'étiquette ne partait jamais.
+  Object.keys(seenMap.m).forEach(k => { const at = editInfo(k).at; if(at && at !== seenMap.m[k].at){ delete seenMap.m[k]; changed = true; } });
   if(changed) saveSeen();
 }
 // 10.45 : qui a modifié une tâche (texte, détail, échéance) et quand, dans une
@@ -9873,7 +9876,8 @@ function buildChatCard(cat, catIdx){
   // lu : dès qu'on passe dessus, qu'on le touche ou qu'on y écrit ; la ligne
   // « nouveau » reste (chatNewAt) jusqu'à ce qu'on écrive, pour savoir où reprendre
   const markRead = ()=>{
-    if(folded) return;   // replié : le voyant reste allumé jusqu'à ce qu'on rouvre
+    // 10.73 : plus d'exception pour l'écran fermé : survolé (il s'entrouvre) ou touché, il est lu
+    // (avant : fermé, le voyant restait allumé tant qu'on ne punaisait pas l'écran — pour toujours, chez qui le garde fermé)
     if(chatSeen[cat.id] === total && !card.classList.contains("unread")) return;
     chatSeen[cat.id] = total; saveChatSeen();
     card.classList.remove("unread");
