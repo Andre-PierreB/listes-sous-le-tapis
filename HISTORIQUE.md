@@ -1043,4 +1043,5 @@ Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours ch
     fiche « moi » listTint) ; jeu fenêtre ouverte : écran unique (le plus petit), bandeaux sur une ligne,
     phrases raccourcies, Revoir à gauche ; voyant en pleine page décollé de l'écran ; glisser : mêmes
     pointillés pour chat et duel, plus de vibration (marge DRAG_SWAP_MARGIN) ; dring dring = sonnette du vélo.
+  - 10.76 : « En cours » en typo un peu plus petite (--task-size 0.85rem), sur deux colonnes sur ordi.
 ```
