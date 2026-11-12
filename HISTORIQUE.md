@@ -3,6 +3,9 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 10.74 : grand ménage, sans changement à l'écran : anciennes versions dans archives/,
+    historique sorti vers ce fichier, 15 règles CSS en double fusionnées ; synchro : une salve
+    de listes arrivées d'un coup (ouverture) ne donne plus qu'un seul rendu au lieu d'un par liste.
 ```
   - 5.2 : case trèfle « Une petite sur le pouce ? » sous les urgences —
     deux tâches tirées au sort chaque jour (plutôt les anciennes), clic =
@@ -1030,4 +1033,7 @@ Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours ch
     sur plusieurs lignes, curseur normal (classe multi). écran de chat à la largeur d'une liste moins 1,5rem, même marge
     en haut ; il prend la hauteur de sa rangée (3 lignes au moins) : plus de
     messages visibles quand une liste voisine est haute.
+  - 10.74 : grand ménage, sans changement à l'écran : anciennes versions dans archives/,
+    historique sorti vers ce fichier, 15 règles CSS en double fusionnées ; synchro : une salve
+    de listes arrivées d'un coup (ouverture) ne donne plus qu'un seul rendu au lieu d'un par liste.
 ```
