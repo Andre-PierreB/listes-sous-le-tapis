@@ -11391,6 +11391,12 @@ function render(){
       addPrefill = addingCat && typed ? { catId: cat.id, t: typed } : null;
       // 10.69 : plus de dépliage pour de bon : la case s'ouvre le temps de l'ajout puis se referme (seule la punaise punaise)
       renderAll();
+      // 10.73 : iPhone : le clavier ne s'ouvre que si le champ reçoit le focus pendant le clic lui-même
+      // (le focus différé d'une image, plus bas, arrive trop tard) : focus tout de suite, ici
+      if(addingCat === cat.id){
+        const f = document.querySelector("#cat-" + CSS.escape(String(cat.id)) + " .add-title");
+        if(f){ try{ f.focus({ preventScroll:true }); const n = f.value.length; f.setSelectionRange(n, n); }catch(err){} }
+      }
     });
     if(canDeleteCat){
       head.querySelector(".cat-delete-btn").addEventListener("click", (e)=>{
