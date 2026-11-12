@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.72 -->
+<!-- Sous le tapis — version AUTONOME 10.73 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1275,6 +1275,10 @@
     l'interrupteur, « + Ajouter un écran de chat » en dessous. Écran de chat : la saisie est un vrai champ visible (sélection à
     la souris, flèches, effacer au milieu du texte) ; le gros curseur ne
     s'affiche qu'en bout de texte, sinon curseur normal (classe mid).
+  - 10.73 : ligne du titre des listes et mémos montée (--hd-lift) : flèche pleine page dans l'angle,
+    à la hauteur de celle du chat et du jeu ; liste vide : la croix à la place de la pleine page ;
+    téléphone : le + ouvre le clavier (focus pendant le clic) ; voyant du chat éteint aussi écran
+    fermé ; « modif » vue n'est plus oubliée après 24 h (elle revenait en boucle).
   - 10.63 : duel de faisans (voir DUEL DE FAISANS) : petit jeu à deux en
     tour par tour, créé par « + Ajouter un duel de faisans » ; entraînement
     seul. Papier des mémos en blanc (--memo-a/b/c #FFFFFF, avant blanc chaud).
@@ -2210,6 +2214,19 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
 .category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:0.35rem; }   /* 10.35 : plus d'air entre le titre et les tâches */
 .category.courses .cat-head{ margin-top:0.11rem; }   /* 10.36 : titre des mémos sur la même ligne que les autres titres */
 .category.courses:not(.collapsed) .cat-head{ margin-bottom:0.12rem; }   /* 10.36 : 1er article sur la même ligne que la 1re tâche des listes voisines */
+/* 10.73 : la ligne du titre (titre, chiffre, saisie, +, pleine page) monte de --hd-lift : la flèche
+   pleine page tombe à la hauteur de celle du chat et du jeu (dans l'angle). Ce qui est monté est rendu
+   sous le titre : tâches, articles, poignée, punaise et hauteur des cases ne bougent pas. Marges
+   seulement (pas de position/transform : rien ne change pour les menus et infobulles). */
+.category{ --hd-lift:9px; }
+@media (pointer:coarse){ .category{ --hd-lift:12px; } }
+.category.fullpage{ --hd-lift:0px; }
+.category .cat-head{ margin-top:calc(0px - var(--hd-lift)); margin-bottom:var(--hd-lift); }
+.category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:calc(0.35rem + var(--hd-lift)); }
+.category.courses .cat-head{ margin-top:calc(0.11rem - var(--hd-lift)); }
+.category.courses:not(.collapsed) .cat-head{ margin-bottom:calc(0.12rem + var(--hd-lift)); }
+.category:not(.courses)::before{ top:calc(1.05rem - var(--hd-lift)); }   /* la barre de couleur part toujours du titre */
+.category.courses:not(.fullpage) .cat-head-right{ position:relative; top:-0.11rem; }   /* mémos : titre 0.11rem plus bas (10.36) ; + et pleine page à la même hauteur que partout */
 .cat-title-group{
   display:flex;
   align-items:center;
@@ -2506,6 +2523,10 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   justify-content:center;
   flex:none;
 }
+/* 10.73 : liste vide : la croix prend exactement la place du bouton pleine page (masqué), le + ne bouge pas */
+.category.can-delete:not(.fullpage) .cat-head-right .cat-full{ display:none; }
+.category.can-delete:not(.fullpage) .cat-head-right .cat-delete-btn{ width:23px; height:23px; margin-right:-10.5px; margin-block:-1.5px; }
+@media (pointer:coarse){ .category.can-delete:not(.fullpage) .cat-head-right .cat-delete-btn{ width:26px; height:26px; margin-right:-13.6px; margin-block:0; } }
 .cat-delete-btn:hover{
   background:var(--urgent-soft);
   color:var(--urgent-ink);
@@ -4515,7 +4536,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.72</span>
+    <span class="version-tag">v10.73</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -7124,7 +7145,10 @@ function noteShown(){
     if(i !== seenMap.c[c.id]){ seenMap.c[c.id] = i; changed = true; }
   });
   // ménage : modifications vues depuis plus de 24 h
-  Object.keys(seenMap.m).forEach(k => { if(now - seenMap.m[k].s >= NEW_FOR_MS){ delete seenMap.m[k]; changed = true; } });
+  // 10.73 : on n'oublie une modification vue que quand elle n'existe plus (tâche effacée, ou modifiée à
+  // nouveau : nouvelle date ; pas tant que les données ne sont pas chargées). Avant : oubliée après 24 h — la tâche redevenait « modif » aussitôt, pour
+  // 24 h de plus, et ainsi de suite : l'étiquette ne partait jamais.
+  Object.keys(seenMap.m).forEach(k => { const at = editInfo(k).at; if(at && at !== seenMap.m[k].at){ delete seenMap.m[k]; changed = true; } });
   if(changed) saveSeen();
 }
 // 10.45 : qui a modifié une tâche (texte, détail, échéance) et quand, dans une
@@ -9860,7 +9884,8 @@ function buildChatCard(cat, catIdx){
   // lu : dès qu'on passe dessus, qu'on le touche ou qu'on y écrit ; la ligne
   // « nouveau » reste (chatNewAt) jusqu'à ce qu'on écrive, pour savoir où reprendre
   const markRead = ()=>{
-    if(folded) return;   // replié : le voyant reste allumé jusqu'à ce qu'on rouvre
+    // 10.73 : plus d'exception pour l'écran fermé : survolé (il s'entrouvre) ou touché, il est lu
+    // (avant : fermé, le voyant restait allumé tant qu'on ne punaisait pas l'écran — pour toujours, chez qui le garde fermé)
     if(chatSeen[cat.id] === total && !card.classList.contains("unread")) return;
     chatSeen[cat.id] = total; saveChatSeen();
     card.classList.remove("unread");
@@ -11285,6 +11310,7 @@ function render(){
     // meilleure façon d'éviter d'effacer une liste pleine par mégarde.
     // 10.2 : une liste partagée par quelqu'un d'autre ne se supprime pas d'ici
     const canDeleteCat = isCategoryEmpty(cat) && iOwnList(cat.id);
+    if(canDeleteCat) card.classList.add("can-delete");   // 10.73 : la croix prend la place de la pleine page
     // 10.2 : pastilles des personnes qui voient aussi cette liste
     const people = listPeople(cat.id);
     let shareChips = "";
@@ -11378,6 +11404,12 @@ function render(){
       addPrefill = addingCat && typed ? { catId: cat.id, t: typed } : null;
       // 10.69 : plus de dépliage pour de bon : la case s'ouvre le temps de l'ajout puis se referme (seule la punaise punaise)
       renderAll();
+      // 10.73 : iPhone : le clavier ne s'ouvre que si le champ reçoit le focus pendant le clic lui-même
+      // (le focus différé d'une image, plus bas, arrive trop tard) : focus tout de suite, ici
+      if(addingCat === cat.id){
+        const f = document.querySelector("#cat-" + CSS.escape(String(cat.id)) + " .add-title");
+        if(f){ try{ f.focus({ preventScroll:true }); const n = f.value.length; f.setSelectionRange(n, n); }catch(err){} }
+      }
     });
     if(canDeleteCat){
       head.querySelector(".cat-delete-btn").addEventListener("click", (e)=>{
