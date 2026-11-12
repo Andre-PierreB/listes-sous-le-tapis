@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.75 -->
+<!-- Sous le tapis — version AUTONOME 10.76 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -2728,6 +2728,12 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 }
 #waitingSection .section-title span{ white-space:nowrap; }   /* 10.50 : trop étroit, coupé après le tiret */
 #waitingList .empty-note{ color:color-mix(in srgb, var(--ink-faint) 72%, var(--wait-soft)); }
+#waitingSection{ --task-size:0.85rem; }   /* 10.75 : « En cours » un peu plus petit que les listes (avant : 0.92rem, comme elles) */
+@media (min-width:721px){   /* 10.75 : sur ordi, deux colonnes (on lit la première, puis la seconde) */
+  #waitingList{ display:block; columns:2; column-gap:1.75rem; }
+  #waitingList > li{ break-inside:avoid; margin-bottom:0.1rem; }
+  #waitingList > .empty-note{ column-span:all; }
+}
 /* choix de la relance (7.3) */
 .relance-pop{
   position:absolute; z-index:80; width:min(270px, calc(100vw - 32px));
@@ -3542,7 +3548,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.75</span>
+    <span class="version-tag">v10.76</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
