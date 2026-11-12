@@ -310,6 +310,23 @@
     suggestions, doublons, collage, hauteur, défilement, glisser-déposer
     avec défilement, conversion aller-retour, invité simulé, fusion, ⌘Z.
 
+  CHANTIER DE LA 11 (préparé en 10.74, à faire dans une conversation dédiée, sans hâte)
+  - But : ne plus redessiner toute la page à chaque geste (renderAll reconstruit toutes
+    les cases : ~0,3 ms par tâche sur ordi, bien plus sur téléphone ; c'est la lourdeur
+    ressentie), mais seulement la case touchée.
+  - Danger : les écouteurs des cases gardées tiennent l'objet `cat` (et des index) de
+    l'ancien rendu ; après reloadAllFromStorage (synchro, autre onglet), DATA contient de
+    NOUVEAUX objets : un geste sur une case non redessinée agirait sur des données périmées.
+  - Ordre prévu : 1) chaque écouteur retrouve sa liste et sa tâche par identifiant au
+    moment du geste (plus de `cat` capturé) ; 2) rendu par case avec signature, derrière un
+    interrupteur sur le banc (ancien / nouveau rendu) ; 3) tests automatiques de chaque geste
+    (cocher, ajouter, modifier, effacer, glisser, partager, synchro deux onglets, ⌘Z) avec les
+    deux rendus : données identiques exigées ; 4) captures avant/après (16 vues ordi +
+    téléphone, au pixel près) et styles calculés identiques ; 5) quelques jours sur le banc
+    chez André-Pierre avant de publier en 11.0.
+  - Outils de vérification utilisés en 10.74 (Playwright, Chrome sans écran, vitrine ?demo,
+    Math.random et Date figés, animations coupées, canevas du jeu masqué) : à refaire.
+
   HISTORIQUE
   - L'historique détaillé des versions (5.2 → 10.73) est dans HISTORIQUE.md,
     à côté de ce fichier dans le dépôt (sorti d'ici en 10.74 pour l'alléger).
