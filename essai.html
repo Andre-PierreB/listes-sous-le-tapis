@@ -1557,6 +1557,10 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 body.pm-A .category.courses::before{ content:""; position:absolute; top:0; left:0; width:20px; height:20px; border-top-left-radius:14px; pointer-events:none;
   background:linear-gradient(135deg, var(--bg) 0 50%, color-mix(in srgb, var(--ink) 10%, var(--surface)) 50% 100%);
   box-shadow:1px 1px 2px rgba(30,40,45,.12); border-bottom-right-radius:4px; }
+/* papier des mémos très légèrement grisé, un peu plus quand ils sont fermés (le fondu du bas suit) */
+body.pm-A .category.courses{ --memo-grey:color-mix(in srgb, var(--ink) 2%, var(--surface)); --memo-a:var(--memo-grey); --memo-b:var(--memo-grey); --memo-c:var(--memo-grey); }
+body.pm-A .category.courses.collapsed{ --memo-grey:color-mix(in srgb, var(--ink) 4.5%, var(--surface)); }
+body.pm-A .category.courses::after{ background:linear-gradient(transparent, var(--memo-grey) 0.75rem); }
 /* mémo B : papier ligné (lignes très pâles sous le texte) */
 body.pm-B .category.courses{ isolation:isolate; }
 body.pm-B .category.courses::before{ content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; pointer-events:none;
@@ -1568,7 +1572,7 @@ body.pm-C .category.courses::before{ content:""; position:absolute; left:14px; r
 /* Nouvelle liste 1 : case fantôme, en pointillés, à la taille d'une colonne */
 body.pnl-1 .add-category-btn{ width:min(100%, calc((100% - 1.25rem) / 2)); justify-content:center; height:3.4rem; border-radius:14px;
   border:1.5px dashed color-mix(in srgb, var(--ink) 18%, transparent); background:transparent; color:var(--ink-soft); }
-body.pnl-1 .add-category-btn:hover{ background:var(--lucky-bg); border-color:var(--lucky-lemon); box-shadow:none; transform:none; color:var(--phrase); }
+body.pnl-1 .add-category-btn:hover, body.pnl-1 .add-category-btn:focus-visible{ background:var(--share-hover); border-color:var(--share-hover); box-shadow:none; transform:none; color:#2A2725; }   /* survol de Partage : jaune plein, sans liseré, texte foncé */
 /* Nouvelle liste 2 : sobre, de la famille des boutons du bas (Corbeille) */
 body.pnl-2 .add-category-btn{ background:var(--surface); border:0; box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--btn-ink) 28%, transparent); color:var(--btn-ink); letter-spacing:0.08em; padding:0.5rem 0.95rem; }
 body.pnl-2 .add-category-btn:hover{ background:var(--btn-ink); color:var(--surface); box-shadow:none; transform:translateY(-1px); }
