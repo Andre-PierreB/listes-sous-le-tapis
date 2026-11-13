@@ -1058,5 +1058,5 @@ Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours ch
     tâches désormais datées) ; plus de messages flottants des autres ; inverser une liste fait descendre les rayées ;
     glisser une tâche sur une liste fermée l'entrouvre sans la punaiser ; une case ouverte n'est jamais plus basse que fermée ;
     en modification, un long titre ou détail s'affiche en entier (zone qui grandit ; mémo : quantité dessous) ;
-    « Quick talk » et « Duel de faisans » gravés dans la tôle à droite du voyant.
+    « Small talk » et « Duel de faisans » gravés dans la tôle à droite du voyant.
 ```
