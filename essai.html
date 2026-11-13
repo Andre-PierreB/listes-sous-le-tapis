@@ -255,6 +255,10 @@
   - 10.80 : étiquettes « new » / « modif » (les siennes aussi, voulu) : 48 h
     (NEW_FOR_MS, avant 24 h) depuis le premier affichage sur l'appareil ;
     plus de messages flottants pour les changements des autres (SHOW_NOTICES).
+    Chaque tâche ajoutée porte sa date (at) : une liste partagée qu'un appareil
+    découvre garde « new » sur ses ajouts de moins de 48 h (avant : rien).
+    Inverser le sens d'une liste fait descendre tout de suite les cochées en
+    attente (flushLinger) ; changer d'appli ne retient plus les cochées.
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -5053,6 +5057,7 @@ function insertItem(cat, item){
   const newIdx = getEffectiveItems(cat).length;
   // 10.2 : qui a créé la tâche (avec un compte seulement)
   if(!item.by && myUid()) item = Object.assign({}, item, { by: myUid() });
+  if(typeof item.at !== "number") item = Object.assign({}, item, { at: Date.now() });   // 10.80 : date de création (étiquette « new » d'une liste partagée découverte plus tard)
   customItems[cat.id] = customItems[cat.id] || [];
   customItems[cat.id].push(item);
   saveCustom(customItems);
@@ -6182,7 +6187,13 @@ function newItems(cat){
     const me = myUid();
     if(!me) return [];
     const items = getEffectiveItems(cat);
-    if(typeof seenMap.c[cat.id] !== "number"){ seenMap.c[cat.id] = items.length; saveSeen(); return []; }   // première rencontre : rien de nouveau
+    if(typeof seenMap.c[cat.id] !== "number"){   // première rencontre : rien de nouveau, sauf les ajouts datés de moins de 48 h (10.80)
+      const t0 = Date.now(), recent = i => items[i] && typeof items[i].at === "number" && t0 - items[i].at < NEW_FOR_MS;
+      let c = items.findIndex((b, i) => recent(i)); if(c < 0) c = items.length;
+      for(let i = c; i < items.length; i++) if(!recent(i)) seenMap.s[itemKey(cat.id, i)] = t0 - NEW_FOR_MS;   // anciennes entre deux : déjà vues
+      seenMap.c[cat.id] = c; saveSeen();
+      if(c === items.length) return [];
+    }
     const now = Date.now(), out = [];
     for(let i = seenMap.c[cat.id]; i < items.length; i++){
       const b = items[i], key = itemKey(cat.id, i);
@@ -6629,6 +6640,14 @@ document.addEventListener("pointerover", e=>{
   hoverCatId = id;
 });
 document.documentElement.addEventListener("mouseleave", ()=>{ hoverCatId = null; });
+// 10.80 : en changeant d'appli (souris restée sur une liste), la liste ne retient plus ses cochées indéfiniment
+window.addEventListener("blur", ()=>{ hoverCatId = null; });
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState !== "visible") hoverCatId = null; });
+function flushLinger(catId){
+  let n = 0;
+  lingering.forEach((t, k)=>{ if(k.slice(0, k.lastIndexOf(":")) === catId){ lingering.delete(k); n++; } });
+  if(n && !lingering.size) clearTimeout(lingerTimer);
+}
 function lingerChecked(key, on){
   if(on){
     const until = Date.now() + CHECK_LINGER_MS;
@@ -10520,6 +10539,7 @@ function render(){
     head.querySelector(".cat-order").addEventListener("click", (e)=>{
       e.stopPropagation();
       toggleCatReversed(cat.id);
+      flushLinger(cat.id);   // 10.80 : on réordonne : les rayées en attente rejoignent le bas tout de suite (elles restaient coincées au milieu)
       renderAll();
     });
     const quickInp = head.querySelector(".cat-quick");

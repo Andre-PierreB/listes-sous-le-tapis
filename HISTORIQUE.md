@@ -1054,5 +1054,6 @@ Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours ch
   - 10.79 : duel — l'interrupteur try hard reprend le niveau de la partie d'avant ; « TRY HARD » en capitales, éteint dans le bleu pâli.
   - 10.80 : + au fond d'une liste : tout le cadre de saisie remonte en vue, avec un peu d'air (plus rogné) ;
     case fermée : la punaise qu'on vise reste sur place pendant que la case s'entrouvre ;
-    « new » / « modif » : 48 h au lieu de 24 ; plus de messages flottants des autres.
+    « new » / « modif » : 48 h au lieu de 24, et sur une liste partagée qu'on découvre (ajouts de moins de 48 h,
+    tâches désormais datées) ; plus de messages flottants des autres ; inverser une liste fait descendre les rayées.
 ```
