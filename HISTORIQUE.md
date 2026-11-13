@@ -1051,5 +1051,5 @@ Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours ch
   - 10.78 : duel — chez le gagnant, « Nouvelle partie » masqué tant que l'autre n'a pas vu le coup final
     (marqueur « vu » écrit par l'appareil de l'autre), puis chacun peut relancer ; changer d'objet ne remet
     plus l'angle et la force à zéro.
-  - 10.79 : duel — l'interrupteur try hard reprend le niveau de la partie d'avant ; éteint, il est jaune.
+  - 10.79 : duel — l'interrupteur try hard reprend le niveau de la partie d'avant ; « TRY HARD » en capitales, éteint dans le bleu pâli.
 ```
