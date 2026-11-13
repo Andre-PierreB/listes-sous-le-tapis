@@ -259,6 +259,7 @@
     découvre garde « new » sur ses ajouts de moins de 48 h (avant : rien).
     Inverser le sens d'une liste fait descendre tout de suite les cochées en
     attente (flushLinger) ; changer d'appli ne retient plus les cochées.
+    Glisser une tâche sur une liste fermée l'entrouvre (peek) sans la punaiser.
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -7285,9 +7286,8 @@ function handleRowDragMove(x, y){
   // pas dans une liste de courses
   if((card.classList.contains("courses") || isCoursesList(d.cat.id)) && card.id !== "cat-" + d.cat.id) return;
   if(card.classList.contains("collapsed")){ // 10.7 : le volet s'ouvre sous la tâche
-    card.classList.remove("collapsed");
-    const fid = card.id.replace(/^cat-/, "");
-    if(fid) setFolded(fid, false);
+    // 10.80 : entrouverte seulement, le temps du glisser : elle n'est plus punaisée, et se referme après le dépôt
+    card.classList.remove("collapsed"); card.classList.add("peek");
   }
   const ul = card.querySelector("ul.items");
   if(!ul) return;
