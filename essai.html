@@ -260,6 +260,7 @@
     Inverser le sens d'une liste fait descendre tout de suite les cochées en
     attente (flushLinger) ; changer d'appli ne retient plus les cochées.
     Glisser une tâche sur une liste fermée l'entrouvre (peek) sans la punaiser.
+    Case ouverte ou entrouverte : au moins --fold-h (ne rétrécit plus au survol).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -1198,7 +1199,8 @@ header{
   .cat-close-bar:active::before{ opacity:.8; }
 }
 html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant une ouverture ou fermeture, le navigateur ne déplace pas la page */
-.category.collapsed{ align-self:start; padding-bottom:2.1rem; min-height:var(--fold-h); overflow:hidden; }   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
+.category.collapsed{ align-self:start; padding-bottom:2.1rem; min-height:var(--fold-h); overflow:hidden; }
+.category:not(.collapsed):not(.fullpage){ min-height:var(--fold-h); }   /* 10.80 : ouverte (ou entrouverte au survol), jamais plus basse que fermée : une liste d'une seule tâche ne rétrécit plus au survol */   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
 /* 10.65 : toutes les cases repliées (liste, mémo, chat, duel) ont la même hauteur, --fold-h ;
    étalon : le mémo replié (bandeau + saisie), resserré de 3 px entre le bandeau et la saisie */
 @media (max-width:720px){ :root{ --fold-h:172px; } }   /* 10.72 : téléphone : la hauteur d'une liste repliée (avec sa ligne « Nouvelle tâche… ») — avant 143 px, le chat et le duel fermés étaient plus bas */   /* 10.69 : téléphone, texte agrandi : 127 × 18/16 (placé après, sinon sans effet) */
