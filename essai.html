@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.76 -->
+<!-- Sous le tapis — version AUTONOME 10.77 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -231,6 +231,15 @@
     fiches) — le décor reste celui d'avant le coup jusqu'au clic, couronne
     comprise ; « En attente de … » après mon coup si la partie continue.
     Message flottant « X a joué ! » (renderNewNotice).
+  - 10.77 : « Nouvelle partie » seulement pour celui qui n'a PAS joué le coup
+    final (peutRelancer) : il le découvre d'abord (« … a joué ! »), puis relance ;
+    l'autre voit « À … de relancer. ». Sinon la nouvelle partie effaçait le coup
+    final avant qu'il soit vu. Entraînement, sans compte, seul : comme avant.
+  - 10.77 : niveau « try hard » (TRYHARD : trous 12 au lieu de 22, vent 8 à 18,
+    cible ±12 px au lieu de ±18, pas de trace des coups précédents), choisi par
+    l'interrupteur en face des faisans avant le 1er coup ; enregistré dans ce
+    1er coup (dur:1), relu par readGame (regles). Les parties normales sont
+    calculées exactement comme avant.
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -1685,6 +1694,19 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .duel-card .d-sous .persos{ justify-self:var(--persos-pos, start); }
 .duel-card:not(.fullpage) .d-sous .d-revoir{ justify-self:start; margin-left:0; }   /* 10.75 : fenêtre ouverte : Revoir à gauche, à la place des faisans */   /* 10.67 : à gauche, loin de « … » et des initiales (essayé centré ; avant : à droite, choisi au banc le 6/11/2026 ; trop chargé avec « … » et les initiales) */
 .duel-card .persos.gone, .duel-card .d-revoir.gone{ visibility:hidden; }
+/* 10.77 : interrupteur « try hard », en face du choix du faisan (même rangée, à droite), visible avant le 1er coup */
+.duel-card .d-dur{ display:inline-flex; align-items:center; gap:0.4rem; font:700 0.78rem 'Courier Prime', monospace; color:var(--ink-soft); cursor:pointer;
+  -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; white-space:nowrap; }
+.duel-card .d-dur input{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
+.duel-card .d-dur-sw{ position:relative; flex:none; width:28px; height:16px; border:1.5px solid var(--line); border-radius:3px; box-sizing:border-box; transition:border-color .15s, background .15s; }
+.duel-card .d-dur-sw::after{ content:""; position:absolute; top:2px; left:2px; width:9px; height:9px; border-radius:1px; background:var(--ink-faint); transition:transform .15s ease, background .15s; }
+.duel-card .d-dur input:checked + .d-dur-sw{ border-color:var(--objet); background:color-mix(in srgb, var(--objet) 10%, transparent); }
+.duel-card .d-dur input:checked + .d-dur-sw::after{ transform:translateX(12px); background:var(--objet); }
+.duel-card .d-dur input:checked ~ *, .duel-card.duel-dur .d-dur{ color:var(--objet); }
+.duel-card .d-dur input:focus-visible + .d-dur-sw{ outline:2px solid var(--objet); outline-offset:2px; }
+.duel-card .d-dur.gone{ visibility:hidden; pointer-events:none; }
+@container (min-width:0px){ .duel-card .d-dur{ grid-column:1 / -1; grid-row:3; justify-self:end; margin-right:3px; } }
+@media (pointer:coarse){ .duel-card .d-dur{ min-height:32px; } }
 /* pied dans la carte, comme les listes : poignée à gauche, « … » et initiales à droite */
 .duel-card .duel-foot{ margin-top:0; padding:0 0.15rem; }
 @media (pointer:coarse){
@@ -1913,6 +1935,8 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   .duel-card.fullpage .objets button{ width:34px; height:34px; border-radius:8px; }
   .duel-card.fullpage .objets canvas{ width:24px; height:24px; }
   .duel-card.fullpage .d-lancer{ grid-column:5; grid-row:3; justify-self:stretch; margin:0.7rem 3px 0 0; min-width:0; min-height:42px; padding:0.3rem 0.4rem; font-size:1rem; white-space:normal; line-height:1.1; }   /* sous la force */
+  .duel-card.fullpage .d-lancer.fin{ font-size:0.8rem; padding:0.3rem 0.15rem; letter-spacing:0; }   /* 10.77 : « Nouvelle partie » tenait mal dans la colonne (tronqué) */
+  .duel-card.fullpage .d-dur{ grid-column:1; grid-row:5; justify-self:center; margin:0; flex-direction:column; gap:0.2rem; font-size:0.72rem; min-height:0; }   /* 10.77 : en bas à gauche, à l'opposé des faisans */
   .duel-card.fullpage .d-sous{ grid-column:4; grid-row:5; justify-self:start; min-height:0; margin-left:1rem; }
   .duel-card.fullpage .d-sous .persos{ justify-self:start; }
   .duel-card.fullpage .persos button{ width:40px; height:32px; }
@@ -3548,7 +3572,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.76</span>
+    <span class="version-tag">v10.77</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -9081,6 +9105,9 @@ document.addEventListener("pointerdown", e=>{
 const makeDuel = ()=>{   // 10.63 : une instance par duel (chacun sa carte, son canevas, sa partie)
 const W = 960, H = 540;
 const REGLES = { g:380, vent:10, trou:22, decor:"pignons" };   // réglages retenus au banc le 6/11/2026
+// 10.77 : niveau « try hard », choisi par celui qui joue le 1er coup (interrupteur en face du choix du faisan) ;
+// gardé dans ce 1er coup (dur:1) : trous plus petits, vent toujours costaud, cible plus étroite, pas de trace
+const TRYHARD = { trou:12, vent:18, vmin:8, cible:12, notrace:1 };
 const S = { trace:1, get son(){ try{ return localStorage.getItem("sous-le-tapis-duel-son") !== "0"; }catch(e){ return true; } } };
 const OBJETS = { stylo:"Stylo plume", roue:"Vélo", reveil:"Réveil", coeur:"Cœur" };
 const OBJ_SIZE = { stylo: 1.15, roue: 1.05, reveil: 1.1, coeur: 1 };
@@ -9144,7 +9171,8 @@ function makeCity(seed, round){
 function freshWorld(){
   const city = makeCity(game.seed, 0);
   const r = rng(game.seed * 31 + 17);
-  const wind = Math.round((r() * 2 - 1) * R().vent);
+  const x = r() * 2 - 1, vm = R().vmin;
+  const wind = vm ? Math.sign(x) * Math.round(vm + Math.abs(x) * (R().vent - vm)) : Math.round(x * R().vent);
   return { city, ph: city.ph, craters: [], wind, over: false, lastPath: [null, null] };
 }
 // cœur unité (polygone) : même forme que le cœur qu'on lance (heartPath), échantillonnée —
@@ -9196,7 +9224,7 @@ function simulate(w, shot){
     for(let k = 0; k < 2; k++){
       if(k === shot.p && i < 60) continue;
       const q = w.ph[k];
-      if(Math.abs(x - q.x) < 18 && y > q.y - 42 && y < q.y + 2){ path.push(x, y); return { path, end:{ kind:"hit", x, y, victim:k } }; }
+      if(Math.abs(x - q.x) < (R().cible || 18) && y > q.y - 42 && y < q.y + 2){ path.push(x, y); return { path, end:{ kind:"hit", x, y, victim:k } }; }
     }
     if(x < -80 || x > W + 80 || y > H + 10){ path.push(x, y); return { path, end:{ kind:"miss", x, y } }; }
     if(y > 0 && solid(w, x, y)){ path.push(x, y); return { path, end:{ kind:"city", x, y } }; }
@@ -9617,7 +9645,7 @@ function frame(now){
   ctx.drawImage(city, 0, 0, W, H);
   // trace du coup précédent du joueur dont c'est le tour
   // coups précédents des deux joueurs (manche en cours) : le sien plus marqué
-  if(S.trace && !world.over) for(let k = 0; k < 2; k++){
+  if(S.trace && !R().notrace && !world.over) for(let k = 0; k < 2; k++){
     const pth = world.lastPath[k];
     if(!pth || (anim && anim.shot.p === k)) continue;
     ctx.fillStyle = css(PLAYERS[k].color); ctx.globalAlpha = turn() === k ? 0.42 : 0.2;
@@ -9718,7 +9746,7 @@ function hud(){
   // vent
   // 10.68 : plus grand et plus contrasté (Hiske : illisible), flèche plus épaisse
   ctx.textAlign = "center"; ctx.font = `700 ${F(16)}px 'Courier Prime', monospace`; ctx.fillStyle = css("--ink");
-  ctx.fillText(world.wind ? `vent ${Math.abs(world.wind)}` : "pas de vent", W / 2, 12 + F(17));
+  ctx.fillText((R().notrace ? "try hard · " : "") + (world.wind ? `vent ${Math.abs(world.wind)}` : "pas de vent"), W / 2, 12 + F(17));
   if(world.wind){
     const k = F(10) / 10, len = (10 + Math.abs(world.wind) * 6) * k, d = Math.sign(world.wind), ay = 12 + F(17) + F(11);
     ctx.strokeStyle = css("--accent"); ctx.fillStyle = css("--accent"); ctx.lineCap = "round";
@@ -9947,8 +9975,9 @@ let seen = (()=>{ try{ const o = JSON.parse(localStorage.getItem(SEEN_KEY) || "{
 function saveSeen(){ try{ localStorage.setItem(SEEN_KEY, JSON.stringify(seen)); }catch(e){} }
 let monObjet = (()=>{ try{ const o = localStorage.getItem("sous-le-tapis-duel-objet"); return o in OBJETS ? o : "roue"; }catch(e){ return "roue"; } })();
 let persoChoix = 0;      // faisan choisi par celui qui lance la partie, avant son premier coup
+let durChoix = false;    // 10.77 : try hard, choisi au même moment
 // entraînement : rien n'est écrit dans la liste (ni synchro ni place prise) — les coups vivent ici, le temps de la page
-let soloShots = [], soloSeed = null, soloPerso = 0;
+let soloShots = [], soloSeed = null, soloPerso = 0, soloDur = false;
 let lastSig = null, ownShot = false;
 const hashStr = s => { let h = 2166136261; for(const ch of String(s)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
 function readGame(cat){
@@ -9964,9 +9993,11 @@ function readGame(cat){
   const rows = solo ? [] : live.slice(start + 1).filter(x => typeof x.b.a === "number" && typeof x.b.v === "number" && !x.b.solo);
   const shots = solo ? soloShots.slice() : rows.map((x, k)=>({ p: k % 2, a: x.b.a, v: x.b.v, o: x.b.o in OBJETS ? x.b.o : "roue", at: x.b.at, by: taskCreator(cat, x.b) }));
   const p0 = solo ? (soloShots.length ? soloPerso : persoChoix) : rows.length ? (rows[0].b.perso === 1 ? 1 : 0) : persoChoix;
+  const dur = solo ? (soloShots.length ? soloDur : durChoix) : rows.length ? rows[0].b.dur === 1 : durChoix;
   const g = {
     seed: solo && soloSeed != null ? soloSeed : head && typeof head.seed === "number" ? head.seed : hashStr(cat.id),
-    regles: { g: head && head.g || REGLES.g, vent: head && head.vent != null ? head.vent : REGLES.vent, trou: head && head.trou || REGLES.trou, decor: head && head.decor || REGLES.decor },
+    regles: Object.assign({ g: head && head.g || REGLES.g, vent: head && head.vent != null ? head.vent : REGLES.vent, trou: head && head.trou || REGLES.trou, decor: head && head.decor || REGLES.decor }, dur ? TRYHARD : null),
+    dur,
     shots, solo, perso: p0 === 1 ? [1, 0] : [0, 1], total: items.length, start: start > -1 ? live[start].i : -1
   };
   // les deux joueurs : celui du 1er coup, puis l'autre personne de la liste
@@ -9983,13 +10014,18 @@ function readGame(cat){
   return g;
 }
 const turnOf = g => g.shots.length % 2;
+// 10.77 : nouvelle partie seulement quand l'autre a vu le coup final : c'est donc lui qui la relance
+// (celui qui a joué le dernier coup attend) ; entraînement, sans compte ou seul : comme avant
+const last0 = ()=> game.shots[game.shots.length - 1];
+const peutRelancer = ()=>{ const me = myUid(), last = game.shots[game.shots.length - 1];
+  return game.solo || !me || !last || last.by !== me || !PLAYERS[1 - last.p].uid; };
 const myTurn = ()=>{ const me = myUid(); if(!me || game.solo) return true; if(!game.shots.length) return true; return PLAYERS[turn()].uid === me; };
 
 // à chaque rendu de l'appli : la carte (construite une fois, gardée telle quelle
 // pour ne pas couper une animation) et la partie relue dans la liste
 function sync(cat, force){
   CAT = cat;
-  const g = readGame(cat), sig = (g.solo ? "solo:" : "") + g.start + ":" + g.seed + ":" + g.shots.length;
+  const g = readGame(cat), sig = (g.solo ? "solo:" : "") + g.start + ":" + g.seed + ":" + g.shots.length + (g.dur ? ":dur" : "");
   if(sig === lastSig && !force){ game.objets = g.objets; game.total = g.total; refreshUI(); return; }
   lastSig = sig;
   if(ownShot){ game = g; return; }   // mon coup est déjà en train de voler
@@ -10044,11 +10080,11 @@ function lancer(){
   const res = simulate(world, shot);
   ownShot = true;
   if(game.solo){   // entraînement : en mémoire seulement
-    if(!soloShots.length) soloPerso = persoChoix;
+    if(!soloShots.length){ soloPerso = persoChoix; soloDur = durChoix; }
     soloShots.push(shot);
   }else{
     const item = { t: `${a} ${v} ${o}`, a, v, o, at: shot.at };
-    if(!game.shots.length) item.perso = persoChoix;
+    if(!game.shots.length){ item.perso = persoChoix; if(durChoix) item.dur = 1; }
     try{ insertItem(CAT, item); }catch(err){ console.error("[duel] coup non enregistré", err); ownShot = false; return; }
     seen[CAT.id] = (game.total || 0) + 1; saveSeen();
   }
@@ -10057,14 +10093,14 @@ function lancer(){
     ownShot = false;
     // la liste contient maintenant mon coup : même partie que celle qu'on voit, on ne la recharge pas
     // (sinon la danse, la couronne et les confettis seraient effacés)
-    const g = readGame(CAT); lastSig = (g.solo ? "solo:" : "") + g.start + ":" + g.seed + ":" + g.shots.length; game.total = g.total;
+    const g = readGame(CAT); lastSig = (g.solo ? "solo:" : "") + g.start + ":" + g.seed + ":" + g.shots.length + (g.dur ? ":dur" : ""); game.total = g.total;
     decideBand();
     renderAll();
   });
   setTimeout(()=> renderAll(), 0);   // la synchro part tout de suite
 }
 function nouvellePartie(){
-  if(busy || !CAT) return;
+  if(busy || !CAT || !peutRelancer()) return;
   if(game.solo){ soloShots = []; soloSeed = (Math.random() * 2 ** 31) | 0; lastSig = null; renderAll(); return; }   // entraînement : nouvelle ville, rien d'écrit
   insertItem(CAT, { t: "nouvelle partie", duel: "partie", seed: (Math.random() * 2 ** 31) | 0, g: REGLES.g, vent: REGLES.vent, trou: REGLES.trou, decor: REGLES.decor, at: Date.now() });
   seen[CAT.id] = getEffectiveItems(CAT).length; saveSeen();
@@ -10113,13 +10149,18 @@ function refreshUI(){
   ROOT.querySelectorAll(".objets button").forEach(b => b.classList.toggle("on", b.dataset.o === monObjet));
   paintObjets(css("--objet"));
   $(".persos").classList.toggle("gone", game.shots.length > 0 || busy);
+  $(".d-dur").classList.toggle("gone", game.shots.length > 0 || busy);
+  $(".d-dur input").checked = !!game.dur;
+  ROOT.classList.toggle("duel-dur", !!game.dur);
   ROOT.querySelectorAll(".persos button").forEach(b => b.classList.toggle("on", Number(b.dataset.k) === persoOf(0)));
   const lock = busy || attente || !mine;
   ROOT.querySelectorAll(".d-angle, .d-vitesse, .pas").forEach(i => i.disabled = lock || world.over);
   const lancerBtn = $(".d-lancer");
+  lancerBtn.classList.toggle("fin", !!world.over);
   if(world.over){
-    lancerBtn.textContent = "Nouvelle partie"; lancerBtn.classList.toggle("locked", busy);
-    $(".d-statut").textContent = "";
+    const relance = peutRelancer();
+    lancerBtn.textContent = "Nouvelle partie"; lancerBtn.classList.toggle("locked", busy || !relance);
+    $(".d-statut").textContent = busy || relance ? "" : `À ${PLAYERS[1 - last0().p].nom} de relancer.`;
   }else{
     lancerBtn.textContent = "Lancer"; lancerBtn.classList.toggle("locked", lock);
     $(".d-statut").textContent = busy || attente ? "" :
@@ -10153,6 +10194,7 @@ function build(){
         <div class="objets"></div>
         <button type="button" class="d-lancer">Lancer</button>
         <div class="d-sous"><div class="persos" title="Votre faisan (l'autre joueur prend l'autre)"></div><button type="button" class="d-revoir">↺ Revoir</button></div>
+        <label class="d-dur" title="Trous plus petits, vent plus costaud, cible plus étroite, sans trace"><input type="checkbox" role="switch"><span class="d-dur-sw" aria-hidden="true"></span>try hard</label>
       </div>
     <div class="chat-foot duel-foot">
       <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
@@ -10195,6 +10237,10 @@ function build(){
     if(world && world.over) nouvellePartie(); else lancer();
   });
   card.querySelector(".d-revoir").addEventListener("click", ()=> replayLast(false));
+  card.querySelector(".d-dur input").addEventListener("change", e => {   // 10.77 : avant le 1er coup seulement ; le décor et le vent suivent
+    if(game.shots.length || busy){ e.target.checked = !!game.dur; return; }
+    haptic("tic"); durChoix = e.target.checked; if(CAT) sync(CAT, true);
+  });
   card.querySelector(".d-go").addEventListener("click", ()=>{ haptic("tic"); $(".attente").classList.remove("on"); bandMode = null; setTimeout(()=> replayLast(true), 300); });
   card.querySelectorAll(".d-angle, .d-vitesse").forEach(i => i.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); lancer(); } }));
   card.querySelectorAll(".pas").forEach(b => {

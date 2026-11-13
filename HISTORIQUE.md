@@ -1044,4 +1044,8 @@ Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours ch
     phrases raccourcies, Revoir à gauche ; voyant en pleine page décollé de l'écran ; glisser : mêmes
     pointillés pour chat et duel, plus de vibration (marge DRAG_SWAP_MARGIN) ; dring dring = sonnette du vélo.
   - 10.76 : « En cours » en typo un peu plus petite (--task-size 0.85rem), sur deux colonnes sur ordi.
+  - 10.77 : duel — « Nouvelle partie » réservée à celui qui n'a pas joué le coup final, une fois ce coup vu
+    (l'autre lit « À … de relancer. ») ; téléphone couché : « Nouvelle partie » sur deux lignes, plus tronqué ;
+    niveau « try hard » (interrupteur en face des faisans, avant le 1er coup) : trous plus petits, vent plus
+    costaud, cible plus étroite, pas de trace.
 ```
