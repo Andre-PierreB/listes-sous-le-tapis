@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.79 -->
+<!-- Sous le tapis — version AUTONOME 10.80 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -247,6 +247,25 @@
     change d'objet (fillKey : seulement quand la situation change).
   - 10.79 : l'interrupteur try hard reprend le niveau de la partie d'avant tant
     qu'on n'y a pas touché (durPour / durKey) ; libellé en capitales, éteint dans le bleu pâli (jaune essayé, écarté).
+  - 10.80 : + au fond d'une liste : revealAddField ramène tout le cadre de
+    saisie (li) avec 10 px d'air (scroll-margin), plus seulement le champ.
+  - 10.80 : case fermée, souris à moins de ~40 px de la punaise : elle reste sur
+    place pendant que la case s'entrouvre (holdPin, propriété translate) ; si la
+    souris s'éloigne (> 60 px) ou au clic, elle rejoint le bas (releasePin).
+  - 10.80 : étiquettes « new » / « modif » (les siennes aussi, voulu) : 48 h
+    (NEW_FOR_MS, avant 24 h) depuis le premier affichage sur l'appareil ;
+    plus de messages flottants pour les changements des autres (SHOW_NOTICES).
+    Chaque tâche ajoutée porte sa date (at) : une liste partagée qu'un appareil
+    découvre garde « new » sur ses ajouts de moins de 48 h (avant : rien).
+    Inverser le sens d'une liste fait descendre tout de suite les cochées en
+    attente (flushLinger) ; changer d'appli ne retient plus les cochées.
+    Glisser une tâche sur une liste fermée l'entrouvre (peek) sans la punaiser.
+    Case ouverte ou entrouverte : au moins --fold-h (ne rétrécit plus au survol).
+    Modifier une tâche ou un article : titre et détail en zones qui grandissent
+    (growField, 8 lignes max) ; nom de mémo long (> 28 car.) : toute la ligne,
+    quantité dessous ; Entrée enregistre toujours, retours collés → espaces (oneLine).
+    Écrans : « Small talk » et « Duel de faisans » gravés dans la tôle à droite du
+    voyant (.chat-led::after, attr data-name), gravure « lèvre seule » (banc 13/11).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -1185,7 +1204,8 @@ header{
   .cat-close-bar:active::before{ opacity:.8; }
 }
 html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant une ouverture ou fermeture, le navigateur ne déplace pas la page */
-.category.collapsed{ align-self:start; padding-bottom:2.1rem; min-height:var(--fold-h); overflow:hidden; }   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
+.category.collapsed{ align-self:start; padding-bottom:2.1rem; min-height:var(--fold-h); overflow:hidden; }
+.category:not(.collapsed):not(.fullpage){ min-height:var(--fold-h); }   /* 10.80 : ouverte (ou entrouverte au survol), jamais plus basse que fermée : une liste d'une seule tâche ne rétrécit plus au survol */   /* 10.43 : plus de place pour la poignée sous le titre (avant 1.5rem) */
 /* 10.65 : toutes les cases repliées (liste, mémo, chat, duel) ont la même hauteur, --fold-h ;
    étalon : le mémo replié (bandeau + saisie), resserré de 3 px entre le bandeau et la saisie */
 @media (max-width:720px){ :root{ --fold-h:172px; } }   /* 10.72 : téléphone : la hauteur d'une liste repliée (avec sa ligne « Nouvelle tâche… ») — avant 143 px, le chat et le duel fermés étaient plus bas */   /* 10.69 : téléphone, texte agrandi : 127 × 18/16 (placé après, sinon sans effet) */
@@ -1795,6 +1815,12 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 4.5px); left:1.25rem;   /* 10.69 : en haut à gauche : le coin droit est au bouton pleine page (avant : juste à sa gauche) */ width:9px; height:9px; border-radius:50%;   /* 10.71 : un peu plus grand (avant : 7) */
   background:color-mix(in srgb, var(--ink) 18%, var(--bg)); box-shadow:inset 0 1px 1px rgba(0,0,0,0.25), 0 1px 0 var(--chat-lip); transition:background .4s ease, box-shadow .4s ease; }
 .chat-card.unread .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
+/* 10.80 : nom de l'écran à droite du voyant, gravé dans la tôle (même creux et même lèvre claire que le voyant) */
+.chat-led::after{ content:attr(data-name); position:absolute; left:24px; top:2px;   /* centré sur la ligne des titres des listes ; px entiers, sans transform : texte net (le demi-pixel floutait) */ white-space:nowrap; pointer-events:none;
+  font:700 0.6rem/1 'Courier Prime', 'Courier New', monospace; letter-spacing:0.14em; text-transform:uppercase;
+  color:color-mix(in srgb, var(--ink) 34%, var(--bg)); text-shadow:0 1px 0 var(--chat-lip), 0 -1px 0 rgba(0,0,0,0.28); }
+/* gravure retenue au banc le 13/11/2026 (« D · lèvre seule ») : Courier droit, capitales, teinte du métal foncée, lèvre claire dessous, sans flou */
+.chat-led::after{ color:color-mix(in srgb, var(--ink) 55%, var(--bg)); text-shadow:0 1px 0 var(--chat-lip); }
 @keyframes chat-led{ 50%{ box-shadow:0 0 2px 0 color-mix(in srgb, var(--logo-green) 50%, transparent); filter:brightness(0.85); } }
 @media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-led{ animation:none; } }
 /* 10.65 : le voyant laisse le coin au bouton pleine page (avant : dans l'axe du trèfle) */
@@ -2385,6 +2411,13 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 }
 .courses-edit input:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
 .courses-edit-name{ flex:1 1 0; width:0; } /* largeur prise sur la ligne, jamais au-delà (téléphone) */
+/* 10.80 : nom et détail en zones qui grandissent avec le texte ; nom long : toute la ligne, quantité dessous */
+.courses-edit textarea{ display:block; font-family:var(--font-memo); font-size:0.95rem; line-height:1.4; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--line); border-radius:8px; padding:0.3rem 0.5rem; min-width:0; resize:none; overflow:hidden; }
+.courses-edit textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+.courses-edit textarea.courses-edit-note{ font-size:0.86rem; }
+.courses-edit.long .courses-edit-name{ flex:1 0 100%; width:100%; }
+.edit-form textarea.grow{ display:block; overflow:hidden; }
 .courses-qty-edit{ flex:none; display:flex; align-items:center; gap:2px; }
 .courses-edit .courses-edit-qty{ width:3.4rem; text-align:center; padding-left:0.25rem; padding-right:0.25rem; }
 .courses-edit .courses-edit-note{ flex:1 0 100%; font-size:0.86rem; } /* 10.19 : détail, comme dans les autres listes */
@@ -3581,7 +3614,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.79</span>
+    <span class="version-tag">v10.80</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5045,6 +5078,7 @@ function insertItem(cat, item){
   const newIdx = getEffectiveItems(cat).length;
   // 10.2 : qui a créé la tâche (avec un compte seulement)
   if(!item.by && myUid()) item = Object.assign({}, item, { by: myUid() });
+  if(typeof item.at !== "number") item = Object.assign({}, item, { at: Date.now() });   // 10.80 : date de création (étiquette « new » d'une liste partagée découverte plus tard)
   customItems[cat.id] = customItems[cat.id] || [];
   customItems[cat.id].push(item);
   saveCustom(customItems);
@@ -6162,7 +6196,7 @@ function personInitials(uid, catId){
 // à l'écran pour la première fois } }. Une tâche ajoutée par quelqu'un
 // d'autre reste « new » au moins 24 h après cette première vue.
 const SEEN_KEY = "sous-le-tapis-vu";
-const NEW_FOR_MS = 24 * 3600 * 1000;
+const NEW_FOR_MS = 48 * 3600 * 1000;   // 10.80 : 48 h (avant 24 h) — comptées depuis le premier affichage sur CET appareil : même après une semaine d'absence, on les voit
 // 10.45 : m = { cléTâche: { at: date de la modification, s: date où je l'ai vue } }
 let seenMap = (()=>{ try{ const o = JSON.parse(localStorage.getItem(SEEN_KEY) || "{}"); return { c: (o && o.c) || {}, s: (o && o.s) || {}, m: (o && o.m) || {} }; }catch(e){ return { c:{}, s:{}, m:{} }; } })();
 function saveSeen(){ try{ localStorage.setItem(SEEN_KEY, JSON.stringify(seenMap)); }catch(e){} }
@@ -6174,11 +6208,17 @@ function newItems(cat){
     const me = myUid();
     if(!me) return [];
     const items = getEffectiveItems(cat);
-    if(typeof seenMap.c[cat.id] !== "number"){ seenMap.c[cat.id] = items.length; saveSeen(); return []; }   // première rencontre : rien de nouveau
+    if(typeof seenMap.c[cat.id] !== "number"){   // première rencontre : rien de nouveau, sauf les ajouts datés de moins de 48 h (10.80)
+      const t0 = Date.now(), recent = i => items[i] && typeof items[i].at === "number" && t0 - items[i].at < NEW_FOR_MS;
+      let c = items.findIndex((b, i) => recent(i)); if(c < 0) c = items.length;
+      for(let i = c; i < items.length; i++) if(!recent(i)) seenMap.s[itemKey(cat.id, i)] = t0 - NEW_FOR_MS;   // anciennes entre deux : déjà vues
+      seenMap.c[cat.id] = c; saveSeen();
+      if(c === items.length) return [];
+    }
     const now = Date.now(), out = [];
     for(let i = seenMap.c[cat.id]; i < items.length; i++){
       const b = items[i], key = itemKey(cat.id, i);
-      if(!b || !b.by || isDeleted(key) || state[key]) continue;
+      if(!b || !b.by || isDeleted(key) || state[key]) continue;   // ses propres ajouts aussi (voulu, 13/11/2026)
       const t = seenMap.s[key];
       if(t && now - t >= NEW_FOR_MS) continue;
       out.push(i);
@@ -6254,7 +6294,10 @@ function renderNewNotice(){
     newItems(c).forEach(i => { const b = getEffectiveItems(c)[i]; if(b.by !== me) now.set(itemKey(c.id, i), { cat:c, idx:i }); });
     editedItems(c).forEach(i => { const k = itemKey(c.id, i), e = editInfo(k); if(e.by !== me) edits.set(k + "@" + e.at, { cat:c, idx:i, by:e.by }); });
   });
-  if(prevEditKeys && document.visibilityState === "visible"){
+  // 10.80 : plus de message flottant pour les ajouts et modifs des autres (jamais lus : trop brefs, hors du regard) ;
+  // les étiquettes « new » / « modif », le voyant du chat et les bandeaux du duel suffisent
+  const SHOW_NOTICES = false;
+  if(SHOW_NOTICES && prevEditKeys && document.visibilityState === "visible"){
     const fresh = [...edits.keys()].filter(k => !prevEditKeys.has(k));
     if(fresh.length){
       const { cat, idx, by } = edits.get(fresh[0]);
@@ -6263,7 +6306,7 @@ function renderNewNotice(){
     }
   }
   prevEditKeys = new Set(edits.keys());
-  if(prevNewKeys && document.visibilityState === "visible"){
+  if(SHOW_NOTICES && prevNewKeys && document.visibilityState === "visible"){
     const fresh = [...now.keys()].filter(k => !prevNewKeys.has(k));
     if(fresh.length){
       const { cat, idx } = now.get(fresh[0]);
@@ -6618,6 +6661,14 @@ document.addEventListener("pointerover", e=>{
   hoverCatId = id;
 });
 document.documentElement.addEventListener("mouseleave", ()=>{ hoverCatId = null; });
+// 10.80 : en changeant d'appli (souris restée sur une liste), la liste ne retient plus ses cochées indéfiniment
+window.addEventListener("blur", ()=>{ hoverCatId = null; });
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState !== "visible") hoverCatId = null; });
+function flushLinger(catId){
+  let n = 0;
+  lingering.forEach((t, k)=>{ if(k.slice(0, k.lastIndexOf(":")) === catId){ lingering.delete(k); n++; } });
+  if(n && !lingering.size) clearTimeout(lingerTimer);
+}
 function lingerChecked(key, on){
   if(on){
     const until = Date.now() + CHECK_LINGER_MS;
@@ -7255,9 +7306,8 @@ function handleRowDragMove(x, y){
   // pas dans une liste de courses
   if((card.classList.contains("courses") || isCoursesList(d.cat.id)) && card.id !== "cat-" + d.cat.id) return;
   if(card.classList.contains("collapsed")){ // 10.7 : le volet s'ouvre sous la tâche
-    card.classList.remove("collapsed");
-    const fid = card.id.replace(/^cat-/, "");
-    if(fid) setFolded(fid, false);
+    // 10.80 : entrouverte seulement, le temps du glisser : elle n'est plus punaisée, et se referme après le dépôt
+    card.classList.remove("collapsed"); card.classList.add("peek");
   }
   const ul = card.querySelector("ul.items");
   if(!ul) return;
@@ -8066,8 +8116,8 @@ function buildItemLi(cat, idx, base, key, opts){
     li.className = "item editing";
     li.innerHTML = `
       <div class="edit-form">
-        <input type="text" class="edit-title" value="${escapeAttr(eff.t)}" placeholder="Titre">
-        <input type="text" class="edit-note" value="${escapeAttr(eff.note || "")}" placeholder="Détail (optionnel)">
+        <textarea rows="1" class="edit-title grow" placeholder="Titre" enterkeyhint="done">${escapeAttr(eff.t)}</textarea>
+        <textarea rows="1" class="edit-note grow" placeholder="Détail (optionnel)" enterkeyhint="done">${escapeAttr(eff.note || "")}</textarea>
         <div class="edit-label-row">
           <label class="edit-label edit-label-cat">Catégorie
             <select class="edit-cat">${catOptions}</select>
@@ -8093,6 +8143,7 @@ function buildItemLi(cat, idx, base, key, opts){
       </div>
     `;
     const titleInput = li.querySelector(".edit-title");
+    li.querySelectorAll("textarea.grow").forEach(growField);   // 10.80 : un long texte s'affiche en entier pendant qu'on le modifie
     const urgentToggle = wireEditUrgent(li);
     const noteInput = li.querySelector(".edit-note");
     const catSelect = li.querySelector(".edit-cat");
@@ -8108,8 +8159,8 @@ function buildItemLi(cat, idx, base, key, opts){
     });
     const save = ()=>{
       try{
-        const newTitle = titleInput.value.trim() || base.t;
-        const newNote = noteInput.value.trim();
+        const newTitle = oneLine(titleInput.value) || base.t;
+        const newNote = oneLine(noteInput.value);
         const newDue = dueInput.value ? (dueTimeInput.value ? dueInput.value + "T" + dueTimeInput.value : dueInput.value) : "";
         const newWho = whoInput.value.trim();
         const targetCatId = catSelect.value;
@@ -8217,13 +8268,13 @@ function buildItemLi(cat, idx, base, key, opts){
       <span class="drag-handle" aria-hidden="true">&#8942;&#8942;</span>
       <span class="strike-dot" aria-hidden="true"></span>
       <span class="courses-edit">
-        <input type="text" class="courses-edit-name" value="${escapeAttr(eff.t)}" aria-label="Article" autocomplete="off" enterkeyhint="done">
+        <textarea rows="1" class="courses-edit-name grow" aria-label="Article" autocomplete="off" enterkeyhint="done">${escapeAttr(eff.t)}</textarea>
         <span class="courses-qty-edit">
           <button type="button" class="qty-step" data-d="-1" aria-label="Un de moins">&minus;</button>
           <input type="text" class="courses-edit-qty" value="${escapeAttr(eff.q)}" placeholder="Qté" aria-label="Quantité" autocomplete="off" enterkeyhint="done">
           <button type="button" class="qty-step" data-d="1" aria-label="Un de plus">+</button>
         </span>
-        <input type="text" class="courses-edit-note" value="${escapeAttr(eff.note || "")}" placeholder="Détail (optionnel)" aria-label="Détail" autocomplete="off" enterkeyhint="done">
+        <textarea rows="1" class="courses-edit-note grow" placeholder="Détail (optionnel)" aria-label="Détail" autocomplete="off" enterkeyhint="done">${escapeAttr(eff.note || "")}</textarea>
         <span class="edit-actions">
           <button type="button" class="edit-remove">Retirer</button>
           <button type="button" class="edit-cancel">Annuler</button>
@@ -8237,6 +8288,10 @@ function buildItemLi(cat, idx, base, key, opts){
     li.querySelector(".edit-cancel").addEventListener("click", e=>{ e.stopPropagation(); editingCoursesKey = null; renderAll(); });
     li.querySelector(".edit-save").addEventListener("click", e=>{ e.stopPropagation(); commitCoursesEdit(); });
     const nameInp = li.querySelector(".courses-edit-name"), qtyInp = li.querySelector(".courses-edit-qty");
+    // 10.80 : texte long : le nom prend toute la ligne (la quantité passe dessous) et la zone grandit avec le texte
+    const ce = li.querySelector(".courses-edit"), longName = ()=> ce.classList.toggle("long", nameInp.value.length > 28);
+    longName(); nameInp.addEventListener("input", longName);
+    li.querySelectorAll("textarea.grow").forEach(growField);
     const noteInp = li.querySelector(".courses-edit-note");
     li.querySelectorAll(".qty-step").forEach(b=>{
       b.addEventListener("mousedown", e => e.preventDefault());   // le curseur reste où il est
@@ -8573,6 +8628,15 @@ let editingCoursesKey = null;   // l'article en cours de modification (crayon)
 // Enregistre la modification d'un article (Entrée, ou clic ailleurs) : nom et
 // quantité, dans ses modifications comme pour une tâche. Un nom vide garde
 // l'ancien ; une quantité tapée dans le nom (« 2 lait ») est reconnue.
+// 10.80 : zone de saisie d'une ligne qui grandit avec le texte (jusqu'à ~8 lignes, puis elle défile)
+function growField(ta){
+  const fit = ()=>{ ta.style.height = "auto"; const max = parseFloat(getComputedStyle(ta).lineHeight || "20") * 8 + 16;
+    ta.style.height = Math.min(ta.scrollHeight + 2, max) + "px"; ta.style.overflowY = ta.scrollHeight + 2 > max ? "auto" : "hidden"; };
+  ta.addEventListener("input", fit);
+  requestAnimationFrame(fit);
+}
+// une tâche tient sur une ligne : retours à la ligne collés → espaces
+function oneLine(v){ return String(v || "").replace(/\s*[\r\n]+\s*/g, " ").trim(); }
 function commitCoursesEdit(){
   const li = document.querySelector(".courses-item.editing");
   const key = editingCoursesKey;
@@ -8587,7 +8651,7 @@ function commitCoursesEdit(){
         const eff = getEffective(key, base);
         const raw = coursesCleanLine(li.querySelector(".courses-edit-name").value);
         let t = raw, q = normCoursesQty(li.querySelector(".courses-edit-qty").value);
-        const note = li.querySelector(".courses-edit-note").value.trim();
+        const note = oneLine(li.querySelector(".courses-edit-note").value);
         if(!q){ const p = parseCoursesLine(raw); if(p.q){ t = p.t; q = p.q; } }
         if(!t) t = eff.t;
         if(t !== eff.t || q !== eff.q || note !== (eff.note || "")){
@@ -8809,7 +8873,10 @@ function revealAddField(f){
     if(!f.isConnected) return;
     try{ if(document.activeElement !== f) f.focus({ preventScroll:true }); const n = f.value.length; f.setSelectionRange(n, n); }catch(e){}
     const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    try{ f.scrollIntoView({ block:"nearest", behavior: still ? "auto" : "smooth" }); }catch(e){}
+    // 10.80 : on ramène tout le cadre de saisie (pas seulement le champ), avec un peu d'air : il n'est plus rogné au bord
+    const box = f.closest("li") || f;
+    box.style.scrollMarginTop = box.style.scrollMarginBottom = "10px";
+    try{ box.scrollIntoView({ block:"nearest", behavior: still ? "auto" : "smooth" }); }catch(e){}
   });
 }
 const COURSES_DBL_MS = 260;   // 10.75 : attente d'un éventuel double-clic avant de rayer un article (souris)
@@ -8910,7 +8977,7 @@ function buildChatCard(cat, catIdx){
   if(folded) card.classList.add("collapsed");
   if(fullpageCat === cat.id) card.classList.add("fullpage");
   paintCardColor(card, cat.id);   // 10.69
-  card.innerHTML = `<div class="chat-box"><span class="chat-led" aria-hidden="true"></span>${scrFullBtn(cat.id)}<div class="chat-hole"><div class="chat-screen">
+  card.innerHTML = `<div class="chat-box"><span class="chat-led" data-name="Small talk" aria-hidden="true"></span>${scrFullBtn(cat.id)}<div class="chat-hole"><div class="chat-screen">
       <div class="chat-log" role="log" aria-label="Messages"></div>
       <div class="chat-in"><textarea class="chat-field" rows="1" aria-label="Écrire un mot" autocomplete="off" enterkeyhint="send"></textarea><span class="chat-cur"></span></div>
     </div></div>
@@ -10240,7 +10307,7 @@ function build(){
       <button type="button" class="cat-fold">${pinSvg()}</button>
       <div class="chat-menu" hidden></div>
     </div>
-    <span class="chat-led" aria-hidden="true"></span><button type="button" class="cat-full scr-full"></button>
+    <span class="chat-led" data-name="Duel de faisans" aria-hidden="true"></span><button type="button" class="cat-full scr-full"></button>
     </div>`;
   ROOT = card;
   card.querySelector(".cat-fold").addEventListener("click", e => { e.stopPropagation(); if(CAT) toggleFold(CAT.id); });
@@ -10506,6 +10573,7 @@ function render(){
     head.querySelector(".cat-order").addEventListener("click", (e)=>{
       e.stopPropagation();
       toggleCatReversed(cat.id);
+      flushLinger(cat.id);   // 10.80 : on réordonne : les rayées en attente rejoignent le bas tout de suite (elles restaient coincées au milieu)
       renderAll();
     });
     const quickInp = head.querySelector(".cat-quick");
@@ -10847,7 +10915,36 @@ function peekCard(card, on, still){
   if(on === card.classList.contains("peek")) return;
   const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); if(card.classList.contains("courses")) placeCoursesScroll(card);
     const log = on && card.querySelector(".chat-log"); if(log) log.scrollTop = log.scrollHeight; };   // 10.67 : l'écran de chat entrouvert montre ses derniers messages (avant : remonté au premier)   // 10.67 : la barre du mémo suit
+  // 10.80 : souris posée sur la punaise au moment où la case s'entrouvre : la punaise reste où elle est
+  // (au lieu de filer avec le bas de la case) tant qu'on ne la quitte pas ; on peut donc la cliquer du premier coup
+  const pin = on && !still && card.querySelector(".cat-fold");
+  const hold = !!pin && pinNear(pin);
   if(still) change(); else softHeight(card, change, on);
+  if(hold) holdPin(card, pin);
+}
+// 10.80 : pas besoin d'être pile dessus : la souris à moins de ~40 px de la punaise suffit
+let ptrX = -1e4, ptrY = -1e4;
+document.addEventListener("pointermove", e => { if(e.pointerType === "mouse"){ ptrX = e.clientX; ptrY = e.clientY; } }, { passive:true, capture:true });
+function pinNear(pin){
+  const r = pin.getBoundingClientRect();
+  return Math.hypot(ptrX - (r.left + r.width / 2), ptrY - (r.top + r.height / 2)) < 40;
+}
+function holdPin(card, pin){
+  const g = card._glide; if(!g || !pin.animate) return;
+  if(pin._hold) pin._hold.cancel();
+  pin._hold = pin.animate([{ translate:"0 0" }, { translate:`0 ${-g.dh}px` }], { duration:g.dur, easing:g.easing, fill:"forwards" });
+  // relâchée quand la souris s'en éloigne (plus de ~60 px), ou quand on la clique
+  const away = e => { if(!pin._hold){ document.removeEventListener("pointermove", away, true); return; }
+    const r = pin.getBoundingClientRect();
+    if(Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) > 60){ document.removeEventListener("pointermove", away, true); releasePin(pin); } };
+  document.addEventListener("pointermove", away, true);
+  pin.addEventListener("click", ()=> releasePin(pin), { once:true, capture:true });   // punaisée : elle redescend avec la case (duel et chat gardent leur carte)
+}
+function releasePin(pin){
+  const a = pin._hold; if(!a) return; pin._hold = null;
+  const cur = getComputedStyle(pin).translate;
+  a.cancel();
+  if(cur && cur !== "none" && pin.isConnected) pin.animate([{ translate:cur }, { translate:"0 0" }], { duration:380, easing:SOFT_EASE });   // elle rejoint doucement le bas de la case
 }
 // 10.66 : la case glisse d'une hauteur à l'autre (douce, sans à-coup), son contenu apparaît en fondu
 const SOFT_EASE = "cubic-bezier(.33,0,.2,1)";   // 10.67 : départ en douceur (avant .25,.8,.25,1 : presque tout le mouvement dans les premiers instants, sec)
@@ -10864,6 +10961,7 @@ function softHeight(card, change, opening){
 // 10.67 : la case passe de la hauteur h0 à sa hauteur actuelle ; rend la durée (ms)
 function glideHeight(card, h0, opening){
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  card._glide = null;
   if(reduce || !card.animate) return 0;
   const h1 = card.getBoundingClientRect().height;
   if(Math.abs(h1 - h0) < 2) return 0;
@@ -10871,7 +10969,7 @@ function glideHeight(card, h0, opening){
   card.style.overflow = "hidden";
   card.classList.add("gliding");   // 10.68 : aperçu non borné pendant le glissement
   const a = card.animate([{ height:h0 + "px" }, { height:h1 + "px" }], { duration:dur, easing:opening ? SOFT_EASE : SOFT_CLOSE });
-  card._soft = a;
+  card._soft = a; card._glide = { dh: h1 - h0, dur, easing: opening ? SOFT_EASE : SOFT_CLOSE };   // 10.80 : pour la punaise retenue
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
   const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); if(card.classList.contains("courses")) placeCoursesScroll(card); } };
