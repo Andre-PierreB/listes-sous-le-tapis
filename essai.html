@@ -1818,7 +1818,21 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 /* 10.80 : nom de l'écran à droite du voyant, gravé dans la tôle (même creux et même lèvre claire que le voyant) */
 .chat-led::after{ content:attr(data-name); position:absolute; left:24px; top:50%; transform:translateY(calc(-50% + 2.6px));   /* centré sur la ligne des titres des listes (2,6 px plus bas que le voyant) */ white-space:nowrap; pointer-events:none;
   font:700 0.6rem/1 'Courier Prime', 'Courier New', monospace; letter-spacing:0.14em; text-transform:uppercase;
-  color:color-mix(in srgb, var(--ink) 24%, var(--bg)); text-shadow:0 1px 0 var(--chat-lip), 0 -1px 0 rgba(0,0,0,0.10); }
+  color:color-mix(in srgb, var(--ink) 34%, var(--bg)); text-shadow:0 1px 0 var(--chat-lip), 0 -1px 0 rgba(0,0,0,0.28); }
+/* BANC (essai seulement) : typo et profondeur de la gravure, réglées par html[data-engr-font] / [data-engr-depth] */
+html[data-engr-font="ci"] .chat-led::after{ font-style:italic; }
+html[data-engr-font="si"] .chat-led::after{ font:italic 600 0.74rem/1 Georgia, 'Times New Roman', serif; letter-spacing:0.04em; text-transform:none; }
+html[data-engr-font="sic"] .chat-led::after{ font:italic 600 0.66rem/1 Georgia, 'Times New Roman', serif; letter-spacing:0.12em; text-transform:uppercase; }
+html[data-engr-depth="douce"] .chat-led::after{ color:color-mix(in srgb, var(--ink) 26%, var(--bg)); text-shadow:0 1px 0 var(--chat-lip), 0 -1px 0 rgba(0,0,0,0.14); }
+html[data-engr-depth="profonde"] .chat-led::after{ color:color-mix(in srgb, var(--ink) 46%, var(--bg)); text-shadow:0 1px 0 var(--chat-lip), 0 1.5px 1px var(--chat-lip), 0 -1px 0 rgba(0,0,0,0.42), 0 -1px 2px rgba(0,0,0,0.12); }
+html[data-engr-depth="creuse"] .chat-led::after{ color:transparent; background:color-mix(in srgb, var(--ink) 62%, var(--bg)); -webkit-background-clip:text; background-clip:text;
+  text-shadow:0 1px 1px var(--chat-lip), 0 -0.5px 0 rgba(0,0,0,0.25); }
+.banc-engr{ position:fixed; left:12px; bottom:12px; z-index:9999; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:0.6rem 0.7rem;
+  font:0.78rem/1.5 'Public Sans', sans-serif; color:var(--ink-soft); box-shadow:var(--shadow); display:grid; gap:0.35rem; }
+.banc-engr b{ font-weight:700; color:var(--ink); }
+.banc-engr .r{ display:flex; gap:0.25rem; flex-wrap:wrap; align-items:center; }
+.banc-engr button{ font:inherit; border:1px solid var(--line); background:var(--surface); border-radius:6px; padding:0.1rem 0.45rem; cursor:pointer; color:var(--ink-soft); }
+.banc-engr button.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
 @keyframes chat-led{ 50%{ box-shadow:0 0 2px 0 color-mix(in srgb, var(--logo-green) 50%, transparent); filter:brightness(0.85); } }
 @media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-led{ animation:none; } }
 /* 10.65 : le voyant laisse le coin au bouton pleine page (avant : dans l'axe du trèfle) */
@@ -8627,6 +8641,26 @@ let editingCoursesKey = null;   // l'article en cours de modification (crayon)
 // quantité, dans ses modifications comme pour une tâche. Un nom vide garde
 // l'ancien ; une quantité tapée dans le nom (« 2 lait ») est reconnue.
 // 10.80 : zone de saisie d'une ligne qui grandit avec le texte (jusqu'à ~8 lignes, puis elle défile)
+// BANC (essai seulement, 13/11/2026) : comparer la typo et la gravure des noms d'écrans ; « Copier » donne les réglages à transmettre
+(function bancEngr(){
+  if(!/essai/i.test(location.pathname)) return;
+  const H = document.documentElement, K = "banc-engr";
+  let st = { font:"c", depth:"marquee" }; try{ Object.assign(st, JSON.parse(localStorage.getItem(K) || "{}")); }catch(e){}
+  const FONTS = [["c","Courier droit"],["ci","Courier italique"],["si","Serif italique"],["sic","Serif ital. capitales"]];
+  const DEPTHS = [["douce","Douce"],["marquee","Marquée"],["profonde","Profonde"],["creuse","Creusée"]];
+  const apply = ()=>{ H.dataset.engrFont = st.font; H.dataset.engrDepth = st.depth; try{ localStorage.setItem(K, JSON.stringify(st)); }catch(e){}
+    box.querySelectorAll("button[data-k]").forEach(b => b.classList.toggle("on", st[b.dataset.k] === b.dataset.v)); };
+  const box = document.createElement("div"); box.className = "banc-engr";
+  const row = (label, k, list)=> `<div><b>${label}</b><div class="r">${list.map(([v, t]) => `<button type="button" data-k="${k}" data-v="${v}">${t}</button>`).join("")}</div></div>`;
+  box.innerHTML = `${row("Noms d'écrans · typo", "font", FONTS)}${row("Gravure", "depth", DEPTHS)}<div class="r"><button type="button" class="cp">Copier les réglages</button><button type="button" class="x">Fermer</button></div>`;
+  box.addEventListener("click", e=>{ const b = e.target.closest("button"); if(!b) return; e.stopPropagation();
+    if(b.dataset.k){ st[b.dataset.k] = b.dataset.v; apply(); }
+    else if(b.classList.contains("cp")){ const t = `Noms d'écrans : typo ${FONTS.find(f => f[0] === st.font)[1]}, gravure ${DEPTHS.find(d => d[0] === st.depth)[1]}`;
+      try{ navigator.clipboard.writeText(t); b.textContent = "Copié !"; setTimeout(()=> b.textContent = "Copier les réglages", 1500); }catch(err){ prompt("À copier :", t); } }
+    else if(b.classList.contains("x")) box.remove(); });
+  const add = ()=>{ document.body.appendChild(box); apply(); };
+  if(document.body) add(); else document.addEventListener("DOMContentLoaded", add);
+})();
 function growField(ta){
   const fit = ()=>{ ta.style.height = "auto"; const max = parseFloat(getComputedStyle(ta).lineHeight || "20") * 8 + 16;
     ta.style.height = Math.min(ta.scrollHeight + 2, max) + "px"; ta.style.overflowY = ta.scrollHeight + 2 > max ? "auto" : "hidden"; };
