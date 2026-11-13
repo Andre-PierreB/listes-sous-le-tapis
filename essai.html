@@ -249,9 +249,9 @@
     qu'on n'y a pas touché (durPour / durKey) ; libellé en capitales, éteint dans le bleu pâli (jaune essayé, écarté).
   - 10.80 : + au fond d'une liste : revealAddField ramène tout le cadre de
     saisie (li) avec 10 px d'air (scroll-margin), plus seulement le champ.
-  - 10.80 : case fermée survolée par la punaise : elle reste sur place pendant
-    que la case s'entrouvre (holdPin, propriété translate), tant que la souris
-    est dessus ; en la quittant elle rejoint le bas (releasePin).
+  - 10.80 : case fermée, souris à moins de ~40 px de la punaise : elle reste sur
+    place pendant que la case s'entrouvre (holdPin, propriété translate) ; si la
+    souris s'éloigne (> 60 px) ou au clic, elle rejoint le bas (releasePin).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -10858,15 +10858,26 @@ function peekCard(card, on, still){
   // 10.80 : souris posée sur la punaise au moment où la case s'entrouvre : la punaise reste où elle est
   // (au lieu de filer avec le bas de la case) tant qu'on ne la quitte pas ; on peut donc la cliquer du premier coup
   const pin = on && !still && card.querySelector(".cat-fold");
-  const hold = !!pin && pin.matches(":hover");
+  const hold = !!pin && pinNear(pin);
   if(still) change(); else softHeight(card, change, on);
   if(hold) holdPin(card, pin);
+}
+// 10.80 : pas besoin d'être pile dessus : la souris à moins de ~40 px de la punaise suffit
+let ptrX = -1e4, ptrY = -1e4;
+document.addEventListener("pointermove", e => { if(e.pointerType === "mouse"){ ptrX = e.clientX; ptrY = e.clientY; } }, { passive:true, capture:true });
+function pinNear(pin){
+  const r = pin.getBoundingClientRect();
+  return Math.hypot(ptrX - (r.left + r.width / 2), ptrY - (r.top + r.height / 2)) < 40;
 }
 function holdPin(card, pin){
   const g = card._glide; if(!g || !pin.animate) return;
   if(pin._hold) pin._hold.cancel();
   pin._hold = pin.animate([{ translate:"0 0" }, { translate:`0 ${-g.dh}px` }], { duration:g.dur, easing:g.easing, fill:"forwards" });
-  pin.addEventListener("pointerleave", ()=> releasePin(pin), { once:true });
+  // relâchée quand la souris s'en éloigne (plus de ~60 px), ou quand on la clique
+  const away = e => { if(!pin._hold){ document.removeEventListener("pointermove", away, true); return; }
+    const r = pin.getBoundingClientRect();
+    if(Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) > 60){ document.removeEventListener("pointermove", away, true); releasePin(pin); } };
+  document.addEventListener("pointermove", away, true);
   pin.addEventListener("click", ()=> releasePin(pin), { once:true, capture:true });   // punaisée : elle redescend avec la case (duel et chat gardent leur carte)
 }
 function releasePin(pin){
