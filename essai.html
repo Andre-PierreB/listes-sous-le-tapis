@@ -236,7 +236,7 @@
     l'autre voit « À … de relancer. ». Sinon la nouvelle partie effaçait le coup
     final avant qu'il soit vu. Entraînement, sans compte, seul : comme avant.
   - 10.77 : niveau « try hard » (TRYHARD : trous 12 au lieu de 22, vent 8 à 18,
-    cible ±12 px au lieu de ±18, pas de trace des coups précédents), choisi par
+    cible ±12 px au lieu de ±18 ; trace des coups gardée), choisi par
     l'interrupteur en face des faisans avant le 1er coup ; enregistré dans ce
     1er coup (dur:1), relu par readGame (regles). Les parties normales sont
     calculées exactement comme avant.
@@ -9106,8 +9106,8 @@ const makeDuel = ()=>{   // 10.63 : une instance par duel (chacun sa carte, son 
 const W = 960, H = 540;
 const REGLES = { g:380, vent:10, trou:22, decor:"pignons" };   // réglages retenus au banc le 6/11/2026
 // 10.77 : niveau « try hard », choisi par celui qui joue le 1er coup (interrupteur en face du choix du faisan) ;
-// gardé dans ce 1er coup (dur:1) : trous plus petits, vent toujours costaud, cible plus étroite, pas de trace
-const TRYHARD = { trou:12, vent:18, vmin:8, cible:12, notrace:1 };
+// gardé dans ce 1er coup (dur:1) : trous plus petits, vent toujours costaud, cible plus étroite
+const TRYHARD = { trou:12, vent:18, vmin:8, cible:12 };   // notrace:1 possible (sans trace) — trace gardée pour l'instant (13/11/2026)
 const S = { trace:1, get son(){ try{ return localStorage.getItem("sous-le-tapis-duel-son") !== "0"; }catch(e){ return true; } } };
 const OBJETS = { stylo:"Stylo plume", roue:"Vélo", reveil:"Réveil", coeur:"Cœur" };
 const OBJ_SIZE = { stylo: 1.15, roue: 1.05, reveil: 1.1, coeur: 1 };
@@ -9746,7 +9746,7 @@ function hud(){
   // vent
   // 10.68 : plus grand et plus contrasté (Hiske : illisible), flèche plus épaisse
   ctx.textAlign = "center"; ctx.font = `700 ${F(16)}px 'Courier Prime', monospace`; ctx.fillStyle = css("--ink");
-  ctx.fillText((R().notrace ? "try hard · " : "") + (world.wind ? `vent ${Math.abs(world.wind)}` : "pas de vent"), W / 2, 12 + F(17));
+  ctx.fillText((R().vmin ? "try hard · " : "") + (world.wind ? `vent ${Math.abs(world.wind)}` : "pas de vent"), W / 2, 12 + F(17));
   if(world.wind){
     const k = F(10) / 10, len = (10 + Math.abs(world.wind) * 6) * k, d = Math.sign(world.wind), ay = 12 + F(17) + F(11);
     ctx.strokeStyle = css("--accent"); ctx.fillStyle = css("--accent"); ctx.lineCap = "round";
@@ -10194,7 +10194,7 @@ function build(){
         <div class="objets"></div>
         <button type="button" class="d-lancer">Lancer</button>
         <div class="d-sous"><div class="persos" title="Votre faisan (l'autre joueur prend l'autre)"></div><button type="button" class="d-revoir">↺ Revoir</button></div>
-        <label class="d-dur" title="Trous plus petits, vent plus costaud, cible plus étroite, sans trace"><input type="checkbox" role="switch"><span class="d-dur-sw" aria-hidden="true"></span>try hard</label>
+        <label class="d-dur" title="Trous plus petits, vent plus costaud, cible plus étroite"><input type="checkbox" role="switch"><span class="d-dur-sw" aria-hidden="true"></span>try hard</label>
       </div>
     <div class="chat-foot duel-foot">
       <span class="cat-grip" aria-label="Réorganiser les listes" data-tip="Réorganiser"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
