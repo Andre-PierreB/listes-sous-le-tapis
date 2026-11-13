@@ -267,7 +267,8 @@
     Écrans : « Small talk » et « Duel de faisans » gravés dans la tôle à droite du
     voyant (.chat-led::after, attr data-name), gravure « lèvre seule » (banc 13/11).
   - 10.81 : mémos : un filet bleu au-dessus du premier article (ombre intérieure,
-    sans décaler les lignes), visible aussi mémo fermé.
+    sans décaler les lignes), visible aussi mémo fermé ; la marge dépasse de 5 px
+    au-dessus (MEMO_RULE_OVER dans fitCoursesCards).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -8836,8 +8837,9 @@ function fitCoursesCards(saved){
     const ul = c.querySelector(":scope > ul.items");
     if(!ul) return;
     // 10.17 : la marge part de la première ligne sous le titre (10.38 : la saisie)
+    const MEMO_RULE_OVER = 5;   // 10.81 : px de marge au-dessus du premier filet
     const first = ul;   // 10.68 : les articles d'abord, la saisie est dessous
-    c.style.setProperty("--rule-top", (first ? first.offsetTop + (ul.querySelector(":scope > .add-form-row") ? 2 : 0) : c.offsetHeight) + "px");   // 10.71 : sous les champs d'ajout, pas un pixel de marge qui dépasse
+    c.style.setProperty("--rule-top", (first ? first.offsetTop + (ul.querySelector(":scope > .add-form-row") ? 2 : -MEMO_RULE_OVER) : c.offsetHeight) + "px");   // 10.71 : sous les champs d'ajout, pas un pixel de marge qui dépasse ; 10.81 : sinon elle dépasse un rien au-dessus du filet du haut
     // 10.18 : barre de défilement maison, toujours visible
     let bar = c.querySelector(":scope > .courses-scroll");
     if(!bar){
