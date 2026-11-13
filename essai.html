@@ -261,6 +261,9 @@
     attente (flushLinger) ; changer d'appli ne retient plus les cochées.
     Glisser une tâche sur une liste fermée l'entrouvre (peek) sans la punaiser.
     Case ouverte ou entrouverte : au moins --fold-h (ne rétrécit plus au survol).
+    Modifier une tâche ou un article : titre et détail en zones qui grandissent
+    (growField, 8 lignes max) ; nom de mémo long (> 28 car.) : toute la ligne,
+    quantité dessous ; Entrée enregistre toujours, retours collés → espaces (oneLine).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -2400,6 +2403,13 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 }
 .courses-edit input:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
 .courses-edit-name{ flex:1 1 0; width:0; } /* largeur prise sur la ligne, jamais au-delà (téléphone) */
+/* 10.80 : nom et détail en zones qui grandissent avec le texte ; nom long : toute la ligne, quantité dessous */
+.courses-edit textarea{ display:block; font-family:var(--font-memo); font-size:0.95rem; line-height:1.4; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--line); border-radius:8px; padding:0.3rem 0.5rem; min-width:0; resize:none; overflow:hidden; }
+.courses-edit textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+.courses-edit textarea.courses-edit-note{ font-size:0.86rem; }
+.courses-edit.long .courses-edit-name{ flex:1 0 100%; width:100%; }
+.edit-form textarea.grow{ display:block; overflow:hidden; }
 .courses-qty-edit{ flex:none; display:flex; align-items:center; gap:2px; }
 .courses-edit .courses-edit-qty{ width:3.4rem; text-align:center; padding-left:0.25rem; padding-right:0.25rem; }
 .courses-edit .courses-edit-note{ flex:1 0 100%; font-size:0.86rem; } /* 10.19 : détail, comme dans les autres listes */
@@ -8098,8 +8108,8 @@ function buildItemLi(cat, idx, base, key, opts){
     li.className = "item editing";
     li.innerHTML = `
       <div class="edit-form">
-        <input type="text" class="edit-title" value="${escapeAttr(eff.t)}" placeholder="Titre">
-        <input type="text" class="edit-note" value="${escapeAttr(eff.note || "")}" placeholder="Détail (optionnel)">
+        <textarea rows="1" class="edit-title grow" placeholder="Titre" enterkeyhint="done">${escapeAttr(eff.t)}</textarea>
+        <textarea rows="1" class="edit-note grow" placeholder="Détail (optionnel)" enterkeyhint="done">${escapeAttr(eff.note || "")}</textarea>
         <div class="edit-label-row">
           <label class="edit-label edit-label-cat">Catégorie
             <select class="edit-cat">${catOptions}</select>
@@ -8125,6 +8135,7 @@ function buildItemLi(cat, idx, base, key, opts){
       </div>
     `;
     const titleInput = li.querySelector(".edit-title");
+    li.querySelectorAll("textarea.grow").forEach(growField);   // 10.80 : un long texte s'affiche en entier pendant qu'on le modifie
     const urgentToggle = wireEditUrgent(li);
     const noteInput = li.querySelector(".edit-note");
     const catSelect = li.querySelector(".edit-cat");
@@ -8140,8 +8151,8 @@ function buildItemLi(cat, idx, base, key, opts){
     });
     const save = ()=>{
       try{
-        const newTitle = titleInput.value.trim() || base.t;
-        const newNote = noteInput.value.trim();
+        const newTitle = oneLine(titleInput.value) || base.t;
+        const newNote = oneLine(noteInput.value);
         const newDue = dueInput.value ? (dueTimeInput.value ? dueInput.value + "T" + dueTimeInput.value : dueInput.value) : "";
         const newWho = whoInput.value.trim();
         const targetCatId = catSelect.value;
@@ -8249,13 +8260,13 @@ function buildItemLi(cat, idx, base, key, opts){
       <span class="drag-handle" aria-hidden="true">&#8942;&#8942;</span>
       <span class="strike-dot" aria-hidden="true"></span>
       <span class="courses-edit">
-        <input type="text" class="courses-edit-name" value="${escapeAttr(eff.t)}" aria-label="Article" autocomplete="off" enterkeyhint="done">
+        <textarea rows="1" class="courses-edit-name grow" aria-label="Article" autocomplete="off" enterkeyhint="done">${escapeAttr(eff.t)}</textarea>
         <span class="courses-qty-edit">
           <button type="button" class="qty-step" data-d="-1" aria-label="Un de moins">&minus;</button>
           <input type="text" class="courses-edit-qty" value="${escapeAttr(eff.q)}" placeholder="Qté" aria-label="Quantité" autocomplete="off" enterkeyhint="done">
           <button type="button" class="qty-step" data-d="1" aria-label="Un de plus">+</button>
         </span>
-        <input type="text" class="courses-edit-note" value="${escapeAttr(eff.note || "")}" placeholder="Détail (optionnel)" aria-label="Détail" autocomplete="off" enterkeyhint="done">
+        <textarea rows="1" class="courses-edit-note grow" placeholder="Détail (optionnel)" aria-label="Détail" autocomplete="off" enterkeyhint="done">${escapeAttr(eff.note || "")}</textarea>
         <span class="edit-actions">
           <button type="button" class="edit-remove">Retirer</button>
           <button type="button" class="edit-cancel">Annuler</button>
@@ -8269,6 +8280,10 @@ function buildItemLi(cat, idx, base, key, opts){
     li.querySelector(".edit-cancel").addEventListener("click", e=>{ e.stopPropagation(); editingCoursesKey = null; renderAll(); });
     li.querySelector(".edit-save").addEventListener("click", e=>{ e.stopPropagation(); commitCoursesEdit(); });
     const nameInp = li.querySelector(".courses-edit-name"), qtyInp = li.querySelector(".courses-edit-qty");
+    // 10.80 : texte long : le nom prend toute la ligne (la quantité passe dessous) et la zone grandit avec le texte
+    const ce = li.querySelector(".courses-edit"), longName = ()=> ce.classList.toggle("long", nameInp.value.length > 28);
+    longName(); nameInp.addEventListener("input", longName);
+    li.querySelectorAll("textarea.grow").forEach(growField);
     const noteInp = li.querySelector(".courses-edit-note");
     li.querySelectorAll(".qty-step").forEach(b=>{
       b.addEventListener("mousedown", e => e.preventDefault());   // le curseur reste où il est
@@ -8605,6 +8620,15 @@ let editingCoursesKey = null;   // l'article en cours de modification (crayon)
 // Enregistre la modification d'un article (Entrée, ou clic ailleurs) : nom et
 // quantité, dans ses modifications comme pour une tâche. Un nom vide garde
 // l'ancien ; une quantité tapée dans le nom (« 2 lait ») est reconnue.
+// 10.80 : zone de saisie d'une ligne qui grandit avec le texte (jusqu'à ~8 lignes, puis elle défile)
+function growField(ta){
+  const fit = ()=>{ ta.style.height = "auto"; const max = parseFloat(getComputedStyle(ta).lineHeight || "20") * 8 + 16;
+    ta.style.height = Math.min(ta.scrollHeight + 2, max) + "px"; ta.style.overflowY = ta.scrollHeight + 2 > max ? "auto" : "hidden"; };
+  ta.addEventListener("input", fit);
+  requestAnimationFrame(fit);
+}
+// une tâche tient sur une ligne : retours à la ligne collés → espaces
+function oneLine(v){ return String(v || "").replace(/\s*[\r\n]+\s*/g, " ").trim(); }
 function commitCoursesEdit(){
   const li = document.querySelector(".courses-item.editing");
   const key = editingCoursesKey;
@@ -8619,7 +8643,7 @@ function commitCoursesEdit(){
         const eff = getEffective(key, base);
         const raw = coursesCleanLine(li.querySelector(".courses-edit-name").value);
         let t = raw, q = normCoursesQty(li.querySelector(".courses-edit-qty").value);
-        const note = li.querySelector(".courses-edit-note").value.trim();
+        const note = oneLine(li.querySelector(".courses-edit-note").value);
         if(!q){ const p = parseCoursesLine(raw); if(p.q){ t = p.t; q = p.q; } }
         if(!t) t = eff.t;
         if(t !== eff.t || q !== eff.q || note !== (eff.note || "")){
