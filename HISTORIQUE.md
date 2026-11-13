@@ -3,6 +3,10 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 10.81 : mémos : filet bleu au-dessus du premier article (visible fermé aussi), marge qui
+    dépasse de 5 px au-dessus ; relance : à sa date, la tâche quitte « En cours » et rentre dans sa
+    liste, urgente, étiquette « Relance j/m » ; le triangle la rend non urgente (bug : impossible
+    avant), ↪ la renvoie en cours (compte +1).
   - 10.74 : grand ménage, sans changement à l'écran : anciennes versions dans archives/,
     historique sorti vers ce fichier, 15 règles CSS en double fusionnées ; synchro : une salve
     de listes arrivées d'un coup (ouverture) ne donne plus qu'un seul rendu au lieu d'un par liste.

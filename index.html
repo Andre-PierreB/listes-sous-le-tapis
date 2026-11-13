@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.80 -->
+<!-- Sous le tapis — version AUTONOME 10.81 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -266,6 +266,13 @@
     quantité dessous ; Entrée enregistre toujours, retours collés → espaces (oneLine).
     Écrans : « Small talk » et « Duel de faisans » gravés dans la tôle à droite du
     voyant (.chat-led::after, attr data-name), gravure « lèvre seule » (banc 13/11).
+  - 10.81 : mémos : un filet bleu au-dessus du premier article (ombre intérieure,
+    sans décaler les lignes), visible aussi mémo fermé ; la marge dépasse de 5 px
+    au-dessus (MEMO_RULE_OVER dans fitCoursesCards).
+  - 10.81 : relance : à sa date, la tâche quitte « En cours » et rentre dans sa
+    liste, urgente, étiquette « Relance j/m » (returnDueRelances, champ relanced).
+    Le triangle la rend non urgente (avant : impossible, la relance la gardait
+    dans la case urgente) ; ↪ la renvoie en cours (compte +1, accepté).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -2383,6 +2390,7 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 .item.is-checked .strike-dot{ border-color:var(--line); }
 /* 10.17 : chaque article posé sur une ligne de cahier */
 .courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:calc(2 * var(--row-pad) + 0.15rem + 20px - 1.4 * var(--memo-size)) 0.3rem 0; } /* 10.18 : texte posé sur sa ligne (air au-dessus) ; 10.38 : même hauteur de ligne que les tâches, où c'est la case à cocher qui la donne (18px + 0.15rem + 3px) : 2 × row-pad + case − texte − filet 1px */
+.category.courses > ul.items > .courses-item:first-child{ box-shadow:inset 0 1px 0 var(--paper-rule); }   /* 10.81 : filet au-dessus du premier article (ombre : rien ne bouge) */
 .courses-item:hover{ background:color-mix(in srgb, var(--paper-rule) 30%, transparent); } /* voile léger : la marge rouge reste visible */
 .courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); color:var(--ink); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
 /* quantité : après le nom (en ligne, pour être barrée avec lui) ; 10.17 : à
@@ -3614,7 +3622,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.80</span>
+    <span class="version-tag">v10.81</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5175,6 +5183,7 @@ function sendToWaiting(key, relanceDue){
   const wasWaiting = !!(eff && eff.waiting);
   if(eff) o.due = eff.due || "";   // échéance gardée telle quelle (masquée en cours)
   delete o.dueBeforeWaiting;
+  delete o.relanced;   // 10.81
   o.waiting = true;
   o.relance = relanceDue || "";
   saveOverrides(overrides);
@@ -6000,6 +6009,7 @@ function getEffective(key, base){
     urgent: o.urgent !== undefined ? !!o.urgent : !!base.urgent,
     due,                       // échéance (masquée tant que la tâche est en cours)
     relance: waiting ? (relance || "") : "", // relance (n'existe qu'en cours)
+    relanced: !waiting ? (o.relanced || "") : "",   // 10.81 : revenue dans sa liste à sa date de relance (date)
     who: o.who !== undefined ? o.who : (base.who || ""),
     waiting,
     egg: o.egg !== undefined ? !!o.egg : !!base.egg,
@@ -6943,7 +6953,7 @@ function collectUrgentItems(){
       const status = dueStatus(shown);
       const dueUrgent = !eff.waiting && isDueUrgent(eff.due);
       if(relance || eff.urgent || dueUrgent){
-        out.push({ key, catId: cat.id, catTitle: cat.title, text: eff.t, note: eff.note || "", due: shown, status, isRdv: isRdvTitle(eff.t), manual: !!eff.urgent, relance });
+        out.push({ key, catId: cat.id, catTitle: cat.title, text: eff.t, note: eff.note || "", due: shown, status, isRdv: isRdvTitle(eff.t), manual: !!eff.urgent, relance, relanced: eff.urgent ? eff.relanced : "" });
       }
     });
   });
@@ -7531,8 +7541,9 @@ function renderUrgentBanner(){
     const li = document.createElement("li");
     const badge = entry.relance
       ? `<span class="due-badge status-relance">Relance ${(()=>{ const [y,m,d] = splitDue(entry.due).date.split("-"); return parseInt(d,10) + "/" + parseInt(m,10); })()}</span>`
+      : entry.relanced ? `<span class="due-badge status-relance">Relance ${shortDateFR(entry.relanced)}</span>`   // 10.81
       : entry.status ? `<span class="due-badge status-${entry.isRdv ? "rdv" : entry.status}">${formatDueLabel(entry.due, entry.isRdv)}</span>` : "";
-    if(entry.relance) li.classList.add("is-relance");
+    if(entry.relance || entry.relanced) li.classList.add("is-relance");
     { const c = DATA.find(x => x.id === entry.catId); if(c) li.style.setProperty("--cat-color", displayCatColor(c.color)); }   // 10.25
     li.innerHTML = `
       <span class="drag-handle" aria-label="Glisser pour réordonner" title="Glisser pour déplacer">&#8942;&#8942;</span>
@@ -7575,6 +7586,7 @@ function renderUrgentBanner(){
       overrides = loadOverrides();
       overrides[entry.key] = overrides[entry.key] || {};
       overrides[entry.key].urgent = false;
+      delete overrides[entry.key].relanced;   // 10.81
       saveOverrides(overrides);
       currentProgressMsg = null;
       renderAll();
@@ -8226,6 +8238,7 @@ function buildItemLi(cat, idx, base, key, opts){
           overrides[key].who = newWho;
           if(newTitle !== eff.t || newNote !== (eff.note || "") || newDue !== (eff.waiting ? (eff.relance || "") : (eff.due || ""))) markEdited(key, cat.id);   // 10.45
           overrides[key].urgent = urgentToggle.value();
+          if(!overrides[key].urgent) delete overrides[key].relanced;   // 10.81
           const becameEgg = urgentToggle.egg() && !eff.egg;
           overrides[key].egg = urgentToggle.egg();
           saveOverrides(overrides);
@@ -8407,7 +8420,7 @@ function buildItemLi(cat, idx, base, key, opts){
   // 10.50 : pas de marque « new / modif » dans « En cours » (on s'en est déjà occupé)
   const isNewHere = !checked && !eff.waiting && newItems(cat).includes(idx);   // 10.31
   const isEditedHere = !checked && !eff.waiting && !isNewHere && editedItems(cat).includes(idx);   // 10.45
-  li.className = "item" + (isNewHere || isEditedHere ? " is-new" : "") + (isRelance(eff) && !checked ? " item-relance" : "") + (isUrgent ? " item-urgent" : "") + (eff.egg && !checked ? " is-egg" : "") + (justChecked ? " just-checked" : "") + (checked ? " is-checked" : "");
+  li.className = "item" + (isNewHere || isEditedHere ? " is-new" : "") + ((isRelance(eff) || (eff.relanced && eff.urgent)) && !checked ? " item-relance" : "") + (isUrgent ? " item-urgent" : "") + (eff.egg && !checked ? " is-egg" : "") + (justChecked ? " just-checked" : "") + (checked ? " is-checked" : "");
   li.dataset.key = key;
   const personTag = eff.person ? `<span class="person-tag${eff.tier ? " tier-" + escapeAttr(eff.tier) : ""}">${escapeAttr(eff.person)}</span>` : "";
   const originTag = showOrigin ? `<span class="urgent-jump-cat">${escapeAttr(cat.title)}</span>` : "";
@@ -8420,6 +8433,7 @@ function buildItemLi(cat, idx, base, key, opts){
   const dueBadgeHtml = checked ? ""
     : eff.waiting
       ? (eff.relance ? `<span class="due-badge status-${isRelance(eff) ? "relance" : "future"}">Relance ${shortDateFR(splitDue(eff.relance).date)}</span>` : "")
+      : (eff.relanced && eff.urgent) ? `<span class="due-badge status-relance">Relance ${shortDateFR(eff.relanced)}</span>`   // 10.81
       : (eff.due ? `<span class="due-badge status-${isRdv ? "rdv" : dueStatusNow}">${formatDueLabel(eff.due, isRdv)}</span>` : "");
   const isEgg = eff.egg && !checked; // en couvaison : pas de case, pas d'urgence, juste l'éclosion
   // 10.2 : liste partagée — initiale de qui a coché ; pas d'effacement des
@@ -8484,6 +8498,7 @@ function buildItemLi(cat, idx, base, key, opts){
     overrides[key] = overrides[key] || {};
     const nowUrgent = !eff.urgent;
     overrides[key].urgent = nowUrgent;
+    if(!nowUrgent) delete overrides[key].relanced;   // 10.81
     if(nowUrgent) overrides[key].egg = false; // urgent et en couvaison s'excluent
     saveOverrides(overrides);
     // 8.7 : marquer urgent ne déplace plus la tâche dans sa liste : elle
@@ -8591,6 +8606,32 @@ function syncColW(){
   }
 }
 window.addEventListener("resize", ()=> requestAnimationFrame(syncColW));
+// 10.81 : à sa date de relance, une tâche « en cours » rentre toute seule dans
+// sa liste, urgente, avec l'étiquette « Relance j/m » (champ relanced). Le
+// triangle la rend non urgente comme n'importe quelle tâche ; ↪ la renvoie en
+// cours avec une nouvelle date (ce renvoi compte, comme tout envoi en cours).
+function returnDueRelances(){
+  if(hasActiveEdit()) return;
+  let o = null;
+  DATA.forEach(cat=>{
+    if(isSideList(cat.id)) return;
+    getEffectiveItems(cat).forEach((base, i)=>{
+      const key = itemKey(cat.id, i);
+      if(isDeleted(key) || state[key]) return;
+      const eff = getEffective(key, base);
+      if(!isRelance(eff)) return;
+      if(!o) o = loadOverrides();
+      const r = o[key] = o[key] || {};
+      r.due = eff.due || "";
+      delete r.dueBeforeWaiting;
+      r.waiting = false;
+      r.relanced = splitDue(eff.relance).date;
+      r.relance = "";
+      r.urgent = true;
+    });
+  });
+  if(o){ overrides = o; saveOverrides(o); }
+}
 function renderAll(){
   if(externalPending && !hasActiveEdit()){
     externalPending = false;
@@ -8599,6 +8640,7 @@ function renderAll(){
     undoCurrent = null;
   }
   try{ maybeRollover(); }catch(err){ console.error("[semaine]", err); }
+  try{ returnDueRelances(); }catch(err){ console.error("[relance]", err); }
   try{
     document.body.classList.toggle("has-editing", !!editingKey || !!addingCat || !!addingCategory || !!editingCategoryTitle || !!editingCoursesKey);
     RENDERERS.forEach(fn => fn());
@@ -8833,8 +8875,9 @@ function fitCoursesCards(saved){
     const ul = c.querySelector(":scope > ul.items");
     if(!ul) return;
     // 10.17 : la marge part de la première ligne sous le titre (10.38 : la saisie)
+    const MEMO_RULE_OVER = 5;   // 10.81 : px de marge au-dessus du premier filet
     const first = ul;   // 10.68 : les articles d'abord, la saisie est dessous
-    c.style.setProperty("--rule-top", (first ? first.offsetTop + (ul.querySelector(":scope > .add-form-row") ? 2 : 0) : c.offsetHeight) + "px");   // 10.71 : sous les champs d'ajout, pas un pixel de marge qui dépasse
+    c.style.setProperty("--rule-top", (first ? first.offsetTop + (ul.querySelector(":scope > .add-form-row") ? 2 : -MEMO_RULE_OVER) : c.offsetHeight) + "px");   // 10.71 : sous les champs d'ajout, pas un pixel de marge qui dépasse ; 10.81 : sinon elle dépasse un rien au-dessus du filet du haut
     // 10.18 : barre de défilement maison, toujours visible
     let bar = c.querySelector(":scope > .courses-scroll");
     if(!bar){
