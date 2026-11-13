@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.77 -->
+<!-- Sous le tapis — version AUTONOME 10.78 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -240,6 +240,11 @@
     l'interrupteur en face des faisans avant le 1er coup ; enregistré dans ce
     1er coup (dur:1), relu par readGame (regles). Les parties normales sont
     calculées exactement comme avant.
+  - 10.78 : chez le gagnant, « Nouvelle partie » est masqué tant que l'autre
+    n'a pas vu le coup final ; dès qu'il l'a vu, son appareil écrit un
+    marqueur { duel:"vu" } (marquerVu, une fois par partie) et le gagnant peut
+    relancer à son tour. Angle et force ne sont plus remis à zéro quand on
+    change d'objet (fillKey : seulement quand la situation change).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -1656,6 +1661,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .duel-card .poussoir:active, .duel-card .d-lancer:active{ transform:translate(3px, 3px); box-shadow:0 0 0 var(--pc); }
 /* 10.67 : Lancer n'est jamais grisé : à chaque clic il s'enfonce dans la tôle et remonte (.appui) ;
    quand ce n'est pas le moment (.locked : vol en cours, tour de l'autre), le clic ne fait rien d'autre */
+.duel-card .d-lancer.cache{ visibility:hidden; pointer-events:none; }   /* 10.78 */
 .duel-card .d-lancer.appui{ animation:d-appui .26s ease-out; }
 @keyframes d-appui{ 0%, 40%{ transform:translate(3px, 3px); box-shadow:0 0 0 var(--pc); } 100%{ transform:translate(0, 0); } }
 @media (prefers-reduced-motion:reduce){ .duel-card .d-lancer.appui{ animation:none; } }
@@ -3572,7 +3578,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.77</span>
+    <span class="version-tag">v10.78</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -6262,7 +6268,7 @@ function renderNewNotice(){
       const who = personName(b.by, cat.id);
       const t = getEffective(itemKey(cat.id, idx), b).t;
       if(isChatList(cat.id)) celebrate(`${who} : « ${chatText(itemKey(cat.id, idx), b)} »`, true);   // 10.57 : un mot sur l'écran
-      else if(isDuelList(cat.id)) celebrate(b.duel === "partie" ? `${who} lance une nouvelle partie de duel.` : `${who} a joué ! À vous de découvrir son coup.`, true);   // 10.63
+      else if(isDuelList(cat.id)) celebrate(b.duel === "partie" ? `${who} lance une nouvelle partie de duel.` : b.duel === "vu" ? `${who} a vu le coup final.` : `${who} a joué ! À vous de découvrir son coup.`, true);   // 10.63
       else celebrate(`${who} a ajouté « ${t} » à ${cat.title}` + (fresh.length > 1 ? ` (et ${fresh.length - 1} autre${fresh.length > 2 ? "s" : ""})` : ""), true);
     }
   }
@@ -9978,7 +9984,7 @@ let persoChoix = 0;      // faisan choisi par celui qui lance la partie, avant s
 let durChoix = false;    // 10.77 : try hard, choisi au même moment
 // entraînement : rien n'est écrit dans la liste (ni synchro ni place prise) — les coups vivent ici, le temps de la page
 let soloShots = [], soloSeed = null, soloPerso = 0, soloDur = false;
-let lastSig = null, ownShot = false;
+let lastSig = null, ownShot = false, fillKey = null;
 const hashStr = s => { let h = 2166136261; for(const ch of String(s)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
 function readGame(cat){
   const items = getEffectiveItems(cat), live = [];
@@ -9994,7 +10000,9 @@ function readGame(cat){
   const shots = solo ? soloShots.slice() : rows.map((x, k)=>({ p: k % 2, a: x.b.a, v: x.b.v, o: x.b.o in OBJETS ? x.b.o : "roue", at: x.b.at, by: taskCreator(cat, x.b) }));
   const p0 = solo ? (soloShots.length ? soloPerso : persoChoix) : rows.length ? (rows[0].b.perso === 1 ? 1 : 0) : persoChoix;
   const dur = solo ? (soloShots.length ? soloDur : durChoix) : rows.length ? rows[0].b.dur === 1 : durChoix;
+  const vu = !solo && live.slice(start + 1).some(x => x.b.duel === "vu");   // 10.78 : l'autre a vu le coup final
   const g = {
+    vu,
     seed: solo && soloSeed != null ? soloSeed : head && typeof head.seed === "number" ? head.seed : hashStr(cat.id),
     regles: Object.assign({ g: head && head.g || REGLES.g, vent: head && head.vent != null ? head.vent : REGLES.vent, trou: head && head.trou || REGLES.trou, decor: head && head.decor || REGLES.decor }, dur ? TRYHARD : null),
     dur,
@@ -10014,11 +10022,24 @@ function readGame(cat){
   return g;
 }
 const turnOf = g => g.shots.length % 2;
-// 10.77 : nouvelle partie seulement quand l'autre a vu le coup final : c'est donc lui qui la relance
-// (celui qui a joué le dernier coup attend) ; entraînement, sans compte ou seul : comme avant
+// 10.77 : nouvelle partie seulement quand l'autre a vu le coup final ; 10.78 : celui qui a joué le dernier
+// coup peut relancer dès que l'autre l'a vu (marqueur « vu » écrit par l'appareil de l'autre) ;
+// entraînement, sans compte ou seul : comme avant
 const last0 = ()=> game.shots[game.shots.length - 1];
 const peutRelancer = ()=>{ const me = myUid(), last = game.shots[game.shots.length - 1];
-  return game.solo || !me || !last || last.by !== me || !PLAYERS[1 - last.p].uid; };
+  return game.solo || !me || !last || last.by !== me || !PLAYERS[1 - last.p].uid || !!game.vu; };
+// 10.78 : chez celui qui découvre le coup final, une fois vu (ou déjà vu avant), on l'écrit dans la liste
+// — une seule fois par partie — pour que l'autre puisse relancer à son tour
+const vuEcrit = new Set();
+function marquerVu(){
+  const me = myUid(), last = game.shots[game.shots.length - 1];
+  if(!CAT || game.solo || !me || !last || last.by === me || !world.over || game.vu || busy || hideLast || bandMode === "decouverte") return;
+  const k = CAT.id + ":" + game.start + ":" + game.shots.length;
+  if(vuEcrit.has(k)) return; vuEcrit.add(k);
+  try{ insertItem(CAT, { t: "vu", duel: "vu", at: Date.now() }); seen[CAT.id] = (game.total || 0) + 1; saveSeen(); game.vu = true; }
+  catch(err){ console.error("[duel] vu non enregistré", err); }
+  setTimeout(()=> renderAll(), 0);
+}
 const myTurn = ()=>{ const me = myUid(); if(!me || game.solo) return true; if(!game.shots.length) return true; return PLAYERS[turn()].uid === me; };
 
 // à chaque rendu de l'appli : la carte (construite une fois, gardée telle quelle
@@ -10026,7 +10047,7 @@ const myTurn = ()=>{ const me = myUid(); if(!me || game.solo) return true; if(!g
 function sync(cat, force){
   CAT = cat;
   const g = readGame(cat), sig = (g.solo ? "solo:" : "") + g.start + ":" + g.seed + ":" + g.shots.length + (g.dur ? ":dur" : "");
-  if(sig === lastSig && !force){ game.objets = g.objets; game.total = g.total; refreshUI(); return; }
+  if(sig === lastSig && !force){ game.objets = g.objets; game.total = g.total; game.vu = g.vu; refreshUI(); return; }
   lastSig = sig;
   if(ownShot){ game = g; return; }   // mon coup est déjà en train de voler
   game = g;
@@ -10160,8 +10181,11 @@ function refreshUI(){
   if(world.over){
     const relance = peutRelancer();
     lancerBtn.textContent = "Nouvelle partie"; lancerBtn.classList.toggle("locked", busy || !relance);
-    $(".d-statut").textContent = busy || relance ? "" : `À ${PLAYERS[1 - last0().p].nom} de relancer.`;
+    lancerBtn.classList.toggle("cache", !relance);   // 10.78 : masqué (place gardée) tant que l'autre n'a pas vu le coup
+    $(".d-statut").textContent = busy || relance ? "" : `En attente que ${PLAYERS[1 - last0().p].nom} voie le coup.`;
+    marquerVu();
   }else{
+    lancerBtn.classList.remove("cache");
     lancerBtn.textContent = "Lancer"; lancerBtn.classList.toggle("locked", lock);
     $(".d-statut").textContent = busy || attente ? "" :
       game.solo ? (game.shots.length ? `Entraînement : l'autre ne renvoie rien.` : `Entraînement : visez l'autre faisan.`)
@@ -10173,7 +10197,10 @@ function refreshUI(){
   $(".d-revoir").disabled = busy;
   if(last) $(".d-revoir").title = `Revoir le coup ${de(PLAYERS[last.p].nom)}`;
   const focused = document.activeElement && ROOT.contains(document.activeElement) && /d-angle|d-vitesse/.test(document.activeElement.className);
-  if(!busy && !world.over && !focused){   // en attente (même après rechargement) : les réglages de son dernier coup restent affichés
+  // 10.78 : remis seulement quand la situation change (coup joué, nouvelle partie, bandeau) — changer
+  // d'objet ou tout autre rafraîchissement ne touche plus aux réglages en cours
+  const fk = [CAT && CAT.id, game.solo, game.start, game.seed, game.shots.length, bandMode, hideLast, p].join("|");
+  if(!busy && !world.over && !focused && fk !== fillKey){ fillKey = fk;   // en attente (même après rechargement) : les réglages de son dernier coup restent affichés
     const ls = bandMode === "attente" && last ? last : lastShotOf(p);
     $(".d-angle").value = ls ? ls.a : 45; $(".d-vitesse").value = ls ? ls.v : 60;
   }

@@ -1048,4 +1048,7 @@ Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours ch
     (l'autre lit « À … de relancer. ») ; téléphone couché : « Nouvelle partie » sur deux lignes, plus tronqué ;
     niveau « try hard » (interrupteur en face des faisans, avant le 1er coup) : trous plus petits, vent plus
     costaud, cible plus étroite (trace des coups gardée).
+  - 10.78 : duel — chez le gagnant, « Nouvelle partie » masqué tant que l'autre n'a pas vu le coup final
+    (marqueur « vu » écrit par l'appareil de l'autre), puis chacun peut relancer ; changer d'objet ne remet
+    plus l'angle et la force à zéro.
 ```
