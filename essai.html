@@ -249,6 +249,9 @@
     qu'on n'y a pas touché (durPour / durKey) ; libellé en capitales, éteint dans le bleu pâli (jaune essayé, écarté).
   - 10.80 : + au fond d'une liste : revealAddField ramène tout le cadre de
     saisie (li) avec 10 px d'air (scroll-margin), plus seulement le champ.
+  - 10.80 : case fermée survolée par la punaise : elle reste sur place pendant
+    que la case s'entrouvre (holdPin, propriété translate), tant que la souris
+    est dessus ; en la quittant elle rejoint le bas (releasePin).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -10852,7 +10855,25 @@ function peekCard(card, on, still){
   if(on === card.classList.contains("peek")) return;
   const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); if(card.classList.contains("courses")) placeCoursesScroll(card);
     const log = on && card.querySelector(".chat-log"); if(log) log.scrollTop = log.scrollHeight; };   // 10.67 : l'écran de chat entrouvert montre ses derniers messages (avant : remonté au premier)   // 10.67 : la barre du mémo suit
+  // 10.80 : souris posée sur la punaise au moment où la case s'entrouvre : la punaise reste où elle est
+  // (au lieu de filer avec le bas de la case) tant qu'on ne la quitte pas ; on peut donc la cliquer du premier coup
+  const pin = on && !still && card.querySelector(".cat-fold");
+  const hold = !!pin && pin.matches(":hover");
   if(still) change(); else softHeight(card, change, on);
+  if(hold) holdPin(card, pin);
+}
+function holdPin(card, pin){
+  const g = card._glide; if(!g || !pin.animate) return;
+  if(pin._hold) pin._hold.cancel();
+  pin._hold = pin.animate([{ translate:"0 0" }, { translate:`0 ${-g.dh}px` }], { duration:g.dur, easing:g.easing, fill:"forwards" });
+  pin.addEventListener("pointerleave", ()=> releasePin(pin), { once:true });
+  pin.addEventListener("click", ()=> releasePin(pin), { once:true, capture:true });   // punaisée : elle redescend avec la case (duel et chat gardent leur carte)
+}
+function releasePin(pin){
+  const a = pin._hold; if(!a) return; pin._hold = null;
+  const cur = getComputedStyle(pin).translate;
+  a.cancel();
+  if(cur && cur !== "none" && pin.isConnected) pin.animate([{ translate:cur }, { translate:"0 0" }], { duration:380, easing:SOFT_EASE });   // elle rejoint doucement le bas de la case
 }
 // 10.66 : la case glisse d'une hauteur à l'autre (douce, sans à-coup), son contenu apparaît en fondu
 const SOFT_EASE = "cubic-bezier(.33,0,.2,1)";   // 10.67 : départ en douceur (avant .25,.8,.25,1 : presque tout le mouvement dans les premiers instants, sec)
@@ -10869,6 +10890,7 @@ function softHeight(card, change, opening){
 // 10.67 : la case passe de la hauteur h0 à sa hauteur actuelle ; rend la durée (ms)
 function glideHeight(card, h0, opening){
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  card._glide = null;
   if(reduce || !card.animate) return 0;
   const h1 = card.getBoundingClientRect().height;
   if(Math.abs(h1 - h0) < 2) return 0;
@@ -10876,7 +10898,7 @@ function glideHeight(card, h0, opening){
   card.style.overflow = "hidden";
   card.classList.add("gliding");   // 10.68 : aperçu non borné pendant le glissement
   const a = card.animate([{ height:h0 + "px" }, { height:h1 + "px" }], { duration:dur, easing:opening ? SOFT_EASE : SOFT_CLOSE });
-  card._soft = a;
+  card._soft = a; card._glide = { dh: h1 - h0, dur, easing: opening ? SOFT_EASE : SOFT_CLOSE };   // 10.80 : pour la punaise retenue
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
   const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); if(card.classList.contains("courses")) placeCoursesScroll(card); } };
