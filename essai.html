@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.79 -->
+<!-- Sous le tapis — version AUTONOME 10.80 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -247,6 +247,8 @@
     change d'objet (fillKey : seulement quand la situation change).
   - 10.79 : l'interrupteur try hard reprend le niveau de la partie d'avant tant
     qu'on n'y a pas touché (durPour / durKey) ; libellé en capitales, éteint dans le bleu pâli (jaune essayé, écarté).
+  - 10.80 : + au fond d'une liste : revealAddField ramène tout le cadre de
+    saisie (li) avec 10 px d'air (scroll-margin), plus seulement le champ.
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -3581,7 +3583,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.79</span>
+    <span class="version-tag">v10.80</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -8809,7 +8811,10 @@ function revealAddField(f){
     if(!f.isConnected) return;
     try{ if(document.activeElement !== f) f.focus({ preventScroll:true }); const n = f.value.length; f.setSelectionRange(n, n); }catch(e){}
     const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    try{ f.scrollIntoView({ block:"nearest", behavior: still ? "auto" : "smooth" }); }catch(e){}
+    // 10.80 : on ramène tout le cadre de saisie (pas seulement le champ), avec un peu d'air : il n'est plus rogné au bord
+    const box = f.closest("li") || f;
+    box.style.scrollMarginTop = box.style.scrollMarginBottom = "10px";
+    try{ box.scrollIntoView({ block:"nearest", behavior: still ? "auto" : "smooth" }); }catch(e){}
   });
 }
 const COURSES_DBL_MS = 260;   // 10.75 : attente d'un éventuel double-clic avant de rayer un article (souris)
