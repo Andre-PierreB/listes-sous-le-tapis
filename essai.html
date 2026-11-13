@@ -1816,7 +1816,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   background:color-mix(in srgb, var(--ink) 18%, var(--bg)); box-shadow:inset 0 1px 1px rgba(0,0,0,0.25), 0 1px 0 var(--chat-lip); transition:background .4s ease, box-shadow .4s ease; }
 .chat-card.unread .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
 /* 10.80 : nom de l'écran à droite du voyant, gravé dans la tôle (même creux et même lèvre claire que le voyant) */
-.chat-led::after{ content:attr(data-name); position:absolute; left:17px; top:50%; transform:translateY(-50%); white-space:nowrap; pointer-events:none;
+.chat-led::after{ content:attr(data-name); position:absolute; left:24px; top:50%; transform:translateY(calc(-50% + 2.6px));   /* centré sur la ligne des titres des listes (2,6 px plus bas que le voyant) */ white-space:nowrap; pointer-events:none;
   font:700 0.6rem/1 'Courier Prime', 'Courier New', monospace; letter-spacing:0.14em; text-transform:uppercase;
   color:color-mix(in srgb, var(--ink) 24%, var(--bg)); text-shadow:0 1px 0 var(--chat-lip), 0 -1px 0 rgba(0,0,0,0.10); }
 @keyframes chat-led{ 50%{ box-shadow:0 0 2px 0 color-mix(in srgb, var(--logo-green) 50%, transparent); filter:brightness(0.85); } }
