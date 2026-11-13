@@ -61,7 +61,13 @@ SNAP = r"""() => {
   return { store, dom: clone.outerHTML, etat };
 }"""
 
-LOAD = """d => { Store.importModel(JSON.parse(d)); DATA.length = 0; reloadAllFromStorage(); renderAll(); }"""
+LOAD = """d => { d = JSON.parse(d);
+  // « moi » = le compte qui possède le plus de listes : les règles du partage (invité,
+  // initiales, qui efface quoi) jouent comme en vrai, sans connexion
+  const n = {}; d.lists.forEach(L => { if(L.owner) n[L.owner] = (n[L.owner] || 0) + 1; });
+  const moi = Object.keys(n).sort((a, b) => n[b] - n[a])[0];
+  if(moi) localStorage.setItem(Store.ns + "me", moi);
+  Store.importModel(d); DATA.length = 0; reloadAllFromStorage(); renderAll(); }"""
 
 # ---------------------------------------------------------------------------
 # Gestes. Chaque geste : (nom, fonction async pg). Sélecteurs ou appels du
@@ -122,6 +128,33 @@ def ailleurs(code):
         await autre.evaluate(code); await autre.wait_for_timeout(700)
         await autre.close(); await pg.bring_to_front()
     return f
+def distant(choix, modif):
+    """L'autre personne d'une liste partagée la modifie « en ligne ». choix : quelle liste
+    (JS, reçoit la fiche L et mon compte) ; modif : ce qu'elle change (JS, reçoit L et son compte)."""
+    code = """() => { const docs = Store.readDocs(), moi = Store.myUid();
+      const L = Object.values(docs.lists).sort((a, b) => a.id < b.id ? -1 : 1).find(L => !L.deleted && (L.members || []).length > 1 && (%s));
+      const elle = (L.members || []).find(m => m !== moi);
+      (%s)(L, elle);
+      Store.writeDocs({ lists: { [L.id]: L } });
+      storeChangedElsewhere(Store.ns + "remote-shared"); }""" % (choix, modif)
+    return lambda pg: pg.evaluate(code)
+NORMALE = "!L.type && L.owner === moi"
+AJOUT = lambda titre, ident: "(L, elle) => { L.items.push({ id: '%s', base: { t: '%s', by: elle, at: Date.now() } }); if(Array.isArray(L.order)) L.order.push('%s'); }" % (ident, titre, ident)
+COCHE = "(L, elle) => { const it = L.items.find(i => !i.done && !(i.edits && (i.edits.deleted || i.edits.waiting))); it.done = true; it.checkedAt = new Date().toISOString(); it.edits = Object.assign(it.edits || {}, { doneBy: elle }); }"
+async def coller(pg):
+    loc = pg.locator(LISTE + " .cat-quick").first
+    await centrer(loc); await loc.click(force=True)
+    await loc.evaluate("e => { const dt = new DataTransfer(); dt.setData('text/plain', 'Ligne une\\nLigne deux\\n- Ligne trois'); e.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })); }")
+
+def convertir(sel):
+    """Double-clic sur le titre puis « Convertir » ; sel=None : la même case que la fois d'avant."""
+    async def f(pg):
+        if sel: pg.converti = await pg.locator(sel).first.get_attribute("id")
+        card = "#" + pg.converti
+        await clic(card + " .cat-title", 0, dbl=True)(pg); await pg.wait_for_timeout(250)
+        await clic(card + " .cat-convert:not(.cat-copy) button")(pg)
+    return f
+
 async def survol_hors(pg): await pg.mouse.move(2, 2)
 async def survol(pg):
     loc = pg.locator(".category.collapsed").first
@@ -178,7 +211,30 @@ GESTES = [
     # panneaux
     ("corbeille : ouvrir", clic("#trashLink")),
     ("corbeille : fermer", clic(".trash-close")),
-    # d'ailleurs
+    ("coller plusieurs lignes", coller),
+    ("partage : ouvrir le panneau", clic("#shareLink")),
+    ("partage : fermer (Échap)", touche("Escape")),
+    ("convertir une liste (non partagée) en mémo", convertir(".category:not(.courses):not(.collapsed):not(.has-people)")),
+    ("la reconvertir en liste", convertir(None)),
+    # l'autre personne (listes partagées), par le chemin de la synchro
+    ("elle ajoute une tâche à une liste partagée", distant(NORMALE, AJOUT("Ajoutée par elle", "tdistant00001"))),
+    ("je coche la 1re tâche de cette liste juste après", clic(".category.has-people:not(.courses):not(.collapsed) .item:not(.is-checked):not(.is-egg) input[type=checkbox]")),
+    ("elle coche une tâche", distant(NORMALE, COCHE)),
+    ("j'efface une tâche de cette liste juste après", clic(".category.has-people:not(.courses):not(.collapsed) .item .delete-btn")),
+    ("elle raye un article d'un mémo partagé", distant("L.type === 'courses'", "(L, elle) => { const it = L.items.find(i => !i.done && !(i.edits && i.edits.deleted)); it.done = true; it.edits = Object.assign(it.edits || {}, { doneBy: elle }); }")),
+    ("je raye un autre article juste après", clic(".category.courses.has-people:not(.collapsed) .courses-item:not(.is-checked) .item-text")),
+    ("elle écrit dans le chat", distant("L.type === 'chat'", "(L, elle) => { L.items.push({ id: 'tdistant00002', base: { t: 'coucou de l’autre côté', by: elle, at: Date.now() } }); }")),
+    ("je réponds dans le chat", suite(clic(".chat-screen"), lambda pg: pg.keyboard.type("bien reçu"), touche("Enter"))),
+    ("elle ajoute pendant que je modifie une tâche", suite(clic(TACHE + " .item-title", 0, dbl=True), distant(NORMALE, AJOUT("Arrivée pendant ma modif", "tdistant00003")))),
+    ("j'enregistre ma modification", suite(taper(".item.editing .edit-title", "Modifiée pendant son ajout", entree=False), clic(".item.editing .edit-save")), 800),
+    ("elle ajoute pendant qu'une liste est en pleine page", suite(clic(LISTE + " .cat-full"), distant(NORMALE, AJOUT("Arrivée en pleine page", "tdistant00004")))),
+    ("je sors de la pleine page", clic(".fp-back")),
+    ("elle renomme sa liste (dont je suis l'invité)", distant("L.owner !== moi", "(L, elle) => { L.title = 'Renommée par elle'; }")),
+    ("⌘Z après un changement venu d'elle (ne doit rien défaire d'elle)", touche("Control+z")),
+    ("elle ne me partage plus sa liste", lambda pg: pg.evaluate("""() => { const docs = Store.readDocs(), moi = Store.myUid();
+        const L = Object.values(docs.lists).sort((a, b) => a.id < b.id ? -1 : 1).find(L => !L.deleted && L.owner && L.owner !== moi);
+        Store.writeDocs({ lists: { [L.id]: null } }); storeChangedElsewhere(Store.ns + "remote-shared"); }""")),
+    # d'ailleurs (autre onglet)
     ("autre onglet : ajoute une tâche", ailleurs("() => { addQuickTask(" + UNE_LISTE + ", 'Venue d’ailleurs'); renderAll(); }")),
     ("autre onglet : coche une tâche", ailleurs("() => { const c = " + UNE_LISTE + "; const i = getEffectiveItems(c).findIndex((b, i) => !isDeleted(itemKey(c.id, i)) && !state[itemKey(c.id, i)]); setDone(itemKey(c.id, i), true); renderAll(); }")),
     ("autre onglet : efface une tâche", ailleurs("() => { document.querySelector('.category:not(.courses) .item .delete-btn').click(); }")),
@@ -251,20 +307,24 @@ async def main():
     ref = sys.argv[1] if len(sys.argv) > 1 else "index.html"
     banc = sys.argv[2] if len(sys.argv) > 2 else "essai.html"
     dump = open(DONNEES).read()
-    print(f"jumeaux : {ref} ↔ {banc} — données : {pathlib.Path(DONNEES).name}")
-    ok = True
+    print(f"jumeaux : {ref} ↔ {banc} — données : {pathlib.Path(DONNEES).name}", flush=True)
+    ok = True; total = 0
     async with async_playwright() as p:
-        for vname, vp in VUES:
+        # un navigateur à la fois (sur une machine à 2 cœurs, deux en parallèle finissent par planter) ;
+        # PARALLELE=1 pour en lancer deux à la fois sur une machine plus costaude
+        rs = []
+        for _, vp in VUES:
+            if os.environ.get("PARALLELE"): rs += await asyncio.gather(jouer(p, ref, dump, vp), jouer(p, banc, dump, vp))
+            else: rs += [await jouer(p, ref, dump, vp), await jouer(p, banc, dump, vp)]
+        for n, (vname, vp) in enumerate(VUES):
             print(f"— {vname}")
-            ra = await jouer(p, ref, dump, vp)
-            rb = await jouer(p, banc, dump, vp)
-            for g, sa, sb in zip(GESTES, ra, rb):
-                res = comparer(g[0], sa, sb)
+            for g, sa, sb in zip(GESTES, rs[2 * n], rs[2 * n + 1]):
+                res = comparer(g[0], sa, sb); total += 1
                 if res:
                     ok = False; print(f"  ÉCART   {g[0]}"); [print("    " + r) for r in res]
-                else:
+                elif not os.environ.get("COURT"):
                     print(f"  ok      {g[0]}")
-    print("\njumeaux : " + ("identiques ✔" if ok else "ÉCARTS ✘"))
+    print(f"\njumeaux : {total} contrôles — " + ("identiques ✔" if ok else "ÉCARTS ✘"))
     return ok
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ n'est envoyé à Firebase. À lancer avant chaque publication :
 
     python3 tests/run.py              # teste essai.html (le banc)
     python3 tests/run.py index.html   # teste l'appli publiée
+    python3 tests/run.py complet      # + comparateur jumeaux index ↔ essai (≈ 20 min)
 
 Besoin : Python 3, le module playwright (pip install playwright) et Chrome
 (chemin dans CHROME ci-dessous, sinon `playwright install chromium`).
@@ -125,7 +126,8 @@ async def t_effacer_tache(pg):
 
 # --- lancement --------------------------------------------------------------
 async def main():
-    page = sys.argv[1] if len(sys.argv) > 1 else "essai.html"
+    args = [a for a in sys.argv[1:] if a != "complet"]
+    page = args[0] if args else "essai.html"
     url = (ROOT / page).as_uri()
     tests = [(n, f) for n, f in globals().items() if n.startswith("t_") and callable(f)]
     ok = 0
@@ -146,6 +148,13 @@ async def main():
             await ctx.close()
         await browser.close()
     print(f"\n{ok}/{len(tests)} réussis sur {page}")
-    sys.exit(0 if ok == len(tests) else 1)
+    tout = ok == len(tests)
+    if "complet" in sys.argv[1:]:
+        # chantier de la 11 : le banc doit se comporter exactement comme l'appli publiée
+        import subprocess
+        print("\ncomparateur jumeaux (index.html ↔ essai.html)…", flush=True)
+        r = subprocess.run([sys.executable, str(ROOT / "tests" / "jumeaux.py")], env=dict(os.environ, COURT="1"))
+        tout = tout and r.returncode == 0
+    sys.exit(0 if tout else 1)
 
 asyncio.run(main())
