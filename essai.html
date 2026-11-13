@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.80 -->
+<!-- Sous le tapis — version AUTONOME 10.81 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -266,6 +266,8 @@
     quantité dessous ; Entrée enregistre toujours, retours collés → espaces (oneLine).
     Écrans : « Small talk » et « Duel de faisans » gravés dans la tôle à droite du
     voyant (.chat-led::after, attr data-name), gravure « lèvre seule » (banc 13/11).
+  - 10.81 : mémos : un filet bleu au-dessus du premier article (ombre intérieure,
+    sans décaler les lignes), visible aussi mémo fermé.
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -2383,6 +2385,7 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 .item.is-checked .strike-dot{ border-color:var(--line); }
 /* 10.17 : chaque article posé sur une ligne de cahier */
 .courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:calc(2 * var(--row-pad) + 0.15rem + 20px - 1.4 * var(--memo-size)) 0.3rem 0; } /* 10.18 : texte posé sur sa ligne (air au-dessus) ; 10.38 : même hauteur de ligne que les tâches, où c'est la case à cocher qui la donne (18px + 0.15rem + 3px) : 2 × row-pad + case − texte − filet 1px */
+.category.courses > ul.items > .courses-item:first-child{ box-shadow:inset 0 1px 0 var(--paper-rule); }   /* 10.81 : filet au-dessus du premier article (ombre : rien ne bouge) */
 .courses-item:hover{ background:color-mix(in srgb, var(--paper-rule) 30%, transparent); } /* voile léger : la marge rouge reste visible */
 .courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); color:var(--ink); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
 /* quantité : après le nom (en ligne, pour être barrée avec lui) ; 10.17 : à
@@ -3614,7 +3617,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.80</span>
+    <span class="version-tag">v10.81</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
