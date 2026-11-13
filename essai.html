@@ -264,6 +264,8 @@
     Modifier une tâche ou un article : titre et détail en zones qui grandissent
     (growField, 8 lignes max) ; nom de mémo long (> 28 car.) : toute la ligne,
     quantité dessous ; Entrée enregistre toujours, retours collés → espaces (oneLine).
+    Écrans : « Quick talk » et « Duel de faisans » gravés dans la tôle à droite du
+    voyant (.chat-led::after, attr data-name).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -1813,6 +1815,10 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .chat-led{ position:absolute; top:calc((0.35rem + 22px) / 2 - 4.5px); left:1.25rem;   /* 10.69 : en haut à gauche : le coin droit est au bouton pleine page (avant : juste à sa gauche) */ width:9px; height:9px; border-radius:50%;   /* 10.71 : un peu plus grand (avant : 7) */
   background:color-mix(in srgb, var(--ink) 18%, var(--bg)); box-shadow:inset 0 1px 1px rgba(0,0,0,0.25), 0 1px 0 var(--chat-lip); transition:background .4s ease, box-shadow .4s ease; }
 .chat-card.unread .chat-led{ background:var(--logo-green); box-shadow:0 0 4px 1px color-mix(in srgb, var(--logo-green) 70%, transparent), 0 0 10px 2px color-mix(in srgb, var(--logo-green) 35%, transparent); animation:chat-led 2.4s ease-in-out infinite; }
+/* 10.80 : nom de l'écran à droite du voyant, gravé dans la tôle (même creux et même lèvre claire que le voyant) */
+.chat-led::after{ content:attr(data-name); position:absolute; left:17px; top:50%; transform:translateY(-50%); white-space:nowrap; pointer-events:none;
+  font:700 0.6rem/1 'Courier Prime', 'Courier New', monospace; letter-spacing:0.14em; text-transform:uppercase;
+  color:color-mix(in srgb, var(--ink) 24%, var(--bg)); text-shadow:0 1px 0 var(--chat-lip), 0 -1px 0 rgba(0,0,0,0.10); }
 @keyframes chat-led{ 50%{ box-shadow:0 0 2px 0 color-mix(in srgb, var(--logo-green) 50%, transparent); filter:brightness(0.85); } }
 @media (prefers-reduced-motion:reduce){ .chat-card.unread .chat-led{ animation:none; } }
 /* 10.65 : le voyant laisse le coin au bouton pleine page (avant : dans l'axe du trèfle) */
@@ -8969,7 +8975,7 @@ function buildChatCard(cat, catIdx){
   if(folded) card.classList.add("collapsed");
   if(fullpageCat === cat.id) card.classList.add("fullpage");
   paintCardColor(card, cat.id);   // 10.69
-  card.innerHTML = `<div class="chat-box"><span class="chat-led" aria-hidden="true"></span>${scrFullBtn(cat.id)}<div class="chat-hole"><div class="chat-screen">
+  card.innerHTML = `<div class="chat-box"><span class="chat-led" data-name="Quick talk" aria-hidden="true"></span>${scrFullBtn(cat.id)}<div class="chat-hole"><div class="chat-screen">
       <div class="chat-log" role="log" aria-label="Messages"></div>
       <div class="chat-in"><textarea class="chat-field" rows="1" aria-label="Écrire un mot" autocomplete="off" enterkeyhint="send"></textarea><span class="chat-cur"></span></div>
     </div></div>
@@ -10299,7 +10305,7 @@ function build(){
       <button type="button" class="cat-fold">${pinSvg()}</button>
       <div class="chat-menu" hidden></div>
     </div>
-    <span class="chat-led" aria-hidden="true"></span><button type="button" class="cat-full scr-full"></button>
+    <span class="chat-led" data-name="Duel de faisans" aria-hidden="true"></span><button type="button" class="cat-full scr-full"></button>
     </div>`;
   ROOT = card;
   card.querySelector(".cat-fold").addEventListener("click", e => { e.stopPropagation(); if(CAT) toggleFold(CAT.id); });
