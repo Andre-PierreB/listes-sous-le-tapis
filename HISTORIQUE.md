@@ -1053,5 +1053,6 @@ Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours ch
     plus l'angle et la force à zéro.
   - 10.79 : duel — l'interrupteur try hard reprend le niveau de la partie d'avant ; « TRY HARD » en capitales, éteint dans le bleu pâli.
   - 10.80 : + au fond d'une liste : tout le cadre de saisie remonte en vue, avec un peu d'air (plus rogné) ;
-    case fermée : la punaise qu'on vise reste sur place pendant que la case s'entrouvre.
+    case fermée : la punaise qu'on vise reste sur place pendant que la case s'entrouvre ;
+    « new » / « modif » : plus sur ses propres ajouts, 12 h au lieu de 24 ; plus de messages flottants des autres.
 ```

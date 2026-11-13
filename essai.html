@@ -252,6 +252,9 @@
   - 10.80 : case fermée, souris à moins de ~40 px de la punaise : elle reste sur
     place pendant que la case s'entrouvre (holdPin, propriété translate) ; si la
     souris s'éloigne (> 60 px) ou au clic, elle rejoint le bas (releasePin).
+  - 10.80 : étiquettes « new » / « modif » : plus sur ses propres ajouts et modifs,
+    12 h (NEW_FOR_MS, avant 24 h) depuis le premier affichage sur l'appareil ;
+    plus de messages flottants pour les changements des autres (SHOW_NOTICES).
   - Affichage : Duel.card (appelée par render à la place d'une carte) ; la
     carte est construite une fois et gardée telle quelle d'un rendu à
     l'autre (une animation n'est jamais coupée) ; une instance par duel
@@ -6167,7 +6170,7 @@ function personInitials(uid, catId){
 // à l'écran pour la première fois } }. Une tâche ajoutée par quelqu'un
 // d'autre reste « new » au moins 24 h après cette première vue.
 const SEEN_KEY = "sous-le-tapis-vu";
-const NEW_FOR_MS = 24 * 3600 * 1000;
+const NEW_FOR_MS = 12 * 3600 * 1000;   // 10.80 : 12 h (avant 24 h) — comptées depuis le premier affichage sur CET appareil : même après une semaine d'absence, on les voit
 // 10.45 : m = { cléTâche: { at: date de la modification, s: date où je l'ai vue } }
 let seenMap = (()=>{ try{ const o = JSON.parse(localStorage.getItem(SEEN_KEY) || "{}"); return { c: (o && o.c) || {}, s: (o && o.s) || {}, m: (o && o.m) || {} }; }catch(e){ return { c:{}, s:{}, m:{} }; } })();
 function saveSeen(){ try{ localStorage.setItem(SEEN_KEY, JSON.stringify(seenMap)); }catch(e){} }
@@ -6183,7 +6186,7 @@ function newItems(cat){
     const now = Date.now(), out = [];
     for(let i = seenMap.c[cat.id]; i < items.length; i++){
       const b = items[i], key = itemKey(cat.id, i);
-      if(!b || !b.by || isDeleted(key) || state[key]) continue;
+      if(!b || !b.by || b.by === me || isDeleted(key) || state[key]) continue;   // 10.80 : pas d'étiquette sur ses propres ajouts
       const t = seenMap.s[key];
       if(t && now - t >= NEW_FOR_MS) continue;
       out.push(i);
@@ -6206,7 +6209,7 @@ function noteShown(){
     let i = seenMap.c[c.id];
     while(i < items.length){
       const b = items[i], k = itemKey(c.id, i), t = seenMap.s[k];
-      const stillNew = b && b.by && !isDeleted(k) && !state[k] && !(t && now - t >= NEW_FOR_MS);
+      const stillNew = b && b.by && b.by !== myUid() && !isDeleted(k) && !state[k] && !(t && now - t >= NEW_FOR_MS);
       if(stillNew) break;
       delete seenMap.s[k]; i++;
     }
@@ -6239,7 +6242,7 @@ function editedItems(cat){
     const fresh = new Set(newItems(cat)), now = Date.now(), out = [];
     getEffectiveItems(cat).forEach((b, i)=>{
       const k = itemKey(cat.id, i), e = editInfo(k);
-      if(!e.at || !e.by || fresh.has(i) || isDeleted(k) || state[k]) return;
+      if(!e.at || !e.by || e.by === myUid() || fresh.has(i) || isDeleted(k) || state[k]) return;   // 10.80 : ni sur ses propres modifs
       const m = seenMap.m[k];
       if(m && m.at === e.at && now - m.s >= NEW_FOR_MS) return;
       out.push(i);
@@ -6259,7 +6262,10 @@ function renderNewNotice(){
     newItems(c).forEach(i => { const b = getEffectiveItems(c)[i]; if(b.by !== me) now.set(itemKey(c.id, i), { cat:c, idx:i }); });
     editedItems(c).forEach(i => { const k = itemKey(c.id, i), e = editInfo(k); if(e.by !== me) edits.set(k + "@" + e.at, { cat:c, idx:i, by:e.by }); });
   });
-  if(prevEditKeys && document.visibilityState === "visible"){
+  // 10.80 : plus de message flottant pour les ajouts et modifs des autres (jamais lus : trop brefs, hors du regard) ;
+  // les étiquettes « new » / « modif », le voyant du chat et les bandeaux du duel suffisent
+  const SHOW_NOTICES = false;
+  if(SHOW_NOTICES && prevEditKeys && document.visibilityState === "visible"){
     const fresh = [...edits.keys()].filter(k => !prevEditKeys.has(k));
     if(fresh.length){
       const { cat, idx, by } = edits.get(fresh[0]);
@@ -6268,7 +6274,7 @@ function renderNewNotice(){
     }
   }
   prevEditKeys = new Set(edits.keys());
-  if(prevNewKeys && document.visibilityState === "visible"){
+  if(SHOW_NOTICES && prevNewKeys && document.visibilityState === "visible"){
     const fresh = [...now.keys()].filter(k => !prevNewKeys.has(k));
     if(fresh.length){
       const { cat, idx } = now.get(fresh[0]);
