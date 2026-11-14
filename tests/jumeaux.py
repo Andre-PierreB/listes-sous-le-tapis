@@ -51,6 +51,7 @@ SNAP = r"""() => {
   }
   const clone = document.body.cloneNode(true);
   clone.querySelectorAll(".version-tag").forEach(e => e.textContent = "");
+  clone.querySelectorAll("script, style").forEach(e => e.remove());   // le code lui-même n'est pas « l'écran »
   // dessins (jeu, tapis) : taille du canevas recalculée en différé → ignorée ;
   // petit message (toast) : on garde son texte, pas l'instant où il s'efface
   clone.querySelectorAll("canvas").forEach(e => { e.removeAttribute("width"); e.removeAttribute("height"); e.removeAttribute("style"); });
@@ -115,6 +116,8 @@ def glisser(src, dst, i=0, j=1):
             await pg.mouse.move(ba["x"] + ba["width"] / 2 + (bb["x"] - ba["x"]) * k / 12, ba["y"] + ba["height"] / 2 + (bb["y"] + bb["height"] * .7 - ba["y"] - ba["height"] / 2) * k / 12)
             await pg.wait_for_timeout(30)
         await pg.mouse.up()
+        # le défilement automatique pendant un glisser dépend du temps écoulé : on repart du haut
+        await pg.wait_for_timeout(500); await pg.evaluate("() => scrollTo(0, 0)")
     return f
 def ailleurs(code):
     """Le 2e onglet fait un geste (code JS de l'appli) ; le 1er le reçoit."""
@@ -181,6 +184,9 @@ GESTES = [
     ("glisser une tâche dans sa liste", glisser(TACHE + " .drag-handle", TACHE, 0, 2)),
     ("glisser une tâche vers une autre liste (ordi)", lambda pg: glisser(TACHE + " .drag-handle", ".category:not(.courses):not(.collapsed) .cat-head", 0, 1)(pg) if pg.viewport_size["width"] > 600 else ev(pg, "() => 0")),
     ("glisser une liste (ordi)", lambda pg: glisser(".category .cat-grip", ".category", 0, 1)(pg) if pg.viewport_size["width"] > 600 else ev(pg, "() => 0")),
+    ("prendre une tâche et la reposer à sa place", glisser(TACHE + " .drag-handle", TACHE, 0, 0)),
+    ("prendre une liste et la reposer à sa place (ordi)", lambda pg: glisser(".category .cat-grip", ".category .cat-head", 0, 0)(pg) if pg.viewport_size["width"] > 600 else ev(pg, "() => 0")),
+    ("cocher juste après", clic(TACHE + " input[type=checkbox]", 1)),
     # mémos
     ("rayer un article de mémo", clic(MEMO + " .courses-item .item-text")),
     ("dé-rayer", clic(MEMO + " .courses-item.is-checked .item-text")),
@@ -257,6 +263,9 @@ async def open_side(browser, page, dump, vp):
     await pg.evaluate(LOAD, dump); await pg.wait_for_timeout(SETTLE)
     pg.autre = None; pg.fichier = page
     return ctx, pg, errs
+
+if os.environ.get("JUSQUA"):   # pour chercher : s'arrêter après le geste dont le nom commence ainsi
+    GESTES = GESTES[:next(i for i, g in enumerate(GESTES) if g[0].startswith(os.environ["JUSQUA"])) + 1]
 
 def first_diff(a, b, label):
     al, bl = a.replace(">", ">\n").splitlines(), b.replace(">", ">\n").splitlines()
