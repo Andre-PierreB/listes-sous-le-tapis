@@ -355,22 +355,35 @@
     suggestions, doublons, collage, hauteur, défilement, glisser-déposer
     avec défilement, conversion aller-retour, invité simulé, fusion, ⌘Z.
 
-  CHANTIER DE LA 11 (préparé en 10.74, à faire dans une conversation dédiée, sans hâte)
-  - But : ne plus redessiner toute la page à chaque geste (renderAll reconstruit toutes
-    les cases : ~0,3 ms par tâche sur ordi, bien plus sur téléphone ; c'est la lourdeur
-    ressentie), mais seulement la case touchée.
-  - Danger : les écouteurs des cases gardées tiennent l'objet `cat` (et des index) de
-    l'ancien rendu ; après reloadAllFromStorage (synchro, autre onglet), DATA contient de
-    NOUVEAUX objets : un geste sur une case non redessinée agirait sur des données périmées.
-  - Ordre prévu : 1) chaque écouteur retrouve sa liste et sa tâche par identifiant au
-    moment du geste (plus de `cat` capturé) ; 2) rendu par case avec signature, derrière un
-    interrupteur sur le banc (ancien / nouveau rendu) ; 3) tests automatiques de chaque geste
-    (cocher, ajouter, modifier, effacer, glisser, partager, synchro deux onglets, ⌘Z) avec les
-    deux rendus : données identiques exigées ; 4) captures avant/après (16 vues ordi +
-    téléphone, au pixel près) et styles calculés identiques ; 5) quelques jours sur le banc
-    chez André-Pierre avant de publier en 11.0.
-  - Outils de vérification utilisés en 10.74 (Playwright, Chrome sans écran, vitrine ?demo,
-    Math.random et Date figés, animations coupées, canevas du jeu masqué) : à refaire.
+  CHANTIER DE LA 11 (en cours sur le banc depuis le 13/11/2026 ; index.html reste en 10.81)
+  - But : ne plus remettre toute la page en place à chaque geste (c'était la lourdeur ressentie,
+    surtout sur téléphone), sans aucun changement visible ni nouvelle fonction.
+  - FAIT (11.0, banc) — rendu par case : render() construit toujours toutes les cases, mais hors
+    de la page ; placeCards (voir sa note, près de wireFolded) ne remplace dans la page que les
+    cases dont le HTML ou les données ont changé. Garde-fous : une case n'est gardée que si elle
+    tient le même objet liste qu'au rendu d'avant (après reloadAllFromStorage — synchro, autre
+    onglet, ⌘Z, import — tout est refait : les écouteurs d'une case gardée ne tiennent jamais de
+    données périmées ; c'est ce qui remplace l'idée de réécrire chaque écouteur), qu'on n'y écrit
+    pas (cardBusy), et jamais pendant ni juste après un glisser-déposer (cardsDirty). Le chat est
+    toujours refait, le duel garde sa carte (comme avant). CSS : .categories > * { overflow-anchor:
+    none } pour que le défilement réagisse comme avant. essai.html?ancien : tout refaire.
+    Mesure (vraies listes, cocher une tâche) : ordi ~75 → ~38 ms ; téléphone lent simulé ~320 → ~165 ms.
+  - RESTE POSSIBLE (pas commencé) : ne plus CONSTRUIRE les cases inchangées (le plus gros du temps
+    restant : buildItemLi et les en-têtes). Il faut alors une empreinte des données ET de tous les
+    réglages d'affichage (édition en cours, pleine page, volets, partage, étiquettes new/modif,
+    date du jour…) : risque d'oubli, donc seulement avec une vérification en temps mort (reconstruire
+    la case plus tard, comparer, corriger et noter l'écart). Aussi : garder la case « En cours », la
+    case urgente et le chat quand ils n'ont pas changé.
+  - VÉRIFICATION : tests/jumeaux.py (lancé aussi par `python3 tests/run.py complet`, ≈ 20 min)
+    rejoue ~70 gestes sur index.html et essai.html, ordinateur et téléphone, hasard et date figés,
+    et exige après chaque geste le même stockage, le même écran (HTML de la page) et le même
+    défilement. Données : tests/donnees-exemple.json (structure d'une vraie sauvegarde, anonymisée) ;
+    DONNEES=/chemin/sauvegarde.json pour une vraie sauvegarde (jamais dans le dépôt). Le partage est
+    simulé par le chemin exact de la synchro (Store.writeDocs + storeChangedElsewhere « remote-shared ») ;
+    Firebase lui-même n'est pas testé. Tant que le banc et index.html diffèrent volontairement à
+    l'écran (nouvelle fonction), les jumeaux signaleront cet écart : c'est attendu.
+  - BUG CONNU de la 10.81, hors chantier : deux onglets ouverts dans le même navigateur — le +1 du
+    compteur d'un envoi « En cours » est parfois annulé par l'autre onglet (la tâche part bien).
 
   HISTORIQUE
   - L'historique détaillé des versions (5.2 → 10.73) est dans HISTORIQUE.md,
