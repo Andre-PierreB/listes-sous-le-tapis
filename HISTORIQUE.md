@@ -3,6 +3,11 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.0 : rendu par case, sans changement à l'écran : à chaque geste, seules les cases qui ont
+    changé sont remplacées dans la page (avant : toutes), pour une appli plus légère, surtout sur
+    téléphone (cocher une tâche : environ deux fois plus rapide). Tout est refait comme avant quand un
+    changement arrive d'ailleurs (synchro, autre onglet, ⌘Z), quand on écrit dans la case, et autour d'un
+    glisser-déposer. Tests : comparateur tests/jumeaux.py (138 contrôles identiques avec la 10.81).
   - 10.81 : mémos : filet bleu au-dessus du premier article (visible fermé aussi), marge qui
     dépasse de 5 px au-dessus ; relance : à sa date, la tâche quitte « En cours » et rentre dans sa
     liste, urgente, étiquette « Relance j/m » ; le triangle la rend non urgente (bug : impossible

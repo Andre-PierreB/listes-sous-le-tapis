@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 10.81 -->
+<!-- Sous le tapis — version AUTONOME 11.0 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -355,22 +355,35 @@
     suggestions, doublons, collage, hauteur, défilement, glisser-déposer
     avec défilement, conversion aller-retour, invité simulé, fusion, ⌘Z.
 
-  CHANTIER DE LA 11 (préparé en 10.74, à faire dans une conversation dédiée, sans hâte)
-  - But : ne plus redessiner toute la page à chaque geste (renderAll reconstruit toutes
-    les cases : ~0,3 ms par tâche sur ordi, bien plus sur téléphone ; c'est la lourdeur
-    ressentie), mais seulement la case touchée.
-  - Danger : les écouteurs des cases gardées tiennent l'objet `cat` (et des index) de
-    l'ancien rendu ; après reloadAllFromStorage (synchro, autre onglet), DATA contient de
-    NOUVEAUX objets : un geste sur une case non redessinée agirait sur des données périmées.
-  - Ordre prévu : 1) chaque écouteur retrouve sa liste et sa tâche par identifiant au
-    moment du geste (plus de `cat` capturé) ; 2) rendu par case avec signature, derrière un
-    interrupteur sur le banc (ancien / nouveau rendu) ; 3) tests automatiques de chaque geste
-    (cocher, ajouter, modifier, effacer, glisser, partager, synchro deux onglets, ⌘Z) avec les
-    deux rendus : données identiques exigées ; 4) captures avant/après (16 vues ordi +
-    téléphone, au pixel près) et styles calculés identiques ; 5) quelques jours sur le banc
-    chez André-Pierre avant de publier en 11.0.
-  - Outils de vérification utilisés en 10.74 (Playwright, Chrome sans écran, vitrine ?demo,
-    Math.random et Date figés, animations coupées, canevas du jeu masqué) : à refaire.
+  CHANTIER DE LA 11 (11.0 publiée le 14/11/2026)
+  - But : ne plus remettre toute la page en place à chaque geste (c'était la lourdeur ressentie,
+    surtout sur téléphone), sans aucun changement visible ni nouvelle fonction.
+  - FAIT (11.0) — rendu par case : render() construit toujours toutes les cases, mais hors
+    de la page ; placeCards (voir sa note, près de wireFolded) ne remplace dans la page que les
+    cases dont le HTML ou les données ont changé. Garde-fous : une case n'est gardée que si elle
+    tient le même objet liste qu'au rendu d'avant (après reloadAllFromStorage — synchro, autre
+    onglet, ⌘Z, import — tout est refait : les écouteurs d'une case gardée ne tiennent jamais de
+    données périmées ; c'est ce qui remplace l'idée de réécrire chaque écouteur), qu'on n'y écrit
+    pas (cardBusy), et jamais pendant ni juste après un glisser-déposer (cardsDirty). Le chat est
+    toujours refait, le duel garde sa carte (comme avant). CSS : .categories > * { overflow-anchor:
+    none } pour que le défilement réagisse comme avant. essai.html?ancien : tout refaire.
+    Mesure (vraies listes, cocher une tâche) : ordi ~75 → ~38 ms ; téléphone lent simulé ~320 → ~165 ms.
+  - RESTE POSSIBLE (pas commencé) : ne plus CONSTRUIRE les cases inchangées (le plus gros du temps
+    restant : buildItemLi et les en-têtes). Il faut alors une empreinte des données ET de tous les
+    réglages d'affichage (édition en cours, pleine page, volets, partage, étiquettes new/modif,
+    date du jour…) : risque d'oubli, donc seulement avec une vérification en temps mort (reconstruire
+    la case plus tard, comparer, corriger et noter l'écart). Aussi : garder la case « En cours », la
+    case urgente et le chat quand ils n'ont pas changé.
+  - VÉRIFICATION : tests/jumeaux.py (lancé aussi par `python3 tests/run.py complet`, ≈ 20 min)
+    rejoue ~70 gestes sur index.html et essai.html, ordinateur et téléphone, hasard et date figés,
+    et exige après chaque geste le même stockage, le même écran (HTML de la page) et le même
+    défilement. Données : tests/donnees-exemple.json (structure d'une vraie sauvegarde, anonymisée) ;
+    DONNEES=/chemin/sauvegarde.json pour une vraie sauvegarde (jamais dans le dépôt). Le partage est
+    simulé par le chemin exact de la synchro (Store.writeDocs + storeChangedElsewhere « remote-shared ») ;
+    Firebase lui-même n'est pas testé. Tant que le banc et index.html diffèrent volontairement à
+    l'écran (nouvelle fonction), les jumeaux signaleront cet écart : c'est attendu.
+  - BUG CONNU de la 10.81, hors chantier : deux onglets ouverts dans le même navigateur — le +1 du
+    compteur d'un envoi « En cours » est parfois annulé par l'autre onglet (la tâche part bien).
 
   HISTORIQUE
   - L'historique détaillé des versions (5.2 → 10.73) est dans HISTORIQUE.md,
@@ -1086,6 +1099,12 @@ header{
 }
 
 /* ---------- listes ---------- */
+/* 11.0 : avant, toutes les cases étaient refaites à chaque geste : le navigateur ne pouvait jamais
+   prendre une case comme repère pour « ancrer » le défilement (il prenait ce qui restait en place :
+   l'en-tête, « En cours »…). Maintenant que les cases sont gardées, on lui interdit de les prendre
+   comme repère, pour que la page réagisse exactement comme avant (la case touchée ne bouge pas,
+   ce qui est dessous suit). */
+.categories > *{ overflow-anchor:none; }
 .categories{
   margin-top:2.25rem;
   display:grid;
@@ -3625,7 +3644,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v10.81</span>
+    <span class="version-tag">v11.0</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -7047,6 +7066,7 @@ function flipMoveMulti(parents, moveFn){
     const dy = firstRect.top - lastRect.top;
     const dx = firstRect.left - lastRect.left; // 0 pour les lignes ; utile pour la grille des listes
     if(Math.abs(dy) < 0.5 && Math.abs(dx) < 0.5) return;
+    cardsDirty = true;   // 11.0 : le glisser-déposer laisse des styles sur les cases : toutes refaites au rendu suivant
     el.style.transition = "none";
     el.style.transform = `translate(${dx}px, ${dy}px)`;
     void el.offsetHeight; // force reflow avant de relâcher la transition
@@ -10526,13 +10546,17 @@ function render(){
   // position d'un rendu à l'autre (rayer un article ne la ramène pas en haut)
   const coursesScroll = {};
   categoriesEl.querySelectorAll(".category.courses > ul.items").forEach(u => { coursesScroll[u.parentElement.id] = u.scrollTop; });
-  categoriesEl.innerHTML = "";
+  // 11.0 : les cases sont toutes construites comme avant, mais hors de la page ; placeCards
+  // ne remplace ensuite dans la page que celles qui ont changé (voir sa note)
+  const prevCards = new Map();
+  Array.from(categoriesEl.children).forEach(n => { if(n.id) prevCards.set(n.id, n); });
+  const built = [];
   const catDisplayOrder = getCategoryOrder().filter(catIdx => !isCategoryDeleted(DATA[catIdx].id));   // 10.66 : les listes restent où on les a mises, ouvertes ou fermées
   let memoRank = 0;   // 10.23 : rang des mémos, pour varier leur reflet
   catDisplayOrder.forEach(catIdx=>{
     const cat = DATA[catIdx];
-    if(isChatList(cat.id)){ categoriesEl.appendChild(buildChatCard(cat, catIdx)); return; }   // 10.57
-    if(isDuelList(cat.id)){ categoriesEl.appendChild(Duel.card(cat, catIdx)); return; }   // 10.63
+    if(isChatList(cat.id)){ built.push({ node: buildChatCard(cat, catIdx) }); return; }   // 10.57
+    if(isDuelList(cat.id)){ built.push({ node: Duel.card(cat, catIdx) }); return; }   // 10.63
     const items = getEffectiveItems(cat);
     const courses = isCoursesList(cat.id);
     const card = document.createElement("div");
@@ -10937,8 +10961,9 @@ function render(){
     bar.addEventListener("pointercancel", ()=>{ barY = null; });
     bar.addEventListener("click", e=>{ e.stopPropagation(); e.preventDefault(); if(e.detail === 0) barSet(!card.classList.contains("peek")); });   // clavier
     card.appendChild(bar);
-    categoriesEl.appendChild(card);
+    built.push({ node: card, cat });
   });
+  placeCards(built, prevCards);   // 11.0
   wireFolded();   // 10.66
   refocusQuickCat = null;
   refocusCoursesCat = null;
@@ -10947,6 +10972,47 @@ function render(){
   renderLuckyLine();
   const waitingSection = document.getElementById("waitingSection");
   if(waitingSection) waitingSection.hidden = !hasAnyList();
+}
+
+// 11.0 : RENDU PAR CASE. render() construit toujours toutes les cases (c'est rapide : la lenteur
+// venait de la page entière à remettre en place par le navigateur), puis placeCards ne met dans la
+// page que celles qui ont changé. Une case déjà à l'écran est GARDÉE telle quelle seulement si :
+//   - c'est une liste ou un mémo (le chat est toujours refait ; le duel gardait déjà sa carte) ;
+//   - elle tient le même objet liste qu'au rendu d'avant (après reloadAllFromStorage — synchro,
+//     autre onglet, ⌘Z, import — DATA contient de nouveaux objets : tout est refait, comme avant ;
+//     les écouteurs d'une case gardée ne tiennent donc jamais de données périmées) ;
+//   - la case neuve est identique à ce que l'ancienne était à sa construction (son HTML entier),
+//     et les données de la liste (tâches, modifications, coches, place) sont les mêmes ;
+//   - on n'est pas en train d'y écrire (pas de formulaire, pas de champ rempli, pas de curseur
+//     dedans) : sinon elle est refaite, exactement comme avant.
+// En cas de doute : refaite. essai.html?ancien : tout refaire à chaque fois (comparaison).
+const RENDU_PAR_CASE = !/[?&]ancien\b/.test(location.search);
+function cardSig(node, cat){
+  const rows = getEffectiveItems(cat).map((base, i)=>{ const k = itemKey(cat.id, i); return [base, overrides[k] || 0, state[k] || 0]; });
+  return node.outerHTML + "\u0000" + JSON.stringify([DATA.indexOf(cat), rows]);
+}
+function cardBusy(card){
+  if(card.contains(document.activeElement)) return true;
+  if(card.querySelector(".editing, .add-form-row, .cat-title-input")) return true;
+  return Array.from(card.querySelectorAll("input, textarea")).some(f =>
+    (f.type === "checkbox" || f.type === "radio") ? f.checked !== f.defaultChecked : f.value !== f.defaultValue);
+}
+let cardsDirty = false;   // posé par le glisser-déposer : au prochain rendu, aucune case n'est gardée
+function placeCards(built, prev){
+  const all = cardsDirty || !!dragState; cardsDirty = false;
+  const want = built.map(b=>{
+    const node = b.node, old = prev.get(node.id);
+    if(!b.cat) return node;   // chat (refait) et duel (sa propre carte, toujours la même)
+    node._cat = b.cat;
+    try{ node._sig = cardSig(node, b.cat); }catch(err){ node._sig = null; }
+    if(RENDU_PAR_CASE && !all && old && old !== node && node._sig && old._sig === node._sig && old._cat === b.cat
+       && !cardBusy(old) && !cardBusy(node)) return old;
+    return node;
+  });
+  const keep = new Set(want);
+  Array.from(categoriesEl.children).forEach(n => { if(!keep.has(n)) n.remove(); });   // (aussi les restes d'un glisser-déposer)
+  let cur = categoriesEl.firstChild;
+  want.forEach(n => { if(n === cur) cur = cur.nextSibling; else categoriesEl.insertBefore(n, cur); });
 }
 
 // 10.66 : rouvrir une case fermée (elle reste à sa place ; essai abandonné : la faire remonter)

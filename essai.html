@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.0 (banc ; index.html reste en 10.81) -->
+<!-- Sous le tapis — version AUTONOME 11.0 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -355,10 +355,10 @@
     suggestions, doublons, collage, hauteur, défilement, glisser-déposer
     avec défilement, conversion aller-retour, invité simulé, fusion, ⌘Z.
 
-  CHANTIER DE LA 11 (en cours sur le banc depuis le 13/11/2026 ; index.html reste en 10.81)
+  CHANTIER DE LA 11 (11.0 publiée le 14/11/2026)
   - But : ne plus remettre toute la page en place à chaque geste (c'était la lourdeur ressentie,
     surtout sur téléphone), sans aucun changement visible ni nouvelle fonction.
-  - FAIT (11.0, banc) — rendu par case : render() construit toujours toutes les cases, mais hors
+  - FAIT (11.0) — rendu par case : render() construit toujours toutes les cases, mais hors
     de la page ; placeCards (voir sa note, près de wireFolded) ne remplace dans la page que les
     cases dont le HTML ou les données ont changé. Garde-fous : une case n'est gardée que si elle
     tient le même objet liste qu'au rendu d'avant (après reloadAllFromStorage — synchro, autre
