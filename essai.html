@@ -3724,8 +3724,7 @@ body.ios-gate-on{ overflow:hidden; }
   /* D : C + le champ de B sur la 2e ligne, collé au titre et aligné à gauche sur lui (après la bulle) ; largeur
      réglable (--cf-w). Même place fermée, entrouverte et ouverte. Le champ disparaît quand le + est ouvert. */
   .cf-d .cat-head-right{ align-self:flex-start; }
-  .cf-d .cat-quick-wrap{ order:4; flex:0 0 100%; max-width:none; z-index:3; --cf-ml:0rem; }
-  .cf-d .cat-count ~ .cat-quick-wrap{ flex-basis:calc(100% - 2.8rem); margin-left:2.8rem; --cf-ml:2.8rem; }   /* bulle (2.3rem) + écart : le champ part du titre */
+  .cf-d .cat-quick-wrap{ order:4; flex:0 0 calc(100% - 3.17rem); max-width:none; z-index:3; margin-left:3.17rem; }   /* toujours à la même place, bulle ou pas : le bord gauche du champ sur celui des cases à cocher (73,7 px du bord de la case) */
   .cf-d .cat-quick{ flex:0 0 auto; width:min(var(--cf-w, 14rem), calc(100% + 40px)); border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb, var(--ink) 2.5%, var(--surface)); padding:0.28rem 0.5rem 0.28rem 1.7rem; }
   .cf-d .cat-quick-pen{ left:0.55rem; }
   .cf-d .cat-quick:focus{ border:1px solid var(--cat-color, var(--accent)); }
@@ -3733,8 +3732,7 @@ body.ios-gate-on{ overflow:hidden; }
   .cf-d .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }
   .cf-d .category.collapsed:not(.chat-card):not(.duel-card) .cat-head{ margin-bottom:0; }   /* la case fermée garde --fold-h */
   .cf-d .category.courses.collapsed{ padding-bottom:calc(2.1rem - 2px); }
-  /* D compact : cases fermées plus basses (listes et mémos ; chat et duel gardent 100 px en attendant leur mise en page),
-     poignée et punaise remontées sur la ligne du champ */
+  /* D compact : cases fermées plus basses (72 px), poignée et punaise remontées sur la ligne du champ */
   .cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card){ min-height:72px; padding-bottom:6px; }
   .cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card) .cat-grip{ bottom:calc(0.12rem + 6px); }
   .cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card) > .cat-fold{ bottom:calc(0.3rem + 7px); }
@@ -3743,6 +3741,15 @@ body.ios-gate-on{ overflow:hidden; }
   .cf-d.cf-compact .category.courses.collapsed .cat-grip{ bottom:calc(0.12rem + 4px); }
   .cf-d.cf-compact .category.courses.collapsed > .cat-fold{ bottom:calc(0.3rem + 5px); }
   .cf-d.cf-compact .category.collapsed.has-people .cat-quick{ width:min(var(--cf-w, 14rem), calc(100% - 0.6rem)); }
+  /* D compact, chat et duel fermés : même principe, deux lignes. Le nom en haut ; dessous, l'écran entre la poignée
+     et « … », initiales, punaise. L'écran part du même bord gauche que le champ des listes. */
+  .cf-d.cf-compact :is(.chat-card, .duel-card).collapsed{ height:72px; min-height:72px; }
+  .cf-d.cf-compact .collapsed > :is(.chat-box, .duel-stage){ display:grid; grid-template-columns:71.7px minmax(0, 1fr) auto; grid-template-rows:34px 38px; height:72px; padding:0; }
+  .cf-d.cf-compact .collapsed :is(.chat-hole, .duel-screen){ grid-area:2 / 2; min-width:0; }
+  .cf-d.cf-compact .collapsed .duel-screen{ margin:0 0 0 2px; width:auto !important; max-width:calc(100% - 2px); box-sizing:border-box; justify-self:stretch; }
+  .cf-d.cf-compact .collapsed .chat-foot{ grid-area:2 / 3; position:static; align-self:center; height:auto; padding-left:0.5rem; margin:0; }
+  .cf-d.cf-compact .collapsed .chat-foot .cat-grip{ bottom:calc(0.12rem + 6px); }
+  .cf-d.cf-compact .collapsed .chat-foot .cat-fold{ bottom:calc(0.3rem + 7px); }
   /* filet du mémo fermé : avec ou sans */
   .cf-sans-filet .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }
 }
@@ -14005,7 +14012,7 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
 // Jamais sur la vraie appli (ESSAI). Ordinateur seulement pour l'instant.
 if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
   const q = new URLSearchParams(location.search), html = document.documentElement;
-  let v = /^[abcd]$/.test(q.get("cf") || "") ? q.get("cf") : "0", filet = q.get("filet") !== "0", pastille = q.get("pastille") !== "0", compact = q.get("compact") === "1", w = Math.min(22, Math.max(8, parseInt(q.get("w"), 10) || 14));
+  let v = /^[abcd]$/.test(q.get("cf") || "") ? q.get("cf") : "0", filet = q.get("filet") !== "0", pastille = q.get("pastille") !== "0", compact = q.get("compact") !== "0", w = Math.min(22, Math.max(8, parseInt(q.get("w"), 10) || 15));
   const apply = ()=>{
     ["a", "b", "c", "d"].forEach(k => html.classList.toggle("cf-" + k, v === k));
     html.classList.toggle("cf-sans-filet", !filet);
@@ -14016,7 +14023,7 @@ if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
     box.querySelectorAll("[data-d]").forEach(n => { n.style.opacity = v === "d" ? "1" : ".4"; });
     window.dispatchEvent(new Event("resize"));
   };
-  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "cf=" + v + (filet ? "" : "&filet=0") + (pastille ? "" : "&pastille=0") + (v === "d" ? (compact ? "&compact=1" : "") + "&w=" + w : "");
+  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "cf=" + v + (filet ? "" : "&filet=0") + (pastille ? "" : "&pastille=0") + (v === "d" ? (compact ? "" : "&compact=0") + "&w=" + w : "");
   const box = document.createElement("div");
   box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:17rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
   document.body.appendChild(box);
