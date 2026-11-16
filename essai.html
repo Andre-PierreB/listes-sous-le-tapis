@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.5 -->
+<!-- Sous le tapis — version AUTONOME 11.6 (banc) -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3690,6 +3690,43 @@ body.ios-gate-on{ overflow:hidden; }
 .ib-btns{ display:inline-flex; gap:0.4rem; }
 
 
+/* ---- banc ?cf (11.6) : cases fermées, trois pistes. Classes cf-a / cf-b / cf-c sur <html>, posées par le banc
+   seulement ; ordinateur seulement. Commun : plus de texte d'invite au repos (le crayon seul), il revient à la saisie. */
+@media (min-width:721px){
+  :is(.cf-a, .cf-b, .cf-c) .cat-quick::placeholder{ opacity:0; }
+  :is(.cf-a, .cf-b, .cf-c) .cat-quick:focus::placeholder{ opacity:.7; }
+  /* A et C : la saisie est un filet qui file jusqu'au bout de la ligne */
+  :is(.cf-a, .cf-c) .cat-quick-wrap{ max-width:none; }
+  :is(.cf-a, .cf-c) .cat-quick{ border-bottom:1px solid var(--line); }
+  /* A et B : le chiffre en colonne à gauche du +, plus gros, sans bulle */
+  :is(.cf-a, .cf-b) .cat-count{ order:3; margin-left:auto; background:none; padding:0; height:auto; min-width:2ch; justify-content:flex-end; font-size:1.3rem; }
+  .cf-a .cat-quick-wrap{ order:2; }
+  /* C : le chiffre à gauche du titre, bulle de largeur fixe */
+  .cf-c .cat-count{ order:-1; min-width:2.3rem; padding:0; }
+  /* B : la saisie sur la 2e ligne, champ marqué, entre la poignée et la punaise. Elle garde la même place
+     fermée, entrouverte et ouverte (rien ne saute sous la souris) ; la case fermée garde sa hauteur (--fold-h) ;
+     poignée, punaise et initiales remontent de 5 px, case fermée, pour s'aligner sur le champ sans coller au bord. */
+  .cf-b .cat-head-right{ align-self:flex-start; }
+  .cf-b .cat-quick-wrap{ order:4; flex:0 0 calc(100% + 44px - 1.2rem); max-width:none; margin-left:1.2rem; margin-top:29px; }
+  .cf-b .category.courses .cat-quick-wrap{ margin-top:27px; }
+  .cf-b .category.has-people .cat-quick-wrap{ flex-basis:calc(100% - 1.2rem - 1.6rem); }
+  .cf-b .cat-quick{ border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb, var(--ink) 2.5%, var(--surface)); padding:0.28rem 0.5rem 0.28rem 1.7rem; }
+  .cf-b .cat-quick-pen{ left:0.55rem; }
+  .cf-b .cat-quick:focus{ border:1px solid var(--cat-color, var(--accent)); }
+  .cf-b .category.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:6px; }
+  .cf-b .category.collapsed .cat-head{ margin-bottom:0; }
+  .cf-b .cat-quick-wrap{ z-index:3; }   /* au-dessus du fondu du bas de la case fermée */
+  .cf-b .category.collapsed .cat-grip{ bottom:calc(0.12rem + 5px); }
+  .cf-b .category.collapsed .cat-fold{ bottom:calc(0.3rem + 5px); }
+  .cf-b .category.collapsed > .share-chips{ bottom:calc(0.35rem + 5px); }
+  .cf-b .category.collapsed :is(.chat-foot, .duel-foot) > :not(.cat-grip):not(.cat-fold){ position:relative; top:-5px; }
+  .cf-b .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }   /* B : le champ fait déjà la ligne */
+  /* filet du mémo fermé : avec ou sans */
+  .cf-sans-filet .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }
+}
+/* banc ?cf : « urgent » actif, au survol : la petite pastille claire d'avant la 11.3 revient derrière le triangle
+   (case urgente et listes), pour qu'on voie qu'il réagit ; le triangle garde son mauve, vidé et plus petit */
+.cf-pastille .urgent-btn.active:not(.auto):hover{ background:var(--surface-2); }
 </style>
 
 <div class="wrap">
@@ -3730,7 +3767,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.5</span>
+    <span class="version-tag">v11.6</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -11189,6 +11226,16 @@ function peekCard(card, on, still){
 // 10.80 : pas besoin d'être pile dessus : la souris à moins de ~40 px de la punaise suffit
 let ptrX = -1e4, ptrY = -1e4;
 document.addEventListener("pointermove", e => { if(e.pointerType === "mouse"){ ptrX = e.clientX; ptrY = e.clientY; } }, { passive:true, capture:true });
+// 11.6 : filet de sécurité : une case entrouverte que la souris ne survole plus se referme, même si elle a été
+// redessinée entre la sortie de la souris et la fin du temps de grâce (la case neuve restait ouverte jusqu'au
+// prochain clic ailleurs : l'ancienne emportait la fermeture avec elle, et la neuve n'attendait plus de sortie)
+const PEEKS = document.getElementsByClassName("peek");
+let peekWatchT = null;
+document.addEventListener("pointermove", e=>{
+  if(e.pointerType !== "mouse" || !PEEKS.length || peekWatchT || dragState) return;
+  peekWatchT = setTimeout(()=>{ peekWatchT = null; if(dragState) return;
+    Array.from(PEEKS).forEach(c => { if(!c.matches(":hover")) peekCard(c, false); }); }, 260);
+}, { passive:true, capture:true });
 function pinNear(pin){
   const r = pin.getBoundingClientRect();
   return Math.hypot(ptrX - (r.left + r.width / 2), ptrY - (r.top + r.height / 2)) < 40;
@@ -13929,6 +13976,39 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
       msg.textContent = "Envoyé. Écartez la souris de l'écran pour voir l'effet.";
     });
   };
+  apply();
+})();
+// ---- banc d'essai (essai.html?demo&cf=a) : cases fermées, trois pistes (11.6) ----
+// cf = 0 (actuel), a, b ou c ; filet=0 retire le filet du mémo fermé ; pastille=0 retire la pastille au survol d'« urgent » actif. Classes cf-* sur <html> : rien que du CSS.
+// Jamais sur la vraie appli (ESSAI). Ordinateur seulement pour l'instant.
+if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
+  const q = new URLSearchParams(location.search), html = document.documentElement;
+  let v = /^[abc]$/.test(q.get("cf") || "") ? q.get("cf") : "0", filet = q.get("filet") !== "0", pastille = q.get("pastille") !== "0";
+  const apply = ()=>{
+    ["a", "b", "c"].forEach(k => html.classList.toggle("cf-" + k, v === k));
+    html.classList.toggle("cf-sans-filet", !filet);
+    html.classList.toggle("cf-pastille", pastille);
+    window.dispatchEvent(new Event("resize"));
+  };
+  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "cf=" + v + (filet ? "" : "&filet=0") + (pastille ? "" : "&pastille=0");
+  const box = document.createElement("div");
+  box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:17rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
+  document.body.appendChild(box);
+  ["click", "pointerdown"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
+  const row = "display:flex;gap:.4rem;align-items:center;margin:.25rem 0;cursor:pointer";
+  box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.4rem">Cases fermées</div>`
+    + [["0", "Actuel"], ["a", "A · chiffre à droite, crayon sur un filet"], ["b", "B · chiffre à droite, champ sur la 2e ligne"], ["c", "C · chiffre à gauche du titre"]]
+      .map(([k, l]) => `<label style="${row}"><input type="radio" name="cf" value="${k}"${k === v ? " checked" : ""}>${l}</label>`).join("")
+    + `<label style="${row};margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--line)"><input type="checkbox" data-f${filet ? " checked" : ""}>Filet du mémo fermé (A, C, actuel)</label>`
+    + `<label style="${row}"><input type="checkbox" data-p${pastille ? " checked" : ""}>Pastille claire au survol d'« urgent » actif</label>`
+    + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
+  box.querySelectorAll("input[type=radio]").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
+  box.querySelector("[data-f]").addEventListener("change", e => { filet = e.target.checked; apply(); });
+  box.querySelector("[data-p]").addEventListener("change", e => { pastille = e.target.checked; apply(); });
+  box.querySelector("[data-c]").addEventListener("click", async e=>{
+    try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
+    setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
+  });
   apply();
 })();
 // 10.68 : vitrine (?demo) : quelques listes remplies, fermées et ouvertes, pour tester sur téléphone
