@@ -3,6 +3,13 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.3 : retouches. « Nouvelle liste » à la largeur d'une liste sur téléphone ; mémos : surlignage
+    « new / modif » transparent (la marge reste visible), sigle du détail en bout de ligne plus caché sous
+    le crayon et la croix (ordi), plus de coin corné en pleine page ; écran de chat fermé : ligne de saisie
+    sous le dernier message (on écrit sans ouvrir) ; œuf : « Faire éclore » à côté de la croix ; tâche
+    urgente par sa date : triangle allumé et inerte dans sa liste aussi ; survol des petits boutons : plus
+    de pastille de couleur, le signe s'allume (comme « Faire éclore »), urgent actif s'éteint en mauve ;
+    flèche « En cours » verte au survol, avec pastille verte dans la case urgente.
   - 11.2 : copie de l'appli gardée sur l'appareil (sw.js) — ouverture sans attendre le réseau (page,
     icônes, polices, code de Firebase) ; une version publiée arrive à l'ouverture suivante ; arrêt à distance
     par ARRET = true dans sw.js. La vraie appli seulement : les bancs d'essai viennent toujours du site.

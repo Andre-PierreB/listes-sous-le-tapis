@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.2 -->
+<!-- Sous le tapis — version AUTONOME 11.3 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1396,6 +1396,8 @@ body > .fp-back{ display:none; position:fixed; z-index:160;
 .fp-back:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 @media (hover:none){ body > .fp-back:hover{ background:var(--surface-2); color:var(--ink-soft); box-shadow:inset 0 0 0 1px var(--line); } .fp-back:hover svg{ transform:none; } }
 body.has-fullpage > .fp-back{ display:inline-flex; }
+/* 11.3 : en pleine page, plus de coin corné au mémo (mal placé au bord de l'écran ; rien ne change hors pleine page) */
+.category.courses.fullpage::before{ display:none; }
 .category.fullpage{ padding-top:calc(max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) + var(--fb-size) + 0.9rem); }
 @media (max-width:820px){ .category.fullpage{ box-shadow:none; } }
 
@@ -1667,6 +1669,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   gap:0.4rem;
   transition:transform .2s var(--pop-ease), border-color .15s ease, box-shadow .2s ease;
 }
+@media (max-width:720px){ .add-category-btn{ width:100%; } }   /* 11.3 : téléphone : une seule colonne, la case fantôme prend la largeur d'une liste */
 /* 10.75 : survol d'« Une petite en passant ? » : halo citron, léger soulèvement ; plus de pointillés, couleurs inchangées */
 .add-category-btn:hover, .add-category-btn:focus-visible{
   outline:none;
@@ -1949,7 +1952,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 @media (pointer:coarse){ .chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ right:calc(0.55rem - 1px); } }
 .chat-card.collapsed, .duel-card.collapsed{ align-self:start; cursor:pointer; height:var(--fold-h); }
 .duel-card.collapsed .duel-stage{ height:100%; display:flex; flex-direction:column; }
-.chat-card.collapsed .chat-in{ display:none; }
+.chat-card.collapsed .chat-in{ flex:none; }   /* 11.3 : écran fermé, la ligne de saisie reste sous le dernier message : on peut écrire sans ouvrir (avant : masquée) */
 .chat-card.collapsed .chat-screen{ justify-content:center; }
 .chat-card.collapsed .chat-log{ flex:none; min-height:0; max-height:none; overflow:hidden; }
 .chat-card.collapsed .chat-l{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -2381,7 +2384,8 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
   scale:var(--pop-scale);
 }
 .urgent-btn.active:not(.auto):hover svg{ scale:0.85; }   /* retirer : il rapetisse */
-.urgent-btn.auto:hover svg{ scale:none; }   /* triangle inerte de la case urgente */
+.urgent-btn.auto:hover svg{ scale:none; }
+.item .urgent-btn.auto{ cursor:default; }   /* 11.3 : dans une liste aussi (urgente par sa date) */   /* triangle inerte de la case urgente */
 @media (prefers-reduced-motion:reduce){
   .urgent-btn svg, .waiting-btn svg, .delete-btn svg, .delete-btn .x, .add-btn .g, .cat-delete-btn .g, .note-toggle svg, .courses-edit-btn svg, .cat-order svg, .cat-grip svg, .cat-fold svg, .lucky-reroll svg, .hatch-btn svg{ transition:none; }
   .urgent-btn:hover svg, .waiting-btn:hover svg, .delete-btn:hover svg, .delete-btn:hover .x, .add-btn:hover .g, .cat-delete-btn:hover .g, .note-toggle:hover svg, .courses-edit-btn:hover svg, .cat-order:hover svg, .cat-grip:hover svg, .cat-fold:hover svg, .lucky-reroll:hover svg, .hatch-btn:hover svg{ scale:none; }
@@ -2456,6 +2460,8 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 /* 10.17 : chaque article posé sur une ligne de cahier */
 .courses-item{ border-radius:0; border-bottom:1px solid var(--paper-rule); padding:calc(2 * var(--row-pad) + 0.15rem + 20px - 1.4 * var(--memo-size)) 0.3rem 0; } /* 10.18 : texte posé sur sa ligne (air au-dessus) ; 10.38 : même hauteur de ligne que les tâches, où c'est la case à cocher qui la donne (18px + 0.15rem + 3px) : 2 × row-pad + case − texte − filet 1px */
 .category.courses > ul.items > .courses-item:first-child{ box-shadow:inset 0 1px 0 var(--paper-rule); }   /* 10.81 : filet au-dessus du premier article (ombre : rien ne bouge) */
+@media (hover:hover){ .courses-item:not(.is-new):has(.note-toggle) > .item-text{ padding-right:4.7rem; } }   /* 11.3 : à la souris, un article avec détail laisse la place du crayon et de la croix : le sigle du détail en bout de ligne n'est plus caché dessous (impossible à ouvrir) */
+.courses-item.is-new{ background:color-mix(in srgb, var(--cat-color, var(--accent)) 8%, transparent); }   /* 11.3 : surlignage « new / modif » transparent comme le survol : la marge rouge reste visible (avant, mélangé au blanc, il la recouvrait) */
 .courses-item:hover{ background:color-mix(in srgb, var(--paper-rule) 30%, transparent); } /* voile léger : la marge rouge reste visible */
 .courses-item .item-text{ font-family:var(--font-memo); font-size:var(--memo-size); color:var(--ink); cursor:default; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
 /* quantité : après le nom (en ligne, pour être barrée avec lui) ; 10.17 : à
@@ -2579,6 +2585,23 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 .hatch-btn:hover .chick{ fill:#F4D35E; stroke:#B8901F; }
 .hatch-btn:hover .beak{ stroke:#D9822B; }
 .hatch-btn:hover .shell{ fill:var(--eggshell); }
+/* 11.3 : œuf : « Faire éclore » à côté de la croix (à la place d'« En cours », masqué pour un œuf) : plus de trou entre les deux */
+.item.is-egg .item-controls .waiting-btn{ order:-1; }
+/* 11.3 : survol des petits boutons de ligne, UN seul principe, celui de « Faire éclore » :
+   pas de pastille de couleur derrière, c'est le signe lui-même qui s'allume (trait foncé, intérieur teinté) et grossit.
+   Couleur seulement là où elle veut dire quelque chose : mauve de l'urgence, ton d'« En cours » ; effacer et modifier
+   restent dans l'encre. Urgent déjà actif : au survol il s'éteint en restant mauve (vidé, plus petit) au lieu de virer au gris. */
+.urgent-btn:not(.active):hover, .waiting-btn:hover, #waitingSection .waiting-btn:hover,
+.delete-btn:hover, .courses-edit-btn:hover, .hatch-btn:hover{ background:transparent; }
+.delete-btn:hover, .courses-edit-btn:hover{ color:var(--ink); }
+.delete-btn:hover svg, .courses-edit-btn:hover svg{ fill:color-mix(in srgb, var(--ink) 12%, transparent); }
+.waiting-btn:hover{ color:var(--logo-green-strong); }   /* même vert que dans la case urgente (avant : bleu d'« En cours ») */
+.urgent-btn.active:not(.auto):hover{ background:transparent; color:color-mix(in srgb, var(--urgent-ink) 60%, transparent); }
+.urgent-btn.active:not(.auto):hover svg .tri{ fill:none; }
+/* 11.3 : dans la case urgente, « Classé, suivi en cours » est LE geste satisfaisant : il garde une pastille, verte (vert du faisan), et grossit plus que les autres */
+.urgent-actions .waiting-btn:not(.postpone-btn):hover{ background:color-mix(in srgb, var(--logo-green) 26%, var(--surface)); color:var(--logo-green-strong); }
+.urgent-actions .waiting-btn:not(.postpone-btn):hover svg{ scale:1.35; color:var(--logo-green-strong); }   /* couleur redite sur le signe : dans le bandeau urgent, les signes ont leur propre couleur (.urgent-banner svg) et ne suivaient pas le bouton */
+@media (prefers-reduced-motion:reduce){ .urgent-banner .urgent-actions .waiting-btn:not(.postpone-btn):hover svg{ scale:none; } }
 /* 10.2 : initiale de qui a coché, dans une liste partagée */
 .checker-tag{
   display:inline-flex; align-items:center; justify-content:center;
@@ -3687,7 +3710,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.2</span>
+    <span class="version-tag">v11.3</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -8522,7 +8545,7 @@ function buildItemLi(cat, idx, base, key, opts){
     ${isEgg ? `<span class="egg-dot" title="En couvaison">${eggSvg(20)}</span>` : `<input type="checkbox" ${checked ? "checked" : ""} aria-label="${escapeAttr(eff.t)}">`}
     ${isNewHere ? newTagHtml(cat, base) : isEditedHere ? editTagHtml(cat, key) : ""}<span class="item-text">${checkerTag}${whoTag}${personTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
     <span class="item-controls">
-      ${isEgg ? `<button type="button" class="hatch-btn" aria-label="Faire éclore" data-tip="Faire éclore"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="chick" cx="12" cy="8.2" r="3.6"/><path class="beak" d="M15.5 8.1l2 .7-2 .7"/><circle cx="13.1" cy="7.3" r=".55" fill="currentColor" stroke="none"/><path class="shell" d="M5.2 13.6c0 4.3 3 7.6 6.8 7.6s6.8-3.3 6.8-7.6l-2.3 1.5-2.2-1.7-2.3 1.7-2.3-1.7-2.2 1.7z"/></svg></button>` : `<button type="button" class="urgent-btn${eff.urgent ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}" data-tip="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}">${triangleSvg(15)}</button>`}
+      ${isEgg ? `<button type="button" class="hatch-btn" aria-label="Faire éclore" data-tip="Faire éclore"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="chick" cx="12" cy="8.2" r="3.6"/><path class="beak" d="M15.5 8.1l2 .7-2 .7"/><circle cx="13.1" cy="7.3" r=".55" fill="currentColor" stroke="none"/><path class="shell" d="M5.2 13.6c0 4.3 3 7.6 6.8 7.6s6.8-3.3 6.8-7.6l-2.3 1.5-2.2-1.7-2.3 1.7-2.3-1.7-2.2 1.7z"/></svg></button>` : isUrgent && !eff.urgent && !checked ? `<span class="urgent-btn active auto" role="img" aria-label="Urgent à cause de la date" data-tip="Urgent à cause de la date">${triangleSvg(15)}</span>` /* 11.3 : urgente par sa date : triangle allumé et inerte, comme dans la case urgente (avant : gris, « Marquer comme urgent ») */ : `<button type="button" class="urgent-btn${eff.urgent ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}" data-tip="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}">${triangleSvg(15)}</button>`}
       <button type="button" class="waiting-btn${eff.waiting ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${waitingBtnTitle}" data-tip="${waitingBtnTitle}">${waitingBtnIcon}</button>
       ${!canRemove ? `<span class="delete-spacer" aria-hidden="true"></span>` : checked
         ? `<button type="button" class="delete-btn" aria-label="Mettre à la corbeille des tâches accomplies" data-tip="Mettre à la corbeille"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>`
@@ -8564,7 +8587,7 @@ function buildItemLi(cat, idx, base, key, opts){
     currentProgressMsg = null;
     renderAll();
   });
-  const urgentBtnEl = li.querySelector(".urgent-btn");
+  const urgentBtnEl = li.querySelector(".urgent-btn:not(.auto)");
   if(urgentBtnEl) urgentBtnEl.addEventListener("click",(e)=>{
     e.stopPropagation();
     overrides = loadOverrides(); // toujours repartir d'une copie fraîche, voir le commentaire sur la case à cocher
