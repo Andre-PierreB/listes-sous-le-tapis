@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.0 -->
+<!-- Sous le tapis — version AUTONOME 11.1 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -384,6 +384,34 @@
     l'écran (nouvelle fonction), les jumeaux signaleront cet écart : c'est attendu.
   - BUG CONNU de la 10.81, hors chantier : deux onglets ouverts dans le même navigateur — le +1 du
     compteur d'un envoi « En cours » est parfois annulé par l'autre onglet (la tâche part bien).
+
+  FLUIDITÉ (11.1) — ouverture et défilement, sans changement à l'écran
+  - Demande : une impression d'instantané, surtout à l'ouverture et au défilement. Mesuré avant de toucher
+    (téléphone simulé, données d'exemple) : les deux gros freins n'étaient pas les listes.
+  - TAPIS : son dessin (une image de toute la hauteur de la page) bloque l'appli 1 à 4 s. Il n'est plus
+    préparé d'office 3 s après l'ouverture ni après chaque changement de hauteur. Souris : préparé quand la
+    page est en arrière-plan, ou après WARM_IDLE_MS sans rien toucher. Doigt : au clic seulement — le rouleau
+    se pose en haut (p = 0.001), puis le tapis est dessiné et se déroule (toggle, ready).
+  - DUEL : au repos (rien ne bouge à part les nuages : « calme » dans frame), le jeu n'est plus redessiné
+    hors de l'écran (enVue, IntersectionObserver à 300 px) ni pendant que la page défile (peint,
+    lastPageScroll). Dès qu'il se passe quelque chose (vol, chute, fête…), tout est dessiné comme avant.
+  - DÉFILEMENT AU DOIGT : l'écouteur touchmove non passif (qui retient la page pendant un glisser) est posé
+    sur chaque poignée (wireHoldScroll), plus sur document : sur toute la page, il obligeait le téléphone à
+    attendre l'appli avant chaque défilement. Ne jamais remettre d'écouteur touchstart / touchmove / wheel
+    non passif sur document, window ou un grand conteneur.
+  - MÉMOS : fitCoursesCards écrit, mesure puis écrit pour tous les mémos à la fois (measureCoursesScroll /
+    applyCoursesScroll) ; avant, deux mises en page forcées par mémo à chaque rendu. Règle générale : ne pas
+    alterner écritures de style et mesures (offsetTop, getBoundingClientRect…) dans une boucle.
+  - OUVERTURE : presetColW lit la largeur d'une case sur la grille vide avant le premier rendu (une mise en
+    page complète de moins).
+  - Chiffres du banc (téléphone simulé, processeur ralenti 4 fois) : défilement 12 → 49 images/s ; après
+    l'ouverture, plus aucun blocage (avant : saccades continues puis 3 s de gel) ; premier rendu 600 → 440 ms.
+  - Tests : glisser_au_doigt, tapis_au_clic, duel_au_repos (tests/run.py) ; jumeaux identiques à la 11.0
+    (le style du rouleau du tapis, invisible, est ignoré comme celui du tapis).
+  - PISTES SUIVANTES (pas faites, à discuter) : un « service worker » pour que l'appli s'ouvre sans attendre
+    le réseau (page, polices, Firebase gardés sur l'appareil) — change la façon dont une nouvelle version
+    arrive ; le @import des polices Google bloque le premier affichage tant que Google n'a pas répondu ;
+    ne plus construire les cases inchangées (voir CHANTIER DE LA 11).
 
   HISTORIQUE
   - L'historique détaillé des versions (5.2 → 10.73) est dans HISTORIQUE.md,
@@ -3644,7 +3672,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.0</span>
+    <span class="version-tag">v11.1</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -7175,13 +7203,19 @@ function afterTouchHold(e, begin){
   timer = setTimeout(()=>{ stop(); begin(e); }, TOUCH_HOLD_MS);
 }
 // une fois la saisie partie au doigt, plus de défilement de la page
-document.addEventListener("touchmove", (e)=>{ if(dragState) e.preventDefault(); }, { passive:false });
+// 11.1 : cet écouteur est posé sur chaque poignée (wireDragRow, wireDragCard), plus sur toute la page. Sur toute
+// la page, il obligeait le téléphone à demander l'avis de l'appli avant CHAQUE défilement, où que soit le doigt :
+// dès que l'appli était occupée, le défilement attendait. Un glisser part toujours d'une poignée, et les
+// événements du doigt restent adressés à l'élément touché au départ : rien ne change pour le glisser.
+const holdScroll = e => { if(dragState) e.preventDefault(); };
+const wireHoldScroll = grip => grip.addEventListener("touchmove", holdScroll, { passive:false });
 
 function wireDragRow(li, value, dragMode, cat){
   li.dataset.dragId = value;
   li.dataset.dragMode = dragMode;
   const grip = li.querySelector(".drag-handle");
 
+  wireHoldScroll(grip);
   grip.addEventListener("pointerdown", (e)=>{
     if(e.pointerType === "mouse" && e.button !== 0) return;
     if(dragState || editingKey || addingCat || addingCategory || editingCategoryTitle || editingCoursesKey) return;
@@ -7245,6 +7279,7 @@ function wireDragCard(card, grip, catIdx){
   card.dataset.dragId = String(catIdx);
   card.dataset.dragMode = "lists";
   if(!grip) return;
+  wireHoldScroll(grip);
   grip.addEventListener("pointerdown", (e)=>{
     if(e.pointerType === "mouse" && e.button !== 0) return;
     if(editingKey || addingCat || editingCategoryTitle || dragState) return;
@@ -8617,18 +8652,28 @@ let externalPending = false;
 // 10.71 : hauteur de base commune — celle de la fenêtre du duel ouvert (la plus contrainte), qu'il y
 // ait un duel ou pas : largeur d'une case × 9/16 (l'écran du jeu) + son poste de commande (--base-k,
 // en CSS). Ici, on ne fait que relever la largeur d'une case (--col-w), au rendu et quand la fenêtre change.
+function setColW(w){
+  syncColW.w = w;
+  document.documentElement.style.setProperty("--col-w", w + "px");
+  document.documentElement.classList.add("has-base-h");
+  requestAnimationFrame(()=> document.querySelectorAll(".chat-card:not(.collapsed) .chat-log").forEach(l => l.scrollTop = l.scrollHeight));   // l'écran du chat a changé de taille : derniers messages en vue
+}
 function syncColW(){
   const c = document.querySelector(".category:not(.fullpage), .chat-card:not(.fullpage), .duel-card:not(.fullpage)");
   if(!c) return;
   const w = Math.round(c.getBoundingClientRect().width);
-  if(w > 0 && w !== syncColW.w){
-    syncColW.w = w;
-    document.documentElement.style.setProperty("--col-w", w + "px");
-    document.documentElement.classList.add("has-base-h");
-    requestAnimationFrame(()=> document.querySelectorAll(".chat-card:not(.collapsed) .chat-log").forEach(l => l.scrollTop = l.scrollHeight));   // l'écran du chat a changé de taille : derniers messages en vue
-  }
+  if(w > 0 && w !== syncColW.w) setColW(w);
 }
 window.addEventListener("resize", ()=> requestAnimationFrame(syncColW));
+// 11.1 : à l'ouverture, la largeur d'une case se lit sur la grille encore vide (ses colonnes sont déjà
+// tracées), juste avant le premier rendu : la hauteur de base est connue tout de suite. Avant, elle n'arrivait
+// qu'après ce rendu, et toute la page était mise en place une deuxième fois. Prévision fausse (rare : barre de
+// défilement qui apparaît…) ou grille pas affichée : syncColW rectifie après le rendu, comme avant.
+function presetColW(){
+  if(syncColW.w) return;
+  const w = Math.round(parseFloat(String(getComputedStyle(categoriesEl).gridTemplateColumns).split(" ")[0]));
+  if(w > 0) setColW(w);
+}
 // 10.81 : à sa date de relance, une tâche « en cours » rentre toute seule dans
 // sa liste, urgente, avec l'étiquette « Relance j/m » (champ relanced). Le
 // triangle la rend non urgente comme n'importe quelle tâche ; ↪ la renvoie en
@@ -8893,14 +8938,16 @@ function fitCoursesCards(saved){
     if(h > tallest) tallest = h;
   });
   const max = Math.round(Math.min(Math.max(tallest, 24 * rem), window.innerHeight * 0.75));
+  // 11.1 : en trois temps, pour tous les mémos à la fois — écrire (hauteur maximale, barre), mesurer, écrire
+  // (marge, barre). Avant, écritures et mesures alternaient mémo par mémo : deux mises en page de toute la
+  // page forcées par mémo, à chaque rendu. Les valeurs posées sont les mêmes (la marge n'est qu'un dessin de
+  // fond et la barre est posée par-dessus : ni l'une ni l'autre ne déplace ce qu'on mesure).
+  const MEMO_RULE_OVER = 5;   // 10.81 : px de marge au-dessus du premier filet
+  const jobs = [];
   cards.forEach(c=>{
     c.style.setProperty("--courses-max", max + "px");
     const ul = c.querySelector(":scope > ul.items");
     if(!ul) return;
-    // 10.17 : la marge part de la première ligne sous le titre (10.38 : la saisie)
-    const MEMO_RULE_OVER = 5;   // 10.81 : px de marge au-dessus du premier filet
-    const first = ul;   // 10.68 : les articles d'abord, la saisie est dessous
-    c.style.setProperty("--rule-top", (first ? first.offsetTop + (ul.querySelector(":scope > .add-form-row") ? 2 : -MEMO_RULE_OVER) : c.offsetHeight) + "px");   // 10.71 : sous les champs d'ajout, pas un pixel de marge qui dépasse ; 10.81 : sinon elle dépasse un rien au-dessus du filet du haut
     // 10.18 : barre de défilement maison, toujours visible
     let bar = c.querySelector(":scope > .courses-scroll");
     if(!bar){
@@ -8912,7 +8959,19 @@ function fitCoursesCards(saved){
       ul.addEventListener("scroll", ()=> placeCoursesScroll(c), { passive:true });
       wireCoursesWheel(ul);
     }
-    placeCoursesScroll(c);
+    jobs.push({ c, ul, bar });
+  });
+  jobs.forEach(j=>{
+    // 10.17 : la marge part de la première ligne sous le titre (10.38 : la saisie ; 10.68 : les articles d'abord, la saisie est dessous)
+    // 10.71 : sous les champs d'ajout, pas un pixel de marge qui dépasse ; 10.81 : sinon elle dépasse un rien au-dessus du filet du haut
+    j.ruleTop = j.ul.offsetTop + (j.ul.querySelector(":scope > .add-form-row") ? 2 : -MEMO_RULE_OVER);
+    j.scroll = measureCoursesScroll(j.ul);
+  });
+  jobs.forEach(j=>{
+    j.c.style.setProperty("--rule-top", j.ruleTop + "px");
+    applyCoursesScroll(j.bar, j.scroll);
+  });
+  jobs.forEach(({ c, ul })=>{
     if(saved && saved[c.id] != null) ul.scrollTop = saved[c.id];
     const go = coursesScrollTo && "cat-" + coursesScrollTo.catId === c.id ? coursesScrollTo : null;
     if(!go) return;
@@ -8957,20 +9016,26 @@ function wireCoursesWheel(ul){
 }
 // 10.18 : barre de défilement d'une liste de courses — cachée si tout tient,
 // sinon à la hauteur de la zone des articles, curseur proportionnel
+// 11.1 : en deux temps (mesurer, puis poser), pour que fitCoursesCards mesure tous les mémos d'un coup
+function measureCoursesScroll(ul){
+  return { view: ul.clientHeight, full: ul.scrollHeight, shown: !!ul.offsetParent, scrollTop: ul.scrollTop, top: ul.offsetTop };
+}
+function applyCoursesScroll(bar, m){
+  bar.hidden = !m.shown || m.full <= m.view + 1;
+  if(bar.hidden) return;
+  const thumbH = Math.max(24, Math.round(m.view * m.view / m.full));
+  const top = Math.round(m.scrollTop / (m.full - m.view) * (m.view - thumbH));
+  bar.style.top = m.top + "px";
+  bar.style.height = m.view + "px";
+  const thumb = bar.firstElementChild;
+  thumb.style.height = thumbH + "px";
+  thumb.style.top = top + "px";
+}
 function placeCoursesScroll(card){
   const ul = card.querySelector(":scope > ul.items");
   const bar = card.querySelector(":scope > .courses-scroll");
   if(!ul || !bar) return;
-  const view = ul.clientHeight, full = ul.scrollHeight;
-  bar.hidden = !ul.offsetParent || full <= view + 1;
-  if(bar.hidden) return;
-  const thumbH = Math.max(24, Math.round(view * view / full));
-  const top = Math.round(ul.scrollTop / (full - view) * (view - thumbH));
-  bar.style.top = ul.offsetTop + "px";
-  bar.style.height = view + "px";
-  const thumb = bar.firstElementChild;
-  thumb.style.height = thumbH + "px";
-  thumb.style.top = top + "px";
+  applyCoursesScroll(bar, measureCoursesScroll(ul));
 }
 
 // ---- 10.57 : écran de chat (voir NOTE, ÉCRAN DE CHAT) ----
@@ -9397,7 +9462,7 @@ const city = document.createElement("canvas"), cctx = city.getContext("2d");
 let DPR = 1;
 function sizeCanvas(){
   DPR = Math.min(2, window.devicePixelRatio || 1);
-  for(const c of [cv, city]){ c.width = W * DPR; c.height = H * DPR; }
+  for(const c of [cv, city]){ c.width = W * DPR; c.height = H * DPR; } peint = false;
 }
 
 function facade(i){ const f = css("--facades").split(","); return f[i % f.length].trim(); }
@@ -9745,6 +9810,7 @@ let cvW = W;   // largeur affichée du canevas, lue une fois par image
 // temps réel : l'animation avance selon l'horloge, pas d'un pas fixe par image —
 // si le navigateur ne tient que 30 images/s (économie d'énergie…), rien ne passe au ralenti
 let lastNow = 0, pathAcc = 0, dt = 1 / 60, foldDrawAt = 0;
+let enVue = true, peint = false, vueObs = null;   // 11.1 : le jeu est-il à l'écran (ou tout près) ? a-t-il déjà été dessiné ?
 function frame(now){
   if(!ROOT || !ROOT.isConnected || !world || !cv){ lastNow = 0; requestAnimationFrame(frame); return; }
   if(ROOT.classList.contains("collapsed")){   // 10.65 : fermé, le jeu reste en filigrane : une image par seconde suffit
@@ -9759,6 +9825,14 @@ function frame(now){
   const fete = !!dance && (dance.t < DANCE_BEATS * DANCE_BEAT || particles.length > 0);
   const live = busy || fete || bandMode === "decouverte" || (!game.solo && !world.over && myTurn() && bandMode !== "attente");
   if(live !== ROOT._live){ ROOT._live = live; ROOT.classList.toggle("duel-live", live); }
+  // 11.1 : rien ne bouge à part les nuages (ni vol, ni chute, ni éclats, ni fête, ni bandeau) : on ne redessine
+  // pas tant que le jeu est hors de l'écran, ni pendant que la page défile (une fois dessiné). Avant, il était
+  // redessiné 60 fois par seconde en permanence, même hors de vue : le défilement de toute la page en souffrait.
+  // Dès qu'il se passe quelque chose, tout est dessiné comme avant, visible ou non (le jeu avance pareil).
+  const calme = !anim && !busy && !tumble && !banner && !shake && !flashes.length && !particles.length && wingT[0] <= 0 && wingT[1] <= 0
+    && !(world.over && (finale < 1 || (dance && dance.t < DANCE_BEATS * DANCE_BEAT)));
+  if(calme && (!enVue || (peint && Date.now() - lastPageScroll < 150))){ lastNow = 0; requestAnimationFrame(frame); return; }
+  peint = true;
   cssCache.clear(); cvW = cv.clientWidth || W;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, W, H);
@@ -10386,6 +10460,13 @@ function build(){
     if(Math.abs(dy) > 1) cv.animate([{ transform:`translateY(${dy}px)` }, { transform:"translateY(0)" }], { duration:dur, easing });
   };
   cv = card.querySelector(".duel-cv"); ctx = cv.getContext("2d");
+  // 11.1 : on suit si le jeu est à l'écran (300 px de marge : il est dessiné avant d'entrer dans la fenêtre)
+  enVue = true; peint = false;
+  if(vueObs) vueObs.disconnect();
+  if("IntersectionObserver" in window){
+    vueObs = new IntersectionObserver(es => { enVue = es[es.length - 1].isIntersecting; if(enVue) peint = false; }, { rootMargin:"300px 0px" });
+    vueObs.observe(cv);
+  }
   // objets et faisans à choisir
   const ob = card.querySelector(".objets");
   for(const k in OBJETS){
@@ -12038,6 +12119,7 @@ document.addEventListener("keydown", (e)=>{
 });
 
 try{ runWeeklyPurge(); }catch(err){ console.error("[corbeille] échec de la purge hebdomadaire", err); }
+try{ presetColW(); }catch(err){}   // 11.1
 renderAll();
 
 // 7.43 : demande au navigateur de ne jamais vider de lui-même ce stockage
@@ -12389,9 +12471,11 @@ const TAPIS = (()=>{
     return { left, width, top: bodyTop - fringe, height: bodyH + 2*fringe, VW, VH: Math.round(bodyH/scale) + 36 };
   }
 
+  const buildKey = m => [Math.round(m.width), Math.round(m.height), isDarkTheme() ? "d" : "l"].join("x");
+  const ready = m => !!(built && built.key === buildKey(m));   // 11.1 : déjà dessiné à cette taille ?
   function build(m){
     const dark = isDarkTheme();
-    const key = [Math.round(m.width), Math.round(m.height), dark ? "d" : "l"].join("x");
+    const key = buildKey(m);
     if(built && built.key === key) return Promise.resolve();
     if(building && building.key === key) return building.promise;
     // 10.40 : l'image SVG faite à cette taille ; 10.41 : ×2 au plus (×3 en
@@ -12559,6 +12643,13 @@ const TAPIS = (()=>{
     const m = measure();
     place(m);
     target = 1;
+    if(!ready(m)){
+      // 11.1 : tapis pas encore dessiné à cette taille : le rouleau se pose tout de suite en haut (la première
+      // image du déroulé), le temps de le préparer — le clic répond aussitôt, puis le tapis part
+      if(p < 0.001){ cancelAnimationFrame(anim); p = 0.001; apply(); }
+      await new Promise(r => requestAnimationFrame(()=> requestAnimationFrame(r)));
+      if(target !== 1) return;   // re-clic entre-temps : il s'enroule déjà
+    }
     await build(m);
     if(target === 1) run(1);
   }
@@ -12578,15 +12669,38 @@ const TAPIS = (()=>{
     }, 200);
   });
 
-  // Préparé en douce après l'ouverture, pour que le premier clic parte tout de suite.
+  // Préparé en douce, pour que le clic parte tout de suite — mais jamais pendant qu'on se sert de l'appli.
+  // 11.1 : avant, le tapis était dessiné d'office 3 s après l'ouverture, puis 1,5 s après chaque changement de
+  // hauteur de la page (10.41). Or ce dessin bloque tout (≈ 1 s sur ordinateur, 2 à 4 s sur téléphone), pile
+  // quand on commence à faire défiler : c'était l'écran vide à l'ouverture. Désormais :
+  //  - à la souris (ordinateur) : seulement quand la page est en arrière-plan (autre onglet, autre fenêtre
+  //    devant), ou quand on n'a plus touché à rien depuis WARM_IDLE_MS ;
+  //  - au doigt (téléphone, tablette) : jamais d'office ; au clic sur le titre, le rouleau se pose d'abord en
+  //    haut (voir toggle), puis le tapis est dessiné et se déroule.
+  const WARM_IDLE_MS = 15000;
   const warm = ()=>{ try{ if(target === 0){ const m = measure(); place(m); build(m); } }catch(e){} };
-  const warmSoon = ()=>{ if("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 3000 }); else setTimeout(warm, 1200); };
-  warmSoon();
-  // 10.41 : la page change de hauteur (listes arrivées de la synchro, ajouts) :
-  // le tapis préparé n'a plus la bonne taille ; on le refait en douce, sinon
-  // le clic suivant le refaisait avant de partir
-  let wt = 0;
-  if("ResizeObserver" in window) new ResizeObserver(()=>{ clearTimeout(wt); wt = setTimeout(warmSoon, 1500); }).observe(wrap);
+  const fine = !!(window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches);
+  let lastInput = performance.now(), wt = 0;
+  function warmWhenIdle(){
+    clearTimeout(wt);
+    const check = ()=>{
+      if(document.hidden){ warm(); return; }            // personne ne regarde : aucun risque de gêner
+      const left = WARM_IDLE_MS - (performance.now() - lastInput);
+      if(left > 0){ wt = setTimeout(check, left + 50); return; }
+      if("requestIdleCallback" in window) requestIdleCallback(()=>{ if(performance.now() - lastInput >= WARM_IDLE_MS) warm(); else check(); }, { timeout: 2000 });
+      else warm();
+    };
+    wt = setTimeout(check, document.hidden ? 800 : WARM_IDLE_MS);
+  }
+  if(fine){
+    ["pointerdown", "pointermove", "keydown", "wheel", "scroll", "touchstart"].forEach(t =>
+      window.addEventListener(t, ()=>{ lastInput = performance.now(); }, { passive:true, capture:true }));
+    document.addEventListener("visibilitychange", warmWhenIdle);
+    warmWhenIdle();
+    // 10.41 : la page change de hauteur (listes arrivées de la synchro, ajouts) : le tapis préparé n'a plus
+    // la bonne taille ; on le refait en douce (11.1 : au calme seulement)
+    if("ResizeObserver" in window) new ResizeObserver(warmWhenIdle).observe(wrap);
+  }
 })();
 
 // ---- 10.1 : synchro en ligne (Firebase : connexion + Firestore) ----

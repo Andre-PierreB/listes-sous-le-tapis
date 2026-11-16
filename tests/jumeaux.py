@@ -56,7 +56,7 @@ SNAP = r"""() => {
   // petit message (toast) : on garde son texte, pas l'instant où il s'efface
   clone.querySelectorAll("canvas").forEach(e => { e.removeAttribute("width"); e.removeAttribute("height"); e.removeAttribute("style"); });
   clone.querySelectorAll("#toast").forEach(e => e.classList.remove("show"));
-  clone.querySelectorAll(".tapis-box").forEach(e => e.removeAttribute("style"));   // décor du fond, recalé en différé
+  clone.querySelectorAll(".tapis-box, .tapis-roll").forEach(e => e.removeAttribute("style"));   // décor du fond, recalé en différé (11.1 : le rouleau aussi, le tapis n'est plus préparé d'office)
   const etat = { y: Math.round(scrollY), actif: document.activeElement ? (document.activeElement.className || document.activeElement.tagName) : "",
     defil: [...document.querySelectorAll("ul.items, .chat-log")].map(u => Math.round(u.scrollTop)).join(",") };
   return { store, dom: clone.outerHTML, etat };

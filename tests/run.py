@@ -8,6 +8,7 @@ n'est envoyé à Firebase. À lancer avant chaque publication :
     python3 tests/run.py              # teste essai.html (le banc)
     python3 tests/run.py index.html   # teste l'appli publiée
     python3 tests/run.py complet      # + comparateur jumeaux index ↔ essai (≈ 20 min)
+    SEUL=duel python3 tests/run.py    # seulement les scénarios dont le nom contient « duel »
 
 Besoin : Python 3, le module playwright (pip install playwright) et Chrome
 (chemin dans CHROME ci-dessous, sinon `playwright install chromium`).
@@ -124,12 +125,115 @@ async def t_effacer_tache(pg):
     await pg.wait_for_timeout(300)
     check(len(await texts(pg, f"#cat-{c} .item")) == 1, "effacer une tâche ne marche pas")
 
+# --- 11.1 : fluidité (rien de tout ça ne doit changer ce qu'on voit) ----------
+async def _tel(pg):
+    """Un téléphone (écran tactile, pas de survol) sur la même page, profil jetable."""
+    ctx = await pg.context.browser.new_context(viewport={"width": 390, "height": 700}, has_touch=True, is_mobile=True)
+    await ctx.route("**/*gstatic.com/**", lambda r: r.abort())
+    tel = await ctx.new_page(); errs = []
+    tel.on("pageerror", lambda e: errs.append(str(e)))
+    await tel.goto(pg.url); await tel.wait_for_timeout(1200)
+    return ctx, tel, errs
+
+async def _doigt(cdp, kind, x=None, y=None):
+    pts = [] if kind == "touchEnd" else [{"x": x, "y": y, "id": 1}]
+    await cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": pts})
+
+async def t_glisser_au_doigt(pg):
+    """Appui tenu sur la poignée : la tâche est saisie, la page ne défile pas, la tâche change de place.
+    Sans appui tenu : la page défile et rien n'est saisi (10.35). Depuis la 11.1, l'écouteur qui bloque
+    le défilement est sur les poignées, plus sur toute la page."""
+    ctx, tel, errs = await _tel(pg)
+    try:
+        c = await new_list(tel, "Longue")
+        await add_tasks(tel, c, *[f"Tâche {i}" for i in range(1, 31)])
+        await tel.wait_for_timeout(300)
+        cdp = await ctx.new_cdp_session(tel)
+        ordre = lambda: tel.evaluate("id => [...document.querySelectorAll(`#cat-${id} .item .item-title`)].map(e => e.textContent.trim()).slice(0, 6)", c)
+        avant = await ordre()
+        grip = tel.locator(f"#cat-{c} .item .drag-handle").nth(1)
+        await grip.evaluate("e => e.scrollIntoView({ block: 'center' })"); await tel.wait_for_timeout(300)
+        bb = await grip.bounding_box(); x, y = bb["x"] + bb["width"] / 2, bb["y"] + bb["height"] / 2
+        y0 = await js(tel, "scrollY")
+        # 1) appui tenu puis glissé vers le bas
+        await _doigt(cdp, "touchStart", x, y); await tel.wait_for_timeout(450)
+        check(await js(tel, "!!dragState"), "l'appui tenu sur la poignée ne saisit pas la tâche")
+        for k in range(1, 13):
+            await _doigt(cdp, "touchMove", x, y + k * 10); await tel.wait_for_timeout(30)
+        await tel.wait_for_timeout(200)
+        check(abs(await js(tel, "scrollY") - y0) < 2, "la page défile pendant qu'on glisse une tâche au doigt")
+        await _doigt(cdp, "touchEnd"); await tel.wait_for_timeout(500)
+        check(not await js(tel, "!!dragState"), "le glisser ne se termine pas au lever du doigt")
+        apres = await ordre()
+        check(apres != avant and sorted(apres) == sorted(avant), f"la tâche glissée au doigt n'a pas changé de place : {avant} → {apres}")
+        # 2) sans appui tenu : c'est un défilement ordinaire
+        bb = await grip.bounding_box(); x, y = bb["x"] + bb["width"] / 2, bb["y"] + bb["height"] / 2
+        y0 = await js(tel, "scrollY")
+        await _doigt(cdp, "touchStart", x, y)
+        for k in range(1, 13):
+            await _doigt(cdp, "touchMove", x, y - k * 12); await tel.wait_for_timeout(16)
+        check(not await js(tel, "!!dragState"), "un balayage sur la poignée saisit la tâche")
+        await _doigt(cdp, "touchEnd"); await tel.wait_for_timeout(400)
+        check(await js(tel, "scrollY") > y0 + 40, "balayer l'écran depuis une poignée ne fait plus défiler la page")
+        check(not errs, "erreur JavaScript : " + "; ".join(errs[:3]))
+    finally:
+        await ctx.close()
+
+async def t_tapis_au_clic(pg):
+    """Le tapis n'est plus dessiné d'office (11.1) : au doigt, rien n'est préparé avant le clic ;
+    le clic le déroule quand même, un second l'enroule."""
+    ctx, tel, errs = await _tel(pg)
+    try:
+        c = await new_list(tel, "Tapis")
+        await add_tasks(tel, c, "Une", "Deux")
+        await tel.wait_for_timeout(3600)   # avant la 11.1 : préparé 3 s après l'ouverture
+        check(await js(tel, "document.querySelector('.tapis-box canvas').width") <= 300, "le tapis est dessiné d'office sur téléphone")
+        await tel.locator("header .eyebrow").click()
+        await tel.wait_for_function("document.body.classList.contains('tapis-down') && document.querySelector('.tapis-box canvas').width > 300", timeout=15000)
+        await tel.wait_for_timeout(2600)
+        check(await js(tel, "getComputedStyle(document.querySelector('.tapis-box')).display") == "block", "le tapis ne se déroule pas")
+        check("inset(0" in await js(tel, "document.querySelector('.tapis-box').style.clipPath") and await js(tel, "parseFloat(document.querySelector('.tapis-box').style.clipPath.split(' ')[2])") < 1, "le tapis ne se déroule pas jusqu'en bas")
+        await tel.locator(".tapis-box").click(position={"x": 40, "y": 60}); await tel.wait_for_timeout(2600)
+        check(await js(tel, "getComputedStyle(document.querySelector('.tapis-box')).display") == "none", "le tapis ne s'enroule pas")
+        check(not errs, "erreur JavaScript : " + "; ".join(errs[:3]))
+    finally:
+        await ctx.close()
+
+async def t_duel_au_repos(pg):
+    """Le duel au repos n'est plus redessiné quand il est hors de l'écran (11.1), l'est de nouveau dès
+    qu'il y revient, et toujours pendant un coup."""
+    await js(pg, """() => { const n = { n: 0 }; window.__dessins = n; const f = CanvasRenderingContext2D.prototype.clearRect;
+        CanvasRenderingContext2D.prototype.clearRect = function(){ if(this.canvas.classList.contains('duel-cv')) n.n++; return f.apply(this, arguments); }; }""")
+    for i in range(10):   # assez de listes pour que le duel (créé en dernier, donc en bas) soit loin du haut de la page
+        c = await new_list(pg, f"Liste {i}")
+        await add_tasks(pg, c, *[f"Tâche {k}" for k in range(8)])
+    await pg.locator(".add-category-btn").click(); await pg.locator(".nl-duel").click(); await pg.wait_for_timeout(800)
+    cv = pg.locator(".duel-cv").first
+    await cv.evaluate("e => e.scrollIntoView({ block: 'center' })"); await pg.wait_for_timeout(600)
+    a = await js(pg, "__dessins.n"); await pg.wait_for_timeout(500); b = await js(pg, "__dessins.n")
+    check(b - a > 10, f"le duel à l'écran n'est pas redessiné ({b - a} dessins en 0,5 s)")
+    await js(pg, "scrollTo(0, 0)"); await pg.wait_for_timeout(600)
+    loin = await cv.evaluate("e => { const r = e.getBoundingClientRect(); return r.bottom < -300 || r.top > innerHeight + 300; }")
+    check(loin, "le test n'arrive pas à sortir le duel de l'écran")
+    a = await js(pg, "__dessins.n"); await pg.wait_for_timeout(600); b = await js(pg, "__dessins.n")
+    check(b - a <= 1, f"le duel hors de l'écran est encore redessiné ({b - a} dessins en 0,6 s)")
+    await cv.evaluate("e => e.scrollIntoView({ block: 'center' })"); await pg.wait_for_timeout(600)
+    a = await js(pg, "__dessins.n"); await pg.wait_for_timeout(500); b = await js(pg, "__dessins.n")
+    check(b - a > 10, f"revenu à l'écran, le duel n'est plus redessiné ({b - a} dessins en 0,5 s)")
+    # un coup lancé puis la page qui file ailleurs : le vol continue (le coup se termine)
+    await pg.locator(".d-lancer").first.click(force=True); await pg.wait_for_timeout(150)
+    await js(pg, "scrollTo(0, 0)")
+    await pg.wait_for_timeout(300)
+    a = await js(pg, "__dessins.n"); await pg.wait_for_timeout(400); b = await js(pg, "__dessins.n")
+    check(b - a > 5, "hors de l'écran, un coup en vol n'avance plus")
+    await pg.wait_for_function("!Duel.etat().busy", timeout=12000)
+
 # --- lancement --------------------------------------------------------------
 async def main():
     args = [a for a in sys.argv[1:] if a != "complet"]
     page = args[0] if args else "essai.html"
     url = (ROOT / page).as_uri()
-    tests = [(n, f) for n, f in globals().items() if n.startswith("t_") and callable(f)]
+    tests = [(n, f) for n, f in globals().items() if n.startswith("t_") and callable(f) and (not __import__("os").environ.get("SEUL") or __import__("os").environ["SEUL"] in n)]
     ok = 0
     async with async_playwright() as p:
         browser = await p.chromium.launch(executable_path=CHROME if os.path.exists(CHROME) else None, args=["--no-sandbox"])

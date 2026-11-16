@@ -3,6 +3,15 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.1 : fluidité, sans changement à l'écran (mesures : tests de la 11.1 dans tests/run.py).
+    Tapis : plus dessiné d'office 3 s après l'ouverture ni après chaque changement de hauteur de la page
+    (ce dessin bloquait tout 1 à 4 s : l'écran vide au défilement) ; à la souris, préparé seulement après
+    4 s sans rien toucher ; au doigt, dessiné au clic (le rouleau se pose en haut le temps de le préparer).
+    Duel au repos : plus redessiné hors de l'écran ni pendant que la page défile (avant : 60 fois par
+    seconde en permanence). Défilement au doigt : l'écouteur qui retient la page pendant un glisser est sur
+    les poignées, plus sur toute la page (le téléphone n'attend plus l'appli pour faire défiler).
+    Mémos : mesures groupées (fitCoursesCards), plus de mise en page forcée mémo par mémo à chaque rendu.
+    Ouverture : hauteur de base connue avant le premier rendu (presetColW), une mise en page de moins.
   - 11.0 : rendu par case, sans changement à l'écran : à chaque geste, seules les cases qui ont
     changé sont remplacées dans la page (avant : toutes), pour une appli plus légère, surtout sur
     téléphone (cocher une tâche : environ deux fois plus rapide). Tout est refait comme avant quand un
