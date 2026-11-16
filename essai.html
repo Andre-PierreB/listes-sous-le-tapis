@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.1 -->
+<!-- Sous le tapis — version AUTONOME 11.2 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -408,10 +408,23 @@
     l'ouverture, plus aucun blocage (avant : saccades continues puis 3 s de gel) ; premier rendu 600 → 440 ms.
   - Tests : glisser_au_doigt, tapis_au_clic, duel_au_repos (tests/run.py) ; jumeaux identiques à la 11.0
     (le style du rouleau du tapis, invisible, est ignoré comme celui du tapis).
-  - PISTES SUIVANTES (pas faites, à discuter) : un « service worker » pour que l'appli s'ouvre sans attendre
-    le réseau (page, polices, Firebase gardés sur l'appareil) — change la façon dont une nouvelle version
-    arrive ; le @import des polices Google bloque le premier affichage tant que Google n'a pas répondu ;
-    ne plus construire les cases inchangées (voir CHANTIER DE LA 11).
+  - PISTES SUIVANTES (pas faites) : ne plus construire les cases inchangées (voir CHANTIER DE LA 11).
+
+  COPIE SUR L'APPAREIL (11.2, SUR LE BANC SEULEMENT pour l'instant — index.html est resté en 11.1)
+  - sw.js (à côté de ce fichier : la seule exception au « fichier autonome », un tel fichier ne peut pas
+    être dans la page) garde sur l'appareil la page, les icônes, les polices Google et le code de Firebase.
+    L'appli s'ouvre depuis cette copie sans attendre le réseau (le @import des polices ne bloque plus le
+    premier affichage) ; en même temps la page est redemandée en ligne et la copie mise à jour.
+  - CONSÉQUENCE, acceptée par André-Pierre le 16/11/2026 : une version publiée n'apparaît qu'à l'ouverture
+    suivante (quitter et rouvrir, ou recharger deux fois). Le dire à chaque publication.
+  - Aucune donnée n'y passe : listes, synchro et connexion ne sont pas touchées.
+  - COUPER À DISTANCE : ARRET = true dans sw.js, publier ; chaque appareil efface sa copie à l'ouverture
+    suivante et tout refonctionne comme en 11.1.
+  - Inscription : fin du script (COPIE_ICI = ESSAI, scope « ./essai.html » : la vraie appli n'est pas
+    concernée). Pour l'étendre à la vraie appli, après essai sur iPhone (Safari ET icône de l'écran
+    d'accueil) : COPIE_ICI = true et scope ESSAI ? "./essai.html" : "./".
+  - Tests : tests/copie.py (petit serveur local : première visite, ouverture sans réseau, nouvelle version
+    à la 2e ouverture, arrêt à distance). tests/run.py ouvre le fichier en local : la copie n'y joue pas.
 
   HISTORIQUE
   - L'historique détaillé des versions (5.2 → 10.73) est dans HISTORIQUE.md,
@@ -3672,7 +3685,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.1</span>
+    <span class="version-tag">v11.2</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -13897,4 +13910,15 @@ if(DEMO) (()=>{
   personName = (u, id) => FAKE[u] ? FAKE[u].name : pn(u, id);
 })();
 if(!DEMO) Sync.start();   // 10.68 : la vitrine ne se connecte jamais
+
+// ---- 11.2 (banc) : copie de l'appli gardée sur l'appareil — voir sw.js et la NOTE (COPIE SUR L'APPAREIL) ----
+// L'appli s'ouvre depuis cette copie sans attendre le réseau ; une version qu'on vient de publier arrive à
+// l'ouverture suivante. Pour l'instant sur le banc seulement (COPIE_ICI) : index.html n'inscrit rien.
+// Inscrit au calme, après l'ouverture ; sans effet hors du site (fichier ouvert en local, tests).
+const COPIE_ICI = ESSAI;
+if(COPIE_ICI && "serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
+  window.addEventListener("load", ()=> setTimeout(()=>{
+    navigator.serviceWorker.register("sw.js", { scope: "./essai.html" }).catch(err => console.error("[copie]", err));
+  }, 2000));
+}
 </script>

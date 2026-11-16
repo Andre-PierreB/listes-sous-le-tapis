@@ -3,6 +3,10 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.2 (SUR LE BANC SEULEMENT, essai.html ; index.html reste en 11.1) : copie de l'appli gardée sur
+    l'appareil (sw.js) — ouverture sans attendre le réseau ; une version publiée arrive à l'ouverture
+    suivante ; arrêt à distance par ARRET = true dans sw.js. Tests : tests/copie.py. À essayer sur iPhone
+    (Safari et icône de l'écran d'accueil) avant de l'étendre à la vraie appli.
   - 11.1 : fluidité, sans changement à l'écran (mesures : tests de la 11.1 dans tests/run.py).
     Tapis : plus dessiné d'office 3 s après l'ouverture ni après chaque changement de hauteur de la page
     (ce dessin bloquait tout 1 à 4 s : l'écran vide au défilement) ; à la souris, préparé seulement après
