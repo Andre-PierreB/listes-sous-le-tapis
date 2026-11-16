@@ -3,6 +3,12 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.4 : cases fermées sur deux lignes — titre (bulle, saisie rapide, +), puis poignée et punaise ; plus
+    d'aperçu des tâches ou articles ; hauteur commune 100 px sur ordi (avant 127), 119 px sur téléphone (avant
+    172), chat et duel compris ; mémo fermé sans marge (le coin corné le signale) ; chat fermé : le dernier
+    message seul, le toucher ouvre l'écran (la saisie fermée de la 11.3 ne tient plus). Bug 11.3 corrigé : une
+    saisie sur plusieurs lignes dans le chat fermé écrasait la ligne du bas ; l'écran se tient désormais dans la
+    hauteur de la case. Cases ouvertes inchangées (mesurées contre la 11.3).
   - 11.3 : retouches. « Nouvelle liste » à la largeur d'une liste sur téléphone ; mémos : surlignage
     « new / modif » transparent (la marge reste visible), sigle du détail en bout de ligne plus caché sous
     le crayon et la croix (ordi), plus de coin corné en pleine page ; écran de chat fermé : ligne de saisie
