@@ -3759,25 +3759,35 @@ body.ios-gate-on{ overflow:hidden; }
   .cf-d.cf-compact .duel-card.collapsed .duel-win{ background:color-mix(in srgb, var(--ink) 5%, var(--bg)); }
   .cf-d.cf-compact .duel-card.collapsed .duel-cv{ opacity:0; }
   .cf-d.cf-compact .duel-card.collapsed .d-mini{ inset:2px; display:flex; align-items:center; justify-content:center; }
-  .cf-d.cf-compact .duel-card.collapsed .d-mini-t{ background:none; padding:0 0.6rem; }
-  /* fermeture en deux temps, à l'envers de l'ouverture : la case reprend sa hauteur (l'écran reste large et suit),
-     puis l'écran reprend la largeur du champ (classe cf-narrow, posée à la fin du glissement) */
-  .cf-d.cf-compact .collapsed.gliding > :is(.chat-box, .duel-stage){ height:100%; grid-template-rows:38px minmax(0, 1fr); }
-  .cf-d.cf-compact .collapsed.gliding :is(.chat-hole, .duel-screen){ margin:0 0 7px; width:100%; max-width:none; height:auto; align-self:stretch; }
+  .cf-d.cf-compact .duel-card.collapsed .d-mini{ justify-content:flex-start; }
+  /* chat et duel fermés : même texte (police, taille, couleur), même place (à gauche, même retrait) */
+  .cf-d.cf-compact .duel-card.collapsed .d-mini-t{ background:none; padding:0 0.7rem; text-align:left; font:14.4px/1.3 'Courier Prime', 'Courier New', Courier, monospace; color:var(--ink-soft); }
+  .cf-d.cf-compact .chat-card.collapsed .chat-screen{ padding:0 0.7rem; }
+  .cf-d.cf-compact .chat-card.collapsed .chat-l{ text-align:left; padding:0; margin:0; color:var(--ink-soft); line-height:1.3; }
+  /* fermeture en deux temps, à l'envers de l'ouverture : la case reprend sa hauteur (l'écran reste large et suit), puis
+     l'écran se resserre à la place du champ (classe cf-narrow, posée à la fin du glissement). Le resserrement est une
+     découpe (clip-path) de l'écran large, pas un changement de largeur : rien n'est recalculé, c'est plus fluide. */
+  .cf-d.cf-compact .collapsed:is(.gliding, .cf-narrow) > :is(.chat-box, .duel-stage){ height:100%; grid-template-rows:38px minmax(0, 1fr); }
+  .cf-d.cf-compact .collapsed:is(.gliding, .cf-narrow) :is(.chat-hole, .duel-screen){ margin:0 0 7px; width:100%; max-width:none; height:auto; align-self:stretch; }
   .cf-d.cf-compact .collapsed.gliding .chat-foot > *{ opacity:0; }
-  .cf-d.cf-compact .collapsed.cf-narrow :is(.chat-hole, .duel-screen){ animation:cfNarrow .26s cubic-bezier(.33,0,.2,1) backwards; }
-  .cf-d.cf-compact .collapsed.cf-narrow .chat-foot > *{ animation:cfFade .26s ease backwards; }
+  .cf-d.cf-compact .chat-card.collapsed:is(.gliding, .cf-narrow) .chat-screen, .cf-d.cf-compact .duel-card.collapsed:is(.gliding, .cf-narrow) .d-mini-t{ padding-left:calc(var(--cf-x, 73.7px) + 0.7rem); }   /* le texte est déjà à sa place finale : la découpe ne le coupe pas */
+  .cf-d.cf-compact .collapsed.cf-narrow :is(.chat-hole, .duel-screen){ animation:cfNarrow .3s cubic-bezier(.33,0,.2,1) forwards; }
+  .cf-d.cf-compact .collapsed.cf-narrow .chat-foot > *{ animation:cfFade .3s ease backwards; }
   /* à l'essai : ouverture en deux temps. D'abord l'écran reprend sa largeur (0,24 s, la case ne bouge pas : glideHeight
-     attend), puis la case prend sa hauteur. */
-  .cf-d.cf-compact .chat-card.peek .chat-hole, .cf-d.cf-compact .duel-card.peek .duel-screen{ animation:cfWiden .24s cubic-bezier(.33,0,.2,1) backwards; }
+     attend), puis la case prend sa hauteur. Comme à la fermeture : une découpe de l'écran ouvert, qui s'élargit. */
+  .cf-d.cf-compact .chat-card.peek .chat-hole, .cf-d.cf-compact .duel-card.peek .duel-screen{ animation:cfWiden .42s cubic-bezier(.33,0,.2,1) backwards; }
+  .cf-d.cf-compact .chat-card{ --cf-sx:0px; } .cf-d.cf-compact .duel-card{ --cf-sx:10px; }   /* où commence l'écran ouvert dans la case */
   /* filet du mémo fermé : avec ou sans */
   .cf-sans-filet .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }
 }
 /* banc ?cf : « urgent » actif, au survol : la petite pastille claire d'avant la 11.3 revient derrière le triangle
    (case urgente et listes), pour qu'on voie qu'il réagit ; le triangle garde son mauve, vidé et plus petit */
 .cf-pastille .urgent-btn.active:not(.auto):hover{ background:var(--surface-2); }
-@keyframes cfWiden{ from{ margin-left:var(--cf-x, 73.7px); margin-right:calc(100% - var(--cf-x, 73.7px) - var(--cf-w, 17rem)); border-radius:8px; } }
-@keyframes cfNarrow{ from{ margin-left:0; width:100%; max-width:none; } }
+@keyframes cfWiden{
+  from{ clip-path:inset(0 calc(100% - var(--cf-x, 73.7px) + var(--cf-sx, 0px) - var(--cf-w, 17rem)) calc(100% - 27px) calc(var(--cf-x, 73.7px) - var(--cf-sx, 0px)) round 8px); translate:0 4px; }
+  57%{ clip-path:inset(0 0 calc(100% - 27px) 0 round 8px); translate:0 4px; }
+  to{ clip-path:inset(0 0 0 0 round 18px); translate:0 0; } }
+@keyframes cfNarrow{ to{ clip-path:inset(0 calc(100% - var(--cf-x, 73.7px) - var(--cf-w, 17rem)) 0 var(--cf-x, 73.7px) round 8px); } }
 @keyframes cfFade{ from{ opacity:0; } }
 /* banc ?cf : chat et duel sur un fond blanc d'office, sans ombre, tant qu'aucune couleur de personne n'est choisie */
 .cf-fond :is(.chat-card, .duel-card):not(.has-pcol):not(.fullpage){ background:var(--surface); border-radius:14px; }
@@ -10899,8 +10909,7 @@ function render(){
         const all = quickInp.value.slice(0, quickInp.selectionStart) + txt + quickInp.value.slice(quickInp.selectionEnd);
         if(courses){ addCoursesQuick(cat, all); quickInp.value = ""; refocusQuickCat = cat.id; renderAll(); return; }   // 10.68
         const lines = splitPastedTasks(all);
-        if(isFolded(cat.id)) unfoldCat(cat.id);
-        if(addPastedTasks(cat, lines)) actionToast("add");
+        if(addPastedTasks(cat, lines)) actionToast("add");   // 11.6 : la liste fermée reste fermée (avant, 10.7 : elle se rouvrait, punaisée)
         quickInp.value = "";
         refocusQuickCat = cat.id;
         renderAll();
@@ -10911,7 +10920,7 @@ function render(){
           if(!quickInp.value.trim()) return;
           if(courses) addCoursesQuick(cat, quickInp.value);   // 10.68 : mémo fermé, il reste fermé (sa bulle grandit), comme en 10.19
           else{
-          if(isFolded(cat.id)) unfoldCat(cat.id); // 10.7 : la liste se rouvre
+          // 11.6 : la liste fermée reste fermée, seule la bulle augmente (avant, 10.7 : elle se rouvrait, punaisée)
           try{ if(addQuickTask(cat, quickInp.value)) actionToast("add"); }
           catch(err){ console.error("[ajout express] échec", err); }
           }
@@ -11274,8 +11283,9 @@ function peekCard(card, on, still){
   // (au lieu de filer avec le bas de la case) tant qu'on ne la quitte pas ; on peut donc la cliquer du premier coup
   const pin = on && !still && card.querySelector(".cat-fold");
   const hold = !!pin && pinNear(pin);
+  const y0 = hold ? pin.getBoundingClientRect().top : 0;   // 11.6 : où elle est avant l'ouverture
   if(still) change(); else softHeight(card, change, on);
-  if(hold) holdPin(card, pin);
+  if(hold) holdPin(card, pin, y0);
 }
 // 10.80 : pas besoin d'être pile dessus : la souris à moins de ~40 px de la punaise suffit
 let ptrX = -1e4, ptrY = -1e4;
@@ -11294,10 +11304,21 @@ function pinNear(pin){
   const r = pin.getBoundingClientRect();
   return Math.hypot(ptrX - (r.left + r.width / 2), ptrY - (r.top + r.height / 2)) < 40;
 }
-function holdPin(card, pin){
-  const g = card._glide; if(!g || !pin.animate) return;
+// 11.6 : la punaise est retenue image par image à l'endroit où elle était (y0), quel que soit le chemin du bas de
+// la case : élargissement d'abord (banc ?cf=d), écran du chat ou du duel qui ne suit pas la hauteur, punaise relevée
+// de quelques pixels case fermée. Avant : une animation calée sur la seule hauteur de la case (10.80).
+function holdPin(card, pin, y0){
   if(pin._hold) pin._hold.cancel();
-  pin._hold = pin.animate([{ translate:"0 0" }, { translate:`0 ${-g.dh}px` }], { duration:g.dur, easing:g.easing, fill:"forwards" });
+  let on = true, ty = 0;
+  const tick = ()=>{
+    if(!on) return;
+    if(!pin.isConnected){ on = false; pin._hold = null; return; }
+    ty += y0 - pin.getBoundingClientRect().top;
+    pin.style.translate = "0 " + ty.toFixed(1) + "px";
+    requestAnimationFrame(tick);
+  };
+  pin._hold = { cancel(){ on = false; pin.style.translate = ""; } };
+  tick();
   // relâchée quand la souris s'en éloigne (plus de ~60 px), ou quand on la clique
   const away = e => { if(!pin._hold){ document.removeEventListener("pointermove", away, true); return; }
     const r = pin.getBoundingClientRect();
@@ -11335,7 +11356,7 @@ function glideHeight(card, h0, opening){
   card.classList.add("gliding");   // 10.68 : aperçu non borné pendant le glissement
   const lag = opening && card.matches(".cf-d.cf-compact .chat-card, .cf-d.cf-compact .duel-card") ? 240 : 0;   // banc ?cf=d : le temps que l'écran s'élargisse
   const a = card.animate([{ height:h0 + "px" }, { height:h1 + "px" }], { duration:dur, delay:lag, fill:"backwards", easing:opening ? SOFT_EASE : SOFT_CLOSE });
-  card._soft = a; card._glide = { dh: h1 - h0, dur, easing: opening ? SOFT_EASE : SOFT_CLOSE };   // 10.80 : pour la punaise retenue
+  card._soft = a; card._glide = { dh: h1 - h0, dur, lag, easing: opening ? SOFT_EASE : SOFT_CLOSE };   // 10.80 : pour la punaise retenue
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
   const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); if(card.classList.contains("courses")) placeCoursesScroll(card);
