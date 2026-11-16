@@ -2384,7 +2384,8 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
   scale:var(--pop-scale);
 }
 .urgent-btn.active:not(.auto):hover svg{ scale:0.85; }   /* retirer : il rapetisse */
-.urgent-btn.auto:hover svg{ scale:none; }   /* triangle inerte de la case urgente */
+.urgent-btn.auto:hover svg{ scale:none; }
+.item .urgent-btn.auto{ cursor:default; }   /* 11.3 : dans une liste aussi (urgente par sa date) */   /* triangle inerte de la case urgente */
 @media (prefers-reduced-motion:reduce){
   .urgent-btn svg, .waiting-btn svg, .delete-btn svg, .delete-btn .x, .add-btn .g, .cat-delete-btn .g, .note-toggle svg, .courses-edit-btn svg, .cat-order svg, .cat-grip svg, .cat-fold svg, .lucky-reroll svg, .hatch-btn svg{ transition:none; }
   .urgent-btn:hover svg, .waiting-btn:hover svg, .delete-btn:hover svg, .delete-btn:hover .x, .add-btn:hover .g, .cat-delete-btn:hover .g, .note-toggle:hover svg, .courses-edit-btn:hover svg, .cat-order:hover svg, .cat-grip:hover svg, .cat-fold:hover svg, .lucky-reroll:hover svg, .hatch-btn:hover svg{ scale:none; }
@@ -8541,7 +8542,7 @@ function buildItemLi(cat, idx, base, key, opts){
     ${isEgg ? `<span class="egg-dot" title="En couvaison">${eggSvg(20)}</span>` : `<input type="checkbox" ${checked ? "checked" : ""} aria-label="${escapeAttr(eff.t)}">`}
     ${isNewHere ? newTagHtml(cat, base) : isEditedHere ? editTagHtml(cat, key) : ""}<span class="item-text">${checkerTag}${whoTag}${personTag}<span class="item-title">${eff.note ? titleWithToggle(eff.t, noteToggleHtml(true, isNoteOpen(key))) : escapeAttr(eff.t)}</span>${originTag}${dueBadgeHtml}${eff.note ? noteFoldHtml(eff.note, "note") : ""}</span>
     <span class="item-controls">
-      ${isEgg ? `<button type="button" class="hatch-btn" aria-label="Faire éclore" data-tip="Faire éclore"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="chick" cx="12" cy="8.2" r="3.6"/><path class="beak" d="M15.5 8.1l2 .7-2 .7"/><circle cx="13.1" cy="7.3" r=".55" fill="currentColor" stroke="none"/><path class="shell" d="M5.2 13.6c0 4.3 3 7.6 6.8 7.6s6.8-3.3 6.8-7.6l-2.3 1.5-2.2-1.7-2.3 1.7-2.3-1.7-2.2 1.7z"/></svg></button>` : `<button type="button" class="urgent-btn${eff.urgent ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}" data-tip="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}">${triangleSvg(15)}</button>`}
+      ${isEgg ? `<button type="button" class="hatch-btn" aria-label="Faire éclore" data-tip="Faire éclore"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="chick" cx="12" cy="8.2" r="3.6"/><path class="beak" d="M15.5 8.1l2 .7-2 .7"/><circle cx="13.1" cy="7.3" r=".55" fill="currentColor" stroke="none"/><path class="shell" d="M5.2 13.6c0 4.3 3 7.6 6.8 7.6s6.8-3.3 6.8-7.6l-2.3 1.5-2.2-1.7-2.3 1.7-2.3-1.7-2.2 1.7z"/></svg></button>` : isUrgent && !eff.urgent && !checked ? `<span class="urgent-btn active auto" role="img" aria-label="Urgent à cause de la date" data-tip="Urgent à cause de la date">${triangleSvg(15)}</span>` /* 11.3 : urgente par sa date : triangle allumé et inerte, comme dans la case urgente (avant : gris, « Marquer comme urgent ») */ : `<button type="button" class="urgent-btn${eff.urgent ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}" data-tip="${eff.urgent ? "Ne plus marquer urgent" : "Marquer comme urgent"}">${triangleSvg(15)}</button>`}
       <button type="button" class="waiting-btn${eff.waiting ? " active" : ""}" ${checked ? 'disabled tabindex="-1" aria-hidden="true"' : ""} aria-label="${waitingBtnTitle}" data-tip="${waitingBtnTitle}">${waitingBtnIcon}</button>
       ${!canRemove ? `<span class="delete-spacer" aria-hidden="true"></span>` : checked
         ? `<button type="button" class="delete-btn" aria-label="Mettre à la corbeille des tâches accomplies" data-tip="Mettre à la corbeille"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>`
@@ -8583,7 +8584,7 @@ function buildItemLi(cat, idx, base, key, opts){
     currentProgressMsg = null;
     renderAll();
   });
-  const urgentBtnEl = li.querySelector(".urgent-btn");
+  const urgentBtnEl = li.querySelector(".urgent-btn:not(.auto)");
   if(urgentBtnEl) urgentBtnEl.addEventListener("click",(e)=>{
     e.stopPropagation();
     overrides = loadOverrides(); // toujours repartir d'une copie fraîche, voir le commentaire sur la case à cocher
