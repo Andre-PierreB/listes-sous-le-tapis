@@ -2587,17 +2587,21 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
 .hatch-btn:hover .shell{ fill:var(--eggshell); }
 /* 11.3 : œuf : « Faire éclore » à côté de la croix (à la place d'« En cours », masqué pour un œuf) : plus de trou entre les deux */
 .item.is-egg .item-controls .waiting-btn{ order:-1; }
-/* 11.3 (banc, essai.html?survol) : survol des petits boutons de ligne, UN seul principe, celui de « Faire éclore » :
+/* 11.3 : survol des petits boutons de ligne, UN seul principe, celui de « Faire éclore » :
    pas de pastille de couleur derrière, c'est le signe lui-même qui s'allume (trait foncé, intérieur teinté) et grossit.
    Couleur seulement là où elle veut dire quelque chose : mauve de l'urgence, ton d'« En cours » ; effacer et modifier
    restent dans l'encre. Urgent déjà actif : au survol il s'éteint en restant mauve (vidé, plus petit) au lieu de virer au gris. */
-[data-survol] .urgent-btn:not(.active):hover, [data-survol] .waiting-btn:hover, [data-survol] #waitingSection .waiting-btn:hover,
-[data-survol] .delete-btn:hover, [data-survol] .courses-edit-btn:hover, [data-survol] .hatch-btn:hover{ background:transparent; }
-[data-survol] .delete-btn:hover, [data-survol] .courses-edit-btn:hover{ color:var(--ink); }
-[data-survol] .delete-btn:hover svg, [data-survol] .courses-edit-btn:hover svg{ fill:color-mix(in srgb, var(--ink) 12%, transparent); }
-[data-survol] .waiting-btn:hover{ color:color-mix(in srgb, var(--wait) 75%, var(--ink)); }
-[data-survol] .urgent-btn.active:not(.auto):hover{ background:transparent; color:color-mix(in srgb, var(--urgent-ink) 60%, transparent); }
-[data-survol] .urgent-btn.active:not(.auto):hover svg .tri{ fill:none; }
+.urgent-btn:not(.active):hover, .waiting-btn:hover, #waitingSection .waiting-btn:hover,
+.delete-btn:hover, .courses-edit-btn:hover, .hatch-btn:hover{ background:transparent; }
+.delete-btn:hover, .courses-edit-btn:hover{ color:var(--ink); }
+.delete-btn:hover svg, .courses-edit-btn:hover svg{ fill:color-mix(in srgb, var(--ink) 12%, transparent); }
+.waiting-btn:hover{ color:color-mix(in srgb, var(--wait) 75%, var(--ink)); }
+.urgent-btn.active:not(.auto):hover{ background:transparent; color:color-mix(in srgb, var(--urgent-ink) 60%, transparent); }
+.urgent-btn.active:not(.auto):hover svg .tri{ fill:none; }
+/* 11.3 : dans la case urgente, « Classé, suivi en cours » est LE geste satisfaisant : il garde une pastille, verte (vert du faisan), et grossit plus que les autres */
+.urgent-actions .waiting-btn:not(.postpone-btn):hover{ background:color-mix(in srgb, var(--logo-green) 26%, var(--surface)); color:var(--logo-green-strong); }
+.urgent-actions .waiting-btn:not(.postpone-btn):hover svg{ scale:1.35; color:var(--logo-green-strong); }   /* couleur redite sur le signe : dans le bandeau urgent, les signes ont leur propre couleur (.urgent-banner svg) et ne suivaient pas le bouton */
+@media (prefers-reduced-motion:reduce){ .urgent-banner .urgent-actions .waiting-btn:not(.postpone-btn):hover svg{ scale:none; } }
 /* 10.2 : initiale de qui a coché, dans une liste partagée */
 .checker-tag{
   display:inline-flex; align-items:center; justify-content:center;
@@ -3759,7 +3763,6 @@ const ESSAI = /essai/i.test(location.pathname);
 // 10.68 : essai.html?demo : vitrine de test, listes d'exemple dans un coin à part du navigateur
 // (préfixe « demo: »), sans connexion ni synchro ; ?demo&reset remet les exemples à neuf
 const DEMO = ESSAI && /[?&]demo\b/.test(location.search);
-if(ESSAI && /[?&]survol\b/.test(location.search)) document.documentElement.dataset.survol = "1";   // 11.3 (banc) : variante du survol des petits boutons
 if(DEMO && /[?&]reset\b/.test(location.search)){
   try{ Object.keys(localStorage).filter(k => k.startsWith("demo:")).forEach(k => localStorage.removeItem(k)); }catch(e){}
   location.replace(location.pathname + "?demo");
