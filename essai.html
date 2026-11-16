@@ -1952,7 +1952,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 @media (pointer:coarse){ .chat-card .chat-box > .scr-full, .duel-card .duel-stage > .scr-full{ right:calc(0.55rem - 1px); } }
 .chat-card.collapsed, .duel-card.collapsed{ align-self:start; cursor:pointer; height:var(--fold-h); }
 .duel-card.collapsed .duel-stage{ height:100%; display:flex; flex-direction:column; }
-.chat-card.collapsed .chat-in{ display:none; }
+.chat-card.collapsed .chat-in{ flex:none; }   /* 11.3 : écran fermé, la ligne de saisie reste sous le dernier message : on peut écrire sans ouvrir (avant : masquée) */
 .chat-card.collapsed .chat-screen{ justify-content:center; }
 .chat-card.collapsed .chat-log{ flex:none; min-height:0; max-height:none; overflow:hidden; }
 .chat-card.collapsed .chat-l{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
