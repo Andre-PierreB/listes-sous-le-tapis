@@ -1,4 +1,4 @@
-// Sous le tapis — copie de l'appli gardée sur l'appareil (banc d'essai depuis la 11.2).
+// Sous le tapis — copie de l'appli gardée sur l'appareil (depuis la 11.2).
 //
 // À quoi ça sert : l'appli s'ouvre tout de suite depuis la copie gardée sur l'appareil, sans attendre
 // le réseau (ni la page, ni les polices, ni le code de Firebase). Pendant ce temps, ce fichier va
@@ -12,8 +12,10 @@
 // sa copie et retire ce fichier ; l'appli refonctionne comme avant la 11.2, sans rien faire à la main.
 // (Le navigateur revérifie ce fichier en ligne à chaque ouverture de l'appli.)
 //
-// Qui s'en sert : la page l'inscrit elle-même (fin du script, « copie gardée sur l'appareil »), pour
-// l'instant essai.html seulement (scope « ./essai.html » : index.html n'est pas concerné).
+// Seule la page de l'appli (l'adresse du dossier, ou index.html) est servie depuis la copie. Les bancs
+// d'essai (essai.html, essai-jeu.html…) et les archives viennent toujours directement du site : quand on
+// y travaille, chaque changement doit se voir tout de suite.
+// Qui s'en sert : la page l'inscrit elle-même (fin du script, « copie gardée sur l'appareil »).
 // Changer ce fichier : n'importe quel changement, même un commentaire, suffit pour que les appareils
 // prennent la nouvelle version. Si le contenu gardé change de forme, augmenter le numéro de COPIE.
 const ARRET = false;
@@ -21,8 +23,9 @@ const COPIE = "sous-le-tapis-copie-1";
 const PREFIXE = "sous-le-tapis-copie-";
 const ICI = new URL("./", self.location).href;   // le dossier de l'appli
 
-// la page que ce fichier sert : l'adresse sans ce qui suit le « ? » (?demo, ?invitation=… : même page)
-const pageKey = url => { const u = new URL(url); u.search = ""; u.hash = ""; return u.href; };
+// la page de l'appli : l'adresse du dossier ou index.html, quoi qu'il y ait après le « ? » (?invitation=… :
+// même page) ; une seule copie, rangée à l'adresse du dossier. Toute autre page : pas servie d'ici.
+const isApp = url => { const u = new URL(url); u.search = ""; u.hash = ""; return u.href === ICI || u.href === ICI + "index.html"; };
 const good = r => r && r.ok && !r.redirected;
 
 self.addEventListener("install", e => {
@@ -31,9 +34,8 @@ self.addEventListener("install", e => {
   // la page est gardée dès la première visite (sinon elle ne le serait qu'à la deuxième)
   e.waitUntil((async () => {
     try{
-      const key = pageKey(self.registration.scope);
-      const r = await fetch(key, { cache: "no-cache" });
-      if(good(r) && r.type === "basic") await (await caches.open(COPIE)).put(key, r);
+      const r = await fetch(ICI, { cache: "no-cache" });
+      if(good(r) && r.type === "basic") await (await caches.open(COPIE)).put(ICI, r);
     }catch(err){ /* pas de réseau : ce sera pour la prochaine fois */ }
   })());
 });
@@ -73,9 +75,8 @@ self.addEventListener("fetch", e => {
   const u = new URL(req.url);
   // la page elle-même
   if(req.mode === "navigate"){
-    if(!req.url.startsWith(self.registration.scope)) return;
-    const key = pageKey(req.url);
-    e.respondWith(copyThenRefresh(e, key, new Request(key, { cache: "no-cache" }), true));
+    if(!isApp(req.url)) return;   // bancs d'essai, archives : toujours directement du site
+    e.respondWith(copyThenRefresh(e, ICI, new Request(ICI, { cache: "no-cache" }), true));
     return;
   }
   // icônes et fiches d'installation, à côté de la page

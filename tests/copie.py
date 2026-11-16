@@ -2,8 +2,8 @@
 """Tests de la copie gardée sur l'appareil (sw.js, depuis la 11.2).
 
 Sert une copie jetable du dépôt sur un petit serveur local, et vérifie dans un navigateur sans fenêtre :
-première visite (la copie se fait), ouverture sans réseau, nouvelle version à la 2e ouverture, index.html
-pas concerné (tant que la copie n'est que sur le banc), arrêt à distance (ARRET = true).
+première visite (la copie se fait), ouverture sans réseau, nouvelle version à la 2e ouverture, banc d'essai
+jamais servi depuis la copie, arrêt à distance (ARRET = true).
 
     python3 tests/copie.py
 """
@@ -54,50 +54,56 @@ async def main():
             def etape(nom): etapes.append(nom); print(f"  ok      {nom}", flush=True)
 
             # 1. première visite : rien n'est encore gardé ; la copie se fait au calme, après l'ouverture
-            await ouvrir(pg, base + "/essai.html?demo")
+            await ouvrir(pg, base + "/")
             v0 = await version(pg)
             await attendre(pg, "navigator.serviceWorker.getRegistrations().then(rs => rs.some(r => r.active))", "la copie ne s'inscrit pas")
             await pg.wait_for_timeout(800)
-            check(await inscrits(pg) == ["/essai.html"], f"inscription inattendue : {await inscrits(pg)}")
-            check("/essai.html" in await copies(pg), f"la page n'est pas gardée dès la première visite : {await copies(pg)}")
+            check(await inscrits(pg) == ["/"], f"inscription inattendue : {await inscrits(pg)}")
+            check("/" in await copies(pg), f"la page n'est pas gardée dès la première visite : {await copies(pg)}")
             etape("première visite : la page est gardée")
 
-            # 2. sans réseau : l'appli s'ouvre depuis la copie (avec ou sans « ?demo »)
+            # 2. sans réseau : l'appli s'ouvre depuis la copie (adresse du dossier, index.html, lien d'invitation)
             await ctx.set_offline(True)
-            await ouvrir(pg, base + "/essai.html?demo"); check(await version(pg) == v0, "mauvaise version sans réseau")
-            await ouvrir(pg, base + "/essai.html")
+            await ouvrir(pg, base + "/"); check(await version(pg) == v0, "mauvaise version sans réseau")
+            await ouvrir(pg, base + "/index.html")
+            await ouvrir(pg, base + "/?invitation=ABCD2345")
+            check(await pg.evaluate("Object.keys(localStorage).some(k => /invitation/.test(k) && localStorage.getItem(k).includes('ABCD2345'))"), "le code d'un lien d'invitation n'est pas retenu")
             await ctx.set_offline(False)
             etape("sans réseau : l'appli s'ouvre depuis la copie")
 
             # 3. une nouvelle version est publiée : l'ancienne à la 1re ouverture, la nouvelle à la suivante
-            page = tmp / "essai.html"; page.write_text(page.read_text().replace(f'<span class="version-tag">{v0}</span>', '<span class="version-tag">v99.9</span>'))
-            await ouvrir(pg, base + "/essai.html?demo", 1500); check(await version(pg) == v0, "la 1re ouverture après publication devrait encore montrer l'ancienne version")
-            await ouvrir(pg, base + "/essai.html?demo"); check(await version(pg) == "v99.9", f"la nouvelle version n'arrive pas à la 2e ouverture ({await version(pg)})")
+            page = tmp / "index.html"; page.write_text(page.read_text().replace(f'<span class="version-tag">{v0}</span>', '<span class="version-tag">v99.9</span>'))
+            await ouvrir(pg, base + "/", 1500); check(await version(pg) == v0, "la 1re ouverture après publication devrait encore montrer l'ancienne version")
+            await ouvrir(pg, base + "/"); check(await version(pg) == "v99.9", f"la nouvelle version n'arrive pas à la 2e ouverture ({await version(pg)})")
+            await ouvrir(pg, base + "/index.html"); check(await version(pg) == "v99.9", "index.html et l'adresse du dossier ne montrent pas la même version")
             etape("nouvelle version : à la deuxième ouverture")
 
             # 4. les données ne passent pas par la copie : une tâche ajoutée est toujours là après rechargement
             await pg.evaluate("() => { addCategory('Copie'); const c = DATA[DATA.length - 1]; addQuickTask(c, 'Toujours là'); renderAll(); }")
-            await ouvrir(pg, base + "/essai.html?demo")
+            await ouvrir(pg, base + "/")
             check(await pg.evaluate("[...document.querySelectorAll('.item-title')].some(e => e.textContent.includes('Toujours là'))"), "une tâche ajoutée a disparu après rechargement")
             etape("les listes ne sont pas touchées")
 
-            # 5. la vraie appli n'est pas concernée (la copie n'est que sur le banc)
-            await ouvrir(pg, base + "/index.html")
-            check(await pg.evaluate("navigator.serviceWorker.controller === null"), "index.html est servi par la copie")
-            await pg.wait_for_timeout(2600)
-            check(await inscrits(pg) == ["/essai.html"], f"index.html a inscrit quelque chose : {await inscrits(pg)}")
-            etape("index.html n'est pas concerné")
+            # 5. le banc vient toujours du site : un changement s'y voit dès la 1re ouverture ; l'inscription
+            #    propre au banc (essai du 16/11/2026) est retirée
+            await pg.evaluate("navigator.serviceWorker.register('sw.js', { scope: './essai.html' })")
+            banc = tmp / "essai.html"; banc.write_text(banc.read_text().replace(f'<span class="version-tag">{v0}</span>', '<span class="version-tag">v77.7</span>'))
+            await ouvrir(pg, base + "/essai.html?demo"); check(await version(pg) == "v77.7", "le banc est servi depuis une copie")
+            banc.write_text(banc.read_text().replace("v77.7", "v77.8"))
+            await ouvrir(pg, base + "/essai.html?demo"); check(await version(pg) == "v77.8", "un changement du banc ne se voit pas tout de suite")
+            await attendre(pg, "navigator.serviceWorker.getRegistrations().then(rs => rs.length === 1 && /\\/$/.test(rs[0].scope))", "l'ancienne inscription du banc n'est pas retirée")
+            check(not any("essai" in c for c in await copies(pg)), f"le banc est gardé dans la copie : {await copies(pg)}")
+            etape("le banc vient toujours directement du site")
 
             # 6. arrêt à distance : ARRET = true publié → copie effacée, plus rien d'inscrit, l'appli marche toujours
             sw = tmp / "sw.js"; src = sw.read_text(); check("const ARRET = false;" in src, "ARRET introuvable dans sw.js")
             sw.write_text(src.replace("const ARRET = false;", "const ARRET = true;"))
-            await ouvrir(pg, base + "/essai.html?demo", 600)
+            await ouvrir(pg, base + "/", 600)
             await attendre(pg, "navigator.serviceWorker.getRegistrations().then(rs => rs.length === 0)", "ARRET publié : l'inscription n'est pas retirée")
             await pg.wait_for_timeout(500)
             check(await copies(pg) == [], f"la copie n'est pas effacée : {await copies(pg)}")
-            sw.write_text(src.replace("const ARRET = false;", "const ARRET = true;") + "\n// encore arrêté\n")
             page.write_text(page.read_text().replace("v99.9", "v100.0"))
-            await ouvrir(pg, base + "/essai.html?demo", 600)
+            await ouvrir(pg, base + "/", 600)
             check(await version(pg) == "v100.0", "après l'arrêt, la page ne vient plus directement du site")
             etape("arrêt à distance : copie effacée, l'appli vient de nouveau du site")
 

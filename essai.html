@@ -410,21 +410,23 @@
     (le style du rouleau du tapis, invisible, est ignoré comme celui du tapis).
   - PISTES SUIVANTES (pas faites) : ne plus construire les cases inchangées (voir CHANTIER DE LA 11).
 
-  COPIE SUR L'APPAREIL (11.2, SUR LE BANC SEULEMENT pour l'instant — index.html est resté en 11.1)
+  COPIE SUR L'APPAREIL (11.2)
   - sw.js (à côté de ce fichier : la seule exception au « fichier autonome », un tel fichier ne peut pas
     être dans la page) garde sur l'appareil la page, les icônes, les polices Google et le code de Firebase.
     L'appli s'ouvre depuis cette copie sans attendre le réseau (le @import des polices ne bloque plus le
     premier affichage) ; en même temps la page est redemandée en ligne et la copie mise à jour.
   - CONSÉQUENCE, acceptée par André-Pierre le 16/11/2026 : une version publiée n'apparaît qu'à l'ouverture
-    suivante (quitter et rouvrir, ou recharger deux fois). Le dire à chaque publication.
+    suivante (quitter et rouvrir, ou recharger deux fois). Le lui rappeler à chaque publication.
+  - Seule la vraie appli (adresse du dossier ou index.html) est servie depuis la copie. Les bancs d'essai
+    (essai.html, essai-jeu.html…) viennent toujours directement du site : un changement s'y voit tout de suite.
   - Aucune donnée n'y passe : listes, synchro et connexion ne sont pas touchées.
   - COUPER À DISTANCE : ARRET = true dans sw.js, publier ; chaque appareil efface sa copie à l'ouverture
     suivante et tout refonctionne comme en 11.1.
-  - Inscription : fin du script (COPIE_ICI = ESSAI, scope « ./essai.html » : la vraie appli n'est pas
-    concernée). Pour l'étendre à la vraie appli, après essai sur iPhone (Safari ET icône de l'écran
-    d'accueil) : COPIE_ICI = true et scope ESSAI ? "./essai.html" : "./".
+  - Essayé sur le banc le 16/11/2026 par André-Pierre sur iPhone (Safari et icône de l'écran d'accueil,
+    ouverture en mode avion) avant d'être étendu à la vraie appli.
   - Tests : tests/copie.py (petit serveur local : première visite, ouverture sans réseau, nouvelle version
-    à la 2e ouverture, arrêt à distance). tests/run.py ouvre le fichier en local : la copie n'y joue pas.
+    à la 2e ouverture, banc jamais servi depuis la copie, arrêt à distance). tests/run.py ouvre le fichier
+    en local : la copie n'y joue pas.
 
   HISTORIQUE
   - L'historique détaillé des versions (5.2 → 10.73) est dans HISTORIQUE.md,
@@ -13911,14 +13913,16 @@ if(DEMO) (()=>{
 })();
 if(!DEMO) Sync.start();   // 10.68 : la vitrine ne se connecte jamais
 
-// ---- 11.2 (banc) : copie de l'appli gardée sur l'appareil — voir sw.js et la NOTE (COPIE SUR L'APPAREIL) ----
+// ---- 11.2 : copie de l'appli gardée sur l'appareil — voir sw.js et la NOTE (COPIE SUR L'APPAREIL) ----
 // L'appli s'ouvre depuis cette copie sans attendre le réseau ; une version qu'on vient de publier arrive à
-// l'ouverture suivante. Pour l'instant sur le banc seulement (COPIE_ICI) : index.html n'inscrit rien.
-// Inscrit au calme, après l'ouverture ; sans effet hors du site (fichier ouvert en local, tests).
-const COPIE_ICI = ESSAI;
-if(COPIE_ICI && "serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
+// l'ouverture suivante. La vraie appli seulement : le banc (essai.html) vient toujours directement du site,
+// pour qu'un changement s'y voie tout de suite. Inscrit au calme, après l'ouverture ; sans effet hors du
+// site (fichier ouvert en local, tests).
+if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
   window.addEventListener("load", ()=> setTimeout(()=>{
-    navigator.serviceWorker.register("sw.js", { scope: "./essai.html" }).catch(err => console.error("[copie]", err));
+    if(!ESSAI) navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(err => console.error("[copie]", err));
+    // le banc avait sa propre inscription pendant l'essai du 16/11/2026 : on la retire
+    else navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => { if(/\/essai\.html$/.test(r.scope)) r.unregister(); })).catch(()=>{});
   }, 2000));
 }
 </script>
