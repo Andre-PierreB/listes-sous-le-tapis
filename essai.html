@@ -9114,7 +9114,13 @@ let chatEdit = null;       // { catId, idx, v } : message corrigé sur place (do
 let chatMenuOpen = null;   // écran dont le menu « … » est ouvert
 // 10.60 : lu / non lu, propre à l'appareil (hors fiches, comme SEEN_KEY) :
 // { idÉcran: nombre de messages déjà vus } ; première rencontre = tout est vu
-const CHAT_SEEN_KEY = "sous-le-tapis-chat-vu";
+// 11.5 : « vu jusqu'à » retenu par la date d'écriture du dernier message des autres (at), et non plus par le
+// nombre de messages : le voyant se rallumait sur le même appareil sans nouveau message. Il suffisait qu'il soit
+// lu à un moment où l'écran n'avait pas encore tous ses messages (ouverture, synchro en cours) : le compte
+// retenu redescendait, et les anciens messages repassaient en « non lus ». Une date ne redescend jamais (on garde
+// la plus grande). Seulement les messages des autres : leur horloge peut retarder sur celle de l'appareil.
+// Nouvelle clé (préfixe du banc à part) ; à la première ouverture, tout ce qui est là est tenu pour lu.
+const CHAT_SEEN_KEY = (DEMO ? "demo:" : ESSAI ? "essai:" : "") + "sous-le-tapis-chat-vu-date";
 let chatSeen = (()=>{ try{ const o = JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) || "{}"); return o && typeof o === "object" ? o : {}; }catch(e){ return {}; } })();
 function saveChatSeen(){ try{ localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify(chatSeen)); }catch(e){} }
 let chatNewAt = {};   // { idÉcran: index du 1er message qui était non lu } : la ligne « nouveau » y reste jusqu'à ce qu'on écrive (ou au rechargement)
@@ -9223,9 +9229,10 @@ function buildChatCard(cat, catIdx){
     log.appendChild(l);
   });
   // 10.60 : non lus = messages des autres au-delà de ce que cet appareil a vu
-  const total = items.length;
-  if(typeof chatSeen[cat.id] !== "number"){ chatSeen[cat.id] = total; saveChatSeen(); }
-  const unread = msgs.filter(m => m.i >= chatSeen[cat.id] && !chatMine(cat, m.base));
+  const theirs = msgs.filter(m => !chatMine(cat, m.base) && typeof m.base.at === "number");
+  const lastAt = theirs.reduce((x, m) => Math.max(x, m.base.at), 0);   // 11.5 : dernier message des autres
+  if(typeof chatSeen[cat.id] !== "number"){ chatSeen[cat.id] = lastAt; saveChatSeen(); }
+  const unread = theirs.filter(m => m.base.at > chatSeen[cat.id]);
   let sep = null;
   if(unread.length){
     card.classList.add("unread");
@@ -9241,8 +9248,8 @@ function buildChatCard(cat, catIdx){
   const markRead = ()=>{
     // 10.73 : plus d'exception pour l'écran fermé : survolé (il s'entrouvre) ou touché, il est lu
     // (avant : fermé, le voyant restait allumé tant qu'on ne punaisait pas l'écran — pour toujours, chez qui le garde fermé)
-    if(chatSeen[cat.id] === total && !card.classList.contains("unread")) return;
-    chatSeen[cat.id] = total; saveChatSeen();
+    if(chatSeen[cat.id] >= lastAt && !card.classList.contains("unread")) return;
+    chatSeen[cat.id] = Math.max(chatSeen[cat.id] || 0, lastAt); saveChatSeen();   // 11.5 : ne redescend jamais
     card.classList.remove("unread");
   };
   ["pointerenter", "touchstart", "focusin"].forEach(ev => card.addEventListener(ev, markRead, { passive:true }));
