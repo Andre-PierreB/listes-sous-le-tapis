@@ -3693,8 +3693,8 @@ body.ios-gate-on{ overflow:hidden; }
 /* ---- banc ?cf (11.6) : cases fermées, trois pistes. Classes cf-a / cf-b / cf-c sur <html>, posées par le banc
    seulement ; ordinateur seulement. Commun : plus de texte d'invite au repos (le crayon seul), il revient à la saisie. */
 @media (min-width:721px){
-  :is(.cf-a, .cf-b, .cf-c) .cat-quick::placeholder{ opacity:0; }
-  :is(.cf-a, .cf-b, .cf-c) .cat-quick:focus::placeholder{ opacity:.7; }
+  :is(.cf-a, .cf-b, .cf-c, .cf-d) .cat-quick::placeholder{ opacity:0; }
+  :is(.cf-a, .cf-b, .cf-c, .cf-d) .cat-quick:focus::placeholder{ opacity:.7; }
   /* A et C : la saisie est un filet qui file jusqu'au bout de la ligne */
   :is(.cf-a, .cf-c) .cat-quick-wrap{ max-width:none; }
   :is(.cf-a, .cf-c) .cat-quick{ border-bottom:1px solid var(--line); }
@@ -3702,7 +3702,7 @@ body.ios-gate-on{ overflow:hidden; }
   :is(.cf-a, .cf-b) .cat-count{ order:3; margin-left:auto; background:none; padding:0; height:auto; min-width:2ch; justify-content:flex-end; font-size:1.3rem; }
   .cf-a .cat-quick-wrap{ order:2; }
   /* C : le chiffre à gauche du titre, bulle de largeur fixe */
-  .cf-c .cat-count{ order:-1; min-width:2.3rem; padding:0; }
+  :is(.cf-c, .cf-d) .cat-count{ order:-1; min-width:2.3rem; padding:0; }
   /* B : la saisie sur la 2e ligne, champ marqué, entre la poignée et la punaise. Elle garde la même place
      fermée, entrouverte et ouverte (rien ne saute sous la souris) ; la case fermée garde sa hauteur (--fold-h) ;
      poignée, punaise et initiales remontent de 5 px, case fermée, pour s'aligner sur le champ sans coller au bord. */
@@ -3721,6 +3721,28 @@ body.ios-gate-on{ overflow:hidden; }
   .cf-b .category.collapsed > .share-chips{ bottom:calc(0.35rem + 5px); }
   .cf-b .category.collapsed :is(.chat-foot, .duel-foot) > :not(.cat-grip):not(.cat-fold){ position:relative; top:-5px; }
   .cf-b .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }   /* B : le champ fait déjà la ligne */
+  /* D : C + le champ de B sur la 2e ligne, collé au titre et aligné à gauche sur lui (après la bulle) ; largeur
+     réglable (--cf-w). Même place fermée, entrouverte et ouverte. Le champ disparaît quand le + est ouvert. */
+  .cf-d .cat-head-right{ align-self:flex-start; }
+  .cf-d .cat-quick-wrap{ order:4; flex:0 0 100%; max-width:none; z-index:3; --cf-ml:0rem; }
+  .cf-d .cat-count ~ .cat-quick-wrap{ flex-basis:calc(100% - 2.8rem); margin-left:2.8rem; --cf-ml:2.8rem; }   /* bulle (2.3rem) + écart : le champ part du titre */
+  .cf-d .cat-quick{ flex:0 0 auto; width:min(var(--cf-w, 14rem), calc(100% + 40px)); border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb, var(--ink) 2.5%, var(--surface)); padding:0.28rem 0.5rem 0.28rem 1.7rem; }
+  .cf-d .cat-quick-pen{ left:0.55rem; }
+  .cf-d .cat-quick:focus{ border:1px solid var(--cat-color, var(--accent)); }
+  .cf-d .category:has(.add-title) .cat-quick-wrap{ display:none; }
+  .cf-d .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }
+  .cf-d .category.collapsed:not(.chat-card):not(.duel-card) .cat-head{ margin-bottom:0; }   /* la case fermée garde --fold-h */
+  .cf-d .category.courses.collapsed{ padding-bottom:calc(2.1rem - 2px); }
+  /* D compact : cases fermées plus basses (listes et mémos ; chat et duel gardent 100 px en attendant leur mise en page),
+     poignée et punaise remontées sur la ligne du champ */
+  .cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card){ min-height:72px; padding-bottom:6px; }
+  .cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card) .cat-grip{ bottom:calc(0.12rem + 6px); }
+  .cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card) > .cat-fold{ bottom:calc(0.3rem + 7px); }
+  .cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card) > .share-chips{ bottom:calc(0.35rem + 6px); }
+  .cf-d.cf-compact .category.courses.collapsed{ padding-bottom:4px; }   /* mémo : titre 2 px plus bas */
+  .cf-d.cf-compact .category.courses.collapsed .cat-grip{ bottom:calc(0.12rem + 4px); }
+  .cf-d.cf-compact .category.courses.collapsed > .cat-fold{ bottom:calc(0.3rem + 5px); }
+  .cf-d.cf-compact .category.collapsed.has-people .cat-quick{ width:min(var(--cf-w, 14rem), calc(100% - 0.6rem)); }
   /* filet du mémo fermé : avec ou sans */
   .cf-sans-filet .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }
 }
@@ -13979,31 +14001,39 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
   apply();
 })();
 // ---- banc d'essai (essai.html?demo&cf=a) : cases fermées, trois pistes (11.6) ----
-// cf = 0 (actuel), a, b ou c ; filet=0 retire le filet du mémo fermé ; pastille=0 retire la pastille au survol d'« urgent » actif. Classes cf-* sur <html> : rien que du CSS.
+// cf = 0 (actuel), a, b, c ou d (d : compact=1 pour les cases basses, w = largeur du champ en rem, 22 = jusqu'à la punaise) ; filet=0 retire le filet du mémo fermé ; pastille=0 retire la pastille au survol d'« urgent » actif. Classes cf-* sur <html> : rien que du CSS.
 // Jamais sur la vraie appli (ESSAI). Ordinateur seulement pour l'instant.
 if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
   const q = new URLSearchParams(location.search), html = document.documentElement;
-  let v = /^[abc]$/.test(q.get("cf") || "") ? q.get("cf") : "0", filet = q.get("filet") !== "0", pastille = q.get("pastille") !== "0";
+  let v = /^[abcd]$/.test(q.get("cf") || "") ? q.get("cf") : "0", filet = q.get("filet") !== "0", pastille = q.get("pastille") !== "0", compact = q.get("compact") === "1", w = Math.min(22, Math.max(8, parseInt(q.get("w"), 10) || 14));
   const apply = ()=>{
-    ["a", "b", "c"].forEach(k => html.classList.toggle("cf-" + k, v === k));
+    ["a", "b", "c", "d"].forEach(k => html.classList.toggle("cf-" + k, v === k));
     html.classList.toggle("cf-sans-filet", !filet);
     html.classList.toggle("cf-pastille", pastille);
+    html.classList.toggle("cf-compact", compact);
+    html.style.setProperty("--cf-w", w + "rem");
+    const wl = box.querySelector("[data-wl]"); if(wl) wl.textContent = w >= 22 ? "jusqu'à la punaise" : w + " rem";
+    box.querySelectorAll("[data-d]").forEach(n => { n.style.opacity = v === "d" ? "1" : ".4"; });
     window.dispatchEvent(new Event("resize"));
   };
-  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "cf=" + v + (filet ? "" : "&filet=0") + (pastille ? "" : "&pastille=0");
+  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "cf=" + v + (filet ? "" : "&filet=0") + (pastille ? "" : "&pastille=0") + (v === "d" ? (compact ? "&compact=1" : "") + "&w=" + w : "");
   const box = document.createElement("div");
   box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:17rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
   document.body.appendChild(box);
   ["click", "pointerdown"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
   const row = "display:flex;gap:.4rem;align-items:center;margin:.25rem 0;cursor:pointer";
   box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.4rem">Cases fermées</div>`
-    + [["0", "Actuel"], ["a", "A · chiffre à droite, crayon sur un filet"], ["b", "B · chiffre à droite, champ sur la 2e ligne"], ["c", "C · chiffre à gauche du titre"]]
+    + [["0", "Actuel"], ["a", "A · chiffre à droite, crayon sur un filet"], ["b", "B · chiffre à droite, champ sur la 2e ligne"], ["c", "C · chiffre à gauche du titre"], ["d", "D · comme C, champ sous le titre"]]
       .map(([k, l]) => `<label style="${row}"><input type="radio" name="cf" value="${k}"${k === v ? " checked" : ""}>${l}</label>`).join("")
+    + `<label data-d style="${row};margin-left:1.2rem"><input type="checkbox" data-k${compact ? " checked" : ""}>Cases compactes</label>`
+    + `<label data-d style="display:block;margin:.25rem 0 0 1.2rem">Largeur du champ : <span data-wl></span><input type="range" data-w min="8" max="22" step="1" value="${w}" style="display:block;width:100%"></label>`
     + `<label style="${row};margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--line)"><input type="checkbox" data-f${filet ? " checked" : ""}>Filet du mémo fermé (A, C, actuel)</label>`
     + `<label style="${row}"><input type="checkbox" data-p${pastille ? " checked" : ""}>Pastille claire au survol d'« urgent » actif</label>`
     + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
   box.querySelectorAll("input[type=radio]").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
   box.querySelector("[data-f]").addEventListener("change", e => { filet = e.target.checked; apply(); });
+  box.querySelector("[data-k]").addEventListener("change", e => { compact = e.target.checked; apply(); });
+  box.querySelector("[data-w]").addEventListener("input", e => { w = +e.target.value; apply(); });
   box.querySelector("[data-p]").addEventListener("change", e => { pastille = e.target.checked; apply(); });
   box.querySelector("[data-c]").addEventListener("click", async e=>{
     try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
