@@ -1282,6 +1282,16 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
    étalon : le mémo replié (bandeau + saisie), resserré de 3 px entre le bandeau et la saisie */
 @media (max-width:720px){ :root{ --fold-h:172px; } }   /* 10.72 : téléphone : la hauteur d'une liste repliée (avec sa ligne « Nouvelle tâche… ») — avant 143 px, le chat et le duel fermés étaient plus bas */   /* 10.69 : téléphone, texte agrandi : 127 × 18/16 (placé après, sinon sans effet) */
 .category.courses.collapsed > .courses-entry, .category.courses.collapsed > .courses-foot{ display:none; }   /* 10.68 : fermé, le mémo montre ses premiers articles (la saisie est en bas, ouverte) */
+/* 11.4 (banc, essai.html?fermees) : cases fermées sur deux lignes — titre (et bulle du nombre), puis poignée
+   et punaise ; plus d'aperçu des tâches ou articles. Pendant le glissement (.gliding), la liste reste là :
+   la case l'avale en douceur, comme avant. Chat fermé : le dernier message seul, la ligne de saisie
+   quand on y écrit. Toutes les cases fermées gardent une même hauteur, --fold-h, plus basse. */
+[data-fermees] .category.collapsed:not(.gliding) > ul.items{ display:none; }
+[data-fermees]{ --fold-h:100px; }
+[data-fermees] .category.courses.collapsed:not(.gliding){ --margin-ink:transparent; }   /* mémo fermé : sans articles, pas de marge (elle montait jusqu'au titre) ; le coin corné le signale */
+@media (min-width:721px){ [data-fermees] .chat-card.collapsed .chat-screen{ padding-top:4px; padding-bottom:4px; } }   /* chat fermé resserré pour tenir dans la même hauteur que les listes */
+@media (max-width:720px){ [data-fermees]{ --fold-h:119px; } }   /* téléphone : la saisie rapide reste sous le titre */
+[data-fermees] .chat-card.collapsed .chat-in{ display:none; }   /* une seule ligne : le dernier message ; toucher l'écran l'ouvre (la saisie fermée de la 11.3 ne tient plus dans cette hauteur) */
 /* 10.66 : fermée, une liste montre ses premières tâches en aperçu, pâles et coupées en fondu (comme le
    dernier mot du chat) ; un survol l'entrouvre en entier */
 .category.collapsed > ul.items{ pointer-events:none; opacity:0.5; margin-top:0.2rem; --fade-a:45%; --fade-b:100%; }
@@ -3763,6 +3773,7 @@ const ESSAI = /essai/i.test(location.pathname);
 // 10.68 : essai.html?demo : vitrine de test, listes d'exemple dans un coin à part du navigateur
 // (préfixe « demo: »), sans connexion ni synchro ; ?demo&reset remet les exemples à neuf
 const DEMO = ESSAI && /[?&]demo\b/.test(location.search);
+if(ESSAI && /[?&]fermees\b/.test(location.search)) document.documentElement.dataset.fermees = "1";   // 11.4 (banc) : cases fermées sur deux lignes
 if(DEMO && /[?&]reset\b/.test(location.search)){
   try{ Object.keys(localStorage).filter(k => k.startsWith("demo:")).forEach(k => localStorage.removeItem(k)); }catch(e){}
   location.replace(location.pathname + "?demo");
