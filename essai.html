@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.3 -->
+<!-- Sous le tapis — version AUTONOME 11.4 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1963,6 +1963,15 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 .chat-card.collapsed, .duel-card.collapsed{ align-self:start; cursor:pointer; height:var(--fold-h); }
 .duel-card.collapsed .duel-stage{ height:100%; display:flex; flex-direction:column; }
 .chat-card.collapsed .chat-in{ flex:none; }   /* 11.3 : écran fermé, la ligne de saisie reste sous le dernier message : on peut écrire sans ouvrir (avant : masquée) */
+/* 11.4 : écran fermé, la ligne du bas (poignée, « … », initiales, punaise) garde sa place : l'écran se tient dans la
+   hauteur commune des cases fermées et rogne son contenu au lieu de pousser le pied (bug 11.3 : une saisie
+   sur plusieurs lignes écrasait la ligne du bas). Le mot en cours reste sur une ligne (il défile dans le champ).
+   À la souris, le survol ouvre l'écran : la ligne de saisie fermée n'y sert pas et ne tenait pas dans les 127 px. */
+.chat-card.collapsed .chat-box{ height:100%; }
+.chat-card.collapsed .chat-hole{ min-height:0; overflow:hidden; }
+.chat-card.collapsed .chat-foot{ flex:none; }
+.chat-card.collapsed .chat-field{ max-height:1.45em; overflow-y:auto; scrollbar-width:none; }
+@media (hover:hover) and (pointer:fine){ .chat-card.collapsed .chat-in{ display:none; } }
 .chat-card.collapsed .chat-screen{ justify-content:center; }
 .chat-card.collapsed .chat-log{ flex:none; min-height:0; max-height:none; overflow:hidden; }
 .chat-card.collapsed .chat-l{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -3720,7 +3729,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.3</span>
+    <span class="version-tag">v11.4</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
