@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.4 -->
+<!-- Sous le tapis — version AUTONOME 11.5 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1286,7 +1286,8 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
    et punaise ; plus d'aperçu des tâches ou articles. Pendant le glissement (.gliding), la liste reste là :
    la case l'avale en douceur, comme avant. Chat fermé : le dernier message seul (le toucher ouvre
    l'écran ; la saisie fermée de la 11.3 ne tient plus dans cette hauteur). Toutes les cases fermées gardent une même hauteur, --fold-h, plus basse. */
-.category.collapsed:not(.gliding) > ul.items{ display:none; }
+.categories > .category.collapsed:not(.gliding) > ul.items{ max-height:0; margin-bottom:calc(-0.65rem - 0.2rem); }   /* 11.5 : rangée à hauteur nulle plutôt que retirée (display:none) : elle garde sa place, et la marge des mémos, calculée sur elle (fitCoursesCards), part du bon endroit à l'entrouverture (bug 11.4 : elle traversait le titre) ; la marge négative reprend l'écart de la grille et le petit décalage du haut, la hauteur ne bouge pas */
+.categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top:1px solid var(--paper-rule); position:relative; z-index:2; margin-bottom:calc(-0.65rem - 0.2rem - 1px); }   /* 11.5 : mémo fermé : le filet du cahier sous le titre, pour le reconnaître d'un coup d'œil */
 :root{ --fold-h:100px; }
 .category.courses.collapsed:not(.gliding){ --margin-ink:transparent; }   /* mémo fermé : sans articles, pas de marge (elle montait jusqu'au titre) ; le coin corné le signale */
 @media (min-width:721px){ .chat-card.collapsed .chat-screen{ padding-top:4px; padding-bottom:4px; } }   /* chat fermé resserré pour tenir dans la même hauteur que les listes */
@@ -3729,7 +3730,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.4</span>
+    <span class="version-tag">v11.5</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -8983,6 +8984,12 @@ function buildCatCopyRow(cat){
 // listes affichées (au moins ~24 lignes de texte, au plus 3/4 de l'écran) ;
 // au-delà, seule la zone des articles défile. Position de défilement gardée,
 // et l'article qu'on vient d'ajouter est montré.
+// 11.5 : marge d'un mémo qu'on entrouvre, recalée sur ses articles (fermé, ils sont ailleurs : sous la saisie
+// rapide au téléphone, rangée à hauteur nulle) — même calcul que fitCoursesCards, pour ce seul mémo
+function memoRuleTop(c){
+  const ul = c.querySelector(":scope > ul.items");
+  if(ul) c.style.setProperty("--rule-top", (ul.offsetTop + (ul.querySelector(":scope > .add-form-row") ? 2 : -5)) + "px");
+}
 function fitCoursesCards(saved){
   const cards = Array.from(categoriesEl.querySelectorAll(".category.courses"));
   if(!cards.length){ coursesScrollTo = null; return; }
@@ -9107,7 +9114,13 @@ let chatEdit = null;       // { catId, idx, v } : message corrigé sur place (do
 let chatMenuOpen = null;   // écran dont le menu « … » est ouvert
 // 10.60 : lu / non lu, propre à l'appareil (hors fiches, comme SEEN_KEY) :
 // { idÉcran: nombre de messages déjà vus } ; première rencontre = tout est vu
-const CHAT_SEEN_KEY = "sous-le-tapis-chat-vu";
+// 11.5 : « vu jusqu'à » retenu par la date d'écriture du dernier message des autres (at), et non plus par le
+// nombre de messages : le voyant se rallumait sur le même appareil sans nouveau message. Il suffisait qu'il soit
+// lu à un moment où l'écran n'avait pas encore tous ses messages (ouverture, synchro en cours) : le compte
+// retenu redescendait, et les anciens messages repassaient en « non lus ». Une date ne redescend jamais (on garde
+// la plus grande). Seulement les messages des autres : leur horloge peut retarder sur celle de l'appareil.
+// Nouvelle clé (préfixe du banc à part) ; à la première ouverture, tout ce qui est là est tenu pour lu.
+const CHAT_SEEN_KEY = (DEMO ? "demo:" : ESSAI ? "essai:" : "") + "sous-le-tapis-chat-vu-date";
 let chatSeen = (()=>{ try{ const o = JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) || "{}"); return o && typeof o === "object" ? o : {}; }catch(e){ return {}; } })();
 function saveChatSeen(){ try{ localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify(chatSeen)); }catch(e){} }
 let chatNewAt = {};   // { idÉcran: index du 1er message qui était non lu } : la ligne « nouveau » y reste jusqu'à ce qu'on écrive (ou au rechargement)
@@ -9216,9 +9229,10 @@ function buildChatCard(cat, catIdx){
     log.appendChild(l);
   });
   // 10.60 : non lus = messages des autres au-delà de ce que cet appareil a vu
-  const total = items.length;
-  if(typeof chatSeen[cat.id] !== "number"){ chatSeen[cat.id] = total; saveChatSeen(); }
-  const unread = msgs.filter(m => m.i >= chatSeen[cat.id] && !chatMine(cat, m.base));
+  const theirs = msgs.filter(m => !chatMine(cat, m.base) && typeof m.base.at === "number");
+  const lastAt = theirs.reduce((x, m) => Math.max(x, m.base.at), 0);   // 11.5 : dernier message des autres
+  if(typeof chatSeen[cat.id] !== "number"){ chatSeen[cat.id] = lastAt; saveChatSeen(); }
+  const unread = theirs.filter(m => m.base.at > chatSeen[cat.id]);
   let sep = null;
   if(unread.length){
     card.classList.add("unread");
@@ -9234,8 +9248,8 @@ function buildChatCard(cat, catIdx){
   const markRead = ()=>{
     // 10.73 : plus d'exception pour l'écran fermé : survolé (il s'entrouvre) ou touché, il est lu
     // (avant : fermé, le voyant restait allumé tant qu'on ne punaisait pas l'écran — pour toujours, chez qui le garde fermé)
-    if(chatSeen[cat.id] === total && !card.classList.contains("unread")) return;
-    chatSeen[cat.id] = total; saveChatSeen();
+    if(chatSeen[cat.id] >= lastAt && !card.classList.contains("unread")) return;
+    chatSeen[cat.id] = Math.max(chatSeen[cat.id] || 0, lastAt); saveChatSeen();   // 11.5 : ne redescend jamais
     card.classList.remove("unread");
   };
   ["pointerenter", "touchstart", "focusin"].forEach(ev => card.addEventListener(ev, markRead, { passive:true }));
@@ -11163,7 +11177,7 @@ document.addEventListener("pointerdown", e=>{
 function peekCard(card, on, still){
   if(on) peekId = card.id; else if(peekId === card.id) peekId = null;
   if(on === card.classList.contains("peek")) return;
-  const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); if(card.classList.contains("courses")) placeCoursesScroll(card);
+  const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); if(card.classList.contains("courses")){ if(on) memoRuleTop(card); placeCoursesScroll(card); }
     const log = on && card.querySelector(".chat-log"); if(log) log.scrollTop = log.scrollHeight; };   // 10.67 : l'écran de chat entrouvert montre ses derniers messages (avant : remonté au premier)   // 10.67 : la barre du mémo suit
   // 10.80 : souris posée sur la punaise au moment où la case s'entrouvre : la punaise reste où elle est
   // (au lieu de filer avec le bas de la case) tant qu'on ne la quitte pas ; on peut donc la cliquer du premier coup

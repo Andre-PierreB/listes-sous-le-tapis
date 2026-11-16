@@ -3,6 +3,12 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.5 : mémo fermé : la marge ne traverse plus le titre à l'entrouverture (bug 11.4 : la rangée des
+    articles était retirée, la marge calée sur elle partait du haut ; elle est gardée à hauteur nulle et la marge
+    est recalée à l'entrouverture, memoRuleTop) ; filet du cahier sous le titre pour reconnaître un mémo fermé.
+    Voyant du chat : « vu jusqu'à » retenu par la date du dernier message des autres, plus par le nombre de
+    messages (il se rallumait sans nouveau message quand l'écran avait été lu incomplet : ouverture, synchro) ;
+    nouvelle clé, tout ce qui est là à la première ouverture compte comme lu.
   - 11.4 : cases fermées sur deux lignes — titre (bulle, saisie rapide, +), puis poignée et punaise ; plus
     d'aperçu des tâches ou articles ; hauteur commune 100 px sur ordi (avant 127), 119 px sur téléphone (avant
     172), chat et duel compris ; mémo fermé sans marge (le coin corné le signale) ; chat fermé : le dernier
