@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.2 -->
+<!-- Sous le tapis — version AUTONOME 11.3 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1667,6 +1667,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   gap:0.4rem;
   transition:transform .2s var(--pop-ease), border-color .15s ease, box-shadow .2s ease;
 }
+@media (max-width:720px){ .add-category-btn{ width:100%; } }   /* 11.3 : téléphone : une seule colonne, la case fantôme prend la largeur d'une liste */
 /* 10.75 : survol d'« Une petite en passant ? » : halo citron, léger soulèvement ; plus de pointillés, couleurs inchangées */
 .add-category-btn:hover, .add-category-btn:focus-visible{
   outline:none;
@@ -3687,7 +3688,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.2</span>
+    <span class="version-tag">v11.3</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
