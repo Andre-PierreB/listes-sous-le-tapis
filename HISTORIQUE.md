@@ -3,6 +3,24 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.6 : cases fermées compactes, ordinateur et téléphone (choisies au banc les 16-17/11, piste « D » parmi A, B,
+    C). Fermée : bulle du nombre à gauche du titre, saisie rapide en champ marqué sous le titre (crayon seul, invite à
+    la saisie), bord gauche sur la colonne des cases à cocher (mesurée au rendu : --cf-ml, --cf-x, --cf-sw) ; 72 px sur
+    ordi, 94 px au téléphone, toutes les cases fermées ; ligne du bas (poignée, punaise, initiales, « … ») toujours à
+    la même place qu'ouverte. Chat et duel fermés : écran à la place et à la taille du champ, texte centré identique
+    (Courier 14,4 px), même atténuation au repos ; ouverture et fermeture en deux temps (découpe mesurée, cfWiden /
+    cfNarrow) ; fond blanc d'office sans couleur de personne ; faisan doré gravé à droite de « Duel de faisans »
+    (cfDuelPicto, traitement du voyant éteint) ; voyant descendu de 1 px sur la ligne des titres des listes. Ordi :
+    liste punaisée avec la saisie de la 11.5, posée sur la ligne du titre ; listes et mémos ouverts (survol ou
+    punaise) à la hauteur du jeu, qui est aussi leur maximum, défilement au-delà ; la poignée n'entrouvre plus la case
+    (nearGrip) ; punaise retenue image par image (holdPin) ; pastille claire au survol d'« urgent » actif. Téléphone :
+    même champ sous le titre une fois punaisée, champ plus fin, barre d'ouverture plus large et plus fine (3,8 rem ×
+    2 px) aussi sur le chat et le duel (closeBar), moins d'air sous le champ ; + : le cadre de saisie remonte
+    au-dessus du clavier (keepAboveKeyboard). Mémos fermés à 5 % d'encre, sans filet, même hauteur que les listes
+    (une règle plus forte les grandissait de 1 à 2 px). Saisie rapide dans une liste fermée : elle reste fermée.
+    Bugs : case entrouverte qui restait ouverte quand elle était redessinée juste après la sortie de la souris
+    (PEEKS / peekWatchT) ; glisser une case : l'emplacement oscillait entre deux cases différentes (case basse à côté
+    d'une haute ; handleListDragMove, lastSwap.fromIdx). Tests : case_entrouverte_se_referme, saisie_rapide_case_fermee.
   - 11.5 : mémo fermé : la marge ne traverse plus le titre à l'entrouverture (bug 11.4 : la rangée des
     articles était retirée, la marge calée sur elle partait du haut ; elle est gardée à hauteur nulle et la marge
     est recalée à l'entrouverture, memoRuleTop) ; filet du cahier sous le titre pour reconnaître un mémo fermé.

@@ -125,6 +125,32 @@ async def t_effacer_tache(pg):
     await pg.wait_for_timeout(300)
     check(len(await texts(pg, f"#cat-{c} .item")) == 1, "effacer une tâche ne marche pas")
 
+# --- 11.6 : cases fermées ---------------------------------------------------
+async def t_case_entrouverte_se_referme(pg):
+    """Bug 11.5 : une case redessinée juste après la sortie de la souris restait entrouverte."""
+    c = await new_list(pg, "Courses", memo=True)
+    await js(pg, "id => { const x = DATA.find(y => y.id === id); for(let i = 0; i < 12; i++) addQuickTask(x, 'Article ' + i); DATA.forEach(y => setFolded(y.id, true)); renderAll(); }", c)
+    await pg.wait_for_timeout(400)
+    b = await pg.locator(f"#cat-{c}").bounding_box()
+    await pg.mouse.move(b["x"] + b["width"] / 2, b["y"] + 15, steps=4); await pg.wait_for_timeout(900)
+    check(await js(pg, "id => document.getElementById('cat-' + id).classList.contains('peek')", c), "la case ne s'entrouvre pas au survol")
+    await pg.mouse.move(5, 5, steps=2)
+    await js(pg, "id => { addQuickTask(DATA.find(y => y.id === id), 'venu de la synchro'); renderAll(); }", c)
+    await pg.wait_for_timeout(2500)
+    check(not await js(pg, "id => document.getElementById('cat-' + id).classList.contains('peek')", c), "redessinée pendant le temps de grâce, la case reste entrouverte")
+
+async def t_saisie_rapide_case_fermee(pg):
+    """11.6 : une tâche ajoutée par la saisie rapide d'une liste fermée la laisse fermée (seule la bulle augmente)."""
+    c = await new_list(pg, "Maison")
+    await add_tasks(pg, c, "Trier la cave")
+    await js(pg, "id => { setFolded(id, true); renderAll(); }", c)
+    await pg.wait_for_timeout(300)
+    await pg.locator(f"#cat-{c} .cat-quick").click(force=True)
+    await pg.keyboard.type("Changer l'ampoule"); await pg.keyboard.press("Enter")
+    await pg.wait_for_timeout(500)
+    check(await js(pg, "id => isFolded(id)", c), "la liste fermée s'est rouverte (punaisée)")
+    check(await js(pg, "id => JSON.stringify(DATA.find(x => x.id === id)).includes(\"Changer l'ampoule\")", c) or "Changer l'ampoule" in " ".join(await texts(pg, f"#cat-{c} .item")), "la tâche n'est pas ajoutée")
+
 # --- 11.1 : fluidité (rien de tout ça ne doit changer ce qu'on voit) ----------
 async def _tel(pg):
     """Un téléphone (écran tactile, pas de survol) sur la même page, profil jetable."""
