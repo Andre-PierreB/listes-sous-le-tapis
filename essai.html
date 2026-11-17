@@ -3739,6 +3739,9 @@ body.ios-gate-on{ overflow:hidden; }
   .cf-d.cf-compact .duel-card.collapsed .d-mini-t{ background:none; padding:0 0.7rem; text-align:center; font:14.4px/1.3 'Courier Prime', 'Courier New', Courier, monospace; color:var(--ink-soft); }
   .cf-d.cf-compact .chat-card.collapsed .chat-screen{ padding:0 0.7rem; }
   .cf-d.cf-compact .chat-card.collapsed .chat-l{ text-align:center; padding:0; margin:0; color:var(--ink-soft); line-height:1.3; }
+  .cf-d.cf-compact .chat-card.collapsed .chat-box{ opacity:1; }   /* fermé, le chat s'atténue comme le duel fermé : tout sauf l'écran (titre, voyant, pleine page, bande du bas à 66 %), l'écran et son texte nets */
+  .cf-d.cf-compact .chat-card.collapsed .chat-box > :not(.chat-hole){ opacity:calc(1 - 0.34); }
+  .cf-d.cf-compact .chat-card.collapsed .chat-l, .cf-d.cf-compact .chat-card.collapsed .chat-l *{ font:14.4px/1.3 'Courier Prime', 'Courier New', Courier, monospace; text-shadow:none; color:var(--ink-soft); }   /* le dernier message : exactement le texte du duel fermé (taille, graisse, couleur, sans ombre), au téléphone aussi */
   /* fermeture en deux temps, à l'envers de l'ouverture : la case reprend sa hauteur (l'écran reste large et suit), puis
      l'écran se resserre à la place du champ (classe cf-narrow, posée à la fin du glissement). Le resserrement est une
      découpe (clip-path) de l'écran large, pas un changement de largeur : rien n'est recalculé, c'est plus fluide. */
@@ -3811,6 +3814,17 @@ body.ios-gate-on{ overflow:hidden; }
   .cf-d .cat-close-bar{ width:5.5rem !important; }
   .cf-d .cat-close-bar::before{ width:3.8rem; height:3px; border-radius:1.5px; }
 }
+/* ---- 11.6, téléphone : la même barre sur le chat et le duel, fermés et ouverts (au milieu de la bande du bas) */
+@media (hover:none){
+  .cf-d :is(.chat-card, .duel-card):is(.collapsed, .peek) > .cat-close-bar{ display:grid; touch-action:none; place-items:center; position:absolute; z-index:3;
+    left:50%; bottom:0; transform:translateX(-50%); height:1.6rem; padding:0; margin:0;
+    appearance:none; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .cf-d .fullpage > .cat-close-bar{ display:none !important; }
+}
+/* ---- 11.6 : le faisan doré, à droite du titre gravé « Duel de faisans », dans le même traitement (couleur du titre,
+   lèvre claire dessous) ; image dessinée au chargement à partir du faisan du jeu (cfDuelPicto) */
+.cf-d .duel-card .chat-led::after{ padding-right:calc(var(--duel-picto-w, 0px) + 7px); background-image:var(--duel-picto, none); background-repeat:no-repeat;
+  background-position:right var(--duel-picto-y, 50%); background-size:var(--duel-picto-w, 0px) auto; }
 </style>
 
 <div class="wrap">
@@ -9333,6 +9347,7 @@ function buildChatCard(cat, catIdx){
         ? `<button type="button" data-a="share"><span class="ic">+</span>Inviter</button><button type="button" data-a="share"><span class="ic">−</span>Retirer</button><button type="button" class="danger" data-a="del"><span class="ic">×</span>Supprimer cet écran</button>`
         : `<div class="chat-menu-note">Écran ${escapeAttr(deName(personName(listOwnerUid(cat.id), cat.id)))}, en partage.</div>`}</div>
     </div></div>`;
+  card.appendChild(closeBar(card));   // 11.6 : au doigt, la barre du bas, comme les listes
   const log = card.querySelector(".chat-log"), field = card.querySelector(".chat-field"),
         inRow = card.querySelector(".chat-in");
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; };
@@ -9795,6 +9810,38 @@ function drawPheasant(c, x, y, dir, o = {}){
   c.fillStyle = "#1A1A1A"; c.beginPath(); c.arc(16.5, -36, 0.6, 0, 7); c.fill();
   c.restore();
 }
+
+// ---- 11.6 : le faisan doré du jeu (drawPheasant, kind 1) en picto gravé, comme le titre « Duel de faisans » : silhouette
+// à la couleur du titre (un léger relief garde les détails), lèvre claire 1 px dessous (comme son text-shadow).
+// Dessiné en 3× pour rester net, posé en image de fond du titre (--duel-picto). Redessiné si le mode clair/sombre change.
+function cfDuelPicto(){
+  try{
+    const probe = document.querySelector(".duel-card .chat-led");
+    let ink = "rgb(140,136,130)", lip = "#FFFFFF";
+    if(probe){ const st = getComputedStyle(probe, "::after"); ink = st.color || ink; const m = /(rgba?\([^)]*\)|#[0-9a-f]{3,8})/i.exec(st.textShadow || ""); if(m) lip = m[1]; }
+    const S = 3, H = 16, k = H / 52, W = Math.ceil(76 * k);   // faisan : ~76 × 52 unités (queue comprise), ramené à 16 px de haut
+    const src = document.createElement("canvas"); src.width = W * S; src.height = (H + 1) * S;
+    const c = src.getContext("2d"); c.scale(S * k, S * k);
+    drawPheasant(c, 50, 50, 1, { kind:1 });
+    const img = c.getImageData(0, 0, src.width, src.height), d = img.data;
+    const t = document.createElement("canvas").getContext("2d"); t.fillStyle = ink; t.fillRect(0, 0, 1, 1);
+    const [ir, ig, ib] = t.getImageData(0, 0, 1, 1).data;
+    for(let i = 0; i < d.length; i += 4){ if(!d[i + 3]) continue;
+      const lum = (0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]) / 255, f = 0.82 + 0.3 * lum;   // relief discret
+      d[i] = Math.min(255, ir * f); d[i + 1] = Math.min(255, ig * f); d[i + 2] = Math.min(255, ib * f); }
+    c.setTransform(1, 0, 0, 1, 0, 0); c.putImageData(img, 0, 0);
+    const out = document.createElement("canvas"); out.width = src.width; out.height = src.height + S;
+    const o = out.getContext("2d");
+    const sil = document.createElement("canvas"); sil.width = src.width; sil.height = src.height;
+    const sc = sil.getContext("2d"); sc.drawImage(src, 0, 0); sc.globalCompositeOperation = "source-in"; sc.fillStyle = lip; sc.fillRect(0, 0, sil.width, sil.height);
+    o.drawImage(sil, 0, S); o.drawImage(src, 0, 0);   // la lèvre, 1 px plus bas, puis le faisan
+    const html = document.documentElement;
+    html.style.setProperty("--duel-picto", `url(${out.toDataURL("image/png")})`);
+    html.style.setProperty("--duel-picto-w", (out.width / S) + "px");
+  }catch(e){}
+}
+setTimeout(cfDuelPicto, 400);
+if(window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", ()=> setTimeout(cfDuelPicto, 50));
 
 // faisan de face (danse du vainqueur), pieds en (0, 0) ; wingL / wingR : 1 = levée, -1 = baissée
 function drawPheasantFront(c, x, y, o = {}){
@@ -10663,6 +10710,7 @@ function build(){
     <span class="chat-led" data-name="Duel de faisans" aria-hidden="true"></span><button type="button" class="cat-full scr-full"></button>
     </div>`;
   ROOT = card;
+  card.appendChild(closeBar(card));   // 11.6 : au doigt, la barre du bas, comme les listes (la carte du duel est gardée d'un rendu à l'autre : posée une fois)
   card.querySelector(".cat-fold").addEventListener("click", e => { e.stopPropagation(); if(CAT) toggleFold(CAT.id); });
   // 10.67 : à l'ouverture et à la fermeture, le jeu glisse de sa place à l'autre (pas de saut ni de zoom) :
   // l'écran se ferme sur les faisans, qui restent visibles dans la bande de l'écran fermé
@@ -11241,19 +11289,7 @@ function render(){
     if(orderBtn) card.appendChild(orderBtn);
     // 10.68 : au doigt, la barre du bas ouvre ou referme la case (tap : bascule ; glissé : vers le bas
     // ouvre, vers le haut referme) ; elle ne prend le doigt que sur elle-même, le défilement reste libre
-    const bar = document.createElement("button");
-    bar.type = "button"; bar.className = "cat-close-bar"; bar.setAttribute("aria-label", "Ouvrir ou refermer");
-    let barY = null;
-    const barSet = open=>{ if(open === card.classList.contains("peek")) return; peekCard(card, open); };
-    bar.addEventListener("pointerdown", e=>{ barY = e.clientY; try{ bar.setPointerCapture(e.pointerId); }catch(err){} });
-    bar.addEventListener("pointerup", e=>{
-      if(barY == null) return;
-      const dy = e.clientY - barY; barY = null;
-      barSet(dy > 12 ? true : dy < -12 ? false : !card.classList.contains("peek"));
-    });
-    bar.addEventListener("pointercancel", ()=>{ barY = null; });
-    bar.addEventListener("click", e=>{ e.stopPropagation(); e.preventDefault(); if(e.detail === 0) barSet(!card.classList.contains("peek")); });   // clavier
-    card.appendChild(bar);
+    card.appendChild(closeBar(card));
     built.push({ node: card, cat });
   });
   placeCards(built, prevCards);   // 11.0
@@ -11308,6 +11344,24 @@ function placeCards(built, prev){
   want.forEach(n => { if(n === cur) cur = cur.nextSibling; else categoriesEl.insertBefore(n, cur); });
 }
 
+// 10.68 : au doigt, la barre du bas ouvre ou referme la case (tap : bascule ; glissé : vers le bas
+// ouvre, vers le haut referme) ; elle ne prend le doigt que sur elle-même, le défilement reste libre.
+// 11.6 : en fonction, pour la poser aussi sur le chat et le duel (affichée au doigt seulement, par le CSS)
+function closeBar(card){
+  const bar = document.createElement("button");
+  bar.type = "button"; bar.className = "cat-close-bar"; bar.setAttribute("aria-label", "Ouvrir ou refermer");
+  let barY = null;
+  const barSet = open=>{ if(open === card.classList.contains("peek")) return; peekCard(card, open); };
+  bar.addEventListener("pointerdown", e=>{ e.stopPropagation(); barY = e.clientY; try{ bar.setPointerCapture(e.pointerId); }catch(err){} });
+  bar.addEventListener("pointerup", e=>{
+    if(barY == null) return;
+    const dy = e.clientY - barY; barY = null;
+    barSet(dy > 12 ? true : dy < -12 ? false : !card.classList.contains("peek"));
+  });
+  bar.addEventListener("pointercancel", ()=>{ barY = null; });
+  bar.addEventListener("click", e=>{ e.stopPropagation(); e.preventDefault(); if(e.detail === 0) barSet(!card.classList.contains("peek")); });   // clavier
+  return bar;
+}
 // 10.66 : rouvrir une case fermée (elle reste à sa place ; essai abandonné : la faire remonter)
 function unfoldCat(catId){ setFolded(catId, false); }
 let lastPointerType = "mouse", peekHold = 0, peekHoldId = null, peekId = null;   // peekHold : juste après un clic sur la punaise, CETTE case ne s'entrouvre pas tout de suite (10.67 : les autres, si)
