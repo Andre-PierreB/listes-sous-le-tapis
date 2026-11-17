@@ -3839,6 +3839,21 @@ body.ios-gate-on{ overflow:hidden; }
 /* ordinateur, chat et duel fermés : pas de « … » (la case s'entrouvre dès qu'on l'approche, et « … » avec elle) : l'écran
    garde la largeur des champs des listes avec une ou deux initiales ; au-delà, cfFootRoom le raccourcit juste assez */
 @media (min-width:721px){ .cf-d.cf-compact :is(.chat-card, .duel-card).collapsed:not(.gliding):not(.cf-narrow) .chat-more{ display:none; } }
+/* ---- banc 11.7 (?champ=a / ?champ=b), ordinateur, cases fermées : place du champ par rapport à la ligne du bas
+   (poignée, punaise, initiales — elle ne bouge pas). Classes ch-a / ch-b sur <html>, posées par le banc seulement.
+   A : le champ au-dessus de la ligne du bas, comme au téléphone (case de 86 px).
+   B : le champ centré sur la ligne du bas, plus fin (22 px) (case de 72 px). */
+@media (min-width:721px){
+  .ch-a.cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:21px; }
+  .ch-a.cf-d.cf-compact .category.courses.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:19px; }
+  .ch-a.cf-d.cf-compact :is(.chat-card, .duel-card).collapsed{ height:86px; min-height:86px; }
+  .ch-a.cf-d.cf-compact .collapsed > :is(.chat-box, .duel-stage){ grid-template-rows:38px 48px; height:86px; }
+
+  .ch-b.cf-d .category.collapsed .cat-quick{ padding-top:0.12rem; padding-bottom:0.12rem; }
+  .ch-b.cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ position:relative; top:9px; }
+  .ch-b.cf-d.cf-compact .category.courses.collapsed .cat-quick-wrap{ top:5px; }   /* le titre du mémo est 2 px plus bas */
+  .ch-b.cf-d.cf-compact .collapsed :is(.chat-hole, .duel-screen){ height:22px; position:relative; top:9px; }
+}
 </style>
 
 <div class="wrap">
@@ -14238,6 +14253,28 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
   [300, 1500, 4000, 10000].forEach(t => setTimeout(measure, t));
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ done = false; measure(); });
   window.addEventListener("resize", ()=>{ done = false; measure(); });
+})();
+// ---- banc 11.7 (essai.html?demo&champ=a|b) : place du champ des cases fermées sur ordinateur, avec interrupteur
+if(ESSAI && /[?&]champ\b/.test(location.search)) (()=>{
+  const q = new URLSearchParams(location.search), html = document.documentElement;
+  let v = /^[ab]$/.test(q.get("champ") || "") ? q.get("champ") : "0";
+  const box = document.createElement("div");
+  box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:17rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
+  document.body.appendChild(box);
+  ["click", "pointerdown"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
+  const row = "display:flex;gap:.4rem;align-items:center;margin:.25rem 0;cursor:pointer";
+  box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.4rem">Champ, cases fermées (ordi)</div>`
+    + [["0", "Actuel (11.6)"], ["a", "A · au-dessus de la ligne du bas"], ["b", "B · centré sur la ligne du bas"]]
+      .map(([k, l]) => `<label style="${row}"><input type="radio" name="ch" value="${k}"${k === v ? " checked" : ""}>${l}</label>`).join("")
+    + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
+  const apply = ()=>{ html.classList.toggle("ch-a", v === "a"); html.classList.toggle("ch-b", v === "b"); if(typeof cfFootRoom === "function") setTimeout(cfFootRoom, 50); };
+  box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
+  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "champ=" + v;
+  box.querySelector("[data-c]").addEventListener("click", async e=>{
+    try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
+    setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
+  });
+  apply();
 })();
 // 10.68 : vitrine (?demo) : quelques listes remplies, fermées et ouvertes, pour tester sur téléphone
 if(DEMO && !hasAnyList()) (()=>{
