@@ -3785,11 +3785,15 @@ body.ios-gate-on{ overflow:hidden; }
 @keyframes cfFade{ from{ opacity:0; } }
 /* banc ?cf : chat et duel sur un fond blanc d'office, sans ombre, tant qu'aucune couleur de personne n'est choisie */
 .cf-fond :is(.chat-card, .duel-card):not(.has-pcol):not(.fullpage){ background:var(--surface); border-radius:14px; }
-/* banc ?cf (11.6) : une seule hauteur maximale pour les listes et les mémos ouverts (--cf-hmax, 80 % de l'écran par
-   défaut) ; au-delà, les tâches défilent dans la case, comme les articles d'un mémo. Le chat et le duel gardent la leur. */
-.cf-hmax .categories > .category:not(.collapsed):not(.fullpage):not(.chat-card):not(.duel-card){ max-height:var(--cf-hmax, 80vh); }
-.cf-hmax .categories > .category.courses{ --courses-max:var(--cf-hmax, 80vh) !important; }
+/* banc ?cf (11.6) : UNE hauteur pour les listes et les mémos ouverts, survolés comme punaisés, qui est aussi leur hauteur
+   maximale (--cf-h, 34 rem par défaut) ; au-delà, les tâches défilent dans la case, comme les articles d'un mémo.
+   Avant (et en 11.5) : au survol, la hauteur du contenu ; punaisée, au moins la hauteur du jeu (406 px) ; pas de maximum
+   pour les listes. Le chat et le jeu gardent leur hauteur, plus petite, la même au survol et punaisés. */
+.cf-hmax .categories > .category:not(.collapsed):not(.fullpage):not(.chat-card):not(.duel-card){ height:var(--cf-h, 34rem); max-height:var(--cf-h, 34rem); min-height:0 !important; }
+.cf-hmax .categories > .category.courses{ --courses-max:var(--cf-h, 34rem) !important; }
 .cf-hmax .categories > .category:not(.courses):not(.collapsed):not(.fullpage):not(.chat-card):not(.duel-card) > ul.items{ flex:0 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:color-mix(in srgb, var(--ink) 18%, transparent) transparent; }
+/* écran du chat ouvert : à 10 px des bords de la case, comme celui du jeu (avant : collé aux bords, ce qui se voit sur le fond blanc) */
+.cf-d .chat-card:not(.collapsed):not(.fullpage) .chat-box{ padding-left:10px; padding-right:10px; box-sizing:border-box; }
 </style>
 
 <div class="wrap">
@@ -14095,7 +14099,7 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
 // Jamais sur la vraie appli (ESSAI). Ordinateur seulement pour l'instant.
 if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
   const q = new URLSearchParams(location.search), html = document.documentElement;
-  let v = /^[abcd]$/.test(q.get("cf") || "") ? q.get("cf") : "0", filet = q.get("filet") !== "0", pastille = q.get("pastille") !== "0", compact = q.get("compact") !== "0", w = Math.min(22, Math.max(8, parseInt(q.get("w"), 10) || 17)), fond = q.get("fond") !== "0", hmax = Math.min(95, Math.max(50, parseInt(q.get("h"), 10) || 80)), memo = Math.min(10, Math.max(2, parseInt(q.get("memo"), 10) || 5));
+  let v = /^[abcd]$/.test(q.get("cf") || "") ? q.get("cf") : "0", filet = q.get("filet") !== "0", pastille = q.get("pastille") !== "0", compact = q.get("compact") !== "0", w = Math.min(22, Math.max(8, parseInt(q.get("w"), 10) || 17)), fond = q.get("fond") !== "0", hmax = Math.min(46, Math.max(26, parseInt(q.get("hl"), 10) || 34)), memo = Math.min(10, Math.max(2, parseInt(q.get("memo"), 10) || 5));
   // où sont les cases à cocher ? Mesuré sur une vraie liste (fermée aussi : ses rangées gardent leur place),
   // car la place dépend de la police ; le champ et les écrans fermés s'alignent dessus
   const measure = ()=>{
@@ -14114,8 +14118,8 @@ if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
     html.classList.toggle("cf-pastille", pastille);
     html.classList.toggle("cf-compact", compact);
     html.classList.toggle("cf-fond", fond);
-    html.classList.add("cf-hmax"); html.style.setProperty("--cf-hmax", hmax + "vh");
-    const hl = box.querySelector("[data-hl]"); if(hl) hl.textContent = hmax + " % de l'écran";
+    html.classList.add("cf-hmax"); html.style.setProperty("--cf-h", hmax + "rem");
+    const hl = box.querySelector("[data-hl]"); if(hl) hl.textContent = hmax + " rem (" + Math.round(hmax * 16) + " px)";
     html.style.setProperty("--cf-w", w + "rem");
     html.style.setProperty("--cf-memo", memo + "%");
     const ml = box.querySelector("[data-ml]"); if(ml) ml.textContent = memo + " %";
@@ -14124,7 +14128,7 @@ if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
     box.querySelectorAll("[data-d]").forEach(n => { n.style.opacity = v === "d" ? "1" : ".4"; });
     window.dispatchEvent(new Event("resize"));
   };
-  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "cf=" + v + (filet ? "" : "&filet=0") + (pastille ? "" : "&pastille=0") + (fond ? "" : "&fond=0") + "&h=" + hmax + (v === "d" ? (compact ? "" : "&compact=0") + "&w=" + w + "&memo=" + memo : "");
+  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "cf=" + v + (filet ? "" : "&filet=0") + (pastille ? "" : "&pastille=0") + (fond ? "" : "&fond=0") + "&hl=" + hmax + (v === "d" ? (compact ? "" : "&compact=0") + "&w=" + w + "&memo=" + memo : "");
   const box = document.createElement("div");
   box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:17rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
   document.body.appendChild(box);
@@ -14138,7 +14142,7 @@ if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
     + `<label data-d style="display:block;margin:.25rem 0 0 1.2rem">Fond des mémos fermés : <span data-ml></span><input type="range" data-m min="2" max="10" step="1" value="${memo}" style="display:block;width:100%"></label>`
     + `<label style="${row};margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--line)"><input type="checkbox" data-f${filet ? " checked" : ""}>Filet du mémo fermé (A, C, actuel)</label>`
     + `<label style="${row}"><input type="checkbox" data-p${pastille ? " checked" : ""}>Pastille claire au survol d'« urgent » actif</label>`
-    + `<label style="display:block;margin:.4rem 0 .2rem">Hauteur max des listes et mémos : <span data-hl></span><input type="range" data-h min="50" max="95" step="5" value="${hmax}" style="display:block;width:100%"></label>`
+    + `<label style="display:block;margin:.4rem 0 .2rem">Hauteur des listes et mémos ouverts : <span data-hl></span><input type="range" data-h min="26" max="46" step="1" value="${hmax}" style="display:block;width:100%"></label>`
     + `<label style="${row}"><input type="checkbox" data-fd${fond ? " checked" : ""}>Fond blanc pour chat et duel</label>`
     + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
   box.querySelectorAll("input[type=radio]").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
