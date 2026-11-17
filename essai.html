@@ -3809,10 +3809,10 @@ body.ios-gate-on{ overflow:hidden; }
   .cf-d .category:not(.courses) .cat-quick:focus::placeholder{ opacity:.7; }
 }
 /* ---- 11.6, téléphone : la barre pour ouvrir et refermer, sur les cases fermées comme ouvertes : une seule ligne, plus
-   large et un peu plus fine que celle de la 11.5 (3,8 rem × 3 px, avant 2,4 rem × 4 px ; une double ligne essayée, écartée) */
+   large et plus fine que celle de la 11.5 (3,8 rem × 2 px, avant 2,4 rem × 4 px ; une double ligne essayée, écartée ; 3 px essayés) */
 @media (hover:none){
   .cf-d .cat-close-bar{ width:5.5rem !important; }
-  .cf-d .cat-close-bar::before{ width:3.8rem; height:3px; border-radius:1.5px; }
+  .cf-d .cat-close-bar::before{ width:3.8rem; height:2px; border-radius:1px; }
 }
 /* ---- 11.6, téléphone : la même barre sur le chat et le duel, fermés et ouverts (au milieu de la bande du bas) */
 @media (hover:none){
@@ -3821,10 +3821,14 @@ body.ios-gate-on{ overflow:hidden; }
     appearance:none; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .cf-d .fullpage > .cat-close-bar{ display:none !important; }
 }
-/* ---- 11.6 : le faisan doré, à droite du titre gravé « Duel de faisans », dans le même traitement (couleur du titre,
-   lèvre claire dessous) ; image dessinée au chargement à partir du faisan du jeu (cfDuelPicto) */
-.cf-d .duel-card .chat-led::after{ padding-right:calc(var(--duel-picto-w, 0px) + 7px); background-image:var(--duel-picto, none); background-repeat:no-repeat;
-  background-position:right var(--duel-picto-y, 50%); background-size:var(--duel-picto-w, 0px) auto; }
+/* ---- 11.6 : le faisan doré, à droite du titre gravé « Duel de faisans », dans le traitement du voyant éteint ; image
+   dessinée au chargement à partir du faisan du jeu (cfDuelPicto). La boîte du titre est agrandie de 5 px en haut et en bas
+   (marge négative : le texte ne bouge pas) pour que l'image, plus haute qu'une ligne, ne soit pas rognée. Voyant, titre
+   et faisan centrés sur une même ligne : celle des titres des listes (le titre n'en bouge pas) ; le voyant descend de 1 px. */
+.cf-d :is(.chat-card, .duel-card) .chat-led{ margin-top:1px; }
+.cf-d :is(.chat-card, .duel-card) .chat-led::after{ top:1px; }
+.cf-d .duel-card .chat-led::after{ padding:5px calc(var(--duel-picto-w, 0px) + 7px) 5px 0; margin-top:-5px; background-image:var(--duel-picto, none); background-repeat:no-repeat;
+  background-position:right 0 top var(--duel-picto-y, 0px); background-size:var(--duel-picto-w, 0px) var(--duel-picto-h, 0px); }
 </style>
 
 <div class="wrap">
@@ -9811,33 +9815,36 @@ function drawPheasant(c, x, y, dir, o = {}){
   c.restore();
 }
 
-// ---- 11.6 : le faisan doré du jeu (drawPheasant, kind 1) en picto gravé, comme le titre « Duel de faisans » : silhouette
-// à la couleur du titre (un léger relief garde les détails), lèvre claire 1 px dessous (comme son text-shadow).
-// Dessiné en 3× pour rester net, posé en image de fond du titre (--duel-picto). Redessiné si le mode clair/sombre change.
+// ---- 11.6 : le faisan doré du jeu (drawPheasant, kind 1, sa huppe soulignée pour qu'on le reconnaisse en petit) en
+// picto à droite du titre « Duel de faisans », dans le traitement du voyant éteint : même teinte pâle, creusé (ombre
+// intérieure en haut), lèvre claire 1 px dessous. Dessiné en 3× pour rester net, posé en image de fond du titre
+// (--duel-picto). Redessiné si le mode clair/sombre change.
 function cfDuelPicto(){
   try{
     const probe = document.querySelector(".duel-card .chat-led");
-    let ink = "rgb(140,136,130)", lip = "#FFFFFF";
-    if(probe){ const st = getComputedStyle(probe, "::after"); ink = st.color || ink; const m = /(rgba?\([^)]*\)|#[0-9a-f]{3,8})/i.exec(st.textShadow || ""); if(m) lip = m[1]; }
-    const S = 3, H = 16, k = H / 52, W = Math.ceil(76 * k);   // faisan : ~76 × 52 unités (queue comprise), ramené à 16 px de haut
-    const src = document.createElement("canvas"); src.width = W * S; src.height = (H + 1) * S;
-    const c = src.getContext("2d"); c.scale(S * k, S * k);
-    drawPheasant(c, 50, 50, 1, { kind:1 });
-    const img = c.getImageData(0, 0, src.width, src.height), d = img.data;
-    const t = document.createElement("canvas").getContext("2d"); t.fillStyle = ink; t.fillRect(0, 0, 1, 1);
-    const [ir, ig, ib] = t.getImageData(0, 0, 1, 1).data;
-    for(let i = 0; i < d.length; i += 4){ if(!d[i + 3]) continue;
-      const lum = (0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]) / 255, f = 0.82 + 0.3 * lum;   // relief discret
-      d[i] = Math.min(255, ir * f); d[i + 1] = Math.min(255, ig * f); d[i + 2] = Math.min(255, ib * f); }
-    c.setTransform(1, 0, 0, 1, 0, 0); c.putImageData(img, 0, 0);
-    const out = document.createElement("canvas"); out.width = src.width; out.height = src.height + S;
-    const o = out.getContext("2d");
-    const sil = document.createElement("canvas"); sil.width = src.width; sil.height = src.height;
-    const sc = sil.getContext("2d"); sc.drawImage(src, 0, 0); sc.globalCompositeOperation = "source-in"; sc.fillStyle = lip; sc.fillRect(0, 0, sil.width, sil.height);
-    o.drawImage(sil, 0, S); o.drawImage(src, 0, 0);   // la lèvre, 1 px plus bas, puis le faisan
+    let fill = "rgb(206,203,198)", lip = "#FFFFFF";
+    if(probe){ const st = getComputedStyle(probe); if(st.backgroundColor) fill = st.backgroundColor;
+      const sh = (st.boxShadow || "").split(/,(?![^(]*\))/).map(x => x.trim()).filter(x => !/inset/.test(x));
+      const m = sh.length && /(rgba?\([^)]*\)|#[0-9a-f]{3,8})/i.exec(sh[sh.length - 1]); if(m) lip = m[1]; }
+    const S = 3, H = 16, k = H / 58, W = Math.ceil(85 * k) + 1, w = W * S, h = (H + 2) * S;   // le faisan, huppe et queue comprises : ~85 × 58 unités
+    const mk = ()=>{ const cv = document.createElement("canvas"); cv.width = w; cv.height = h; return cv; };
+    // silhouette : le faisan doré, et sa huppe rabattue en arrière, un peu soulignée
+    const mask = mk(), m = mask.getContext("2d");
+    m.scale(S * k, S * k); drawPheasant(m, 57, 58, 1, { kind:1 });
+    m.translate(57, 58); m.scale(1.15, 1.15); m.fillStyle = "#000";
+    m.beginPath(); m.moveTo(17.5, -38.5); m.quadraticCurveTo(10, -48.5, -3, -45); m.quadraticCurveTo(7, -43.2, 11, -36.5); m.closePath(); m.fill();
+    const tint = (src, col)=>{ const cv = mk(), c = cv.getContext("2d"); c.drawImage(src, 0, 0); c.globalCompositeOperation = "source-in"; c.fillStyle = col; c.fillRect(0, 0, w, h); return cv; };
+    const out = mk(), o = out.getContext("2d");
+    o.drawImage(tint(mask, lip), 0, S);               // lèvre claire, 1 px plus bas
+    o.drawImage(tint(mask, fill), 0, 0);              // la teinte du voyant éteint
+    const sh = mk(), s = sh.getContext("2d");        // creux : ombre intérieure en haut (inset 0 1px 1px)
+    s.drawImage(tint(mask, "rgba(0,0,0,0.25)"), 0, 0);
+    s.globalCompositeOperation = "destination-out"; s.drawImage(mask, 0, Math.round(1.2 * S));
+    o.save(); o.filter = `blur(${S * 0.5}px)`; o.globalCompositeOperation = "source-atop"; o.drawImage(sh, 0, 0); o.restore();
     const html = document.documentElement;
     html.style.setProperty("--duel-picto", `url(${out.toDataURL("image/png")})`);
-    html.style.setProperty("--duel-picto-w", (out.width / S) + "px");
+    html.style.setProperty("--duel-picto-w", W + "px");
+    html.style.setProperty("--duel-picto-h", (H + 2) + "px");
   }catch(e){}
 }
 setTimeout(cfDuelPicto, 400);
