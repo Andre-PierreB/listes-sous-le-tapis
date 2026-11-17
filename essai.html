@@ -3805,12 +3805,11 @@ body.ios-gate-on{ overflow:hidden; }
   .cf-d .category:not(.courses) .cat-quick::placeholder{ opacity:0; }
   .cf-d .category:not(.courses) .cat-quick:focus::placeholder{ opacity:.7; }
 }
-/* ---- 11.6, téléphone : la barre pour ouvrir et refermer devient une double ligne, plus large et plus fine, sur les cases
-   fermées comme ouvertes */
+/* ---- 11.6, téléphone : la barre pour ouvrir et refermer, sur les cases fermées comme ouvertes : une seule ligne, plus
+   large et un peu plus fine que celle de la 11.5 (3,8 rem × 3 px, avant 2,4 rem × 4 px ; une double ligne essayée, écartée) */
 @media (hover:none){
   .cf-d .cat-close-bar{ width:5.5rem !important; }
-  .cf-d .cat-close-bar::before{ width:3.4rem; height:5px; border-radius:0; background:none; box-sizing:border-box;
-    border-top:1.5px solid var(--ink-faint); border-bottom:1.5px solid var(--ink-faint); }
+  .cf-d .cat-close-bar::before{ width:3.8rem; height:3px; border-radius:1.5px; }
 }
 </style>
 
