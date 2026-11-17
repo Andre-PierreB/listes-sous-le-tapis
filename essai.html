@@ -3797,6 +3797,13 @@ body.ios-gate-on{ overflow:hidden; }
 /* chat sur le fond blanc d'office : même mise en page qu'avec une couleur de personne (retrait de 0,6 rem comme le jeu, bande du bas pleine largeur) */
 .cf-fond .chat-card:not(.has-pcol):not(.fullpage) .chat-box{ padding-left:0.6rem; padding-right:0.6rem; }
 .cf-fond .chat-card:not(.has-pcol):not(.fullpage) .chat-foot{ margin-left:-0.6rem; margin-right:-0.6rem; }
+/* banc ?cf=d (11.6), liste punaisée, ordinateur : « Nouvelle tâche… » posée sur la même ligne que le titre (elle reposait
+   1 px plus haut, déjà en 11.5) et le crayon centré sur les capitales du titre (2,25 px trop haut) — mesuré avec les vraies
+   polices (Courier Prime, Public Sans) */
+@media (min-width:721px){
+  .cf-d .categories > .category:not(.collapsed):not(.peek):not(.courses) .cat-quick-wrap{ position:relative; top:1px; }
+  .cf-d .categories > .category:not(.collapsed):not(.peek):not(.courses) .cat-quick-pen{ top:calc(50% + 1.25px); }
+}
 </style>
 
 <div class="wrap">
