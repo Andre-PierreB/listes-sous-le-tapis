@@ -3693,8 +3693,8 @@ body.ios-gate-on{ overflow:hidden; }
 /* ---- banc ?cf (11.6) : cases fermées, trois pistes. Classes cf-a / cf-b / cf-c sur <html>, posées par le banc
    seulement ; ordinateur seulement. Commun : plus de texte d'invite au repos (le crayon seul), il revient à la saisie. */
 @media (min-width:721px){
-  :is(.cf-a, .cf-b, .cf-c, .cf-d) .cat-quick::placeholder{ opacity:0; }
-  :is(.cf-a, .cf-b, .cf-c, .cf-d) .cat-quick:focus::placeholder{ opacity:.7; }
+  :is(.cf-a, .cf-b, .cf-c) .cat-quick::placeholder, .cf-d :is(.collapsed, .peek) .cat-quick::placeholder{ opacity:0; }
+  :is(.cf-a, .cf-b, .cf-c) .cat-quick:focus::placeholder, .cf-d :is(.collapsed, .peek) .cat-quick:focus::placeholder{ opacity:.7; }
   /* A et C : la saisie est un filet qui file jusqu'au bout de la ligne */
   :is(.cf-a, .cf-c) .cat-quick-wrap{ max-width:none; }
   :is(.cf-a, .cf-c) .cat-quick{ border-bottom:1px solid var(--line); }
@@ -3723,13 +3723,14 @@ body.ios-gate-on{ overflow:hidden; }
   .cf-b .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }   /* B : le champ fait déjà la ligne */
   /* D : C + le champ de B sur la 2e ligne, collé au titre et aligné à gauche sur lui (après la bulle) ; largeur
      réglable (--cf-w). Même place fermée, entrouverte et ouverte. Le champ disparaît quand le + est ouvert. */
-  .cf-d .cat-head-right{ align-self:flex-start; }
-  .cf-d .cat-quick-wrap{ order:4; flex:0 0 calc(100% - var(--cf-ml, 3.17rem)); max-width:none; z-index:3; margin-left:var(--cf-ml, 3.17rem); }   /* toujours à la même place, bulle ou pas : le bord gauche du champ sur celui des cases à cocher, mesuré par le banc (--cf-ml depuis le titre, --cf-x depuis le bord de la case) : la place des cases dépend de la police */
+  .cf-d :is(.collapsed, .peek) .cat-head-right{ align-self:flex-start; }
+  .cf-d :is(.collapsed, .peek) .cat-quick-wrap{ order:4; flex:0 0 calc(100% - var(--cf-ml, 3.17rem)); max-width:none; z-index:3; margin-left:var(--cf-ml, 3.17rem); }   /* toujours à la même place, bulle ou pas : le bord gauche du champ sur celui des cases à cocher, mesuré par le banc (--cf-ml depuis le titre, --cf-x depuis le bord de la case) : la place des cases dépend de la police */
   .cf-d .category.courses.collapsed{ --memo-grey:color-mix(in srgb, var(--ink) var(--cf-memo, 5%), var(--surface)); }   /* fond du mémo fermé un peu plus marqué (avant 2 %) */
-  .cf-d .cat-quick{ flex:0 0 auto; width:min(var(--cf-w, 17rem), calc(100% + 40px)); border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb, var(--ink) 2.5%, var(--surface)); padding:0.28rem 0.5rem 0.28rem 1.7rem; }
-  .cf-d .cat-quick-pen{ left:0.55rem; }
-  .cf-d .cat-quick:focus{ border:1px solid var(--cat-color, var(--accent)); }
+  .cf-d :is(.collapsed, .peek) .cat-quick{ flex:0 0 auto; width:min(var(--cf-w, 17rem), calc(100% + 40px)); border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb, var(--ink) 2.5%, var(--surface)); padding:0.28rem 0.5rem 0.28rem 1.7rem; }
+  .cf-d :is(.collapsed, .peek) .cat-quick-pen{ left:0.55rem; }
+  .cf-d :is(.collapsed, .peek) .cat-quick:focus{ border:1px solid var(--cat-color, var(--accent)); }
   .cf-d .category:has(.add-title) .cat-quick-wrap{ display:none; }
+  /* D, liste punaisée : la saisie rapide redevient celle de la 11.5 (à côté du titre, « Nouvelle tâche… », filet en pointillés au survol) ; le champ marqué sous le titre ne vaut que fermée ou entrouverte */
   .cf-d .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }
   .cf-d .category.collapsed:not(.chat-card):not(.duel-card) .cat-head{ margin-bottom:0; }   /* la case fermée garde --fold-h */
   .cf-d .category.courses.collapsed{ padding-bottom:calc(2.1rem - 2px); }
