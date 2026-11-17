@@ -3759,38 +3759,37 @@ body.ios-gate-on{ overflow:hidden; }
   .cf-d.cf-compact .duel-card.collapsed .duel-win{ background:color-mix(in srgb, var(--ink) 5%, var(--bg)); }
   .cf-d.cf-compact .duel-card.collapsed .duel-cv{ opacity:0; }
   .cf-d.cf-compact .duel-card.collapsed .d-mini{ inset:2px; display:flex; align-items:center; justify-content:center; }
-  .cf-d.cf-compact .duel-card.collapsed .d-mini{ justify-content:flex-start; }
-  /* chat et duel fermés : même texte (police, taille, couleur), même place (à gauche, même retrait) */
-  .cf-d.cf-compact .duel-card.collapsed .d-mini-t{ background:none; padding:0 0.7rem; text-align:left; font:14.4px/1.3 'Courier Prime', 'Courier New', Courier, monospace; color:var(--ink-soft); }
+  .cf-d.cf-compact .duel-card.collapsed .d-mini{ justify-content:flex-end; }
+  /* chat et duel fermés : même texte (police, taille, couleur), même place (à droite, même retrait) */
+  .cf-d.cf-compact .duel-card.collapsed .d-mini-t{ background:none; padding:0 0.7rem; text-align:right; font:14.4px/1.3 'Courier Prime', 'Courier New', Courier, monospace; color:var(--ink-soft); }
   .cf-d.cf-compact .chat-card.collapsed .chat-screen{ padding:0 0.7rem; }
-  .cf-d.cf-compact .chat-card.collapsed .chat-l{ text-align:left; padding:0; margin:0; color:var(--ink-soft); line-height:1.3; }
+  .cf-d.cf-compact .chat-card.collapsed .chat-l{ text-align:right; padding:0; margin:0; color:var(--ink-soft); line-height:1.3; }
   /* fermeture en deux temps, à l'envers de l'ouverture : la case reprend sa hauteur (l'écran reste large et suit), puis
      l'écran se resserre à la place du champ (classe cf-narrow, posée à la fin du glissement). Le resserrement est une
      découpe (clip-path) de l'écran large, pas un changement de largeur : rien n'est recalculé, c'est plus fluide. */
   .cf-d.cf-compact .collapsed:is(.gliding, .cf-narrow) > :is(.chat-box, .duel-stage){ height:100%; grid-template-rows:38px minmax(0, 1fr); }
   .cf-d.cf-compact .collapsed:is(.gliding, .cf-narrow) :is(.chat-hole, .duel-screen){ margin:0 0 7px; width:100%; max-width:none; height:auto; align-self:stretch; }
   .cf-d.cf-compact .collapsed.gliding .chat-foot > *{ opacity:0; }
-  .cf-d.cf-compact .chat-card.collapsed:is(.gliding, .cf-narrow) .chat-screen, .cf-d.cf-compact .duel-card.collapsed:is(.gliding, .cf-narrow) .d-mini-t{ padding-left:calc(var(--cf-x, 73.7px) + 0.7rem); }   /* le texte est déjà à sa place finale : la découpe ne le coupe pas */
-  .cf-d.cf-compact .collapsed.cf-narrow :is(.chat-hole, .duel-screen){ animation:cfNarrow .3s cubic-bezier(.33,0,.2,1) forwards; }
-  .cf-d.cf-compact .collapsed.cf-narrow .chat-foot > *{ animation:cfFade .3s ease backwards; }
+  /* pendant la fermeture, le texte est déjà à sa place finale (même bord gauche, même largeur que dans l'écran étroit) */
+  .cf-d.cf-compact .duel-card.collapsed:is(.gliding, .cf-narrow) .d-mini{ left:calc(var(--cf-x, 73.7px) + 2px); right:auto; width:calc(min(var(--cf-w, 17rem), 100% - var(--cf-x, 73.7px) - 5.4rem) - 4px); }
+  .cf-d.cf-compact .chat-card.collapsed:is(.gliding, .cf-narrow) .chat-log{ margin-left:var(--cf-x, 73.7px); width:calc(min(var(--cf-w, 17rem), 100% + 1.4rem + 4px - var(--cf-x, 73.7px) - 5.4rem) - 1.4rem - 4px); align-self:flex-start; }
+  .cf-d.cf-compact .collapsed.cf-narrow .chat-foot > *{ animation:cfFade .4s ease .15s backwards; }   /* la découpe elle-même est jouée par le banc, sur des mesures réelles */
   /* à l'essai : ouverture en deux temps. D'abord l'écran reprend sa largeur (0,24 s, la case ne bouge pas : glideHeight
      attend), puis la case prend sa hauteur. Comme à la fermeture : une découpe de l'écran ouvert, qui s'élargit. */
-  .cf-d.cf-compact .chat-card.peek .chat-hole, .cf-d.cf-compact .duel-card.peek .duel-screen{ animation:cfWiden .42s cubic-bezier(.33,0,.2,1) backwards; }
-  .cf-d.cf-compact .chat-card{ --cf-sx:0px; } .cf-d.cf-compact .duel-card{ --cf-sx:10px; }   /* où commence l'écran ouvert dans la case */
   /* filet du mémo fermé : avec ou sans */
   .cf-sans-filet .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }
 }
 /* banc ?cf : « urgent » actif, au survol : la petite pastille claire d'avant la 11.3 revient derrière le triangle
    (case urgente et listes), pour qu'on voie qu'il réagit ; le triangle garde son mauve, vidé et plus petit */
 .cf-pastille .urgent-btn.active:not(.auto):hover{ background:var(--surface-2); }
-@keyframes cfWiden{
-  from{ clip-path:inset(0 calc(100% - var(--cf-x, 73.7px) + var(--cf-sx, 0px) - var(--cf-w, 17rem)) calc(100% - 27px) calc(var(--cf-x, 73.7px) - var(--cf-sx, 0px)) round 8px); translate:0 4px; }
-  57%{ clip-path:inset(0 0 calc(100% - 27px) 0 round 8px); translate:0 4px; }
-  to{ clip-path:inset(0 0 0 0 round 18px); translate:0 0; } }
-@keyframes cfNarrow{ to{ clip-path:inset(0 calc(100% - var(--cf-x, 73.7px) - var(--cf-w, 17rem)) 0 var(--cf-x, 73.7px) round 8px); } }
 @keyframes cfFade{ from{ opacity:0; } }
 /* banc ?cf : chat et duel sur un fond blanc d'office, sans ombre, tant qu'aucune couleur de personne n'est choisie */
 .cf-fond :is(.chat-card, .duel-card):not(.has-pcol):not(.fullpage){ background:var(--surface); border-radius:14px; }
+/* banc ?cf (11.6) : une seule hauteur maximale pour les listes et les mémos ouverts (--cf-hmax, 80 % de l'écran par
+   défaut) ; au-delà, les tâches défilent dans la case, comme les articles d'un mémo. Le chat et le duel gardent la leur. */
+.cf-hmax .categories > .category:not(.collapsed):not(.fullpage):not(.chat-card):not(.duel-card){ max-height:var(--cf-hmax, 80vh); }
+.cf-hmax .categories > .category.courses{ --courses-max:var(--cf-hmax, 80vh) !important; }
+.cf-hmax .categories > .category:not(.courses):not(.collapsed):not(.fullpage):not(.chat-card):not(.duel-card) > ul.items{ flex:0 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:color-mix(in srgb, var(--ink) 18%, transparent) transparent; }
 </style>
 
 <div class="wrap">
@@ -7514,7 +7513,12 @@ function handleListDragMove(x, y){
   const ls = d.lastSwap;
   if(ls && ls.card === best && Math.hypot(gx - ls.gx, gy - ls.gy) < 48) return;
   const idxBest = cards.indexOf(best), idxEl = cards.indexOf(d.el);
-  d.lastSwap = { card: best, gx, gy };
+  // 11.6 : ni retour à la place qu'on vient de quitter, quelle que soit la carte visée (l'emplacement oscillait
+  // entre deux cartes différentes quand une case basse est glissée à côté d'une haute : après chaque échange, l'autre
+  // carte devenait la plus proche), tant que le fantôme n'a pas vraiment bougé ; ni nouvel échange au moindre frémissement
+  if(ls && idxBest === ls.fromIdx && Math.hypot(gx - ls.gx, gy - ls.gy) < 72) return;
+  if(ls && Math.hypot(gx - ls.gx, gy - ls.gy) < 20) return;
+  d.lastSwap = { card: best, gx, gy, fromIdx: idxEl };
   moveDragSlot([categoriesEl], ()=>{
     best.parentElement.insertBefore(d.el, idxEl < idxBest ? best.nextSibling : best);
   });
@@ -11335,13 +11339,40 @@ function releasePin(pin){
 // 10.66 : la case glisse d'une hauteur à l'autre (douce, sans à-coup), son contenu apparaît en fondu
 const SOFT_EASE = "cubic-bezier(.33,0,.2,1)";   // 10.67 : départ en douceur (avant .25,.8,.25,1 : presque tout le mouvement dans les premiers instants, sec)
 const SOFT_CLOSE = "cubic-bezier(.45,0,.25,1)";   // 10.67 : fermeture plus douce, sans départ sec (lente au début et à la fin)
+// banc ?cf=d compact : l'écran du chat ou du duel s'élargit (ouverture) ou se resserre (fermeture) par une découpe
+// (clip-path) calculée sur ses vraies positions, avant et après : rien ne saute, ni le bord ni le texte
+function cfScreen(card){ return card.matches(".cf-d.cf-compact .chat-card, .cf-d.cf-compact .duel-card") ? card.querySelector(".chat-hole, .duel-screen") : null; }
+function cfInset(t, r, b, l, rad){ return `inset(${t.toFixed(1)}px ${r.toFixed(1)}px ${b.toFixed(1)}px ${l.toFixed(1)}px round ${rad}px)`; }
+function cfWiden(card, r0, dur){
+  const s = cfScreen(card); if(!s || !s.animate) return;
+  const r1 = s.getBoundingClientRect(), lag = 240, T = lag + Math.max(dur, 300);
+  const top = r0.top - r1.top, bot = r1.bottom - r0.bottom;
+  s.animate([
+    { clipPath:cfInset(top, r1.right - r0.right, bot, r0.left - r1.left, 8), easing:"cubic-bezier(.33,0,.2,1)" },
+    { clipPath:cfInset(top, 0, bot, 0, 8), offset:lag / T, easing:SOFT_EASE },
+    { clipPath:cfInset(0, 0, 0, 0, 18) } ], { duration:T });
+}
+function cfNarrow(card){
+  const s = cfScreen(card);
+  card.classList.add("cf-narrow");
+  if(!s || !s.animate){ card.classList.remove("cf-narrow"); return; }
+  const rw = s.getBoundingClientRect();
+  card.classList.remove("cf-narrow"); const rn = s.getBoundingClientRect(); card.classList.add("cf-narrow");   // la place finale, mesurée
+  const a = s.animate([{ clipPath:cfInset(0, 0, 0, 0, 8) },
+    { clipPath:cfInset(rn.top - rw.top, rw.right - rn.right, rw.bottom - rn.bottom, rn.left - rw.left, 8) }],
+    { duration:520, easing:SOFT_CLOSE, fill:"forwards" });
+  const end = ()=>{ card.classList.remove("cf-narrow"); a.cancel(); };
+  a.onfinish = end; a.oncancel = ()=> card.classList.remove("cf-narrow");
+}
 function softHeight(card, change, opening){
   const h0 = card.getBoundingClientRect().height;   // pendant une animation : la hauteur du moment
   if(card._soft){ card._soft.cancel(); card._soft = null; }
   keepRoomBelow();
   const pre = card._preGlide ? card._preGlide() : null;   // 10.67 : le duel note où est son jeu, pour le faire glisser sans saut
+  const cfS0 = opening && cfScreen(card), cfR0 = cfS0 && cfS0.getBoundingClientRect();   // banc ?cf=d : l'écran étroit, avant
   change();
   const dur = glideHeight(card, h0, opening);
+  if(cfR0) cfWiden(card, cfR0, dur);
   if(card._postGlide) card._postGlide(pre, dur, opening ? SOFT_EASE : SOFT_CLOSE);
 }
 // 10.67 : la case passe de la hauteur h0 à sa hauteur actuelle ; rend la durée (ms)
@@ -11360,7 +11391,7 @@ function glideHeight(card, h0, opening){
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
   const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); if(card.classList.contains("courses")) placeCoursesScroll(card);
-    if(!opening && card.matches(".cf-d.cf-compact .chat-card.collapsed, .cf-d.cf-compact .duel-card.collapsed")){ card.classList.add("cf-narrow"); setTimeout(()=> card.classList.remove("cf-narrow"), 300); } } };
+    if(!opening && card.matches(".cf-d.cf-compact .chat-card.collapsed, .cf-d.cf-compact .duel-card.collapsed")){ cfNarrow(card); } } };
   a.onfinish = done; a.oncancel = done;
   return dur;
 }
@@ -14064,7 +14095,7 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
 // Jamais sur la vraie appli (ESSAI). Ordinateur seulement pour l'instant.
 if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
   const q = new URLSearchParams(location.search), html = document.documentElement;
-  let v = /^[abcd]$/.test(q.get("cf") || "") ? q.get("cf") : "0", filet = q.get("filet") !== "0", pastille = q.get("pastille") !== "0", compact = q.get("compact") !== "0", w = Math.min(22, Math.max(8, parseInt(q.get("w"), 10) || 17)), fond = q.get("fond") !== "0", memo = Math.min(10, Math.max(2, parseInt(q.get("memo"), 10) || 5));
+  let v = /^[abcd]$/.test(q.get("cf") || "") ? q.get("cf") : "0", filet = q.get("filet") !== "0", pastille = q.get("pastille") !== "0", compact = q.get("compact") !== "0", w = Math.min(22, Math.max(8, parseInt(q.get("w"), 10) || 17)), fond = q.get("fond") !== "0", hmax = Math.min(95, Math.max(50, parseInt(q.get("h"), 10) || 80)), memo = Math.min(10, Math.max(2, parseInt(q.get("memo"), 10) || 5));
   // où sont les cases à cocher ? Mesuré sur une vraie liste (fermée aussi : ses rangées gardent leur place),
   // car la place dépend de la police ; le champ et les écrans fermés s'alignent dessus
   const measure = ()=>{
@@ -14083,6 +14114,8 @@ if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
     html.classList.toggle("cf-pastille", pastille);
     html.classList.toggle("cf-compact", compact);
     html.classList.toggle("cf-fond", fond);
+    html.classList.add("cf-hmax"); html.style.setProperty("--cf-hmax", hmax + "vh");
+    const hl = box.querySelector("[data-hl]"); if(hl) hl.textContent = hmax + " % de l'écran";
     html.style.setProperty("--cf-w", w + "rem");
     html.style.setProperty("--cf-memo", memo + "%");
     const ml = box.querySelector("[data-ml]"); if(ml) ml.textContent = memo + " %";
@@ -14091,7 +14124,7 @@ if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
     box.querySelectorAll("[data-d]").forEach(n => { n.style.opacity = v === "d" ? "1" : ".4"; });
     window.dispatchEvent(new Event("resize"));
   };
-  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "cf=" + v + (filet ? "" : "&filet=0") + (pastille ? "" : "&pastille=0") + (fond ? "" : "&fond=0") + (v === "d" ? (compact ? "" : "&compact=0") + "&w=" + w + "&memo=" + memo : "");
+  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "cf=" + v + (filet ? "" : "&filet=0") + (pastille ? "" : "&pastille=0") + (fond ? "" : "&fond=0") + "&h=" + hmax + (v === "d" ? (compact ? "" : "&compact=0") + "&w=" + w + "&memo=" + memo : "");
   const box = document.createElement("div");
   box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:17rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
   document.body.appendChild(box);
@@ -14105,6 +14138,7 @@ if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
     + `<label data-d style="display:block;margin:.25rem 0 0 1.2rem">Fond des mémos fermés : <span data-ml></span><input type="range" data-m min="2" max="10" step="1" value="${memo}" style="display:block;width:100%"></label>`
     + `<label style="${row};margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--line)"><input type="checkbox" data-f${filet ? " checked" : ""}>Filet du mémo fermé (A, C, actuel)</label>`
     + `<label style="${row}"><input type="checkbox" data-p${pastille ? " checked" : ""}>Pastille claire au survol d'« urgent » actif</label>`
+    + `<label style="display:block;margin:.4rem 0 .2rem">Hauteur max des listes et mémos : <span data-hl></span><input type="range" data-h min="50" max="95" step="5" value="${hmax}" style="display:block;width:100%"></label>`
     + `<label style="${row}"><input type="checkbox" data-fd${fond ? " checked" : ""}>Fond blanc pour chat et duel</label>`
     + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
   box.querySelectorAll("input[type=radio]").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
@@ -14113,6 +14147,7 @@ if(ESSAI && /[?&]cf\b/.test(location.search)) (()=>{
   box.querySelector("[data-w]").addEventListener("input", e => { w = +e.target.value; apply(); });
   box.querySelector("[data-m]").addEventListener("input", e => { memo = +e.target.value; apply(); });
   box.querySelector("[data-p]").addEventListener("change", e => { pastille = e.target.checked; apply(); });
+  box.querySelector("[data-h]").addEventListener("input", e => { hmax = +e.target.value; apply(); });
   box.querySelector("[data-fd]").addEventListener("change", e => { fond = e.target.checked; apply(); });
   box.querySelector("[data-c]").addEventListener("click", async e=>{
     try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
