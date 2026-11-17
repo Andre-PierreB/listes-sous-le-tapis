@@ -3,6 +3,13 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.7 : ordinateur, cases fermées : champ (et écran du chat et du duel fermés) centré sur la ligne du bas, à 14 px
+    du bas comme la poignée et la punaise, plus fin (22 px) ; cases toujours à 72 px (variante B choisie au banc le
+    17/11, parmi l'actuel, A et B). Chat et duel fermés : l'écran s'atténue au repos (66 %) comme ouvert, net au
+    survol, en écrivant ou jouant, et quand un message ou un coup attend (ordi et téléphone). Bande du bas du chat
+    et du duel resserrée ; ordi fermé : « … » masqué, l'écran garde la largeur des champs avec une ou deux
+    initiales, et cfFootRoom le raccourcit juste assez au-delà (bug 11.6 : « … » passait sous l'écran avec des
+    initiales doubles).
   - 11.6 : cases fermées compactes, ordinateur et téléphone (choisies au banc les 16-17/11, piste « D » parmi A, B,
     C). Fermée : bulle du nombre à gauche du titre, saisie rapide en champ marqué sous le titre (crayon seul, invite à
     la saisie), bord gauche sur la colonne des cases à cocher (mesurée au rendu : --cf-ml, --cf-x, --cf-sw) ; 72 px sur

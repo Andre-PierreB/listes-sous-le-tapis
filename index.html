@@ -20,7 +20,7 @@
   // ouvertes (voir le CSS « 11.6 », ordinateur seulement) ; posées ici, avant tout rendu, pour qu'aucune mise en page ne saute
   document.documentElement.classList.add("cf-d", "cf-compact", "cf-fond", "cf-pastille", "cf-hmax");
 </script>
-<!-- Sous le tapis — version AUTONOME 11.6 -->
+<!-- Sous le tapis — version AUTONOME 11.7 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3693,8 +3693,8 @@ body.ios-gate-on{ overflow:hidden; }
 .ib-btns{ display:inline-flex; gap:0.4rem; }
 
 
-/* ---- 11.6 : cases fermées compactes et cases ouvertes à hauteur commune — ORDINATEUR SEULEMENT (le téléphone reste
-   comme en 11.5, à traiter ensuite sur le banc d'essai). Choisi les 16-17/11/2026 (piste « D », parmi A, B, C).
+/* ---- 11.6 : cases fermées compactes (ordinateur et téléphone) et cases ouvertes à hauteur commune (ordinateur).
+   Choisi les 16-17/11/2026 (piste « D », parmi A, B, C).
    Les classes cf-d, cf-compact, cf-fond, cf-pastille et cf-hmax sont posées sur <html> dès l'ouverture (script en tête
    de page) ; elles gardent leur nom d'essai pour que les règles ci-dessous gardent exactement le poids essayé.
    Fermée ou entrouverte : bulle du nombre à gauche du titre ; saisie rapide en champ marqué sous le titre, bord gauche
@@ -3829,6 +3829,28 @@ body.ios-gate-on{ overflow:hidden; }
 .cf-d :is(.chat-card, .duel-card) .chat-led::after{ top:1px; }
 .cf-d .duel-card .chat-led::after{ padding:5px calc(var(--duel-picto-w, 0px) + 7px) 5px 0; margin-top:-5px; background-image:var(--duel-picto, none); background-repeat:no-repeat;
   background-position:right 0 top var(--duel-picto-y, 0px); background-size:var(--duel-picto-w, 0px) var(--duel-picto-h, 0px); }
+/* ---- 11.7 : bande du bas du chat et du duel un peu resserrée (ouverts comme fermés : rien ne saute à l'ouverture) —
+   « … », initiales et punaise plus proches, initiales moins espacées : avec deux initiales (« AP LJ »), « … » passait
+   sous l'écran du chat ou du duel fermé. La place réservée à droite de l'écran fermé est en plus mesurée au rendu
+   (cfFootRoom, --cf-foot par case) : l'écran s'arrête toujours avant « … », même avec trois initiales. */
+.cf-d .chat-foot, .cf-d .duel-card .duel-foot{ gap:0.25rem; padding-right:calc(0.55rem + 24px + 0.1rem); }
+.cf-d .chat-foot .chat-more{ padding:1px 3px 4px; }
+.cf-d .chat-foot .chat-who{ letter-spacing:0.02em; }
+/* ordinateur, chat et duel fermés : pas de « … » (la case s'entrouvre dès qu'on l'approche, et « … » avec elle) : l'écran
+   garde la largeur des champs des listes avec une ou deux initiales ; au-delà, cfFootRoom le raccourcit juste assez */
+@media (min-width:721px){ .cf-d.cf-compact :is(.chat-card, .duel-card).collapsed:not(.gliding):not(.cf-narrow) .chat-more{ display:none; } }
+/* 11.7 : ordinateur, cases fermées : le champ (et l'écran du chat et du duel fermés) centré sur la ligne du bas, à la hauteur
+   de la poignée et de la punaise (14 px du bas), plus fin (22 px) ; les cases gardent leurs 72 px. Choisi au banc le 17/11/2026. */
+@media (min-width:721px){
+  .cf-d .category.collapsed .cat-quick{ padding-top:0.12rem; padding-bottom:0.12rem; }
+  .cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ position:relative; top:9px; }
+  .cf-d.cf-compact .category.courses.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ top:7px; }
+  .cf-d.cf-compact .collapsed :is(.chat-hole, .duel-screen){ height:22px; position:relative; top:9px; }
+}
+/* 11.7 : chat et duel fermés : l'écran s'atténue au repos, comme ouverts ; net au survol, quand on écrit ou joue,
+   et quand un message ou un coup de l'autre attend d'être vu */
+.cf-d .collapsed:is(.chat-card, .duel-card) :is(.chat-hole, .duel-screen){ opacity:calc(1 - 0.34); transition:opacity .35s ease; }
+.cf-d .collapsed:is(.chat-card, .duel-card):is(:hover, :focus-within, .chat-open, .unread, .duel-new, .duel-live, .duel-touch) :is(.chat-hole, .duel-screen){ opacity:1; }
 </style>
 
 <div class="wrap">
@@ -3869,7 +3891,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.6</span>
+    <span class="version-tag">v11.7</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -11301,6 +11323,7 @@ function render(){
   });
   placeCards(built, prevCards);   // 11.0
   wireFolded();   // 10.66
+  cfFootRoom();   // 11.7
   refocusQuickCat = null;
   refocusCoursesCat = null;
   fitCoursesCards(coursesScroll);
@@ -11351,6 +11374,17 @@ function placeCards(built, prev){
   want.forEach(n => { if(n === cur) cur = cur.nextSibling; else categoriesEl.insertBefore(n, cur); });
 }
 
+// 11.7 : chat et duel fermés : l'écran s'arrête avant « … » de la bande du bas, quelle que soit la largeur des initiales
+// (--cf-foot propre à chaque case : du bord droit de la case au début de « … » ou, sans lui, des initiales, plus 6 px d'air). Toutes les mesures
+// d'abord, puis toutes les écritures (pas d'alternance : une seule mise en page).
+function cfFootRoom(){
+  const wide = !(window.matchMedia && matchMedia("(max-width:720px)").matches);   // au téléphone, la bande du bas passe sous l'écran : rien à réserver
+  const cards = Array.from(categoriesEl.querySelectorAll(":scope > .chat-card.collapsed, :scope > .duel-card.collapsed"));
+  const need = cards.map(card => { const m = wide && [card.querySelector(".chat-more"), card.querySelector(".chat-who")].find(e => e && e.getClientRects().length && e.getBoundingClientRect().width); if(!m) return null;
+    return Math.ceil(card.getBoundingClientRect().right - m.getBoundingClientRect().left + 6); });
+  cards.forEach((card, i) => { if(need[i] != null) card.style.setProperty("--cf-foot", need[i] + "px"); else card.style.removeProperty("--cf-foot"); });
+}
+window.addEventListener("resize", ()=>{ clearTimeout(cfFootRoom.t); cfFootRoom.t = setTimeout(cfFootRoom, 150); });
 // 10.68 : au doigt, la barre du bas ouvre ou referme la case (tap : bascule ; glissé : vers le bas
 // ouvre, vers le haut referme) ; elle ne prend le doigt que sur elle-même, le défilement reste libre.
 // 11.6 : en fonction, pour la poser aussi sur le chat et le duel (affichée au doigt seulement, par le CSS)
