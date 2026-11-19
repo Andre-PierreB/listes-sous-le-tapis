@@ -20,7 +20,7 @@
   // ouvertes (voir le CSS « 11.6 », ordinateur seulement) ; posées ici, avant tout rendu, pour qu'aucune mise en page ne saute
   document.documentElement.classList.add("cf-d", "cf-compact", "cf-fond", "cf-pastille", "cf-hmax");
 </script>
-<!-- Sous le tapis — version AUTONOME 11.10 -->
+<!-- Sous le tapis — version AUTONOME 11.9 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3905,7 +3905,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.10</span>
+    <span class="version-tag">v11.9</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -14485,13 +14485,11 @@ var listDebord = null;   // var : appelé par le rendu avant cette ligne
         c.appendChild(more);
       }
       more.textContent = "+" + d.n + " ↓";
-      if(PLUS_H){ more.style.right = "0.2rem"; more.style.bottom = "calc(0.3rem + 20px)"; }   // banc : au-dessus de la punaise
-      else more.style.right = `calc(2.3rem + ${d.chipsW ? d.chipsW + 6 : 0}px)`;
+      more.style.right = `calc(2.3rem + ${d.chipsW ? d.chipsW + 6 : 0}px)`;
       more.title = d.n + (d.n > 1 ? " tâches plus bas" : " tâche plus bas");
     }
   }
   const one = c => write(measure(c));
-  const PLUS_H = ESSAI && /[?&]plus=h\b/.test(location.search);   // banc 11.10 : « +n ↓ » au-dessus de la punaise
   listDebord = ()=>{
     const cards = [...categoriesEl.querySelectorAll(".category:not(.chat-card):not(.duel-card)")];   // listes et mémos, même signal
     cards.forEach(c=>{
