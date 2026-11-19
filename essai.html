@@ -9907,6 +9907,10 @@ function cfDuelPicto(){
     if(pv === "a"){
       m.translate(57, 58); m.scale(1.15, 1.15); m.fillStyle = "#000";
       m.beginPath(); m.moveTo(17.5, -38.5); m.quadraticCurveTo(10, -48.5, -3, -45); m.quadraticCurveTo(7, -43.2, 11, -36.5); m.closePath(); m.fill();
+    }else{
+      // 11.8 : pattes épaissies (en petit, celles du jeu disparaissaient)
+      m.save(); m.translate(57, 58); m.scale(1.15, 1.15); m.strokeStyle = "#000"; m.lineWidth = 3.4; m.lineCap = "round";
+      m.beginPath(); m.moveTo(-2, -11); m.lineTo(-3, -0.5); m.moveTo(4, -11); m.lineTo(5.5, -0.5); m.stroke(); m.restore();
     }
     const tint = (src, col)=>{ const cv = mk(), c = cv.getContext("2d"); c.drawImage(src, 0, 0); c.globalCompositeOperation = "source-in"; c.fillStyle = col; c.fillRect(0, 0, w, h); return cv; };
     const out = mk(), o = out.getContext("2d");
@@ -14418,7 +14422,7 @@ if(ESSAI && /[?&]champ\b/.test(location.search)) (()=>{
   apply();
 })();
 // ---- banc 11.8 (essai.html?demo&debord=a|b|c|ab…) : liste ouverte plus longue que sa case (ordinateur) : signaler
-// qu'il reste des tâches à découvrir en défilant. A : la barre des mémos (10.18), toujours visible. B : fondu en bas
+// qu'il reste des tâches à découvrir en défilant (mémos compris, demandé le 19/11 : même signal partout). A : la barre des mémos (10.18), toujours visible. B : fondu en bas
 // (et en haut une fois qu'on a défilé). C : « +n » au centre de la ligne du bas, cliquable (descend d'une page).
 // Les lettres se combinent. Seulement sur le banc et avec le réglage d'adresse.
 var listDebord = null;   // var : appelé par le rendu avant cette ligne
@@ -14431,9 +14435,9 @@ if(ESSAI && /[?&]debord\b/.test(location.search)) (()=>{
     .db-a .category.db-over:not(.courses) > ul.items::-webkit-scrollbar{ display:none; }
     .category:not(.courses) > .courses-scroll.list-scroll{ display:none; }
     .db-a .category.db-over:not(.courses):not(.collapsed) > .courses-scroll.list-scroll{ display:block; }
-    .db-b .category.db-bot:not(.courses) > ul.items{ -webkit-mask-image:linear-gradient(#000 calc(100% - 2.2rem), transparent); mask-image:linear-gradient(#000 calc(100% - 2.2rem), transparent); }
-    .db-b .category.db-top:not(.courses) > ul.items{ -webkit-mask-image:linear-gradient(transparent, #000 1.6rem); mask-image:linear-gradient(transparent, #000 1.6rem); }
-    .db-b .category.db-top.db-bot:not(.courses) > ul.items{ -webkit-mask-image:linear-gradient(transparent, #000 1.6rem, #000 calc(100% - 2.2rem), transparent); mask-image:linear-gradient(transparent, #000 1.6rem, #000 calc(100% - 2.2rem), transparent); }
+    .db-b .category.db-bot > ul.items{ -webkit-mask-image:linear-gradient(#000 calc(100% - 2.2rem), transparent); mask-image:linear-gradient(#000 calc(100% - 2.2rem), transparent); }
+    .db-b .category.db-top > ul.items{ -webkit-mask-image:linear-gradient(transparent, #000 1.6rem); mask-image:linear-gradient(transparent, #000 1.6rem); }
+    .db-b .category.db-top.db-bot > ul.items{ -webkit-mask-image:linear-gradient(transparent, #000 1.6rem, #000 calc(100% - 2.2rem), transparent); mask-image:linear-gradient(transparent, #000 1.6rem, #000 calc(100% - 2.2rem), transparent); }
     .db-more{ display:none; position:absolute; left:50%; bottom:6px; transform:translateX(-50%); z-index:3; appearance:none; border:0; background:none;
       padding:2px 8px; border-radius:8px; font:600 0.78rem/1.2 'Courier Prime', monospace; letter-spacing:.04em; color:var(--cat-color, var(--accent));
       opacity:.75; cursor:pointer; white-space:nowrap; }
@@ -14450,7 +14454,7 @@ if(ESSAI && /[?&]debord\b/.test(location.search)) (()=>{
     const top = over && ul.scrollTop > 2, bot = over && ul.scrollTop + ul.clientHeight < ul.scrollHeight - 2;
     c.classList.toggle("db-over", over); c.classList.toggle("db-top", top); c.classList.toggle("db-bot", bot);
     let bar = c.querySelector(":scope > .list-scroll");
-    if(v.includes("a") && over){
+    if(v.includes("a") && over && !c.classList.contains("courses")){   // un mémo a déjà la sienne (10.18)
       if(!bar){ bar = document.createElement("div"); bar.className = "courses-scroll list-scroll"; bar.setAttribute("aria-hidden", "true"); bar.innerHTML = "<span></span>"; c.appendChild(bar); }
       applyCoursesScroll(bar, measureCoursesScroll(ul));
     }
@@ -14468,7 +14472,7 @@ if(ESSAI && /[?&]debord\b/.test(location.search)) (()=>{
     }
   }
   listDebord = ()=>{
-    categoriesEl.querySelectorAll(".category:not(.courses):not(.chat-card):not(.duel-card)").forEach(c=>{
+    categoriesEl.querySelectorAll(".category:not(.chat-card):not(.duel-card)").forEach(c=>{   // listes et mémos, même signal
       const ul = c.querySelector(":scope > ul.items");
       if(!ul) return;
       if(!watched.has(ul)){ watched.add(ul); ul.addEventListener("scroll", ()=> one(c), { passive:true }); if(ro) ro.observe(ul); }
@@ -14498,12 +14502,14 @@ if(ESSAI && /[?&]debord\b/.test(location.search)) (()=>{
 if(ESSAI && /[?&]pm\b/.test(location.search)) (()=>{
   const q = new URLSearchParams(location.search), html = document.documentElement;
   let pv = ["a", "b", "c"].includes(q.get("picto")) ? q.get("picto") : "a";
-  let mv = ["a", "b", "c", "d"].includes(q.get("memo")) ? q.get("memo") : "a";
+  let mv = ["a", "b", "c", "d", "e", "f"].includes(q.get("memo")) ? q.get("memo") : "a";
   const st = document.createElement("style");
   st.textContent = `
     .pm-b.cf-d .category.courses.collapsed:not(.has-ptint){ --cf-memo:9%; }
     .pm-c.cf-d .category.courses.collapsed:not(.has-ptint){ --cf-memo:13%; }
-    .pm-d.cf-d .category.courses.collapsed:not(.has-ptint){ --memo-grey:color-mix(in srgb, #C8A24E 14%, var(--surface)); }`;
+    .pm-d.cf-d .category.courses.collapsed:not(.has-ptint){ --memo-grey:color-mix(in srgb, #C8A24E 14%, var(--surface)); }
+    .pm-e.cf-d .category.courses.collapsed:not(.has-ptint){ --memo-grey:color-mix(in srgb, #E2CE6E 15%, var(--surface)); }
+    .pm-f.cf-d .category.courses.collapsed:not(.has-ptint){ --memo-grey:color-mix(in srgb, #D2D08A 17%, var(--surface)); }`;
   document.head.appendChild(st);
   const box = document.createElement("div");
   box.style.cssText = "position:fixed;left:1rem;bottom:1rem;z-index:8000;width:17rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
@@ -14515,12 +14521,12 @@ if(ESSAI && /[?&]pm\b/.test(location.search)) (()=>{
   box.innerHTML = head("Picto du duel")
     + radios("pv", pv, [["a", "A · actuel (huppe soulignée)"], ["b", "B · sans la huppe ajoutée"], ["c", "C · faisan commun"]])
     + head("Mémo fermé")
-    + radios("mv", mv, [["a", "A · actuel (5 % d'encre)"], ["b", "B · gris plus marqué (9 %)"], ["c", "C · gris marqué (13 %)"], ["d", "D · papier crème"]])
+    + radios("mv", mv, [["a", "A · actuel (5 % d'encre)"], ["b", "B · gris plus marqué (9 %)"], ["c", "C · gris marqué (13 %)"], ["d", "D · papier crème"], ["e", "E · crème plus frais (citron pâle)"], ["f", "F · ivoire vert pâle"]])
     + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
   const link = ()=>{ const u = new URLSearchParams(location.search); u.set("picto", pv); u.set("memo", mv);
     return location.origin + location.pathname + "?" + u.toString().replace(/=(&|$)/g, "$1"); };
   const apply = ()=>{
-    ["b", "c", "d"].forEach(k => html.classList.toggle("pm-" + k, mv === k));
+    ["b", "c", "d", "e", "f"].forEach(k => html.classList.toggle("pm-" + k, mv === k));
     try{ history.replaceState(null, "", link().replace(location.origin, "")); }catch(e){}
     if(window.cfDuelPicto) window.cfDuelPicto(); else setTimeout(()=> window.cfDuelPicto && window.cfDuelPicto(), 600);
   };
