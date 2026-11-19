@@ -1210,6 +1210,16 @@ header{
     linear-gradient(var(--gloss-a, 115deg), transparent calc(var(--gloss-p, 18%) + 34%), color-mix(in srgb, var(--gloss) 60%, transparent) calc(var(--gloss-p, 18%) + 38%), transparent calc(var(--gloss-p, 18%) + 44%)),   /* 10.25 : second reflet, fin */   /* 10.23 : papier glacé — bande de lumière en biais */
     linear-gradient(160deg, var(--memo-a) 10%, var(--memo-b) 60%, var(--memo-c) 100%);   /* 10.25 : nacre légère */
 }
+/* 11.13 : mémo ouvert : rappel de l'ivoire du mémo fermé (11.8) en haut, qui fond vers le blanc sur la hauteur d'une
+   case fermée (72 px sur ordinateur, 94 px au téléphone) ; reflets gardés, nacre remplacée (variante E du banc, 19/11). */
+:root{ --memo-top-h:72px; }
+@media (hover:none){ :root{ --memo-top-h:94px; } }
+.cf-d .category.courses:not(.collapsed):not(.has-ptint){
+  background:
+    linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 9%), transparent calc(var(--gloss-p, 18%) + 26%)),
+    linear-gradient(var(--gloss-a, 115deg), transparent calc(var(--gloss-p, 18%) + 34%), color-mix(in srgb, var(--gloss) 60%, transparent) calc(var(--gloss-p, 18%) + 38%), transparent calc(var(--gloss-p, 18%) + 44%)),
+    linear-gradient(180deg, color-mix(in srgb, #D2D08A 17%, var(--surface)) 0, var(--surface) var(--memo-top-h));
+}
 /* 11.12 : la marge passe par-dessus les lignes du cahier, comme sur une vraie feuille (avant : dessinée dans le fond de
    la carte, sous les filets des articles). Un trait posé par fitCoursesCards, sous le fondu du bas, sans capter le doigt. */
 .memo-margin{ position:absolute; z-index:1; left:var(--margin-x); top:var(--rule-top, 0); bottom:0; width:1.5px; background:var(--margin-ink); pointer-events:none; }
@@ -14533,6 +14543,7 @@ var listDebord = null;   // var : appelé par le rendu avant cette ligne
         c.appendChild(more);
       }
       more.textContent = "+" + d.n + " ↓";
+      more.style.display = d.n ? "" : "none";   // 11.13 : rien de caché (seulement de l'air ou la saisie sous les articles) : pas de « +0 »
       more.style.right = `calc(2.3rem + ${d.chipsW ? d.chipsW + 6 : 0}px)`;
       more.title = d.n + (d.n > 1 ? " tâches plus bas" : " tâche plus bas");
     }
@@ -14548,39 +14559,6 @@ var listDebord = null;   // var : appelé par le rendu avant cette ligne
   };
   ["a", "b", "c"].forEach(k => html.classList.add("db-" + k));
   listDebord();
-})();
-// ---- banc 11.13 (essai.html?demo&grad=a|e|f) : mémo ouvert, rappel de l'ivoire du mémo fermé sur la hauteur d'une case
-// fermée (72 px ordi, 94 px téléphone), qui fond vers le blanc. a : rien (11.12) ; e : fondu sur toute cette hauteur ;
-// f : ivoire plein sur la bande du titre, puis fondu jusqu'au bas de cette hauteur.
-if(ESSAI && /[?&]grad\b/.test(location.search)) (()=>{
-  const q = new URLSearchParams(location.search), html = document.documentElement;
-  let v = ["a", "e", "f"].includes(q.get("grad")) ? q.get("grad") : "e";
-  const IV = "color-mix(in srgb, #D2D08A 17%, var(--surface))";
-  const GLOSS = `linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 9%), transparent calc(var(--gloss-p, 18%) + 26%)),
-    linear-gradient(var(--gloss-a, 115deg), transparent calc(var(--gloss-p, 18%) + 34%), color-mix(in srgb, var(--gloss) 60%, transparent) calc(var(--gloss-p, 18%) + 38%), transparent calc(var(--gloss-p, 18%) + 44%))`;
-  const st = document.createElement("style");
-  st.textContent = `
-    html{ --gr-h:72px; } @media (hover:none){ html{ --gr-h:94px; } }
-    .gr-e .category.courses:not(.collapsed):not(.has-ptint){ background:${GLOSS}, linear-gradient(180deg, ${IV} 0, var(--surface) var(--gr-h)); }
-    .gr-f .category.courses:not(.collapsed):not(.has-ptint){ background:${GLOSS}, linear-gradient(180deg, ${IV} 0, ${IV} calc(var(--gr-h) * 0.45), var(--surface) var(--gr-h)); }`;
-  document.head.appendChild(st);
-  const box = document.createElement("div");
-  box.style.cssText = "position:fixed;left:1rem;bottom:1rem;z-index:8000;width:17rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
-  document.body.appendChild(box);
-  ["click", "pointerdown"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
-  const row = "display:flex;gap:.4rem;align-items:center;margin:.25rem 0;cursor:pointer";
-  box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.4rem">Mémo ouvert : rappel de l'ivoire</div>`
-    + [["a", "A · aucun (11.12)"], ["e", "E · fondu sur la hauteur d'une case fermée"], ["f", "F · ivoire sur le titre, puis fondu"]]
-      .map(([k, l]) => `<label style="${row}"><input type="radio" name="gr" value="${k}"${k === v ? " checked" : ""}>${l}</label>`).join("")
-    + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
-  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "grad=" + v;
-  const apply = ()=>{ ["e", "f"].forEach(k => html.classList.toggle("gr-" + k, v === k)); };
-  box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
-  box.querySelector("[data-c]").addEventListener("click", async e=>{
-    try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
-    setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
-  });
-  apply();
 })();
 // 10.68 : vitrine (?demo) : quelques listes remplies, fermées et ouvertes, pour tester sur téléphone
 if(DEMO && !hasAnyList()) (()=>{
