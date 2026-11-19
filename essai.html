@@ -20,7 +20,7 @@
   // ouvertes (voir le CSS « 11.6 », ordinateur seulement) ; posées ici, avant tout rendu, pour qu'aucune mise en page ne saute
   document.documentElement.classList.add("cf-d", "cf-compact", "cf-fond", "cf-pastille", "cf-hmax");
 </script>
-<!-- Sous le tapis — version AUTONOME 11.9 -->
+<!-- Sous le tapis — version AUTONOME 11.13 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1208,11 +1208,11 @@ header{
   background:
     linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 9%), transparent calc(var(--gloss-p, 18%) + 26%)),
     linear-gradient(var(--gloss-a, 115deg), transparent calc(var(--gloss-p, 18%) + 34%), color-mix(in srgb, var(--gloss) 60%, transparent) calc(var(--gloss-p, 18%) + 38%), transparent calc(var(--gloss-p, 18%) + 44%)),   /* 10.25 : second reflet, fin */   /* 10.23 : papier glacé — bande de lumière en biais */
-    linear-gradient(90deg, transparent var(--margin-x), var(--margin-ink) var(--margin-x),
-      var(--margin-ink) calc(var(--margin-x) + 1.5px), transparent calc(var(--margin-x) + 1.5px))
-      0 var(--rule-top, 0) / 100% 100% no-repeat,
     linear-gradient(160deg, var(--memo-a) 10%, var(--memo-b) 60%, var(--memo-c) 100%);   /* 10.25 : nacre légère */
 }
+/* 11.12 : la marge passe par-dessus les lignes du cahier, comme sur une vraie feuille (avant : dessinée dans le fond de
+   la carte, sous les filets des articles). Un trait posé par fitCoursesCards, sous le fondu du bas, sans capter le doigt. */
+.memo-margin{ position:absolute; z-index:1; left:var(--margin-x); top:var(--rule-top, 0); bottom:0; width:1.5px; background:var(--margin-ink); pointer-events:none; }
 /* 10.75 : mémo reconnaissable même fermé (choisi au banc) : coin corné en haut à gauche (à droite, la
    pleine page) ; papier blanc ouvert, gris très clair fermé (le fondu du bas suit) */
 .category.courses::before{ content:""; position:absolute; top:0; left:0; width:20px; height:20px; border-top-left-radius:14px; pointer-events:none;
@@ -2163,6 +2163,10 @@ ul.items > .item.group-start{ margin-top:0.6rem; }
   100%{ background:transparent; }
 }
 @media (prefers-reduced-motion:reduce){ .courses-item.just-added{ animation-duration:.01s; animation-delay:2.5s; } }
+/* 11.10 : la case qu'on vient de créer s'illumine un instant (l'écran y a glissé) */
+.category.new-flash{ animation:new-flash 2.2s ease-out both; }
+@keyframes new-flash{ 0%, 35%{ outline:3px solid color-mix(in srgb, var(--cat-color, var(--accent)) 45%, transparent); outline-offset:2px; } 100%{ outline:3px solid transparent; outline-offset:2px; } }
+@media (prefers-reduced-motion:reduce){ .category.new-flash{ animation-duration:.01s; animation-delay:1.8s; } }
 /* 11.8 : la tâche que ⌘Z / ⌘⇧Z vient de changer, surlignée à sa place (le message seul passait inaperçu) */
 li.undo-flash{ animation:undo-flash 2.6s ease-out both; }
 @keyframes undo-flash{ 0%, 40%{ background:color-mix(in srgb, var(--cat-color, var(--accent)) 20%, transparent); } 100%{ background:transparent; } }
@@ -3905,7 +3909,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.9</span>
+    <span class="version-tag">v11.13</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4860,7 +4864,39 @@ function addCategory(title){
   DATA.push(newCat);
   customCategories.push({ id:newCat.id, title:newCat.title, color:newCat.color });
   saveCustomCategories(customCategories);
+  placeAfterPinned(DATA.length - 1);   // 11.10
   return newCat;
+}
+// 11.10 : une nouvelle liste arrive en haut, juste après les listes punaisées (ouvertes) ; avant : tout en bas.
+// Seulement pour une liste créée ici : une liste partagée par quelqu'un arrive toujours à la fin (pas de changement
+// dans la synchro). Seul l'ordre des cases change.
+function placeAfterPinned(newIdx){
+  try{
+    if(newIdx < 0 || !DATA[newIdx]) return;
+    order = loadOrder();
+    const ord = getCategoryOrder().filter(i => i !== newIdx);
+    let at = 0;
+    ord.forEach((i, p)=>{ const c = DATA[i]; if(c && i !== newIdx && !isCategoryDeleted(c.id) && !isFolded(c.id)) at = p + 1; });
+    ord.splice(at, 0, newIdx);
+    order.__categories__ = ord;
+    saveOrder(order);
+  }catch(err){ console.error("[nouvelle liste] place", err); }
+}
+// 11.10 : après la création d'une liste (ou d'un mémo, d'un chat, d'un duel) : elle arrive en haut, peut-être hors de
+// l'écran ; l'écran y glisse doucement et la case s'illumine un instant, pour qu'on voie que c'est fait.
+let revealCatId = null;
+function revealNewCard(catId){
+  revealCatId = catId;
+  requestAnimationFrame(()=> requestAnimationFrame(()=>{
+    revealCatId = null;
+    const el = document.getElementById("cat-" + catId);
+    if(!el) return;
+    const r = el.getBoundingClientRect(), vh = window.visualViewport ? visualViewport.height : innerHeight;
+    const still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if(r.top < 0 || r.bottom > vh){ el.style.scrollMarginTop = "1rem"; el.scrollIntoView({ block: r.height > vh - 40 ? "start" : "center", behavior: still ? "auto" : "smooth" }); }
+    el.classList.remove("new-flash"); void el.offsetWidth; el.classList.add("new-flash");
+    setTimeout(()=> el.classList.remove("new-flash"), 2400);
+  }));
 }
 
 // Suppression d'une case (catégorie) : comme pour les tâches, on ne touche
@@ -6212,11 +6248,14 @@ function renderAddCategoryRow(){
           actionToast("newCat");
         }
       }
+      if(cat) revealCatId = cat.id;
     }catch(err){
       console.error("[nouvelle liste] échec de l'enregistrement", err);
     }
     addingCategory = false;
+    const nid = revealCatId;
     renderAll();
+    if(nid) revealNewCard(nid);
   };
   card.querySelector(".nl-save").addEventListener("click", save);
   // 10.57 : un écran de chat se crée directement, sans nom
@@ -6230,9 +6269,12 @@ function renderAddCategoryRow(){
         insertItem(cat, { t: "nouvelle partie", duel: "partie", seed: (Math.random() * 2 ** 31) | 0, g: 380, vent: 10, trou: 22, decor: "pignons", at: Date.now() });
         actionToast("newDuel");
       }
+      if(cat) revealCatId = cat.id;
     }catch(err){ console.error("[nouveau duel] échec", err); }
     addingCategory = false;
+    const nid = revealCatId;
     renderAll();
+    if(nid) revealNewCard(nid);
   });
   const chatBtn = card.querySelector(".nl-chat:not(.nl-duel)");
   if(chatBtn) chatBtn.addEventListener("click", ()=>{
@@ -6240,9 +6282,12 @@ function renderAddCategoryRow(){
     try{
       const cat = addCategory("Chat");
       if(cat && Store.setListField(cat.id, "type", "chat")){ chatFocus = cat.id; actionToast("newChat"); }
+      if(cat) revealCatId = cat.id;
     }catch(err){ console.error("[nouvel écran] échec", err); }
     addingCategory = false;
+    const nid = revealCatId;
     renderAll();
+    if(nid) revealNewCard(nid);
   });
   card.querySelector(".nl-cancel").addEventListener("click", cancel);
   nameInput.addEventListener("keydown", e=>{
@@ -9142,7 +9187,7 @@ function buildCoursesParts(cat){
     if(n) actionToast("coursesClear");
     renderAll();
   });
-  if(refocusCoursesCat === cat.id) requestAnimationFrame(()=> ta.focus());
+  if(refocusCoursesCat === cat.id) requestAnimationFrame(()=> ta.focus({ preventScroll: revealCatId === cat.id }));
   return { entry, foot };
 }
 // dans le renommage d'une liste (double-clic sur le titre) : la convertir
@@ -9248,6 +9293,7 @@ function fitCoursesCards(saved){
       ul.addEventListener("scroll", ()=> placeCoursesScroll(c), { passive:true });
       wireCoursesWheel(ul);
     }
+    if(!c.querySelector(":scope > .memo-margin")){ const mg = document.createElement("div"); mg.className = "memo-margin"; mg.setAttribute("aria-hidden", "true"); c.insertBefore(mg, c.firstChild); }   // 11.12
     jobs.push({ c, ul, bar });
   });
   jobs.forEach(j=>{
@@ -11109,7 +11155,7 @@ function render(){
         }
         if(e.key === "Escape"){ quickInp.value = ""; quickInp.blur(); }
       });
-      if(refocusQuickCat === cat.id) requestAnimationFrame(()=> quickInp.focus());
+      if(refocusQuickCat === cat.id) requestAnimationFrame(()=> quickInp.focus({ preventScroll: revealCatId === cat.id }));   // 11.10 : nouvelle liste : l'écran y glisse (revealNewCard)
     }
     const addBtnEl = head.querySelector(".add-btn");   // 10.53 : aussi sur les mémos
     if(addBtnEl) addBtnEl.addEventListener("click", (e)=>{
@@ -12534,6 +12580,7 @@ function noteUndoPoint(){
 // 11.8 : ce que ⌘Z / ⌘⇧Z a changé, en mots (« Remis : … ») ; la tâche concernée est surlignée à sa place
 function undoSnapshot(){
   const m = new Map();
+  m.set("O", { ord: JSON.stringify(getCategoryOrder().filter(i => DATA[i] && !isCategoryDeleted(DATA[i].id))) });   // 11.11 : ordre des listes
   DATA.forEach(cat=>{
     if(isCategoryDeleted(cat.id)) return;
     m.set("L:" + cat.id, { list:true, t: cat.title });
@@ -12553,6 +12600,7 @@ function undoDescribe(a, b){
   const out = [];
   b.forEach((x, k)=>{
     const y = a.get(k);
+    if(k === "O"){ if(y && y.ord !== x.ord) out.push({ k:null, s:"listes remises dans l'ordre d'avant" }); return; }
     if(x.list){ if(!y) out.push({ k, s: "liste " + q(x.t) + " revenue" }); else if(y.t !== x.t) out.push({ k, s: "liste " + q(x.t) + " (ancien nom)" }); return; }
     if(!y){ out.push({ k, s: q(x.t) + " revenue dans " + x.cat }); return; }
     if(y.done !== x.done) out.push({ k, s: q(x.t) + (x.done ? " recochée" : " décochée") });
@@ -14500,6 +14548,39 @@ var listDebord = null;   // var : appelé par le rendu avant cette ligne
   };
   ["a", "b", "c"].forEach(k => html.classList.add("db-" + k));
   listDebord();
+})();
+// ---- banc 11.13 (essai.html?demo&grad=a|e|f) : mémo ouvert, rappel de l'ivoire du mémo fermé sur la hauteur d'une case
+// fermée (72 px ordi, 94 px téléphone), qui fond vers le blanc. a : rien (11.12) ; e : fondu sur toute cette hauteur ;
+// f : ivoire plein sur la bande du titre, puis fondu jusqu'au bas de cette hauteur.
+if(ESSAI && /[?&]grad\b/.test(location.search)) (()=>{
+  const q = new URLSearchParams(location.search), html = document.documentElement;
+  let v = ["a", "e", "f"].includes(q.get("grad")) ? q.get("grad") : "e";
+  const IV = "color-mix(in srgb, #D2D08A 17%, var(--surface))";
+  const GLOSS = `linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 9%), transparent calc(var(--gloss-p, 18%) + 26%)),
+    linear-gradient(var(--gloss-a, 115deg), transparent calc(var(--gloss-p, 18%) + 34%), color-mix(in srgb, var(--gloss) 60%, transparent) calc(var(--gloss-p, 18%) + 38%), transparent calc(var(--gloss-p, 18%) + 44%))`;
+  const st = document.createElement("style");
+  st.textContent = `
+    html{ --gr-h:72px; } @media (hover:none){ html{ --gr-h:94px; } }
+    .gr-e .category.courses:not(.collapsed):not(.has-ptint){ background:${GLOSS}, linear-gradient(180deg, ${IV} 0, var(--surface) var(--gr-h)); }
+    .gr-f .category.courses:not(.collapsed):not(.has-ptint){ background:${GLOSS}, linear-gradient(180deg, ${IV} 0, ${IV} calc(var(--gr-h) * 0.45), var(--surface) var(--gr-h)); }`;
+  document.head.appendChild(st);
+  const box = document.createElement("div");
+  box.style.cssText = "position:fixed;left:1rem;bottom:1rem;z-index:8000;width:17rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
+  document.body.appendChild(box);
+  ["click", "pointerdown"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
+  const row = "display:flex;gap:.4rem;align-items:center;margin:.25rem 0;cursor:pointer";
+  box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.4rem">Mémo ouvert : rappel de l'ivoire</div>`
+    + [["a", "A · aucun (11.12)"], ["e", "E · fondu sur la hauteur d'une case fermée"], ["f", "F · ivoire sur le titre, puis fondu"]]
+      .map(([k, l]) => `<label style="${row}"><input type="radio" name="gr" value="${k}"${k === v ? " checked" : ""}>${l}</label>`).join("")
+    + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
+  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "grad=" + v;
+  const apply = ()=>{ ["e", "f"].forEach(k => html.classList.toggle("gr-" + k, v === k)); };
+  box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
+  box.querySelector("[data-c]").addEventListener("click", async e=>{
+    try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
+    setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
+  });
+  apply();
 })();
 // 10.68 : vitrine (?demo) : quelques listes remplies, fermées et ouvertes, pour tester sur téléphone
 if(DEMO && !hasAnyList()) (()=>{
