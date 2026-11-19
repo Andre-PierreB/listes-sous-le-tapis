@@ -20,7 +20,7 @@
   // ouvertes (voir le CSS « 11.6 », ordinateur seulement) ; posées ici, avant tout rendu, pour qu'aucune mise en page ne saute
   document.documentElement.classList.add("cf-d", "cf-compact", "cf-fond", "cf-pastille", "cf-hmax");
 </script>
-<!-- Sous le tapis — version AUTONOME 11.9 -->
+<!-- Sous le tapis — version AUTONOME 11.10 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3905,7 +3905,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.9</span>
+    <span class="version-tag">v11.10</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -14430,7 +14430,7 @@ if(ESSAI && /[?&]champ\b/.test(location.search)) (()=>{
 // ---- 11.8 : liste ou mémo plus long que sa case : signaler qu'il reste des tâches à découvrir en défilant (les barres
 // du système restent cachées au repos sur Mac). Les trois signaux ensemble (choisis au banc le 19/11) : la barre des
 // mémos (10.18) sur les listes aussi, toujours visible ; un fondu en bas (et en haut une fois qu'on a défilé) ; « +n ↓ »
-// au centre de la ligne du bas, cliquable (descend de 80 % de la case). Mêmes signaux sur les listes et les mémos.
+// sur la ligne du bas, à gauche de la punaise et des initiales (11.9), cliquable (descend de 80 % de la case). Mêmes signaux sur les listes et les mémos.
 var listDebord = null;   // var : appelé par le rendu avant cette ligne
 (()=>{
   const html = document.documentElement;
@@ -14443,7 +14443,7 @@ var listDebord = null;   // var : appelé par le rendu avant cette ligne
     .db-b .category.db-bot > ul.items{ -webkit-mask-image:linear-gradient(#000 calc(100% - 2.2rem), transparent); mask-image:linear-gradient(#000 calc(100% - 2.2rem), transparent); }
     .db-b .category.db-top > ul.items{ -webkit-mask-image:linear-gradient(transparent, #000 1.6rem); mask-image:linear-gradient(transparent, #000 1.6rem); }
     .db-b .category.db-top.db-bot > ul.items{ -webkit-mask-image:linear-gradient(transparent, #000 1.6rem, #000 calc(100% - 2.2rem), transparent); mask-image:linear-gradient(transparent, #000 1.6rem, #000 calc(100% - 2.2rem), transparent); }
-    .db-more{ display:none; position:absolute; left:auto; z-index:3; appearance:none; border:0; background:none;
+    .db-more{ display:none; position:absolute; left:auto; bottom:4px; z-index:3; appearance:none; border:0; background:none;
       padding:2px 8px; border-radius:8px; font:600 0.78rem/1.2 'Courier Prime', monospace; letter-spacing:.04em; color:var(--cat-color, var(--accent));
       opacity:.75; cursor:pointer; white-space:nowrap; }
     .db-more:hover{ opacity:1; }
@@ -14460,10 +14460,9 @@ var listDebord = null;   // var : appelé par le rendu avant cette ligne
     const d = { c, ul, over, top: over && ul.scrollTop > 2, bot: over && ul.scrollTop + ul.clientHeight < ul.scrollHeight - 2 };
     if(over && !c.classList.contains("courses")) d.scroll = measureCoursesScroll(ul);   // un mémo a déjà sa barre (10.18)
     if(d.bot){
-      // 11.9 : « +n ↓ » à droite (banc : ?plus=p à gauche de la punaise et des initiales, sinon au pied de la barre)
+      // 11.9 : « +n ↓ » sur la ligne du bas, à gauche de la punaise, et des initiales s'il y en a (choisi au banc le 19/11)
       const chips = c.querySelector(":scope > .share-chips");
       d.chipsW = chips && chips.offsetParent ? chips.offsetWidth : 0;
-      d.ulBottom = ul.offsetTop + ul.clientHeight;
       const limit = ul.getBoundingClientRect().bottom;
       d.n = [...ul.querySelectorAll(":scope > li.item")].filter(li => { const r = li.getBoundingClientRect(); return (r.top + r.bottom) / 2 > limit; }).length;
     }
@@ -14486,13 +14485,13 @@ var listDebord = null;   // var : appelé par le rendu avant cette ligne
         c.appendChild(more);
       }
       more.textContent = "+" + d.n + " ↓";
-      if(PLUS_P){ more.style.top = ""; more.style.bottom = "4px"; more.style.right = `calc(2.3rem + ${d.chipsW ? d.chipsW + 6 : 0}px)`; }
-      else{ more.style.bottom = ""; more.style.top = (d.ulBottom - 22) + "px"; more.style.right = "0.8rem"; }
+      if(PLUS_H){ more.style.right = "0.2rem"; more.style.bottom = "calc(0.3rem + 20px)"; }   // banc : au-dessus de la punaise
+      else more.style.right = `calc(2.3rem + ${d.chipsW ? d.chipsW + 6 : 0}px)`;
       more.title = d.n + (d.n > 1 ? " tâches plus bas" : " tâche plus bas");
     }
   }
   const one = c => write(measure(c));
-  const PLUS_P = ESSAI && /[?&]plus=p\b/.test(location.search);
+  const PLUS_H = ESSAI && /[?&]plus=h\b/.test(location.search);   // banc 11.10 : « +n ↓ » au-dessus de la punaise
   listDebord = ()=>{
     const cards = [...categoriesEl.querySelectorAll(".category:not(.chat-card):not(.duel-card)")];   // listes et mémos, même signal
     cards.forEach(c=>{
