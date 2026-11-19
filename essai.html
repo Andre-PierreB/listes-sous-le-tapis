@@ -20,7 +20,7 @@
   // ouvertes (voir le CSS « 11.6 », ordinateur seulement) ; posées ici, avant tout rendu, pour qu'aucune mise en page ne saute
   document.documentElement.classList.add("cf-d", "cf-compact", "cf-fond", "cf-pastille", "cf-hmax");
 </script>
-<!-- Sous le tapis — version AUTONOME 11.8 -->
+<!-- Sous le tapis — version AUTONOME 11.9 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3712,7 +3712,7 @@ body.ios-gate-on{ overflow:hidden; }
   /* champ sous le titre, même place fermée et entrouverte ; il disparaît quand le + est ouvert */
   .cf-d :is(.collapsed, .peek) .cat-head-right{ align-self:flex-start; }
   .cf-d :is(.collapsed, .peek) .cat-quick-wrap{ order:4; flex:0 0 calc(100% - var(--cf-ml, 3.17rem)); max-width:none; z-index:3; margin-left:var(--cf-ml, 3.17rem); }   /* toujours à la même place, bulle ou pas : le bord gauche du champ sur celui des cases à cocher, mesuré au rendu (--cf-ml depuis le titre, --cf-x depuis le bord de la case) : la place des cases dépend de la police */
-  .cf-d .category.courses.collapsed{ --memo-grey:color-mix(in srgb, var(--ink) var(--cf-memo, 5%), var(--surface)); }   /* fond du mémo fermé un peu plus marqué (avant 2 %) */
+  .cf-d .category.courses.collapsed{ --memo-grey:color-mix(in srgb, #D2D08A 17%, var(--surface)); }   /* 11.8 : mémo fermé ivoire vert pâle (variante F du banc, 19/11) ; avant : 5 % d'encre, presque la couleur du fond de la page */
   .cf-d :is(.collapsed, .peek) .cat-quick{ flex:0 0 auto; width:min(var(--cf-w, 17rem), calc(100% + 40px)); border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb, var(--ink) 2.5%, var(--surface)); padding:0.28rem 0.5rem 0.28rem 1.7rem; }
   .cf-d :is(.collapsed, .peek) .cat-quick-pen{ left:0.55rem; }
   .cf-d :is(.collapsed, .peek) .cat-quick:focus{ border:1px solid var(--cat-color, var(--accent)); }
@@ -3905,7 +3905,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.8</span>
+    <span class="version-tag">v11.9</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5210,6 +5210,14 @@ const LAST_PURGE_KEY = "fauconnerie-v2-lastpurge";
 // report d'une relance (tâche déjà en cours) ne compte pas.
 const WAIT_LOG_KEY = "fauconnerie-v2-waitlog";
 function waitLog(){ const l = loadJSONKey(WAIT_LOG_KEY, []); return Array.isArray(l) ? l : []; }
+// 11.9 : une tâche compte une fois. Envoyée « en cours » (comptée à l'envoi, 8.1) puis cochée : la coche ne recompte
+// pas. Renvoie la date du premier envoi de chaque tâche ; une coche du même jour ou après est déjà comptée.
+function waitedOn(){
+  const m = new Map();
+  waitLog().forEach(e=>{ if(e && e.key && e.on && (!m.has(e.key) || e.on < m.get(e.key))) m.set(e.key, e.on); });
+  return m;
+}
+const countedAtWaiting = (w, key, doneOn) => !!key && w.has(key) && (!doneOn || w.get(key) <= doneOn);
 // 10.53 : retire le dernier envoi « en cours » de cette tâche s'il date de
 // cette semaine (il ne compte alors plus dans le compteur ni le graphique)
 function unlogWaitingThisWeek(key){
@@ -7037,6 +7045,7 @@ function getTotalItems(){
 function getWeekDoneCount(){
   const monday = mondayOf(todayISO());
   checkedAt = loadJSONKey(CHECKED_AT_KEY, {});
+  const w = waitedOn();   // 11.9
   let n = 0;
   DATA.forEach(cat=>{
     if(isSideList(cat.id)) return;   // 10.15 ; 10.57 : écrans
@@ -7044,12 +7053,13 @@ function getWeekDoneCount(){
       const key = itemKey(cat.id,i);
       if(isDeleted(key) || !state[key]) return;
       if(!checkedByMe(cat.id, key)) return; // 10.2 : seul le compteur de qui a coché bouge
+      if(countedAtWaiting(w, key, checkedAt[key])) return;   // 11.9 : déjà comptée à l'envoi « en cours »
       if((checkedAt[key] || "") >= monday) n++;
     });
   });
   // + celles cochées cette semaine puis déjà parties à la corbeille
   loadJSONKey(TRASH_KEY, []).forEach(e=>{
-    if(e && e.kind !== "deleted" && (e.doneOn || "") >= monday) n++;
+    if(e && e.kind !== "deleted" && (e.doneOn || "") >= monday && !countedAtWaiting(w, e.key, e.doneOn)) n++;
   });
   // + les envois dans « En cours » de la semaine (8.1)
   waitLog().forEach(e=>{ if(e && (e.on || "") >= monday) n++; });
@@ -9899,19 +9909,13 @@ function cfDuelPicto(){
       const m = sh.length && /(rgba?\([^)]*\)|#[0-9a-f]{3,8})/i.exec(sh[sh.length - 1]); if(m) lip = m[1]; }
     const S = 3, H = 16, k = H / 58, W = Math.ceil(85 * k) + 1, w = W * S, h = (H + 2) * S;   // le faisan, huppe et queue comprises : ~85 × 58 unités
     const mk = ()=>{ const cv = document.createElement("canvas"); cv.width = w; cv.height = h; return cv; };
-    // silhouette : le faisan doré, et sa huppe rabattue en arrière, un peu soulignée
+    // silhouette : le faisan doré
     const mask = mk(), m = mask.getContext("2d");
-    // banc 11.8 (?pm&picto=a|b|c) : a = actuel (huppe soulignée), b = sans la huppe ajoutée, c = faisan commun
-    const pv = (ESSAI && new URLSearchParams(location.search).get("picto")) || "a";
-    m.scale(S * k, S * k); drawPheasant(m, 57, 58, 1, { kind: pv === "c" ? 0 : 1 });
-    if(pv === "a"){
-      m.translate(57, 58); m.scale(1.15, 1.15); m.fillStyle = "#000";
-      m.beginPath(); m.moveTo(17.5, -38.5); m.quadraticCurveTo(10, -48.5, -3, -45); m.quadraticCurveTo(7, -43.2, 11, -36.5); m.closePath(); m.fill();
-    }else{
-      // 11.8 : pattes épaissies (en petit, celles du jeu disparaissaient)
-      m.save(); m.translate(57, 58); m.scale(1.15, 1.15); m.strokeStyle = "#000"; m.lineWidth = 3.4; m.lineCap = "round";
-      m.beginPath(); m.moveTo(-2, -11); m.lineTo(-3, -0.5); m.moveTo(4, -11); m.lineTo(5.5, -0.5); m.stroke(); m.restore();
-    }
+    // 11.8 : plus de huppe ajoutée (la pointe rabattue faisait penser à Sonic), pattes épaissies (en petit, celles du jeu
+    // disparaissaient) — variante B choisie au banc le 19/11
+    m.scale(S * k, S * k); drawPheasant(m, 57, 58, 1, { kind:1 });
+    m.save(); m.translate(57, 58); m.scale(1.15, 1.15); m.strokeStyle = "#000"; m.lineWidth = 3.4; m.lineCap = "round";
+    m.beginPath(); m.moveTo(-2, -11); m.lineTo(-3, -0.5); m.moveTo(4, -11); m.lineTo(5.5, -0.5); m.stroke(); m.restore();
     const tint = (src, col)=>{ const cv = mk(), c = cv.getContext("2d"); c.drawImage(src, 0, 0); c.globalCompositeOperation = "source-in"; c.fillStyle = col; c.fillRect(0, 0, w, h); return cv; };
     const out = mk(), o = out.getContext("2d");
     o.drawImage(tint(mask, lip), 0, S);               // lèvre claire, 1 px plus bas
@@ -9927,7 +9931,6 @@ function cfDuelPicto(){
   }catch(e){}
 }
 setTimeout(cfDuelPicto, 400);
-window.cfDuelPicto = cfDuelPicto;   // banc 11.8 : redessiné par l'interrupteur (?pm)
 if(window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", ()=> setTimeout(cfDuelPicto, 50));
 
 // faisan de face (danse du vainqueur), pieds en (0, 0) ; wingL / wingR : 1 = levée, -1 = baissée
@@ -11385,7 +11388,7 @@ function render(){
   refocusQuickCat = null;
   refocusCoursesCat = null;
   fitCoursesCards(coursesScroll);
-  if(typeof listDebord === "function") listDebord();   // banc 11.8
+  if(typeof listDebord === "function") listDebord();   // 11.8
   renderUrgentBanner();
   renderLuckyLine();
   const waitingSection = document.getElementById("waitingSection");
@@ -11679,9 +11682,11 @@ function getTrashChartMode(){
 function setTrashChartMode(m){ try{ Store.set(TRASH_CHART_KEY, m); }catch(e){} }
 function collectDoneDates(){
   const dates = []; let undated = 0;
+  const w = waitedOn();   // 11.9 : une tâche compte une fois (envoi « en cours » puis coche)
   const tr = loadJSONKey(TRASH_KEY, []);
   (Array.isArray(tr) ? tr : []).forEach(e=>{
     if(!e || e.kind === "deleted") return;
+    if(countedAtWaiting(w, e.key, e.doneOn)) return;
     if(e.doneOn) dates.push(e.doneOn); else undated++;
   });
   const st = loadState(), ca = loadJSONKey(CHECKED_AT_KEY, {});
@@ -11691,6 +11696,7 @@ function collectDoneDates(){
       const key = itemKey(cat.id, i);
       if(isDeleted(key) || !st[key]) return;
       if(!checkedByMe(cat.id, key)) return;
+      if(countedAtWaiting(w, key, ca[key])) return;
       if(ca[key]) dates.push(ca[key]); else undated++;
     });
   });
@@ -14421,14 +14427,13 @@ if(ESSAI && /[?&]champ\b/.test(location.search)) (()=>{
   });
   apply();
 })();
-// ---- banc 11.8 (essai.html?demo&debord=a|b|c|ab…) : liste ouverte plus longue que sa case (ordinateur) : signaler
-// qu'il reste des tâches à découvrir en défilant (mémos compris, demandé le 19/11 : même signal partout). A : la barre des mémos (10.18), toujours visible. B : fondu en bas
-// (et en haut une fois qu'on a défilé). C : « +n » au centre de la ligne du bas, cliquable (descend d'une page).
-// Les lettres se combinent. Seulement sur le banc et avec le réglage d'adresse.
+// ---- 11.8 : liste ou mémo plus long que sa case : signaler qu'il reste des tâches à découvrir en défilant (les barres
+// du système restent cachées au repos sur Mac). Les trois signaux ensemble (choisis au banc le 19/11) : la barre des
+// mémos (10.18) sur les listes aussi, toujours visible ; un fondu en bas (et en haut une fois qu'on a défilé) ; « +n ↓ »
+// au centre de la ligne du bas, cliquable (descend de 80 % de la case). Mêmes signaux sur les listes et les mémos.
 var listDebord = null;   // var : appelé par le rendu avant cette ligne
-if(ESSAI && /[?&]debord\b/.test(location.search)) (()=>{
-  const q = new URLSearchParams(location.search), html = document.documentElement;
-  let v = q.get("debord") === "-" ? "" : (q.get("debord") || "a").replace(/[^abc]/g, "") || "a";
+(()=>{
+  const html = document.documentElement;
   const st = document.createElement("style");
   st.textContent = `
     .db-a .category.db-over:not(.courses) > ul.items{ scrollbar-width:none; }
@@ -14438,7 +14443,7 @@ if(ESSAI && /[?&]debord\b/.test(location.search)) (()=>{
     .db-b .category.db-bot > ul.items{ -webkit-mask-image:linear-gradient(#000 calc(100% - 2.2rem), transparent); mask-image:linear-gradient(#000 calc(100% - 2.2rem), transparent); }
     .db-b .category.db-top > ul.items{ -webkit-mask-image:linear-gradient(transparent, #000 1.6rem); mask-image:linear-gradient(transparent, #000 1.6rem); }
     .db-b .category.db-top.db-bot > ul.items{ -webkit-mask-image:linear-gradient(transparent, #000 1.6rem, #000 calc(100% - 2.2rem), transparent); mask-image:linear-gradient(transparent, #000 1.6rem, #000 calc(100% - 2.2rem), transparent); }
-    .db-more{ display:none; position:absolute; left:50%; bottom:6px; transform:translateX(-50%); z-index:3; appearance:none; border:0; background:none;
+    .db-more{ display:none; position:absolute; left:auto; z-index:3; appearance:none; border:0; background:none;
       padding:2px 8px; border-radius:8px; font:600 0.78rem/1.2 'Courier Prime', monospace; letter-spacing:.04em; color:var(--cat-color, var(--accent));
       opacity:.75; cursor:pointer; white-space:nowrap; }
     .db-more:hover{ opacity:1; }
@@ -14446,96 +14451,58 @@ if(ESSAI && /[?&]debord\b/.test(location.search)) (()=>{
   document.head.appendChild(st);
   const watched = new WeakSet();
   const ro = typeof ResizeObserver === "function" ? new ResizeObserver(es => es.forEach(e => one(e.target.parentElement))) : null;
-  function one(c){
-    if(!c || !c.isConnected) return;
+  // en deux temps pour toutes les cases (mesurer, puis écrire) : pas d'aller-retour mesure / style dans la boucle (11.1)
+  function measure(c){
+    if(!c || !c.isConnected) return null;
     const ul = c.querySelector(":scope > ul.items");
-    if(!ul) return;
+    if(!ul) return null;
     const over = !c.classList.contains("collapsed") && ul.scrollHeight > ul.clientHeight + 1;
-    const top = over && ul.scrollTop > 2, bot = over && ul.scrollTop + ul.clientHeight < ul.scrollHeight - 2;
-    c.classList.toggle("db-over", over); c.classList.toggle("db-top", top); c.classList.toggle("db-bot", bot);
-    let bar = c.querySelector(":scope > .list-scroll");
-    if(v.includes("a") && over && !c.classList.contains("courses")){   // un mémo a déjà la sienne (10.18)
-      if(!bar){ bar = document.createElement("div"); bar.className = "courses-scroll list-scroll"; bar.setAttribute("aria-hidden", "true"); bar.innerHTML = "<span></span>"; c.appendChild(bar); }
-      applyCoursesScroll(bar, measureCoursesScroll(ul));
+    const d = { c, ul, over, top: over && ul.scrollTop > 2, bot: over && ul.scrollTop + ul.clientHeight < ul.scrollHeight - 2 };
+    if(over && !c.classList.contains("courses")) d.scroll = measureCoursesScroll(ul);   // un mémo a déjà sa barre (10.18)
+    if(d.bot){
+      // 11.9 : « +n ↓ » à droite (banc : ?plus=p à gauche de la punaise et des initiales, sinon au pied de la barre)
+      const chips = c.querySelector(":scope > .share-chips");
+      d.chipsW = chips && chips.offsetParent ? chips.offsetWidth : 0;
+      d.ulBottom = ul.offsetTop + ul.clientHeight;
+      const limit = ul.getBoundingClientRect().bottom;
+      d.n = [...ul.querySelectorAll(":scope > li.item")].filter(li => { const r = li.getBoundingClientRect(); return (r.top + r.bottom) / 2 > limit; }).length;
     }
-    let more = c.querySelector(":scope > .db-more");
-    if(v.includes("c") && bot){
+    return d;
+  }
+  function write(d){
+    if(!d) return;
+    const { c, ul } = d;
+    c.classList.toggle("db-over", d.over); c.classList.toggle("db-top", d.top); c.classList.toggle("db-bot", d.bot);
+    if(d.scroll){
+      let bar = c.querySelector(":scope > .list-scroll");
+      if(!bar){ bar = document.createElement("div"); bar.className = "courses-scroll list-scroll"; bar.setAttribute("aria-hidden", "true"); bar.innerHTML = "<span></span>"; c.appendChild(bar); }
+      applyCoursesScroll(bar, d.scroll);
+    }
+    if(d.bot){
+      let more = c.querySelector(":scope > .db-more");
       if(!more){
         more = document.createElement("button"); more.type = "button"; more.className = "db-more";
         more.addEventListener("click", e=>{ e.stopPropagation(); ul.scrollBy({ top: ul.clientHeight * 0.8, behavior:"smooth" }); });
         c.appendChild(more);
       }
-      const limit = ul.getBoundingClientRect().bottom;
-      const n = [...ul.querySelectorAll(":scope > li.item")].filter(li => { const r = li.getBoundingClientRect(); return (r.top + r.bottom) / 2 > limit; }).length;
-      more.textContent = "+" + n + " ↓";
-      more.title = n + (n > 1 ? " tâches plus bas" : " tâche plus bas");
+      more.textContent = "+" + d.n + " ↓";
+      if(PLUS_P){ more.style.top = ""; more.style.bottom = "4px"; more.style.right = `calc(2.3rem + ${d.chipsW ? d.chipsW + 6 : 0}px)`; }
+      else{ more.style.bottom = ""; more.style.top = (d.ulBottom - 22) + "px"; more.style.right = "0.8rem"; }
+      more.title = d.n + (d.n > 1 ? " tâches plus bas" : " tâche plus bas");
     }
   }
+  const one = c => write(measure(c));
+  const PLUS_P = ESSAI && /[?&]plus=p\b/.test(location.search);
   listDebord = ()=>{
-    categoriesEl.querySelectorAll(".category:not(.chat-card):not(.duel-card)").forEach(c=>{   // listes et mémos, même signal
+    const cards = [...categoriesEl.querySelectorAll(".category:not(.chat-card):not(.duel-card)")];   // listes et mémos, même signal
+    cards.forEach(c=>{
       const ul = c.querySelector(":scope > ul.items");
-      if(!ul) return;
-      if(!watched.has(ul)){ watched.add(ul); ul.addEventListener("scroll", ()=> one(c), { passive:true }); if(ro) ro.observe(ul); }
-      one(c);
+      if(ul && !watched.has(ul)){ watched.add(ul); ul.addEventListener("scroll", ()=> one(c), { passive:true }); if(ro) ro.observe(ul); }
     });
+    cards.map(measure).forEach(write);
   };
-  const box = document.createElement("div");
-  box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:17rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
-  document.body.appendChild(box);
-  ["click", "pointerdown"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
-  const row = "display:flex;gap:.4rem;align-items:center;margin:.25rem 0;cursor:pointer";
-  box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.4rem">Tâches cachées (ordi)</div>`
-    + [["a", "A · barre toujours visible (comme les mémos)"], ["b", "B · fondu en bas / en haut"], ["c", "C · « +n ↓ » sur la ligne du bas"]]
-      .map(([k, l]) => `<label style="${row}"><input type="checkbox" value="${k}"${v.includes(k) ? " checked" : ""}>${l}</label>`).join("")
-    + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
-  const apply = ()=>{ ["a", "b", "c"].forEach(k => html.classList.toggle("db-" + k, v.includes(k))); listDebord(); };
-  box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ v = [...box.querySelectorAll("input:checked")].map(x => x.value).join(""); apply(); }));
-  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "debord=" + (v || "-");
-  box.querySelector("[data-c]").addEventListener("click", async e=>{
-    try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
-    setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
-  });
-  apply();
-})();
-// ---- banc 11.8 (essai.html?demo&pm&picto=a|b|c&memo=a|b|c|d) : picto du duel (« trop Sonic ») et fond du mémo fermé
-// (« ne tranche pas assez avec le fond »). Seulement sur le banc et avec le réglage d'adresse.
-if(ESSAI && /[?&]pm\b/.test(location.search)) (()=>{
-  const q = new URLSearchParams(location.search), html = document.documentElement;
-  let pv = ["a", "b", "c"].includes(q.get("picto")) ? q.get("picto") : "a";
-  let mv = ["a", "b", "c", "d", "e", "f"].includes(q.get("memo")) ? q.get("memo") : "a";
-  const st = document.createElement("style");
-  st.textContent = `
-    .pm-b.cf-d .category.courses.collapsed:not(.has-ptint){ --cf-memo:9%; }
-    .pm-c.cf-d .category.courses.collapsed:not(.has-ptint){ --cf-memo:13%; }
-    .pm-d.cf-d .category.courses.collapsed:not(.has-ptint){ --memo-grey:color-mix(in srgb, #C8A24E 14%, var(--surface)); }
-    .pm-e.cf-d .category.courses.collapsed:not(.has-ptint){ --memo-grey:color-mix(in srgb, #E2CE6E 15%, var(--surface)); }
-    .pm-f.cf-d .category.courses.collapsed:not(.has-ptint){ --memo-grey:color-mix(in srgb, #D2D08A 17%, var(--surface)); }`;
-  document.head.appendChild(st);
-  const box = document.createElement("div");
-  box.style.cssText = "position:fixed;left:1rem;bottom:1rem;z-index:8000;width:17rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
-  document.body.appendChild(box);
-  ["click", "pointerdown"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
-  const row = "display:flex;gap:.4rem;align-items:center;margin:.25rem 0;cursor:pointer";
-  const head = t => `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:.5rem 0 .3rem">${t}</div>`;
-  const radios = (name, cur, opts) => opts.map(([k, l]) => `<label style="${row}"><input type="radio" name="${name}" value="${k}"${k === cur ? " checked" : ""}>${l}</label>`).join("");
-  box.innerHTML = head("Picto du duel")
-    + radios("pv", pv, [["a", "A · actuel (huppe soulignée)"], ["b", "B · sans la huppe ajoutée"], ["c", "C · faisan commun"]])
-    + head("Mémo fermé")
-    + radios("mv", mv, [["a", "A · actuel (5 % d'encre)"], ["b", "B · gris plus marqué (9 %)"], ["c", "C · gris marqué (13 %)"], ["d", "D · papier crème"], ["e", "E · crème plus frais (citron pâle)"], ["f", "F · ivoire vert pâle"]])
-    + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
-  const link = ()=>{ const u = new URLSearchParams(location.search); u.set("picto", pv); u.set("memo", mv);
-    return location.origin + location.pathname + "?" + u.toString().replace(/=(&|$)/g, "$1"); };
-  const apply = ()=>{
-    ["b", "c", "d", "e", "f"].forEach(k => html.classList.toggle("pm-" + k, mv === k));
-    try{ history.replaceState(null, "", link().replace(location.origin, "")); }catch(e){}
-    if(window.cfDuelPicto) window.cfDuelPicto(); else setTimeout(()=> window.cfDuelPicto && window.cfDuelPicto(), 600);
-  };
-  box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ if(i.name === "pv") pv = i.value; else mv = i.value; apply(); }));
-  box.querySelector("[data-c]").addEventListener("click", async e=>{
-    try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
-    setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
-  });
-  apply();
+  ["a", "b", "c"].forEach(k => html.classList.add("db-" + k));
+  listDebord();
 })();
 // 10.68 : vitrine (?demo) : quelques listes remplies, fermées et ouvertes, pour tester sur téléphone
 if(DEMO && !hasAnyList()) (()=>{
