@@ -20,7 +20,7 @@
   // ouvertes (voir le CSS « 11.6 », ordinateur seulement) ; posées ici, avant tout rendu, pour qu'aucune mise en page ne saute
   document.documentElement.classList.add("cf-d", "cf-compact", "cf-fond", "cf-pastille", "cf-hmax");
 </script>
-<!-- Sous le tapis — version AUTONOME 11.14 -->
+<!-- Sous le tapis — version AUTONOME 11.16 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1384,6 +1384,10 @@ html.fold-still, html.fold-still *{ overflow-anchor:none; }   /* 10.67 : pendant
 .strike-dot::after{ content:""; position:absolute; inset:-12px; }
 .cat-full::before, .cat-order::before{ content:""; position:absolute; inset:-10px -4px; }   /* 10.71 : la zone de toucher passe sur ::before ; ::after est l'infobulle (avant : les deux se mélangeaient, l'infobulle était écrasée en une petite pastille) */
 .haptic-wrap:has(> .strike-dot) > .haptic-tap{ inset:-12px; }   /* iPhone : la zone qui fait vibrer suit */
+/* 11.15 : sous le DERNIER article d'un mémo, la zone ne descend plus que de 4 px : elle dépassait du bas de la
+   zone des articles (6 px de vide) et faisait croire à un débordement : barre de défilement dès un seul article */
+.category.courses > ul.items > li:last-child .strike-dot::after,
+.category.courses > ul.items > li:last-child .haptic-wrap:has(> .strike-dot) > .haptic-tap{ bottom:-4px; }
 .cat-full:hover{ background:var(--surface-2); color:var(--ink-soft); opacity:1; }
 .cat-full:hover svg{ scale:var(--pop-scale); }
 .cat-full:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
@@ -3929,7 +3933,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.14</span>
+    <span class="version-tag">v11.16</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -14531,7 +14535,9 @@ var listDebord = null;   // var : appelé par le rendu avant cette ligne
       // 11.9 : « +n ↓ » sur la ligne du bas, à gauche de la punaise, et des initiales s'il y en a (choisi au banc le 19/11)
       const chips = c.querySelector(":scope > .share-chips");
       d.chipsW = chips && chips.offsetParent ? chips.offsetWidth : 0;
-      const limit = ul.getBoundingClientRect().bottom;
+      // 11.16 : le bas de la case est en fondu (2,2 rem) : un article dont le milieu tombe dans la moitié basse du fondu
+      // ne se lit plus, il compte comme caché (avant : seulement sous le bord, « +1 ↓ » manquait sur un article effacé par le fondu)
+      const limit = ul.getBoundingClientRect().bottom - 1.1 * (parseFloat(getComputedStyle(html).fontSize) || 16);
       d.n = [...ul.querySelectorAll(":scope > li.item")].filter(li => { const r = li.getBoundingClientRect(); return (r.top + r.bottom) / 2 > limit; }).length;
     }
     return d;
