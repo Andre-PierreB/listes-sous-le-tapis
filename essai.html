@@ -16,11 +16,8 @@
   // 10.53 : le banc d'essai s'installe comme sa propre icône (sinon l'icône
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
-  // 11.6 : cases fermées compactes, fond blanc du chat et du duel, pastille d'« urgent », hauteur commune des cases
-  // ouvertes (voir le CSS « 11.6 », ordinateur seulement) ; posées ici, avant tout rendu, pour qu'aucune mise en page ne saute
-  document.documentElement.classList.add("cf-d", "cf-compact", "cf-fond", "cf-pastille", "cf-hmax");
 </script>
-<!-- Sous le tapis — version AUTONOME 11.16 -->
+<!-- Sous le tapis — version AUTONOME 11.18 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1214,7 +1211,7 @@ header{
    case fermée (72 px sur ordinateur, 94 px au téléphone) ; reflets gardés, nacre remplacée (variante E du banc, 19/11). */
 :root{ --memo-top-h:72px; }
 @media (hover:none){ :root{ --memo-top-h:94px; } }
-.cf-d .category.courses:is(:not(.collapsed), .gliding):not(.has-ptint){   /* 11.14 : gardé pendant la fermeture (.gliding) : la couleur pleine ne revient qu'une fois la case fermée */
+:root .category.courses:is(:not(.collapsed), .gliding):not(.has-ptint){   /* 11.14 : gardé pendant la fermeture (.gliding) : la couleur pleine ne revient qu'une fois la case fermée */
   --memo-grey:var(--surface);
   background:
     linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 9%), transparent calc(var(--gloss-p, 18%) + 26%)),
@@ -1502,12 +1499,12 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 /* 11.14 : mémo partagé à la couleur d'une personne : même principe que l'ivoire (11.13). Fermé : la couleur ; ouvert (et
    pendant qu'il se referme) : la couleur en haut, qui fond vers le blanc sur la hauteur d'une case fermée. Le fond des champs
    d'ajout (--memo-b) suit le blanc. */
-:root.cf-d .category.courses.has-ptint:is(:not(.collapsed), .gliding){ --memo-a:var(--surface); --memo-b:var(--surface); --memo-c:var(--surface);
+:root:root .category.courses.has-ptint:is(:not(.collapsed), .gliding){ --memo-a:var(--surface); --memo-b:var(--surface); --memo-c:var(--surface);
   background:
     linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 9%), transparent calc(var(--gloss-p, 18%) + 26%)),
     linear-gradient(var(--gloss-a, 115deg), transparent calc(var(--gloss-p, 18%) + 34%), color-mix(in srgb, var(--gloss) 60%, transparent) calc(var(--gloss-p, 18%) + 38%), transparent calc(var(--gloss-p, 18%) + 44%)),
     linear-gradient(180deg, var(--ptint-bg) 0, var(--surface) var(--memo-top-h, 72px)); }
-:root.cf-d .category.courses.has-ptint.gliding::after{ background:linear-gradient(transparent, var(--surface) 0.75rem); }   /* 11.14 : le fondu du bas reste blanc pendant la fermeture */
+:root:root .category.courses.has-ptint.gliding::after{ background:linear-gradient(transparent, var(--surface) 0.75rem); }   /* 11.14 : le fondu du bas reste blanc pendant la fermeture */
 /* 10.2 : pastilles des personnes avec qui la liste est partagée (à côté du titre) */
 .share-chips{ display:inline-flex; flex:none; }
 .share-chip{
@@ -3728,171 +3725,172 @@ body.ios-gate-on{ overflow:hidden; }
 
 /* ---- 11.6 : cases fermées compactes (ordinateur et téléphone) et cases ouvertes à hauteur commune (ordinateur).
    Choisi les 16-17/11/2026 (piste « D », parmi A, B, C).
-   Les classes cf-d, cf-compact, cf-fond, cf-pastille et cf-hmax sont posées sur <html> dès l'ouverture (script en tête
-   de page) ; elles gardent leur nom d'essai pour que les règles ci-dessous gardent exactement le poids essayé.
+   11.17 (ménage) : les classes d'essai posées sur <html> (cf-d, cf-fond, cf-pastille, cf-hmax ; cf-d.cf-compact) sont
+   devenues « :root » (et « :root:root ») : même élément, même poids, donc exactement les mêmes règles gagnent.
+   « :root:root » n'est pas une faute de frappe : il garde le poids de deux classes, dont dépendent certaines règles
+   (ex. le chat fermé à la couleur d'une personne, sans retrait intérieur).
    Fermée ou entrouverte : bulle du nombre à gauche du titre ; saisie rapide en champ marqué sous le titre, bord gauche
    sur la colonne des cases à cocher (--cf-x / --cf-ml, mesurés au rendu), largeur --cf-w ; texte d'invite seulement à la
    saisie. Punaisée : la saisie de la 11.5. Cases fermées de 72 px, poignée et punaise sur la ligne du champ. */
 @media all{   /* ordinateur et téléphone (réglages du téléphone plus bas) */
-  .cf-d :is(.collapsed, .peek) .cat-quick::placeholder{ opacity:0; }
-  .cf-d :is(.collapsed, .peek) .cat-quick:focus::placeholder{ opacity:.7; }
-  .cf-d .cat-count{ order:-1; min-width:2.3rem; padding:0; }
+  :root :is(.collapsed, .peek) .cat-quick::placeholder{ opacity:0; }
+  :root :is(.collapsed, .peek) .cat-quick:focus::placeholder{ opacity:.7; }
+  :root .cat-count{ order:-1; min-width:2.3rem; padding:0; }
   /* champ sous le titre, même place fermée et entrouverte ; il disparaît quand le + est ouvert */
-  .cf-d :is(.collapsed, .peek) .cat-head-right{ align-self:flex-start; }
-  .cf-d :is(.collapsed, .peek) .cat-quick-wrap{ order:4; flex:0 0 calc(100% - var(--cf-ml, 3.17rem)); max-width:none; z-index:3; margin-left:var(--cf-ml, 3.17rem); }   /* toujours à la même place, bulle ou pas : le bord gauche du champ sur celui des cases à cocher, mesuré au rendu (--cf-ml depuis le titre, --cf-x depuis le bord de la case) : la place des cases dépend de la police */
-  .cf-d .category.courses.collapsed{ --memo-grey:color-mix(in srgb, #D2D08A 17%, var(--surface)); }   /* 11.8 : mémo fermé ivoire vert pâle (variante F du banc, 19/11) ; avant : 5 % d'encre, presque la couleur du fond de la page */
-  .cf-d :is(.collapsed, .peek) .cat-quick{ flex:0 0 auto; width:min(var(--cf-w, 17rem), calc(100% + 40px)); border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb, var(--ink) 2.5%, var(--surface)); padding:0.28rem 0.5rem 0.28rem 1.7rem; }
-  .cf-d :is(.collapsed, .peek) .cat-quick-pen{ left:0.55rem; }
-  .cf-d :is(.collapsed, .peek) .cat-quick:focus{ border:1px solid var(--cat-color, var(--accent)); }
-  .cf-d .category:has(.add-title) .cat-quick-wrap{ display:none; }
+  :root :is(.collapsed, .peek) .cat-head-right{ align-self:flex-start; }
+  :root :is(.collapsed, .peek) .cat-quick-wrap{ order:4; flex:0 0 calc(100% - var(--cf-ml, 3.17rem)); max-width:none; z-index:3; margin-left:var(--cf-ml, 3.17rem); }   /* toujours à la même place, bulle ou pas : le bord gauche du champ sur celui des cases à cocher, mesuré au rendu (--cf-ml depuis le titre, --cf-x depuis le bord de la case) : la place des cases dépend de la police */
+  :root .category.courses.collapsed{ --memo-grey:color-mix(in srgb, #D2D08A 17%, var(--surface)); }   /* 11.8 : mémo fermé ivoire vert pâle (variante F du banc, 19/11) ; avant : 5 % d'encre, presque la couleur du fond de la page */
+  :root :is(.collapsed, .peek) .cat-quick{ flex:0 0 auto; width:min(var(--cf-w, 17rem), calc(100% + 40px)); border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb, var(--ink) 2.5%, var(--surface)); padding:0.28rem 0.5rem 0.28rem 1.7rem; }
+  :root :is(.collapsed, .peek) .cat-quick-pen{ left:0.55rem; }
+  :root :is(.collapsed, .peek) .cat-quick:focus{ border:1px solid var(--cat-color, var(--accent)); }
+  :root .category:has(.add-title) .cat-quick-wrap{ display:none; }
   /* D, liste punaisée : la saisie rapide redevient celle de la 11.5 (à côté du titre, « Nouvelle tâche… », filet en pointillés au survol) ; le champ marqué sous le titre ne vaut que fermée ou entrouverte */
-  .cf-d .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }
-  .cf-d .category.collapsed:not(.chat-card):not(.duel-card) .cat-head{ margin-bottom:0; }   /* la case fermée garde --fold-h */
-  .cf-d .category.courses.collapsed{ padding-bottom:calc(2.1rem - 2px); }
+  :root .categories > .category.courses.collapsed:not(.gliding) > ul.items{ border-top-color:transparent; }
+  :root .category.collapsed:not(.chat-card):not(.duel-card) .cat-head{ margin-bottom:0; }   /* la case fermée garde --fold-h */
+  :root .category.courses.collapsed{ padding-bottom:calc(2.1rem - 2px); }
   /* D compact : cases fermées plus basses (72 px), poignée et punaise remontées sur la ligne du champ */
-  .cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card){ min-height:72px; padding-bottom:6px; }   /* poignée, punaise, initiales : à leur place habituelle, au bas de la case (même hauteur partout, ouverte ou fermée) ; le champ, plus haut, n'est pas centré sur elles */
-  .cf-d.cf-compact .category.courses.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:4px; }   /* mémo : titre 2 px plus bas, case de la même hauteur (avant, la règle des listes, plus forte, l'emportait : 1 à 2 px de trop) */
-  .cf-d.cf-compact .category.collapsed.has-people .cat-quick{ width:min(var(--cf-w, 17rem), calc(100% - 0.6rem)); }
+  :root:root .category.collapsed:not(.chat-card):not(.duel-card){ min-height:72px; padding-bottom:6px; }   /* poignée, punaise, initiales : à leur place habituelle, au bas de la case (même hauteur partout, ouverte ou fermée) ; le champ, plus haut, n'est pas centré sur elles */
+  :root:root .category.courses.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:4px; }   /* mémo : titre 2 px plus bas, case de la même hauteur (avant, la règle des listes, plus forte, l'emportait : 1 à 2 px de trop) */
+  :root:root .category.collapsed.has-people .cat-quick{ width:min(var(--cf-w, 17rem), calc(100% - 0.6rem)); }
   /* D compact, chat et duel fermés : deux lignes aussi. Le nom en haut ; dessous, l'écran a la forme, la taille et la
      place du champ des listes (même bord gauche, même largeur --cf-w, même hauteur, mêmes coins), entre la poignée
      et « … », initiales, punaise. */
-  .cf-d.cf-compact :is(.chat-card, .duel-card).collapsed{ height:72px; min-height:72px; }
-  .cf-d.cf-compact .collapsed > :is(.chat-box, .duel-stage){ display:grid; grid-template-columns:var(--cf-x, 73.7px) minmax(0, 1fr) auto; grid-template-rows:38px 34px; height:72px; padding:0; }
-  .cf-d.cf-compact .collapsed :is(.chat-hole, .duel-screen){ grid-area:2 / 1 / 3 / -1; justify-self:start; align-self:start; box-sizing:border-box; margin-left:var(--cf-x, 73.7px); width:var(--cf-sw, var(--cf-w, 17rem)); max-width:calc(100% - var(--cf-x, 73.7px) - var(--cf-foot, 5rem)); height:27px; min-height:0; margin:0 0 0 var(--cf-x, 73.7px); flex:none; border-radius:8px; }
-  .cf-d.cf-compact .collapsed :is(.chat-screen, .duel-win, .d-mini){ border-radius:6px !important; }
-  .cf-d.cf-compact .collapsed .duel-screen :is(*, *::before, *::after), .cf-d.cf-compact .collapsed .duel-screen::before, .cf-d.cf-compact .collapsed .duel-screen::after{ border-radius:6px !important; }
-  .cf-d.cf-compact .collapsed .chat-screen{ padding-top:0; padding-bottom:0; }
-  .cf-d.cf-compact .collapsed .chat-foot{ position:absolute; left:0; right:0; bottom:0; z-index:2; margin:0; }   /* la bande du bas reste au bas de la case, à la même place qu'ouverte */
+  :root:root :is(.chat-card, .duel-card).collapsed{ height:72px; min-height:72px; }
+  :root:root .collapsed > :is(.chat-box, .duel-stage){ display:grid; grid-template-columns:var(--cf-x, 73.7px) minmax(0, 1fr) auto; grid-template-rows:38px 34px; height:72px; padding:0; }
+  :root:root .collapsed :is(.chat-hole, .duel-screen){ grid-area:2 / 1 / 3 / -1; justify-self:start; align-self:start; box-sizing:border-box; width:var(--cf-sw, var(--cf-w, 17rem)); max-width:calc(100% - var(--cf-x, 73.7px) - var(--cf-foot, 5rem)); height:27px; min-height:0; margin:0 0 0 var(--cf-x, 73.7px); flex:none; border-radius:8px; }
+  :root:root .collapsed :is(.chat-screen, .duel-win, .d-mini){ border-radius:6px !important; }
+  :root:root .collapsed .duel-screen :is(*, *::before, *::after), :root:root .collapsed .duel-screen::before, :root:root .collapsed .duel-screen::after{ border-radius:6px !important; }
+  :root:root .collapsed .chat-screen{ padding-top:0; padding-bottom:0; }
+  :root:root .collapsed .chat-foot{ position:absolute; left:0; right:0; bottom:0; z-index:2; margin:0; }   /* la bande du bas reste au bas de la case, à la même place qu'ouverte */
   /* duel fermé : même fond que l'écran du chat sous la phrase (plus de jeu en filigrane ni de bandeau blanc) */
-  .cf-d.cf-compact .duel-card.collapsed .duel-win{ background:color-mix(in srgb, var(--ink) 5%, var(--bg)); }
-  .cf-d.cf-compact .duel-card.collapsed .duel-cv{ opacity:0; }
-  .cf-d.cf-compact .duel-card.collapsed .d-mini{ inset:2px; display:flex; align-items:center; justify-content:center; }
-  .cf-d.cf-compact .duel-card.collapsed .d-mini{ justify-content:center; }
+  :root:root .duel-card.collapsed .duel-win{ background:color-mix(in srgb, var(--ink) 5%, var(--bg)); }
+  :root:root .duel-card.collapsed .duel-cv{ opacity:0; }
+  :root:root .duel-card.collapsed .d-mini{ inset:2px; display:flex; align-items:center; justify-content:center; }
   /* chat et duel fermés : même texte (police, taille, couleur), même place (centré) */
-  .cf-d.cf-compact .duel-card.collapsed .d-mini-t{ background:none; padding:0 0.7rem; text-align:center; font:14.4px/1.3 'Courier Prime', 'Courier New', Courier, monospace; color:var(--ink-soft); }
-  .cf-d.cf-compact .chat-card.collapsed .chat-screen{ padding:0 0.7rem; }
-  .cf-d.cf-compact .chat-card.collapsed .chat-l{ text-align:center; padding:0; margin:0; color:var(--ink-soft); line-height:1.3; }
-  .cf-d.cf-compact .chat-card.collapsed .chat-box{ opacity:1; }   /* fermé, le chat s'atténue comme le duel fermé : tout sauf l'écran (titre, voyant, pleine page, bande du bas à 66 %), l'écran et son texte nets */
-  .cf-d.cf-compact .chat-card.collapsed .chat-box > :not(.chat-hole){ opacity:calc(1 - 0.34); }
-  .cf-d.cf-compact .chat-card.collapsed .chat-l, .cf-d.cf-compact .chat-card.collapsed .chat-l *{ font:14.4px/1.3 'Courier Prime', 'Courier New', Courier, monospace; text-shadow:none; color:var(--ink-soft); }   /* le dernier message : exactement le texte du duel fermé (taille, graisse, couleur, sans ombre), au téléphone aussi */
-  /* fermeture en deux temps, à l'envers de l'ouverture : la case reprend sa hauteur (l'écran reste large et suit), puis
+  :root:root .duel-card.collapsed .d-mini-t{ background:none; padding:0 0.7rem; text-align:center; font:14.4px/1.3 'Courier Prime', 'Courier New', Courier, monospace; color:var(--ink-soft); }
+  :root:root .chat-card.collapsed .chat-screen{ padding:0 0.7rem; }
+  :root:root .chat-card.collapsed .chat-l{ text-align:center; padding:0; margin:0; color:var(--ink-soft); line-height:1.3; }
+  :root:root .chat-card.collapsed .chat-box{ opacity:1; }   /* fermé, le chat s'atténue comme le duel fermé : tout sauf l'écran (titre, voyant, pleine page, bande du bas à 66 %), l'écran et son texte nets */
+  :root:root .chat-card.collapsed .chat-box > :not(.chat-hole){ opacity:calc(1 - 0.34); }
+  :root:root .chat-card.collapsed .chat-l, :root:root .chat-card.collapsed .chat-l *{ font:14.4px/1.3 'Courier Prime', 'Courier New', Courier, monospace; text-shadow:none; color:var(--ink-soft); }   /* le dernier message : exactement le texte du duel fermé (taille, graisse, couleur, sans ombre), au téléphone aussi */
+  /* ouverture en deux temps : d'abord l'écran s'élargit (découpe jouée en JS, cfWiden ; glideHeight attend 240 ms),
+     puis la case prend sa hauteur.
+     fermeture en deux temps, à l'envers de l'ouverture : la case reprend sa hauteur (l'écran reste large et suit), puis
      l'écran se resserre à la place du champ (classe cf-narrow, posée à la fin du glissement). Le resserrement est une
      découpe (clip-path) de l'écran large, pas un changement de largeur : rien n'est recalculé, c'est plus fluide. */
-  .cf-d.cf-compact .collapsed:is(.gliding, .cf-narrow) > :is(.chat-box, .duel-stage){ height:100%; grid-template-rows:38px minmax(0, 1fr); padding:0 0.6rem; }
-  .cf-d.cf-compact .collapsed:is(.gliding, .cf-narrow) :is(.chat-hole, .duel-screen){ margin:0 0 7px; width:100%; max-width:none; height:auto; align-self:stretch; }
-  .cf-d.cf-compact .collapsed.gliding .chat-foot > *{ opacity:0; }
+  :root:root .collapsed:is(.gliding, .cf-narrow) > :is(.chat-box, .duel-stage){ height:100%; grid-template-rows:38px minmax(0, 1fr); padding:0 0.6rem; }
+  :root:root .collapsed:is(.gliding, .cf-narrow) :is(.chat-hole, .duel-screen){ margin:0 0 7px; width:100%; max-width:none; height:auto; align-self:stretch; }
+  :root:root .collapsed.gliding .chat-foot > *{ opacity:0; }
   /* pendant la fermeture, le texte est déjà à sa place finale (même bord gauche, même largeur que dans l'écran étroit) */
-  .cf-d.cf-compact .duel-card.collapsed:is(.gliding, .cf-narrow) .d-mini{ left:calc(var(--cf-x, 73.7px) + 2px - 0.6rem); right:auto; width:calc(min(var(--cf-sw, var(--cf-w, 17rem)), 100% - var(--cf-x, 73.7px) - var(--cf-foot, 5rem)) - 4px); }
-  .cf-d.cf-compact .chat-card.collapsed:is(.gliding, .cf-narrow) .chat-log{ margin-left:calc(var(--cf-x, 73.7px) - 0.6rem); width:calc(min(var(--cf-sw, var(--cf-w, 17rem)), 100% + 1.4rem + 4px - var(--cf-x, 73.7px) - var(--cf-foot, 5rem)) - 1.4rem - 4px); align-self:flex-start; }
-  .cf-d.cf-compact .collapsed.cf-narrow .chat-foot > *{ animation:cfFade .4s ease .15s backwards; }   /* la découpe elle-même est jouée en JS (cfNarrow), sur des mesures réelles */
-  /* ouverture en deux temps : d'abord l'écran s'élargit (découpe jouée en JS, cfWiden ; glideHeight attend 240 ms),
-     puis la case prend sa hauteur */
+  :root:root .duel-card.collapsed:is(.gliding, .cf-narrow) .d-mini{ left:calc(var(--cf-x, 73.7px) + 2px - 0.6rem); right:auto; width:calc(min(var(--cf-sw, var(--cf-w, 17rem)), 100% - var(--cf-x, 73.7px) - var(--cf-foot, 5rem)) - 4px); }
+  :root:root .chat-card.collapsed:is(.gliding, .cf-narrow) .chat-log{ margin-left:calc(var(--cf-x, 73.7px) - 0.6rem); width:calc(min(var(--cf-sw, var(--cf-w, 17rem)), 100% + 1.4rem + 4px - var(--cf-x, 73.7px) - var(--cf-foot, 5rem)) - 1.4rem - 4px); align-self:flex-start; }
+  :root:root .collapsed.cf-narrow .chat-foot > *{ animation:cfFade .4s ease .15s backwards; }   /* la découpe elle-même est jouée en JS (cfNarrow), sur des mesures réelles */
 }
 @media (min-width:721px){   /* ordinateur seulement : hauteur commune des cases ouvertes et pastille d'« urgent » au survol */
   /* « urgent » actif, au survol : la petite pastille claire d'avant la 11.3 revient derrière le triangle
      (case urgente et listes), pour qu'on voie qu'il réagit ; le triangle garde son mauve, vidé et plus petit */
-  .cf-pastille .urgent-btn.active:not(.auto):hover{ background:var(--surface-2); }
+  :root .urgent-btn.active:not(.auto):hover{ background:var(--surface-2); }
   /* UNE hauteur pour les listes et les mémos ouverts, survolés comme punaisés, qui est aussi leur hauteur
      maximale : la hauteur punaisée actuelle, celle du jeu (--cf-h = largeur d'une case × 9/16 + poste de commande) ; au-delà, les tâches défilent dans la case, comme les articles d'un mémo.
      Avant (et en 11.5) : au survol, la hauteur du contenu ; punaisée, au moins la hauteur du jeu (406 px) ; pas de maximum
      pour les listes. */
-  .cf-hmax{ --cf-h:calc(var(--col-w, 427px) * 9 / 16 + var(--base-k, 166px)); }
-  .cf-hmax .categories > .category:not(.collapsed):not(.fullpage):not(.chat-card):not(.duel-card){ height:var(--cf-h); max-height:var(--cf-h); min-height:0 !important; }
-  .cf-hmax .categories > .category.courses{ --courses-max:var(--cf-h) !important; }
-  .cf-hmax .categories > .category:not(.courses):not(.collapsed):not(.fullpage):not(.chat-card):not(.duel-card) > ul.items{ flex:0 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:color-mix(in srgb, var(--ink) 18%, transparent) transparent; }
+  :root{ --cf-h:calc(var(--col-w, 427px) * 9 / 16 + var(--base-k, 166px)); }
+  :root .categories > .category:not(.collapsed):not(.fullpage):not(.chat-card):not(.duel-card){ height:var(--cf-h); max-height:var(--cf-h); min-height:0 !important; }
+  :root .categories > .category.courses{ --courses-max:var(--cf-h) !important; }
+  :root .categories > .category:not(.courses):not(.collapsed):not(.fullpage):not(.chat-card):not(.duel-card) > ul.items{ flex:0 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:color-mix(in srgb, var(--ink) 18%, transparent) transparent; }
 }
 /* chat et duel : fond blanc d'office, sans ombre, tant qu'aucune couleur de personne n'est choisie (ordinateur et téléphone) ;
    le chat y reprend la mise en page qu'il a sur une couleur de personne (retrait de 0,6 rem comme le jeu, bande du bas pleine largeur) */
-.cf-fond :is(.chat-card, .duel-card):not(.has-pcol):not(.fullpage){ background:var(--surface); border-radius:14px; }
-.cf-fond .chat-card:not(.has-pcol):not(.fullpage):not(.collapsed) .chat-box{ padding-left:0.6rem; padding-right:0.6rem; }
-.cf-fond .chat-card:not(.has-pcol):not(.fullpage):not(.collapsed) .chat-foot{ margin-left:-0.6rem; margin-right:-0.6rem; }
+:root :is(.chat-card, .duel-card):not(.has-pcol):not(.fullpage){ background:var(--surface); border-radius:14px; }
+:root .chat-card:not(.has-pcol):not(.fullpage):not(.collapsed) .chat-box{ padding-left:0.6rem; padding-right:0.6rem; }
+:root .chat-card:not(.has-pcol):not(.fullpage):not(.collapsed) .chat-foot{ margin-left:-0.6rem; margin-right:-0.6rem; }
 @keyframes cfFade{ from{ opacity:0; } }
 /* liste punaisée, ordinateur : « Nouvelle tâche… » posée sur la même ligne que le titre (elle reposait
    1 px plus haut, déjà en 11.5) et le crayon centré sur les capitales du titre (2,25 px trop haut) — mesuré avec les vraies
    polices (Courier Prime, Public Sans) */
 @media (min-width:721px){
-  .cf-d .categories > .category:not(.collapsed):not(.peek):not(.courses) .cat-quick-wrap{ position:relative; top:1px; }
-  .cf-d .categories > .category:not(.collapsed):not(.peek):not(.courses) .cat-quick-pen{ top:calc(50% + 1.25px); }
+  :root .categories > .category:not(.collapsed):not(.peek):not(.courses) .cat-quick-wrap{ position:relative; top:1px; }
+  :root .categories > .category:not(.collapsed):not(.peek):not(.courses) .cat-quick-pen{ top:calc(50% + 1.25px); }
 }
 
 /* ---- 11.6, téléphone : même principe. Case fermée sur deux lignes (titre, puis champ entre poignée et punaise) ; la
    barre du bas n'y est plus (toucher la case l'ouvre) et reste sur la case ouverte, pour la refermer. Liste punaisée :
    le même champ sous le titre (au téléphone, la saisie y était déjà sous le titre). */
 @media (max-width:720px){
-  .cf-d .categories > .category.collapsed:not(.chat-card):not(.duel-card){ min-height:0; }
+  :root .categories > .category.collapsed:not(.chat-card):not(.duel-card){ min-height:0; }
   :root{ --cf-foot:2.4rem; }
   /* case fermée : le champ au-dessus de la ligne du bas (poignée, barre, punaise), à leur place habituelle ; la case grandit un peu */
-  .cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:27px; }
-  .cf-d.cf-compact .category.courses.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:25px; }
+  :root:root .category.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:27px; }
+  :root:root .category.courses.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:25px; }
   /* champ un peu plus fin (le texte reste à 16 px : en dessous, Safari zoome en tapant) */
-  .cf-d .cat-quick{ padding-top:0.12rem !important; padding-bottom:0.12rem !important; }
+  :root .cat-quick{ padding-top:0.12rem !important; padding-bottom:0.12rem !important; }
   /* chat et duel fermés : même hauteur que les listes (94 px), écran à la hauteur et à la place du champ */
-  .cf-d.cf-compact :is(.chat-card, .duel-card).collapsed{ height:94px; min-height:94px; }
-  .cf-d.cf-compact .collapsed > :is(.chat-box, .duel-stage){ grid-template-rows:43px 51px; height:94px; }
-  .cf-d.cf-compact .collapsed :is(.chat-hole, .duel-screen){ height:24px; }
+  :root:root :is(.chat-card, .duel-card).collapsed{ height:94px; min-height:94px; }
+  :root:root .collapsed > :is(.chat-box, .duel-stage){ grid-template-rows:43px 51px; height:94px; }
+  :root:root .collapsed :is(.chat-hole, .duel-screen){ height:24px; }
   /* liste ouverte : moins d'air entre le champ et la première tâche (40 px → 24 px du champ à la première case) */
-  .cf-d .category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:calc(0.35rem + var(--hd-lift) - 16px); }
+  :root .category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:calc(0.35rem + var(--hd-lift) - 16px); }
   /* liste punaisée : le même champ sous le titre */
-  .cf-d .category:not(.courses) .cat-head-right{ align-self:flex-start; }
-  .cf-d .category:not(.courses) .cat-quick-wrap{ order:4; flex:0 0 calc(100% - var(--cf-ml, 3.17rem)); max-width:none; z-index:3; margin-left:var(--cf-ml, 3.17rem); }
-  .cf-d .category:not(.courses) .cat-quick{ flex:0 0 auto; width:min(var(--cf-w, 17rem), calc(100% + 40px)); border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb, var(--ink) 2.5%, var(--surface)); padding:0.28rem 0.5rem 0.28rem 1.7rem; }
-  .cf-d .category:not(.courses) .cat-quick-pen{ left:0.55rem; }
-  .cf-d .category:not(.courses) .cat-quick:focus{ border:1px solid var(--cat-color, var(--accent)); }
-  .cf-d .category:not(.courses) .cat-quick::placeholder{ opacity:0; }
-  .cf-d .category:not(.courses) .cat-quick:focus::placeholder{ opacity:.7; }
+  :root .category:not(.courses) .cat-head-right{ align-self:flex-start; }
+  :root .category:not(.courses) .cat-quick-wrap{ order:4; flex:0 0 calc(100% - var(--cf-ml, 3.17rem)); max-width:none; z-index:3; margin-left:var(--cf-ml, 3.17rem); }
+  :root .category:not(.courses) .cat-quick{ flex:0 0 auto; width:min(var(--cf-w, 17rem), calc(100% + 40px)); border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb, var(--ink) 2.5%, var(--surface)); padding:0.28rem 0.5rem 0.28rem 1.7rem; }
+  :root .category:not(.courses) .cat-quick-pen{ left:0.55rem; }
+  :root .category:not(.courses) .cat-quick:focus{ border:1px solid var(--cat-color, var(--accent)); }
+  :root .category:not(.courses) .cat-quick::placeholder{ opacity:0; }
+  :root .category:not(.courses) .cat-quick:focus::placeholder{ opacity:.7; }
 }
 /* ---- 11.6, téléphone : la barre pour ouvrir et refermer, sur les cases fermées comme ouvertes : une seule ligne, plus
    large et plus fine que celle de la 11.5 (3,8 rem × 2 px, avant 2,4 rem × 4 px ; une double ligne essayée, écartée ; 3 px essayés) */
 @media (hover:none){
-  .cf-d .cat-close-bar{ width:5.5rem !important; }
-  .cf-d .cat-close-bar::before{ width:3.8rem; height:2px; border-radius:1px; }
+  :root .cat-close-bar{ width:5.5rem !important; }
+  :root .cat-close-bar::before{ width:3.8rem; height:2px; border-radius:1px; }
 }
 /* ---- 11.6, téléphone : la même barre sur le chat et le duel, fermés et ouverts (au milieu de la bande du bas) */
 @media (hover:none){
-  .cf-d :is(.chat-card, .duel-card):is(.collapsed, .peek) > .cat-close-bar{ display:grid; touch-action:none; place-items:center; position:absolute; z-index:3;
+  :root :is(.chat-card, .duel-card):is(.collapsed, .peek) > .cat-close-bar{ display:grid; touch-action:none; place-items:center; position:absolute; z-index:3;
     left:50%; bottom:0; transform:translateX(-50%); height:1.6rem; padding:0; margin:0;
     appearance:none; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
-  .cf-d .fullpage > .cat-close-bar{ display:none !important; }
+  :root .fullpage > .cat-close-bar{ display:none !important; }
 }
 /* ---- 11.6 : le faisan doré, à droite du titre gravé « Duel de faisans », dans le traitement du voyant éteint ; image
    dessinée au chargement à partir du faisan du jeu (cfDuelPicto). La boîte du titre est agrandie de 5 px en haut et en bas
    (marge négative : le texte ne bouge pas) pour que l'image, plus haute qu'une ligne, ne soit pas rognée. Voyant, titre
    et faisan centrés sur une même ligne : celle des titres des listes (le titre n'en bouge pas) ; le voyant descend de 1 px. */
-.cf-d :is(.chat-card, .duel-card) .chat-led{ margin-top:1px; }
-.cf-d :is(.chat-card, .duel-card) .chat-led::after{ top:1px; }
-.cf-d .duel-card .chat-led::after{ padding:5px calc(var(--duel-picto-w, 0px) + 7px) 5px 0; margin-top:-5px; background-image:var(--duel-picto, none); background-repeat:no-repeat;
+:root :is(.chat-card, .duel-card) .chat-led{ margin-top:1px; }
+:root :is(.chat-card, .duel-card) .chat-led::after{ top:1px; }
+:root .duel-card .chat-led::after{ padding:5px calc(var(--duel-picto-w, 0px) + 7px) 5px 0; margin-top:-5px; background-image:var(--duel-picto, none); background-repeat:no-repeat;
   background-position:right 0 top var(--duel-picto-y, 0px); background-size:var(--duel-picto-w, 0px) var(--duel-picto-h, 0px); }
 /* 11.8 : duel ouvert (punaisé) : plus de faisan doré à côté du titre, le jeu en montre déjà assez ; entrouvert au survol, il
    reste (au doigt, déployé = ouvert : il part aussi) */
-.cf-d .duel-card:not(.collapsed):not(.peek) .chat-led::after{ background-image:none; padding-right:0; }
-@media (hover:none){ .cf-d .duel-card.peek .chat-led::after{ background-image:none; padding-right:0; } }
+:root .duel-card:not(.collapsed):not(.peek) .chat-led::after{ background-image:none; padding-right:0; }
+@media (hover:none){ :root .duel-card.peek .chat-led::after{ background-image:none; padding-right:0; } }
 /* ---- 11.7 : bande du bas du chat et du duel un peu resserrée (ouverts comme fermés : rien ne saute à l'ouverture) —
    « … », initiales et punaise plus proches, initiales moins espacées : avec deux initiales (« AP LJ »), « … » passait
    sous l'écran du chat ou du duel fermé. La place réservée à droite de l'écran fermé est en plus mesurée au rendu
    (cfFootRoom, --cf-foot par case) : l'écran s'arrête toujours avant « … », même avec trois initiales. */
-.cf-d .chat-foot, .cf-d .duel-card .duel-foot{ gap:0.25rem; padding-right:calc(0.55rem + 24px + 0.1rem); }
-.cf-d .chat-foot .chat-more{ padding:1px 3px 4px; }
-.cf-d .chat-foot .chat-who{ letter-spacing:0.02em; }
+:root .chat-foot, :root .duel-card .duel-foot{ gap:0.25rem; padding-right:calc(0.55rem + 24px + 0.1rem); }
+:root .chat-foot .chat-more{ padding:1px 3px 4px; }
+:root .chat-foot .chat-who{ letter-spacing:0.02em; }
 /* ordinateur, chat et duel fermés : pas de « … » (la case s'entrouvre dès qu'on l'approche, et « … » avec elle) : l'écran
    garde la largeur des champs des listes avec une ou deux initiales ; au-delà, cfFootRoom le raccourcit juste assez */
-@media (min-width:721px){ .cf-d.cf-compact :is(.chat-card, .duel-card).collapsed:not(.gliding):not(.cf-narrow) .chat-more{ display:none; } }
+@media (min-width:721px){ :root:root :is(.chat-card, .duel-card).collapsed:not(.gliding):not(.cf-narrow) .chat-more{ display:none; } }
 /* 11.7 : ordinateur, cases fermées : le champ (et l'écran du chat et du duel fermés) centré sur la ligne du bas, à la hauteur
    de la poignée et de la punaise (14 px du bas), plus fin (22 px) ; les cases gardent leurs 72 px. Choisi au banc le 17/11/2026. */
 @media (min-width:721px){
-  html:not(.ch-a).cf-d .category.collapsed .cat-quick{ padding-top:0.12rem; padding-bottom:0.12rem; }
-  html:not(.ch-a).cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ position:relative; top:9px; }
-  html:not(.ch-a).cf-d.cf-compact .category.courses.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ top:7px; }
-  html:not(.ch-a).cf-d.cf-compact .collapsed :is(.chat-hole, .duel-screen){ height:22px; position:relative; top:9px; }
+  html:not(.ch-a):root .category.collapsed .cat-quick{ padding-top:0.12rem; padding-bottom:0.12rem; }
+  html:not(.ch-a):root:root .category.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ position:relative; top:9px; }
+  html:not(.ch-a):root:root .category.courses.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ top:7px; }
+  html:not(.ch-a):root:root .collapsed :is(.chat-hole, .duel-screen){ height:22px; position:relative; top:9px; }
   /* banc : variante A (?champ=a) : le champ au-dessus de la ligne du bas, cases fermées à 86 px */
-  .ch-a.cf-d.cf-compact .category.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:21px; }
-  .ch-a.cf-d.cf-compact .category.courses.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:19px; }
-  .ch-a.cf-d.cf-compact :is(.chat-card, .duel-card).collapsed{ height:86px; min-height:86px; }
-  .ch-a.cf-d.cf-compact .collapsed > :is(.chat-box, .duel-stage){ grid-template-rows:38px 48px; height:86px; }
+  .ch-a:root:root .category.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:21px; }
+  .ch-a:root:root .category.courses.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:19px; }
+  .ch-a:root:root :is(.chat-card, .duel-card).collapsed{ height:86px; min-height:86px; }
+  .ch-a:root:root .collapsed > :is(.chat-box, .duel-stage){ grid-template-rows:38px 48px; height:86px; }
 }
 /* 11.7 : chat et duel fermés : l'écran s'atténue au repos, comme ouverts ; net au survol, quand on écrit ou joue,
    et quand un message ou un coup de l'autre attend d'être vu */
-.cf-d .collapsed:is(.chat-card, .duel-card) :is(.chat-hole, .duel-screen){ opacity:calc(1 - 0.34); transition:opacity .35s ease; }
-.cf-d .collapsed:is(.chat-card, .duel-card):is(:hover, :focus-within, .chat-open, .unread, .duel-new, .duel-live, .duel-touch) :is(.chat-hole, .duel-screen){ opacity:1; }
+:root .collapsed:is(.chat-card, .duel-card) :is(.chat-hole, .duel-screen){ opacity:calc(1 - 0.34); transition:opacity .35s ease; }
+:root .collapsed:is(.chat-card, .duel-card):is(:hover, :focus-within, .chat-open, .unread, .duel-new, .duel-live, .duel-touch) :is(.chat-hole, .duel-screen){ opacity:1; }
 </style>
 
 <div class="wrap">
@@ -3933,7 +3931,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.16</span>
+    <span class="version-tag">v11.18</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -11605,7 +11603,7 @@ const SOFT_EASE = "cubic-bezier(.33,0,.2,1)";   // 10.67 : départ en douceur (a
 const SOFT_CLOSE = "cubic-bezier(.45,0,.25,1)";   // 10.67 : fermeture plus douce, sans départ sec (lente au début et à la fin)
 // 11.6 : l'écran du chat ou du duel fermé s'élargit (ouverture) ou se resserre (fermeture) par une découpe
 // (clip-path) calculée sur ses vraies positions, avant et après : rien ne saute, ni le bord ni le texte
-function cfScreen(card){ return card.matches(".cf-d.cf-compact .chat-card, .cf-d.cf-compact .duel-card") ? card.querySelector(".chat-hole, .duel-screen") : null; }
+function cfScreen(card){ return card.matches(".chat-card, .duel-card") ? card.querySelector(".chat-hole, .duel-screen") : null; }
 function cfInset(t, r, b, l, rad){ return `inset(${t.toFixed(1)}px ${r.toFixed(1)}px ${b.toFixed(1)}px ${l.toFixed(1)}px round ${rad}px)`; }
 function cfWiden(card, r0, dur){
   const s = cfScreen(card); if(!s || !s.animate) return;
@@ -11615,6 +11613,7 @@ function cfWiden(card, r0, dur){
     { clipPath:cfInset(top, r1.right - r0.right, bot, r0.left - r1.left, 8), easing:"cubic-bezier(.33,0,.2,1)" },
     { clipPath:cfInset(top, 0, bot, 0, 8), offset:lag / T, easing:SOFT_EASE },
     { clipPath:cfInset(0, 0, 0, 0, 18) } ], { duration:T });
+  return T;
 }
 function cfNarrow(card){
   const s = cfScreen(card);
@@ -11636,7 +11635,12 @@ function softHeight(card, change, opening){
   const cfS0 = opening && cfScreen(card), cfR0 = cfS0 && cfS0.getBoundingClientRect();   // 11.6 : l'écran étroit, avant
   change();
   const dur = glideHeight(card, h0, opening);
-  if(cfR0) cfWiden(card, cfR0, dur);
+  const cfT = cfR0 ? cfWiden(card, cfR0, dur) : 0;
+  // 11.18 : duel qui s'ouvre : le jeu reste caché tant que l'écran s'élargit et que la case descend (le voir glisser
+  // dans l'écran en mouvement faisait bug), puis il apparaît en fondu, l'écran une fois déployé
+  const cv = card.querySelector(".duel-cv");
+  if(cv && cv._appear){ cv._appear.cancel(); cv._appear = null; }
+  if(cfT && cv && cv.animate) cv._appear = cv.animate([{ opacity:0 }, { opacity:0, offset:cfT / (cfT + 350) }, { opacity:1 }], { duration:cfT + 350, easing:"ease" });
   if(card._postGlide) card._postGlide(pre, dur, opening ? SOFT_EASE : SOFT_CLOSE);
 }
 // 10.67 : la case passe de la hauteur h0 à sa hauteur actuelle ; rend la durée (ms)
