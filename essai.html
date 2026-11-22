@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.19 -->
+<!-- Sous le tapis — version AUTONOME 11.20 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3934,7 +3934,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.19</span>
+    <span class="version-tag">v11.20</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5510,10 +5510,28 @@ function addPastedTasks(cat, lines){
   if(!lines.length) return 0;
   // insertItem met chaque tâche en tête : on insère à rebours pour garder
   // l'ordre collé (liste « récentes en bas » : affichage inversé, donc à l'endroit)
-  const seq = isCatReversed(cat.id) ? lines : lines.slice().reverse();
+  // 11.20 : les œufs, eux, vont en queue (insertItem les ajoute à la fin) : dans l'ordre collé
+  const items = lines.map(pastedItem).filter(Boolean);
+  const tasks = items.filter(it => !it.egg), eggs = items.filter(it => it.egg);
+  const seq = (isCatReversed(cat.id) ? tasks : tasks.slice().reverse()).concat(eggs);
   let n = 0;
-  seq.forEach(t => { try{ insertItem(cat, { t }); n++; }catch(err){ console.error("[collage] échec", err); } });
+  seq.forEach(it => { try{ insertItem(cat, it); n++; }catch(err){ console.error("[collage] échec", err); } });
   return n;
+}
+// 11.20 : marques ajoutées par « Copier » en fin de ligne : [œuf] → œuf, [urgent] → urgente,
+// [en cours] → retirée (la tâche recollée repart normale) ; le reste du texte ne bouge pas
+function pastedItem(line){
+  let t = String(line || ""), egg = false, urgent = false, m;
+  while((m = t.match(/\s*\[(œuf|oeuf|urgent|en cours)\]\s*$/i))){
+    const w = m[1].toLowerCase();
+    if(w === "urgent") urgent = true; else if(w !== "en cours") egg = true;
+    t = t.slice(0, m.index);
+  }
+  t = t.trim();
+  if(!t) return null;
+  const it = { t };
+  if(urgent) it.urgent = true; else if(egg) it.egg = true;   // urgent et en couvaison s'excluent
+  return it;
 }
 // Glisser une tâche dans une autre liste : même principe que le changement
 // de catégorie du formulaire — la tâche est recopiée en entier (avec sa
@@ -9296,6 +9314,7 @@ function catTasksText(cat){
       if(courses && e.q) line += " " + coursesQtyLabel(e.q);
       if(e.note && String(e.note).trim()) line += " (" + String(e.note).trim().replace(/\s*\n\s*/g, " ; ") + ")";
       if(e.urgent) line += " [urgent]";
+      else if(!courses && e.egg) line += " [œuf]";   // 11.20 : recollée dans l'appli, elle redevient un œuf
       if(e.waiting) line += " [en cours]";
       return line;
     })
@@ -9348,7 +9367,7 @@ function buildCatCopyRow(cat){
   b.addEventListener("click", async ()=>{
     const lines = catTasksText(cat);
     if(!lines.length){ b.textContent = "Rien à copier"; setTimeout(()=>{ b.textContent = "Copier (toutes les tâches de la liste)"; }, 1600); return; }
-    const ok = await copyText(cat.title + "\n" + lines.join("\n"));
+    const ok = await copyText(lines.join("\n"));   // 11.20 : sans le titre (recollé, il devenait une tâche)
     b.textContent = ok ? `Copié (${lines.length})` : "La copie n'a pas marché";
     setTimeout(()=>{ b.textContent = "Copier (toutes les tâches de la liste)"; }, 1800);
   });

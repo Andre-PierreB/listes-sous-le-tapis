@@ -173,6 +173,24 @@ async def t_supprimer_liste_pleine(pg):
     await pg.locator(f"#cat-{v} .cat-remove").click(); await pg.wait_for_timeout(300)
     check(await pg.locator(f"#cat-{v}").count() == 0, "une liste vide doit partir d'un seul clic")
 
+async def t_copier_recoller(pg):
+    """11.20 : « Copier » sans le titre ; recollé, l'œuf reste un œuf et l'urgente reste urgente."""
+    c = await new_list(pg, "Source")
+    await add_tasks(pg, c, "Simple", "Pressée")
+    await js(pg, """id => { const c = DATA.find(x => x.id === id); insertItem(c, { t:"Couvée 1", egg:true }); insertItem(c, { t:"Couvée 2", egg:true });
+        overrides = loadOverrides(); const k = getEffectiveItems(c).findIndex(b => b.t === "Pressée");
+        overrides[id + ':' + k] = { urgent:true }; saveOverrides(overrides); renderAll(); }""", c)
+    txt = await js(pg, "id => catTasksText(DATA.find(x => x.id === id)).join('\\n')", c)
+    check("Source" not in txt, f"le titre est dans la copie : {txt!r}")
+    check("[œuf]" in txt, f"les œufs ne sont pas marqués : {txt!r}")
+    d = await new_list(pg, "Destination")
+    got = await js(pg, """([id, txt]) => { const c = DATA.find(x => x.id === id); addPastedTasks(c, splitPastedTasks(txt)); renderAll();
+        return getCatOrder(c).map(i => { const b = getEffectiveItems(c)[i]; return [b.t, !!b.egg, !!b.urgent]; }); }""", [d, txt])
+    check([g[0] for g in got if g[1]] == ["Couvée 1", "Couvée 2"], f"œufs mal recollés : {got}")
+    check(any(g[0] == "Pressée" and g[2] for g in got), f"l'urgente n'est plus urgente : {got}")
+    check(all("[" not in g[0] for g in got), f"une marque est restée dans le texte : {got}")
+    check(len(got) == 4, f"il devrait y avoir 4 tâches : {got}")
+
 # --- 11.6 : cases fermées ---------------------------------------------------
 async def t_case_entrouverte_se_referme(pg):
     """Bug 11.5 : une case redessinée juste après la sortie de la souris restait entrouverte."""
