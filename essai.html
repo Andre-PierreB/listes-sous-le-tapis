@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.18 -->
+<!-- Sous le tapis — version AUTONOME 11.19 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -2820,6 +2820,9 @@ li.undo-flash{ animation:undo-flash 2.6s ease-out both; }
 .cat-edit-actions{ margin:0.5rem 0 0.2rem; justify-content:flex-end; }   /* 10.53 : bas de la modification d'une liste */
 .courses-edit .edit-actions{ flex-basis:100%; margin-top:0.1rem; }
 .courses-edit .edit-remove{ margin-right:auto; color:var(--ink-faint); border-color:transparent; background:none; }   /* 10.71 : à gauche, discret */
+.cat-share-link.cat-remove{ color:var(--ink-faint); text-decoration-color:color-mix(in srgb, currentColor 40%, transparent); transition:color .12s ease; }   /* 11.19 : discret, terre cuite au survol */
+.cat-share-link.cat-remove:hover, .cat-share-link.cat-remove.sure{ color:var(--late); }
+.cat-share-link.cat-remove.sure{ font-weight:600; text-decoration-color:currentColor; }
 .courses-item{ -webkit-touch-callout:none; }   /* 10.71 : l'appui long ouvre la modification (pas le menu de l'iPhone) */
 .courses-item:not(.editing) .item-text{ cursor:pointer; -webkit-user-select:none; user-select:none; }
 @media (hover:hover) and (pointer:fine){ .courses-item .item-text, .courses-item:not(.editing) .item-text{ -webkit-user-select:text; user-select:text; } }   /* 10.75 : à la souris, le texte des mémos se sélectionne (glisser) ; au doigt, l'appui long modifie */
@@ -3931,7 +3934,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.18</span>
+    <span class="version-tag">v11.19</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -4962,6 +4965,48 @@ function deleteCategory(catId){
   if(!deletedCategoryIds.includes(catId)) deletedCategoryIds.push(catId);
   saveDeletedCategoryIds(deletedCategoryIds);
   return true;
+}
+
+// 11.19 : supprimer une liste pleine, depuis sa fenêtre de modification (créateur
+// de la liste seulement). Chaque tâche est traitée comme par sa croix : cochée par
+// moi, elle part à la corbeille (le compteur ne bouge pas) ; sinon elle est effacée.
+// Les tâches « en cours » de la liste partent aussi (elles reviendraient sinon dans
+// une liste disparue). Tout est écrit avant le même rendu : un seul ⌘Z remet tout.
+function deleteFullCategory(catId){
+  const cat = DATA.find(c => c.id === catId);
+  if(!cat || !iOwnList(catId)) return false;
+  state = loadState();
+  overrides = loadOverrides();
+  customItems = loadCustom();
+  checkedAt = loadJSONKey(CHECKED_AT_KEY, {});
+  trash = loadJSONKey(TRASH_KEY, []);
+  if(!Array.isArray(trash)) trash = [];
+  const side = isSideList(catId);   // mémo : un article n'est jamais envoyé à la corbeille
+  const waitingKeys = [];
+  getEffectiveItems(cat).forEach((base, i)=>{
+    const key = itemKey(catId, i);
+    if(!base || isDeleted(key)) return;
+    const eff = getEffective(key, base);
+    const wasDone = !side && !!state[key] && checkedByMe(catId, key);
+    if(wasDone) trash.push({
+      t: eff.t, note: eff.note || "", who: eff.who || "", due: eff.due || "",
+      catId: cat.id, catTitle: cat.title, doneOn: checkedAt[key] || "",
+      purgedOn: todayISO(), kind: "done", key,
+    });
+    else if(eff.waiting) waitingKeys.push(key);
+    if(checkedAt[key]) delete checkedAt[key];
+    overrides[key] = overrides[key] || {};
+    overrides[key].deleted = true;
+  });
+  saveJSONKey(TRASH_KEY, trash);
+  saveJSONKey(CHECKED_AT_KEY, checkedAt);
+  saveOverrides(overrides);
+  waitingKeys.forEach(unlogWaitingThisWeek);   // comme la croix : l'envoi en cours de cette semaine ne compte plus
+  return deleteCategory(catId);
+}
+// nombre de tâches (ou d'articles) vivantes d'une liste, « en cours » comprises
+function liveTaskCount(cat){
+  return getEffectiveItems(cat).filter((b, i) => b && !isDeleted(itemKey(cat.id, i))).length;
 }
 
 // 8.36 : nouvelle couleur choisie dans les pastilles du renommage, écrite
@@ -9256,6 +9301,43 @@ function catTasksText(cat){
     })
     .filter(l => l !== "- ");
 }
+// 11.19 : « Supprimer la liste », dernière ligne de la modification, sous « Copier ».
+// Pleine, deux clics : le premier dit ce qui sera effacé (gardé si la case est redessinée
+// entre-temps, par exemple quand une case fermée s'ouvre au premier clic). Vide : un clic.
+let catRemoveArmed = null;
+function buildCatDeleteRow(cat){
+  const row = document.createElement("div");
+  row.className = "cat-convert cat-del";
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "cat-share-link cat-remove";
+  const armText = ()=>{
+    const n = liveTaskCount(cat), courses = isCoursesList(cat.id);
+    const word = courses ? (n > 1 ? "articles effacés" : "article effacé") : (n > 1 ? "tâches effacées" : "tâche effacée");
+    const others = listPeople(cat.id).map(u => personName(u, cat.id));
+    return `Vraiment ? ${n} ${word}` + (others.length ? `, aussi chez ${others.join(", ")}` : "");
+  };
+  const armed = catRemoveArmed === cat.id && liveTaskCount(cat) > 0;
+  b.textContent = armed ? armText() : "Supprimer la liste";
+  b.classList.toggle("sure", armed);
+  row.appendChild(b);
+  row.addEventListener("mousedown", e => { if(e.target.closest("button")) e.preventDefault(); }); // le curseur reste dans le titre
+  row.addEventListener("click", e => e.stopPropagation());
+  b.addEventListener("click", ()=>{
+    if(liveTaskCount(cat) && catRemoveArmed !== cat.id){
+      catRemoveArmed = cat.id;
+      b.textContent = armText(); b.classList.add("sure");
+      return;
+    }
+    catRemoveArmed = null;
+    editingCategoryTitle = null; catEditSnap = null;
+    if(addingCat === cat.id) addingCat = null;
+    if(fullpageCat === cat.id){ fullpageCat = null; document.body.classList.remove("has-fullpage"); }
+    deleteFullCategory(cat.id);
+    renderAll();
+  });
+  return row;
+}
 function buildCatCopyRow(cat){
   const row = document.createElement("div");
   row.className = "cat-convert cat-copy";
@@ -11109,6 +11191,7 @@ function render(){
     }
 
     const renamingThisCat = editingCategoryTitle === cat.id;
+    if(!renamingThisCat && catRemoveArmed === cat.id) catRemoveArmed = null;   // 11.19 : fenêtre refermée : on repart de zéro
     // 10.53 : état de la liste à l'ouverture de la modification (pour Annuler)
     if(renamingThisCat && (!catEditSnap || catEditSnap.id !== cat.id))
       catEditSnap = { id: cat.id, color: cat.color, members: ((listInfo(cat.id) || { members:[] }).members || []).slice(), tint: listTintUid(cat.id) };
@@ -11270,6 +11353,7 @@ function render(){
       const convRow = buildCatConvertRow(cat, head);
       if(convRow) card.appendChild(convRow);
       card.appendChild(buildCatCopyRow(cat));   // 10.27
+      if(iOwnList(cat.id)) card.appendChild(buildCatDeleteRow(cat));   // 11.19
       // 10.53 : Annuler / Enregistrer, comme dans la modification d'une tâche.
       // Annuler remet aussi la couleur et le partage d'avant.
       const act = document.createElement("div");
