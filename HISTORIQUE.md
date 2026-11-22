@@ -8,8 +8,36 @@ Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours ch
     effacées » (« aussi chez … » si partagée) ; vide : un clic. Chaque tâche comme par sa croix (cochée par moi →
     corbeille, sinon effacée ; « en cours » comprises, envoi de la semaine décompté ; articles de mémo effacés).
     Un seul ⌘Z remet tout (une liste partagée revient non partagée). deleteFullCategory, buildCatDeleteRow.
-    Test : supprimer_liste_pleine. (11.8 à 11.18 : publiées par dépôt manuel, détail dans les notes de banc du
-    projet, pas encore reportées ici ni archivées.)
+    Test : supprimer_liste_pleine.
+  - 11.18 : duel fermé qui s'ouvre : le jeu reste caché pendant que l'écran s'élargit et que la case descend, puis
+    apparaît en fondu (le voir glisser dans l'écran en mouvement « faisait bug »).
+  - 11.17 : ménage du code sans changement visible : les classes d'essai de la 11.6 posées sur <html> (cf-d, cf-fond,
+    cf-pastille, cf-hmax, cf-compact) deviennent « :root » / « :root:root » (même élément, même poids de règles).
+    Pas d'archive (jamais passée par le dépôt).
+  - 11.16 : « +n ↓ » absent alors qu'un article était caché dans le fondu du bas : la limite de listDebord remonte de
+    la moitié du fondu (1,1 rem) ; listes et mémos.
+  - 11.15 : barre de défilement du mémo visible dès un seul article : la zone de toucher du rond (.strike-dot::after)
+    dépassait sous le dernier article ; sous le dernier article d'un mémo, elle ne descend plus que de 4 px. Pas
+    d'archive (jamais passée par le dépôt).
+  - 11.14 : mémo partagé à la couleur d'une personne : fermé, la couleur ; ouvert, la couleur en haut en fondu vers le
+    blanc (comme l'ivoire de la 11.13) ; le dégradé reste pendant la fermeture (.gliding).
+  - 11.13 : mémo ouvert : l'ivoire du mémo fermé en haut, en fondu vers le blanc sur la hauteur d'une case fermée
+    (--memo-top-h). Bug 11.8 : « +0 ↓ » masqué.
+  - 11.12 : marge des mémos par-dessus les lignes du cahier (.memo-margin posé par fitCoursesCards).
+  - 11.11 : nouvelle case hors de vue : l'écran y glisse et elle s'illumine (revealNewCard, .new-flash) ; ⌘Z sur une
+    liste déplacée le dit. Pas d'archive (jamais passée par le dépôt seule ; contenue dans la 11.12).
+  - 11.10 : nouvelle liste (ou chat, duel) créée en haut, juste après les listes punaisées (placeAfterPinned) ; une
+    liste partagée par quelqu'un reste ajoutée à la fin (synchro inchangée). Archive : copie du banc 11.10 (pas mise
+    en ligne seule).
+  - 11.9 : une tâche compte une fois : envoyée « en cours » puis cochée, elle ne recompte plus (waitedOn,
+    countedAtWaiting, effet rétroactif sur le graphique). « +n ↓ » à gauche de la punaise et des initiales.
+  - 11.8 : téléphone : plus de sélection de texte en glissant (lockSelection). Liste ou mémo plus long que sa case :
+    barre toujours visible, fondu, « +n ↓ » cliquable (listDebord). ⌘⇧Z rétablit ; ⌘Z et ⌘⇧Z disent ce qui a changé
+    et surlignent la tâche. Case urgente qui rétrécit en glissant. Duel punaisé sans faisan doré au titre ; picto sans
+    huppe ajoutée. Mémo fermé ivoire vert pâle. Archive : copie du banc 11.8 (identique à la version déposée).
+  (11.8 à 11.18 : déposées à la main sur github.com, entrées rattrapées le 22/11/2026 d'après les notes de banc.
+  Les tests ajoutés pendant ces versions — glisser_sans_selection, annuler_retablir, en_cours_puis_coche,
+  nouvelle_liste_en_haut — n'ont jamais été déposés et sont perdus ; tests/run.py en a 14 en 11.20.)
   - 11.7 : ordinateur, cases fermées : champ (et écran du chat et du duel fermés) centré sur la ligne du bas, à 14 px
     du bas comme la poignée et la punaise, plus fin (22 px) ; cases toujours à 72 px (variante B choisie au banc le
     17/11, parmi l'actuel, A et B). Chat et duel fermés : l'écran s'atténue au repos (66 %) comme ouvert, net au
