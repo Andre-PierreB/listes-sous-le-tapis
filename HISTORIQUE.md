@@ -3,6 +3,13 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.19 : « Supprimer la liste » dans la fenêtre de modification d'une liste ou d'un mémo (dernière ligne, sous
+    « Copier », créateur de la liste seulement). Pleine : deux clics, le premier annonce « Vraiment ? n tâches
+    effacées » (« aussi chez … » si partagée) ; vide : un clic. Chaque tâche comme par sa croix (cochée par moi →
+    corbeille, sinon effacée ; « en cours » comprises, envoi de la semaine décompté ; articles de mémo effacés).
+    Un seul ⌘Z remet tout (une liste partagée revient non partagée). deleteFullCategory, buildCatDeleteRow.
+    Test : supprimer_liste_pleine. (11.8 à 11.18 : publiées par dépôt manuel, détail dans les notes de banc du
+    projet, pas encore reportées ici ni archivées.)
   - 11.7 : ordinateur, cases fermées : champ (et écran du chat et du duel fermés) centré sur la ligne du bas, à 14 px
     du bas comme la poignée et la punaise, plus fin (22 px) ; cases toujours à 72 px (variante B choisie au banc le
     17/11, parmi l'actuel, A et B). Chat et duel fermés : l'écran s'atténue au repos (66 %) comme ouvert, net au
