@@ -8852,7 +8852,7 @@ function buildItemLi(cat, idx, base, key, opts){
       const t = setTimeout(()=>{
         end(); longFired = Date.now(); haptic.tick();
         let done = false;
-        const open = ()=>{ if(done) return; done = true; document.removeEventListener("touchend", open, true); document.removeEventListener("pointerup", open, true); primeKeyboard(); editingCoursesKey = key; renderAll(); };
+        const open = ()=>{ if(done) return; done = true; document.removeEventListener("touchend", open, true); document.removeEventListener("pointerup", open, true); primeKeyboard(); editingCoursesKey = key; renderAll(); focusEditNow(); };
         document.addEventListener("touchend", open, true); document.addEventListener("pointerup", open, true);
       }, 480);
       li.classList.add("pressing");
@@ -9473,53 +9473,102 @@ function revealAddField(f){
 // 11.6 : au doigt, le clavier s'ouvre APRÈS le clic sur + et recouvre le bas de l'écran sans que la page change de
 // taille (iPhone) : le cadre de saisie, ramené en vue avant, finissait derrière le clavier. On écoute la zone
 // réellement visible (visualViewport) pendant l'ouverture du clavier et on remonte la page juste assez.
-function keepAboveKeyboard(box){
+function keepAboveKeyboard(box, bottomEl, field){
   const vv = window.visualViewport;
-  if(!vv || !(window.matchMedia && matchMedia("(hover:none)").matches)) return;
+  if(!vv || !isTouchUI()) return;
+  bottomEl = bottomEl || box;
+  // 11.21 : tout en bas de la page, on ne pouvait pas remonter assez : de la place est ajoutée sous la page tant que le
+  // clavier est ouvert sur ce cadre
+  const card = box.closest(".category, .chat-card, .duel-card") || box;
   const fit = ()=>{
-    if(!box.isConnected || !box.contains(document.activeElement)) return;
-    const r = box.getBoundingClientRect(), top = vv.offsetTop + 10, bottom = vv.offsetTop + vv.height - 10;
-    if(r.bottom > bottom) window.scrollBy(0, Math.min(r.bottom - bottom, Math.max(0, r.top - top)));
+    if(!box.isConnected || !card.contains(document.activeElement)) return;
+    const kb = Math.max(0, innerHeight - vv.height - vv.offsetTop);
+    document.body.style.paddingBottom = kb ? kb + "px" : "";
+    const top = vv.offsetTop + 10, bottom = vv.offsetTop + vv.height - 10;
+    const rb = bottomEl.getBoundingClientRect().bottom;
+    const keepTop = (field || box).getBoundingClientRect().top;   // le champ où l'on écrit reste toujours visible
+    if(rb > bottom) window.scrollBy(0, Math.min(rb - bottom, Math.max(0, keepTop - top)));
   };
+  const later = ()=> setTimeout(()=>{
+    if(card.isConnected && card.contains(document.activeElement)) return;
+    document.body.style.paddingBottom = "";
+    vv.removeEventListener("resize", fit);
+    document.removeEventListener("focusout", later, true);
+  }, 300);
   vv.addEventListener("resize", fit);
-  [350, 700, 1100].forEach(t => setTimeout(fit, t));
-  setTimeout(()=> vv.removeEventListener("resize", fit), 1600);
+  document.addEventListener("focusout", later, true);
+  [50, 350, 700, 1100].forEach(t => setTimeout(fit, t));
 }
-// 11.21 : au doigt, l'iPhone n'ouvre le clavier que si un champ prend le curseur PENDANT le geste (le toucher
-// lui-même). Or la fenêtre de modification se dessine juste après, et son champ prend le curseur une image plus
-// tard : le clavier ne venait pas. On donne donc le curseur, pendant le geste, à un champ invisible (le clavier
-// s'ouvre), puis le vrai champ le reprend : l'iPhone garde le clavier ouvert. Sans effet à la souris.
+// 11.21 : au doigt, l'iPhone n'ouvre le clavier que si un champ prend le curseur PENDANT un vrai geste (un toucher,
+// un clic). Le double-toucher natif (dblclick) n'en est pas un pour lui, et le champ de la fenêtre de modification
+// prenait le curseur une image trop tard : pas de clavier. Au doigt, on reconnaît donc nous-mêmes le double-toucher
+// sur le 2e clic (un vrai geste), on ouvre la modification tout de suite et on donne le curseur à son champ dans le
+// même geste. Le dblclick natif qui suit est ignoré (il redessinerait la fenêtre et refermerait le clavier).
+function isTouchUI(){ return !!(window.matchMedia && matchMedia("(hover:none)").matches); }
+const EDIT_FIELD_SEL = ".editing input:not([type=checkbox]), .editing textarea, li .edit-form input, .cat-title-input, .chat-edit";
+function focusEditNow(){
+  const f = document.querySelector(EDIT_FIELD_SEL);
+  if(!f) return null;
+  try{ f.focus({ preventScroll:true }); if(f.classList.contains("cat-title-input")) f.select(); }catch(e){}
+  return f;
+}
+// filet de sécurité : un champ invisible prend le curseur pendant le geste, le vrai champ le reprend ensuite
 function primeKeyboard(){
-  if(!(window.matchMedia && matchMedia("(hover:none)").matches)) return;
+  if(!isTouchUI()) return;
   let p = document.getElementById("kbProxy");
   if(!p){
     p = document.createElement("input");
     p.id = "kbProxy"; p.type = "text"; p.tabIndex = -1; p.autocomplete = "off";
     p.setAttribute("aria-hidden", "true");
-    p.style.cssText = "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0;margin:0;pointer-events:none;";
+    p.style.cssText = "position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;font-size:16px;border:0;padding:0;margin:0;";
     document.body.appendChild(p);
   }
   p.style.top = (window.visualViewport ? visualViewport.offsetTop : 0) + "px";
   try{ p.focus({ preventScroll:true }); }catch(e){}
-  setTimeout(()=>{ if(document.activeElement === p) p.blur(); }, 1500);   // rien n'a repris le curseur : on referme
+  setTimeout(()=>{ if(document.activeElement === p) p.blur(); }, 1500);
 }
-// les gestes qui ouvrent une modification (double-toucher sur une tâche, un article, un titre, un message ; crayon d'un article)
-document.addEventListener("dblclick", e=>{
-  if(e.target.closest && e.target.closest(".item-text, .urgent-jump, .cat-title, .chat-l.mine")) primeKeyboard();
-}, true);
+const DBL_TAP_SEL = ".item-text, .urgent-jump, .cat-title, .chat-l.mine";
+let lastTap = null, ownDblAt = 0;
 document.addEventListener("click", e=>{
-  if(e.target.closest && e.target.closest(".courses-edit-btn")) primeKeyboard();
+  if(!isTouchUI() || !e.target.closest) return;
+  if(e.target.closest(".courses-edit-btn")){ primeKeyboard(); return; }
+  const t = e.target.closest(DBL_TAP_SEL);
+  if(!t || t.closest(".courses-item")){ lastTap = null; return; }   // mémo : appui long (le toucher raye)
+  const holder = t.closest("[data-key]") || t.closest("[id]");
+  const id = holder ? (holder.dataset.key || holder.id) : "";
+  const now = Date.now();
+  if(lastTap && lastTap.id === id && now - lastTap.at < 420 && Math.abs(e.clientX - lastTap.x) < 30 && Math.abs(e.clientY - lastTap.y) < 30){
+    lastTap = null; ownDblAt = now;
+    e.stopPropagation(); e.preventDefault();   // ce 2e toucher ne va pas plus loin (il redessinerait la case et fermerait le clavier)
+    primeKeyboard();
+    // le dblclick natif arrive ensuite sur ce même élément, souvent déjà retiré de la page (la case a été redessinée) :
+    // on l'arrête sur l'élément lui-même
+    const stopNative = ev=>{ if(ev.isTrusted){ ev.stopImmediatePropagation(); ev.preventDefault(); } };
+    t.addEventListener("dblclick", stopNative, true);
+    setTimeout(()=> t.removeEventListener("dblclick", stopNative, true), 800);
+    t.dispatchEvent(new MouseEvent("dblclick", { bubbles:true, cancelable:true, clientX:e.clientX, clientY:e.clientY }));
+    focusEditNow();
+    return;
+  }
+  lastTap = { id, at: now, x: e.clientX, y: e.clientY };
 }, true);
-// 11.21 : la fenêtre de modification ouverte au doigt : son cadre est ramené au-dessus du clavier (comme le +, 11.6)
+document.addEventListener("dblclick", e=>{
+  if(e.isTrusted && isTouchUI() && Date.now() - ownDblAt < 800){ e.stopImmediatePropagation(); e.preventDefault(); }
+}, true);
+// 11.21 : fenêtre de modification ouverte au doigt : tout son cadre, jusqu'à Annuler / Enregistrer, au-dessus du clavier
+function editFrame(f){
+  const li = f.closest("li");
+  if(li) return { top: li, bottom: li.querySelector(".edit-actions") || li };
+  const card = f.closest(".category, .chat-card, .duel-card");
+  const acts = card && card.querySelector(".cat-edit-actions");
+  return { top: f.closest(".cat-head") || f, bottom: acts || f };
+}
 document.addEventListener("focusin", e=>{
   const f = e.target;
-  if(!f || f.id === "kbProxy" || !(window.matchMedia && matchMedia("(hover:none)").matches)) return;
-  if(!f.matches || !f.matches(".editing input, .editing textarea, .edit-form input, .edit-form textarea, .cat-title-input, .chat-edit")) return;
-  const box = f.closest("li") || f.closest(".cat-head") || f;
-  const still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  box.style.scrollMarginTop = box.style.scrollMarginBottom = "10px";
-  try{ box.scrollIntoView({ block:"nearest", behavior: still ? "auto" : "smooth" }); }catch(err){}
-  keepAboveKeyboard(box);
+  if(!f || f.id === "kbProxy" || !isTouchUI() || !f.matches || !f.matches(EDIT_FIELD_SEL)) return;
+  const fr = editFrame(f);
+  fr.top.style.scrollMarginTop = "10px";
+  keepAboveKeyboard(fr.top, fr.bottom, f);
 });
 const COURSES_DBL_MS = 260;   // 10.75 : attente d'un éventuel double-clic avant de rayer un article (souris)
 let lastPageScroll = 0;
