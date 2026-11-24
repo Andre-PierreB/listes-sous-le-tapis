@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.20 -->
+<!-- Sous le tapis — version AUTONOME 11.21 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3881,9 +3881,10 @@ body.ios-gate-on{ overflow:hidden; }
    de la poignée et de la punaise (14 px du bas), plus fin (22 px) ; les cases gardent leurs 72 px. Choisi au banc le 17/11/2026. */
 @media (min-width:721px){
   html:not(.ch-a):root .category.collapsed .cat-quick{ padding-top:0.12rem; padding-bottom:0.12rem; }
-  html:not(.ch-a):root:root .category.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ position:relative; top:9px; }
-  html:not(.ch-a):root:root .category.courses.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ top:7px; }
-  html:not(.ch-a):root:root .collapsed :is(.chat-hole, .duel-screen){ height:22px; position:relative; top:9px; }
+  /* 11.21 : --cf-up remonte le champ et l'écran d'un rien (rien d'autre ne bouge : décalage seul, sans place prise) */
+  html:not(.ch-a):root:root .category.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ position:relative; top:calc(9px - var(--cf-up, 0px)); }
+  html:not(.ch-a):root:root .category.courses.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ top:calc(7px - var(--cf-up, 0px)); }
+  html:not(.ch-a):root:root .collapsed :is(.chat-hole, .duel-screen){ height:22px; position:relative; top:calc(9px - var(--cf-up, 0px)); }
   /* banc : variante A (?champ=a) : le champ au-dessus de la ligne du bas, cases fermées à 86 px */
   .ch-a:root:root .category.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:21px; }
   .ch-a:root:root .category.courses.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:19px; }
@@ -3934,7 +3935,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.20</span>
+    <span class="version-tag">v11.21</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -8847,7 +8848,13 @@ function buildItemLi(cat, idx, base, key, opts){
       const x0 = e.clientX, y0 = e.clientY, id = e.pointerId;
       const end = ()=>{ clearTimeout(t); li.classList.remove("pressing"); document.removeEventListener("pointermove", mv, true); document.removeEventListener("pointerup", end, true); document.removeEventListener("pointercancel", end, true); };
       const mv = ev=>{ if(ev.pointerId === id && (Math.abs(ev.clientX - x0) > 10 || Math.abs(ev.clientY - y0) > 10)) end(); };
-      const t = setTimeout(()=>{ end(); longFired = Date.now(); haptic.tick(); editingCoursesKey = key; renderAll(); }, 480);
+      // 11.21 : prêt au bout de 480 ms (vibration), mais la fenêtre s'ouvre au lever du doigt : c'est un geste, le clavier peut venir
+      const t = setTimeout(()=>{
+        end(); longFired = Date.now(); haptic.tick();
+        let done = false;
+        const open = ()=>{ if(done) return; done = true; document.removeEventListener("touchend", open, true); document.removeEventListener("pointerup", open, true); primeKeyboard(); editingCoursesKey = key; renderAll(); };
+        document.addEventListener("touchend", open, true); document.addEventListener("pointerup", open, true);
+      }, 480);
       li.classList.add("pressing");
       document.addEventListener("pointermove", mv, true); document.addEventListener("pointerup", end, true); document.addEventListener("pointercancel", end, true);
     });
@@ -9478,6 +9485,42 @@ function keepAboveKeyboard(box){
   [350, 700, 1100].forEach(t => setTimeout(fit, t));
   setTimeout(()=> vv.removeEventListener("resize", fit), 1600);
 }
+// 11.21 : au doigt, l'iPhone n'ouvre le clavier que si un champ prend le curseur PENDANT le geste (le toucher
+// lui-même). Or la fenêtre de modification se dessine juste après, et son champ prend le curseur une image plus
+// tard : le clavier ne venait pas. On donne donc le curseur, pendant le geste, à un champ invisible (le clavier
+// s'ouvre), puis le vrai champ le reprend : l'iPhone garde le clavier ouvert. Sans effet à la souris.
+function primeKeyboard(){
+  if(!(window.matchMedia && matchMedia("(hover:none)").matches)) return;
+  let p = document.getElementById("kbProxy");
+  if(!p){
+    p = document.createElement("input");
+    p.id = "kbProxy"; p.type = "text"; p.tabIndex = -1; p.autocomplete = "off";
+    p.setAttribute("aria-hidden", "true");
+    p.style.cssText = "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0;margin:0;pointer-events:none;";
+    document.body.appendChild(p);
+  }
+  p.style.top = (window.visualViewport ? visualViewport.offsetTop : 0) + "px";
+  try{ p.focus({ preventScroll:true }); }catch(e){}
+  setTimeout(()=>{ if(document.activeElement === p) p.blur(); }, 1500);   // rien n'a repris le curseur : on referme
+}
+// les gestes qui ouvrent une modification (double-toucher sur une tâche, un article, un titre, un message ; crayon d'un article)
+document.addEventListener("dblclick", e=>{
+  if(e.target.closest && e.target.closest(".item-text, .urgent-jump, .cat-title, .chat-l.mine")) primeKeyboard();
+}, true);
+document.addEventListener("click", e=>{
+  if(e.target.closest && e.target.closest(".courses-edit-btn")) primeKeyboard();
+}, true);
+// 11.21 : la fenêtre de modification ouverte au doigt : son cadre est ramené au-dessus du clavier (comme le +, 11.6)
+document.addEventListener("focusin", e=>{
+  const f = e.target;
+  if(!f || f.id === "kbProxy" || !(window.matchMedia && matchMedia("(hover:none)").matches)) return;
+  if(!f.matches || !f.matches(".editing input, .editing textarea, .edit-form input, .edit-form textarea, .cat-title-input, .chat-edit")) return;
+  const box = f.closest("li") || f.closest(".cat-head") || f;
+  const still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  box.style.scrollMarginTop = box.style.scrollMarginBottom = "10px";
+  try{ box.scrollIntoView({ block:"nearest", behavior: still ? "auto" : "smooth" }); }catch(err){}
+  keepAboveKeyboard(box);
+});
 const COURSES_DBL_MS = 260;   // 10.75 : attente d'un éventuel double-clic avant de rayer un article (souris)
 let lastPageScroll = 0;
 window.addEventListener("scroll", ()=>{ lastPageScroll = Date.now(); }, { passive:true });
@@ -14600,6 +14643,26 @@ if(ESSAI && /[?&]champ\b/.test(location.search)) (()=>{
   const apply = ()=>{ html.classList.toggle("ch-a", v === "a"); if(typeof cfFootRoom === "function") setTimeout(cfFootRoom, 50); };
   box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
   const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "champ=" + v;
+  box.querySelector("[data-c]").addEventListener("click", async e=>{
+    try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
+    setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
+  });
+  apply();
+})();
+// ---- banc 11.21 (essai.html?demo&monte=0..5) : champ et écran des cases fermées (ordi) remontés de quelques px
+if(ESSAI && /[?&]monte\b/.test(location.search)) (()=>{
+  const q = new URLSearchParams(location.search), html = document.documentElement;
+  let v = q.get("monte"); if(!/^[0-5]$/.test(v || "")) v = "3";
+  const box = document.createElement("div");
+  box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:15rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
+  document.body.appendChild(box);
+  ["click", "pointerdown"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
+  box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.4rem">Champ remonté (ordi, fermé)</div>`
+    + ["0", "2", "3", "4", "5"].map(k => `<label style="display:inline-flex;gap:.25rem;align-items:center;margin:.2rem .5rem .2rem 0;cursor:pointer"><input type="radio" name="mt" value="${k}"${k === v ? " checked" : ""}>${k === "0" ? "0 (en ligne)" : k + " px"}</label>`).join("")
+    + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
+  const apply = ()=> html.style.setProperty("--cf-up", v + "px");
+  box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
+  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "monte=" + v;
   box.querySelector("[data-c]").addEventListener("click", async e=>{
     try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
     setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
