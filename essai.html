@@ -9528,30 +9528,39 @@ function primeKeyboard(){
   setTimeout(()=>{ if(document.activeElement === p) p.blur(); }, 1500);
 }
 const DBL_TAP_SEL = ".item-text, .urgent-jump, .cat-title, .chat-l.mine";
-let lastTap = null, ownDblAt = 0;
+// 11.21 (2e essai) : sur iPhone, le 2e toucher d'un double-toucher ne produit pas de clic (seulement le dblclick, qui
+// n'ouvre pas le clavier) : le double-toucher est donc reconnu au lever du doigt (touchend, un geste valable pour le
+// clavier) ; ce 2e toucher est annulé (preventDefault : ni clic, ni dblclick, ni zoom derrière)
+let lastTap = null, ownDblAt = 0, tapStart = null;
 document.addEventListener("click", e=>{
-  if(!isTouchUI() || !e.target.closest) return;
-  if(e.target.closest(".courses-edit-btn")){ primeKeyboard(); return; }
-  const t = e.target.closest(DBL_TAP_SEL);
+  if(isTouchUI() && e.target.closest && e.target.closest(".courses-edit-btn")) primeKeyboard();
+}, true);
+document.addEventListener("touchstart", e=>{
+  const p = e.touches[0];
+  tapStart = (e.touches.length === 1 && p) ? { x: p.clientX, y: p.clientY, at: Date.now() } : null;
+}, { capture:true, passive:true });
+document.addEventListener("touchend", e=>{
+  const p = e.changedTouches[0], st = tapStart; tapStart = null;
+  if(!p || !st || e.touches.length || Date.now() - st.at > 350 || Math.abs(p.clientX - st.x) > 10 || Math.abs(p.clientY - st.y) > 10){ return; }
+  const t = e.target.closest && e.target.closest(DBL_TAP_SEL);
   if(!t || t.closest(".courses-item")){ lastTap = null; return; }   // mémo : appui long (le toucher raye)
   const holder = t.closest("[data-key]") || t.closest("[id]");
   const id = holder ? (holder.dataset.key || holder.id) : "";
   const now = Date.now();
-  if(lastTap && lastTap.id === id && now - lastTap.at < 420 && Math.abs(e.clientX - lastTap.x) < 30 && Math.abs(e.clientY - lastTap.y) < 30){
+  if(lastTap && lastTap.id === id && now - lastTap.at < 450 && Math.abs(p.clientX - lastTap.x) < 30 && Math.abs(p.clientY - lastTap.y) < 30){
     lastTap = null; ownDblAt = now;
-    e.stopPropagation(); e.preventDefault();   // ce 2e toucher ne va pas plus loin (il redessinerait la case et fermerait le clavier)
+    e.preventDefault(); e.stopPropagation();
     primeKeyboard();
-    // le dblclick natif arrive ensuite sur ce même élément, souvent déjà retiré de la page (la case a été redessinée) :
-    // on l'arrête sur l'élément lui-même
+    // un éventuel dblclick natif arriverait sur ce même élément, peut-être déjà retiré de la page : arrêté sur lui
     const stopNative = ev=>{ if(ev.isTrusted){ ev.stopImmediatePropagation(); ev.preventDefault(); } };
     t.addEventListener("dblclick", stopNative, true);
     setTimeout(()=> t.removeEventListener("dblclick", stopNative, true), 800);
-    t.dispatchEvent(new MouseEvent("dblclick", { bubbles:true, cancelable:true, clientX:e.clientX, clientY:e.clientY }));
+    t.dispatchEvent(new MouseEvent("dblclick", { bubbles:true, cancelable:true, clientX:p.clientX, clientY:p.clientY }));
     focusEditNow();
     return;
   }
-  lastTap = { id, at: now, x: e.clientX, y: e.clientY };
-}, true);
+  lastTap = { id, at: now, x: p.clientX, y: p.clientY };
+}, { capture:true, passive:false });
 document.addEventListener("dblclick", e=>{
   if(e.isTrusted && isTouchUI() && Date.now() - ownDblAt < 800){ e.stopImmediatePropagation(); e.preventDefault(); }
 }, true);
@@ -14697,6 +14706,19 @@ if(ESSAI && /[?&]champ\b/.test(location.search)) (()=>{
     setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
   });
   apply();
+})();
+// ---- banc 11.21 (essai.html?demo&clavier) : petit journal à l'écran (touchers, dblclick, curseur), pour le téléphone
+if(ESSAI && /[?&]clavier\b/.test(location.search)) (()=>{
+  const box = document.createElement("pre");
+  box.style.cssText = "position:fixed;left:4px;right:4px;top:4px;z-index:9000;max-height:9.5em;overflow:hidden;margin:0;padding:4px 6px;background:rgba(20,30,30,.82);color:#cfe;font:11px/1.25 monospace;border-radius:6px;pointer-events:none;white-space:pre-wrap";
+  document.body.appendChild(box);
+  const lines = [], t0 = Date.now();
+  const log = s => { lines.push(((Date.now() - t0) / 1000).toFixed(2) + " " + s); while(lines.length > 7) lines.shift(); box.textContent = lines.join("\n"); };
+  const nm = el => !el ? "?" : (el.id ? "#" + el.id : (el.className && typeof el.className === "string" ? "." + el.className.split(" ")[0] : el.tagName));
+  ["touchend", "click", "dblclick"].forEach(t => document.addEventListener(t, e => log(t + " " + nm(e.target) + (e.isTrusted ? "" : " (appli)")), true));
+  document.addEventListener("focusin", e => log("curseur → " + nm(e.target)), true);
+  if(window.visualViewport) visualViewport.addEventListener("resize", ()=> log("écran visible : " + Math.round(visualViewport.height) + " px"));
+  log("journal prêt (" + (isTouchUI() ? "doigt" : "souris") + ")");
 })();
 // ---- banc 11.21 (essai.html?demo&monte=0..5) : champ et écran des cases fermées (ordi) remontés de quelques px
 if(ESSAI && /[?&]monte\b/.test(location.search)) (()=>{
