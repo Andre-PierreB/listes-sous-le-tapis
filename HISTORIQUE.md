@@ -3,6 +3,8 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.20 : « Copier » une liste : sans le titre ; œufs marqués « [œuf] ». Collage de plusieurs lignes : « [œuf] »
+    → œuf (en queue, dans l'ordre), « [urgent] » → urgente, « [en cours] » retiré (pastedItem). Test : copier_recoller.
   - 11.19 : « Supprimer la liste » dans la fenêtre de modification d'une liste ou d'un mémo (dernière ligne, sous
     « Copier », créateur de la liste seulement). Pleine : deux clics, le premier annonce « Vraiment ? n tâches
     effacées » (« aussi chez … » si partagée) ; vide : un clic. Chaque tâche comme par sa croix (cochée par moi →
