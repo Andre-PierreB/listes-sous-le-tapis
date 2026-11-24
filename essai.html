@@ -3881,10 +3881,10 @@ body.ios-gate-on{ overflow:hidden; }
    de la poignée et de la punaise (14 px du bas), plus fin (22 px) ; les cases gardent leurs 72 px. Choisi au banc le 17/11/2026. */
 @media (min-width:721px){
   html:not(.ch-a):root .category.collapsed .cat-quick{ padding-top:0.12rem; padding-bottom:0.12rem; }
-  /* 11.21 : --cf-up remonte le champ et l'écran d'un rien (rien d'autre ne bouge : décalage seul, sans place prise) */
-  html:not(.ch-a):root:root .category.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ position:relative; top:calc(9px - var(--cf-up, 0px)); }
-  html:not(.ch-a):root:root .category.courses.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ top:calc(7px - var(--cf-up, 0px)); }
-  html:not(.ch-a):root:root .collapsed :is(.chat-hole, .duel-screen){ height:22px; position:relative; top:calc(9px - var(--cf-up, 0px)); }
+  /* 11.21 : --cf-up (3 px, choisi le 24/11) remonte le champ et l'écran d'un rien (rien d'autre ne bouge : décalage seul, sans place prise) */
+  html:not(.ch-a):root:root .category.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ position:relative; top:calc(9px - var(--cf-up, 3px)); }
+  html:not(.ch-a):root:root .category.courses.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ top:calc(7px - var(--cf-up, 3px)); }
+  html:not(.ch-a):root:root .collapsed :is(.chat-hole, .duel-screen){ height:22px; position:relative; top:calc(9px - var(--cf-up, 3px)); }
   /* banc : variante A (?champ=a) : le champ au-dessus de la ligne du bas, cases fermées à 86 px */
   .ch-a:root:root .category.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:21px; }
   .ch-a:root:root .category.courses.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:19px; }
@@ -14658,7 +14658,7 @@ if(ESSAI && /[?&]monte\b/.test(location.search)) (()=>{
   document.body.appendChild(box);
   ["click", "pointerdown"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
   box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.4rem">Champ remonté (ordi, fermé)</div>`
-    + ["0", "2", "3", "4", "5"].map(k => `<label style="display:inline-flex;gap:.25rem;align-items:center;margin:.2rem .5rem .2rem 0;cursor:pointer"><input type="radio" name="mt" value="${k}"${k === v ? " checked" : ""}>${k === "0" ? "0 (en ligne)" : k + " px"}</label>`).join("")
+    + ["0", "2", "3", "4", "5"].map(k => `<label style="display:inline-flex;gap:.25rem;align-items:center;margin:.2rem .5rem .2rem 0;cursor:pointer"><input type="radio" name="mt" value="${k}"${k === v ? " checked" : ""}>${k === "3" ? "3 px (retenu)" : k + " px"}</label>`).join("")
     + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
   const apply = ()=> html.style.setProperty("--cf-up", v + "px");
   box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
