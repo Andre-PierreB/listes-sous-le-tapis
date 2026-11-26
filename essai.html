@@ -3570,6 +3570,7 @@ body.no-list .add-category-row{
 .nl-chat:hover{ color:var(--ink); }
 .nl-chat:not(.nl-duel){ margin-top:0.7rem; }   /* 10.63 : écran de chat et duel groupés, à l'écart de la création d'une liste */
 .nl-chat.nl-duel{ margin-top:-0.3rem; }
+.nl-chat.nl-duel.nl-seul{ margin-top:0.7rem; }   /* 11.22 : sans le chat, le duel prend sa place */
 .nl-chat:hover .add-btn{ color:var(--ink); border-color:color-mix(in srgb, var(--ink-soft) 40%, var(--line)); }
 .nl-courses input:focus-visible + .nl-switch{ outline:2px solid var(--accent); outline-offset:2px; }
 .nl-courses:has(input:checked){ color:var(--ink); }
@@ -4034,6 +4035,10 @@ body.ios-gate-on{ overflow:hidden; }
 // qu'elle range dans le navigateur porte le préfixe « essai: », et en ligne ses
 // fiches vont dans des collections « essai_… ». L'appli elle-même n'y touche jamais.
 const ESSAI = /essai/i.test(location.pathname);
+// 11.22 : chat retiré de l'interface (demandé le 26/11) : plus affiché, plus de création, plus proposé comme liste où
+// déplacer une tâche. Rien n'est effacé : les écrans de chat et leurs messages restent dans les données (et en ligne),
+// à leur place parmi les cases. Le code reste là, en veille : CHAT_OFF = false le fait revenir tel quel.
+const CHAT_OFF = true;
 // 10.68 : essai.html?demo : vitrine de test, listes d'exemple dans un coin à part du navigateur
 // (préfixe « demo: »), sans connexion ni synchro ; ?demo&reset remet les exemples à neuf
 const DEMO = ESSAI && /[?&]demo\b/.test(location.search);
@@ -6356,8 +6361,8 @@ function renderAddCategoryRow(){
             <button type="button" class="add-save nl-save">Créer</button>
           </div>
         </div>
-        ${Store.mode === "doc" ? `<button type="button" class="nl-chat"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un écran de chat</button>` : ""}
-        ${Store.mode === "doc" ? `<button type="button" class="nl-chat nl-duel"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un duel de faisans</button>` : ""}
+        ${Store.mode === "doc" && !CHAT_OFF ? `<button type="button" class="nl-chat"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un écran de chat</button>` : ""}
+        ${Store.mode === "doc" ? `<button type="button" class="nl-chat nl-duel${CHAT_OFF ? " nl-seul" : ""}"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un duel de faisans</button>` : ""}
       </div>
     </div>
   `;
@@ -8655,7 +8660,7 @@ function buildItemLi(cat, idx, base, key, opts){
     const dueParts = splitDue(eff.waiting ? eff.relance : eff.due);
     // 10.2 : une tâche qu'on ne peut pas effacer ne peut pas non plus quitter sa liste
     const canMove = canRemoveTask(cat, base);
-    const catOptions = DATA.filter(c => (!isCategoryDeleted(c.id) || c.id === cat.id) && (canMove || c.id === cat.id))
+    const catOptions = DATA.filter(c => (!isCategoryDeleted(c.id) || c.id === cat.id) && (canMove || c.id === cat.id) && !(CHAT_OFF && isChatList(c.id) && c.id !== cat.id))   // 11.22 : pas vers un chat caché
       .map(c => `<option value="${escapeAttr(c.id)}" ${c.id === cat.id ? "selected" : ""}>${escapeAttr(c.title)}</option>`).join("");
     li.className = "item editing";
     li.innerHTML = `
@@ -11312,7 +11317,7 @@ function render(){
   let memoRank = 0;   // 10.23 : rang des mémos, pour varier leur reflet
   catDisplayOrder.forEach(catIdx=>{
     const cat = DATA[catIdx];
-    if(isChatList(cat.id)){ built.push({ node: buildChatCard(cat, catIdx) }); return; }   // 10.57
+    if(isChatList(cat.id)){ if(!CHAT_OFF) built.push({ node: buildChatCard(cat, catIdx) }); return; }   // 10.57 ; 11.22 : CHAT_OFF
     if(isDuelList(cat.id)){ built.push({ node: Duel.card(cat, catIdx) }); return; }   // 10.63
     const items = getEffectiveItems(cat);
     const courses = isCoursesList(cat.id);
