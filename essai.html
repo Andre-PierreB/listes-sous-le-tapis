@@ -2968,7 +2968,13 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 .waiting-fold:hover svg{ color:var(--ink-soft); scale:1.15; }
 .waiting-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 #waitingSection.folded .waiting-fold svg{ transform:none; }
-#waitingSection.folded{ padding-bottom:1.4rem; }
+#waitingSection.folded{ padding-top:0; padding-bottom:0; min-height:72px; display:flex; align-items:center; }   /* masquée : jamais plus fine qu'une case fermée (72 px, 94 au téléphone) ; titre, bulle et flèche centrés en hauteur */
+@media (hover:none){ #waitingSection.folded{ min-height:94px; } }
+#waitingSection.folded .waiting-fold{ top:50%; translate:0 -50%; }
+/* masquée : chiffre et flèche dans une même pastille verte, qui se lit comme un seul bouton */
+#waitingSection.folded .waiting-fold{ gap:0.1rem; padding:0 0.3rem 0 0; border-radius:999px; background:color-mix(in srgb, #2E9467 16%, var(--surface)); }
+#waitingSection.folded .waiting-count{ background:none; min-width:1.8rem; padding:0 0 0 0.4rem; }
+#waitingSection.folded .waiting-fold svg{ color:color-mix(in srgb, #2E9467 75%, var(--ink)); }
 #waitingSection.folded .section-title{ margin-bottom:0; }
 #waitingSection.folded #waitingList{ display:none; }
 #waitingSection .waiting-count{   /* masquée : le nombre à gauche de la flèche, dans le bouton (un clic dessus rouvre) ; vert de la case */
@@ -2976,8 +2982,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   color:color-mix(in srgb, #2E9467 75%, var(--ink)); }
 #waitingSection .waiting-count{   /* bulle des cases fermées, en vert (choisie au banc le 26/11) */
   display:inline-flex; align-items:center; justify-content:center; min-width:2.3rem; height:1.3rem; padding:0 0.45rem;
-  border-radius:999px; font-size:0.78rem; background:color-mix(in srgb, #2E9467 16%, var(--surface));
-  translate:0 -4px; }   /* un rien plus haut que la flèche : au téléphone, elle touchait la fin du titre (2e ligne) */
+  border-radius:999px; font-size:0.78rem; background:color-mix(in srgb, #2E9467 16%, var(--surface)); }
 #waitingSection .waiting-count[hidden]{ display:none; }   /* 10.50 : trop étroit, coupé après le tiret */
 #waitingList .empty-note{ color:color-mix(in srgb, var(--ink-faint) 72%, var(--wait-soft)); }
 #waitingSection{ --task-size:0.85rem; }   /* 10.75 : « En cours » un peu plus petit que les listes (avant : 0.92rem, comme elles) */
