@@ -2974,7 +2974,8 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
    case fermée (72 px, 94 au téléphone), titre et bouton centrés en hauteur ; le nombre de tâches et la flèche forment une
    pastille verte, qui apparaît et disparaît en fondu (le nombre s'élargit depuis la flèche). */
 #waitingSection{ position:relative; }
-#waitingSection .section-title{ padding-right:1.5rem; }
+#waitingSection .section-title{ padding-right:1.5rem; margin-left:-1px; }   /* aligné sur les titres des listes ouvertes (sans bulle) : 23 px du bord */
+@media (max-width:720px){ #waitingSection .section-title{ margin-left:-1.5px; } }   /* téléphone : 25,5 px, comme elles */
 #waitingSection.folded{ padding-top:16px; padding-bottom:0; min-height:72px; }   /* titre sur la ligne des titres des cases fermées */
 @media (hover:none){ #waitingSection.folded{ min-height:94px; padding-top:17px; } }
 #waitingSection.folded .section-title{ margin-bottom:0; padding-right:3.5rem; }
@@ -2986,10 +2987,10 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   background-color:transparent; transition:background-color .3s ease, padding .3s ease; }
 @media (hover:none){ #waitingSection .waiting-fold{ top:9px; right:8px; } }
 #waitingSection.folded .waiting-fold{ padding:0; background:color-mix(in srgb, #2E9467 16%, var(--surface)); }
-.waiting-fold svg{ display:block; flex:none; transform:rotate(180deg); transition:transform .25s ease, scale .15s ease, color .3s ease; }
-.waiting-fold:hover svg{ color:var(--ink-soft); scale:1.15; }
+.waiting-fold svg{ display:block; flex:none; transform:rotate(180deg); transition:transform .25s ease, scale .15s ease; color:color-mix(in srgb, #2E9467 75%, var(--ink)); }   /* toujours verte, ouverte ou masquée */
+.waiting-fold:hover svg{ scale:1.15; }
 .waiting-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
-#waitingSection.folded .waiting-fold svg{ transform:none; color:color-mix(in srgb, #2E9467 75%, var(--ink)); }
+#waitingSection.folded .waiting-fold svg{ transform:none; }
 #waitingSection .waiting-count{ display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; overflow:hidden;
   font-family:'Public Sans', system-ui, sans-serif; font-size:0.78rem; font-weight:700; line-height:1; color:color-mix(in srgb, #2E9467 75%, var(--ink));
   max-width:0; min-width:0; padding:0; opacity:0; transition:max-width .3s ease, min-width .3s ease, padding .3s ease, opacity .25s ease; }
