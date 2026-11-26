@@ -3708,8 +3708,8 @@ html.no-select, html.no-select *{ -webkit-user-select:none !important; user-sele
 :root[data-theme="dark"] .urgent-banner{ box-shadow:var(--shadow); }
 :root[data-theme="dark"] #waitingSection .item:not(.editing):hover{ background:color-mix(in srgb, var(--wait) 14%, transparent); }
 :root[data-theme="dark"] .tapis-roll{ background:linear-gradient(180deg, #34424A 0%, #26323A 50%, #1A2328 100%); border-color:#3A4650; }
-@media (prefers-color-scheme: dark){   /* 11.28 : mémo fermé en sombre : teinte à 4 % (17 % comme en clair donnait un kaki plus voyant que les listes ; choisi au banc) */
-  :root:not([data-theme="light"]) .category.courses.collapsed:not(.has-ptint){ --memo-grey:color-mix(in srgb, #D2D08A 4%, var(--surface)); }
+@media (prefers-color-scheme: dark){   /* 11.28 : mémo fermé en sombre : teinte à 6 % (17 % comme en clair donnait un kaki plus voyant que les listes ; choisi au banc : 4 %, puis 6 % pour la transition vers la fenêtre ouverte) */
+  :root:not([data-theme="light"]) .category.courses.collapsed:not(.has-ptint){ --memo-grey:color-mix(in srgb, #D2D08A 6%, var(--surface)); }
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .tapis-watermark{ opacity:0.1; }
