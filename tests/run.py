@@ -320,6 +320,38 @@ async def t_duel_au_repos(pg):
     check(b - a > 5, "hors de l'écran, un coup en vol n'avance plus")
     await pg.wait_for_function("!Duel.etat().busy", timeout=12000)
 
+async def t_decalage_telephone(pg):
+    """11.26 : au téléphone, le contenu des cases glisse de --ph-dx vers la gauche ; le champ des cases fermées,
+    les titres et la flèche de tri restent où ils étaient ; les filets des mémos gardent leur départ. Ordi inchangé."""
+    pos = """() => { const r = e => e ? Math.round(e.getBoundingClientRect().left * 10) / 10 : null;
+        const l = [...document.querySelectorAll('.categories > .category:not(.courses):not(.chat-card):not(.duel-card)')].find(c => c.querySelector('ul.items > .item input'));
+        const f = document.querySelector('.categories > .category.collapsed:not(.courses):not(.has-people) .cat-quick');
+        const m = document.querySelector('.category.courses:not(.collapsed)');
+        return { dx: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ph-dx')) || 0,
+          chk: r(l.querySelector('ul.items > .item input')), title: r(l.querySelector('.cat-title-group')), card: r(l),
+          ul: getComputedStyle(l.querySelector('ul.items')).marginLeft, field: r(f),
+          memoLi: m && r(m.querySelector('.courses-item')), memoUl: m && r(m.querySelector('ul.items')), memoHandle: m && r(m.querySelector('.courses-item .drag-handle')) }; }"""
+    async def prepare(page):
+        await js(page, """() => { addCategory('Maison'); const a = DATA[DATA.length - 1]; addQuickTask(a, 'Trier la cave'); addQuickTask(a, 'Ampoule');
+            addCategory('Bureau'); const b = DATA[DATA.length - 1]; addQuickTask(b, 'Agrafes');
+            addCategory('Épicerie'); const m = DATA[DATA.length - 1]; setCoursesList(m.id, true); renderAll(); addCoursesQuick(m, 'Pain\\nLait'); renderAll();
+            setFolded(b.id, true); unfoldCat(a.id); unfoldCat(m.id); renderAll(); }""")
+        await page.evaluate("() => { window.dispatchEvent(new Event('resize')); }"); await page.wait_for_timeout(900)
+    await prepare(pg)
+    o = await js(pg, pos)
+    check(o["dx"] == 0 and o["ul"] == "0px", f"ordi : décalage appliqué ({o})")
+    ctx, tel, errs = await _tel(pg)
+    try:
+        await prepare(tel)
+        t = await js(tel, pos)
+        check(t["dx"] == 20, f"téléphone : --ph-dx vaut {t['dx']}")
+        check(abs(t["field"] - t["dx"] - t["chk"]) < 1.5, f"téléphone : le champ fermé a bougé ou les cases n'ont pas glissé ({t})")
+        check(t["memoLi"] is not None and abs(t["memoLi"] - t["memoUl"] - t["dx"]) < 1.5, f"mémo : le filet part du bord ({t})")
+        check(t["memoHandle"] is not None and t["memoHandle"] < t["memoLi"], f"mémo : la poignée n'a pas glissé ({t})")
+        check(not errs, "erreur JavaScript au téléphone : " + "; ".join(errs[:3]))
+    finally:
+        await ctx.close()
+
 async def t_signets(pg):
     """11.23 : la pile des signets suit l'ordre des cases, distingue listes et mémos, et mène à la bonne case."""
     a = await new_list(pg, "Maison"); await add_tasks(pg, a, "Porte", "Volet")

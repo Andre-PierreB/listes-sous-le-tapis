@@ -3999,6 +3999,18 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   .sig{ min-height:44px; border-radius:8px 0 0 8px; border-right:0; }
   .sig-title{ font-size:0.8rem; }
 }
+/* 11.26 : téléphone : le contenu des cases (rangées des listes, des mémos, d'« En cours » et de la case urgente) glisse
+   vers la gauche de --ph-dx, pour gagner de la largeur. Titres, boutons (flèche de tri comprise), ligne du bas, champ de
+   saisie et cases fermées ne bougent pas (la mesure de la colonne des cases ajoute --ph-dx) ; la marge des mémos suit. */
+@media (max-width:720px){
+  :root{ --ph-dx:20px; }
+  .category > ul.items, .urgent-list, #waitingList{ margin-left:calc(-1 * var(--ph-dx)); }
+  .category.courses{ --margin-x:calc(3.19rem - var(--ph-dx)); }
+  /* mémos : le filet et le voile des articles gardent leur départ (la ligne ne s'allonge pas vers le bord), seul leur contenu glisse */
+  .category.courses > ul.items > .courses-item{ margin-left:var(--ph-dx); }
+  .category.courses > ul.items > .courses-item > .drag-handle{ margin-left:calc(-1 * var(--ph-dx)); }
+  .category.courses > .courses-entry{ margin-left:calc(-1 * var(--ph-dx)); }   /* « + Ajouter un article » reste sous les ronds */
+}
 </style>
 
 <div class="wrap">
@@ -4041,7 +4053,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.25</span>
+    <span class="version-tag">v11.26</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -14806,7 +14818,9 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
     for(const card of document.querySelectorAll(".categories > .category:not(.courses):not(.chat-card):not(.duel-card):not(.fullpage)")){
       const k = card.querySelector("ul.items > .item input[type=checkbox]"), g = card.querySelector(".cat-title-group");
       if(!k || !g) continue;
-      const x = k.getBoundingClientRect().left, c = card.getBoundingClientRect().left, t = g.getBoundingClientRect().left;
+      // 11.26 : au téléphone, les rangées sont décalées de --ph-dx vers la gauche, le champ et l'écran fermé restent où ils étaient
+      const dx = parseFloat(getComputedStyle(html).getPropertyValue("--ph-dx")) || 0;
+      const x = k.getBoundingClientRect().left + dx, c = card.getBoundingClientRect().left, t = g.getBoundingClientRect().left;
       if(!(x > c)) continue;
       html.style.setProperty("--cf-ml", (x - t).toFixed(1) + "px");
       // le champ d'une case fermée sans initiales (elles le raccourcissent), une fois posé sur la colonne des cases
