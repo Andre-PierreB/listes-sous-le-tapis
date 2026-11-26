@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.22 -->
+<!-- Sous le tapis — version AUTONOME 11.23 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3947,6 +3947,57 @@ body.ios-gate-on{ overflow:hidden; }
    et quand un message ou un coup de l'autre attend d'être vu */
 :root .collapsed:is(.chat-card, .duel-card) :is(.chat-hole, .duel-screen){ opacity:calc(1 - 0.34); transition:opacity .35s ease; }
 :root .collapsed:is(.chat-card, .duel-card):is(:hover, :focus-within, .chat-open, .unread, .duel-new, .duel-live, .duel-touch) :is(.chat-hole, .duel-screen){ opacity:1; }
+/* 11.23 : signets. Un onglet fixe (flèche sans trait) au bord droit, sous le compteur au départ, puis collé en haut
+   en défilant (position:sticky dans .wrap, hauteur nulle : rien ne bouge dans la page). Au clic, la pile droite des
+   signets, dans l'ordre des cases : liste (blanc, bulle du nombre), mémo (ivoire, coin corné, panier), duel (gris, faisan).
+   Petit point vert : ajouts ou modifs des autres de moins de 48 h (les mêmes que « new » / « modif »).
+   Sur ordi, la pile s'ouvre aussi au survol (et se referme en la quittant) ; ouverte d'un clic, elle reste en défilant. Un signet entrouvre la case fermée (sans la punaiser). */
+.signets{ position:sticky; top:max(0.6rem, env(safe-area-inset-top, 0px)); height:0; z-index:130; }
+/* voile léger sur la page quand la pile est ouverte : les signets s'en détachent. Il ne prend pas la souris ni le doigt (on peut faire défiler derrière) */
+.signets::before{ content:""; position:fixed; inset:0; z-index:0; pointer-events:none; background:color-mix(in srgb, var(--bg) 62%, transparent); opacity:0; transition:opacity .16s ease; }
+.signets.open::before{ opacity:1; }
+.sig-col{ z-index:1; position:absolute; top:0.5rem; width:34px; left:min(calc(100% + 10px), calc(50vw + 50% - 38px)); }
+.sig-tab{ appearance:none; padding:0; width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2);
+  color:var(--ink-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow); }
+.sig-tab svg{ width:18px; height:18px; transition:transform .16s ease; }
+.signets.open .sig-tab svg{ transform:rotate(180deg); }
+@media (hover:hover){ .sig-tab:hover{ background:var(--accent-soft); color:var(--accent-strong); border-color:var(--accent); } }
+.sig-pile{ position:absolute; right:-14px; top:42px; width:calc(16rem + 14px); display:flex; flex-direction:column; gap:4px; overflow-y:auto; overscroll-behavior:contain;
+  padding:2px 14px 20px 10px; opacity:0;   /* de la place pour l'ombre (la pile défile : elle couperait l'ombre) */ transform:translateX(8px); visibility:hidden; pointer-events:none;
+  transition:opacity .16s ease, transform .16s ease, visibility 0s .16s; }
+.signets.open .sig-pile{ opacity:1; transform:none; visibility:visible; pointer-events:auto; transition:opacity .16s ease, transform .16s ease; }
+.sig{ appearance:none; font:inherit; text-align:left; flex:none; display:flex; align-items:center; gap:0.5rem; min-height:36px; padding:0 0.75rem 0 5px;
+  position:relative; background:var(--surface); border:1px solid var(--line); border-radius:8px; cursor:pointer;
+  box-shadow:0 1px 3px rgba(30,40,45,.12), 0 10px 22px -8px rgba(30,40,45,.32); transition:transform .12s ease; }   /* ombre plus marquée que celle des cases : la pile passe par-dessus et doit s'en détacher */
+.sig-liste::after{ content:""; position:absolute; left:3px; top:6px; bottom:6px; width:3px; background:var(--cat-color, var(--accent)); }   /* comme la case : filet droit à gauche, un peu de blanc avant lui, bouts droits, loin des coins ; pas de filet sur les mémos ni le duel */
+@media (hover:hover){ .sig:hover{ transform:translateX(-4px); } }
+.sig-mark{ flex:none; width:2.3rem; display:flex; align-items:center; justify-content:center; }
+.sig-count{ font-family:'Public Sans', system-ui, sans-serif; font-size:0.78rem; font-weight:700; min-width:1.55rem; height:1.3rem; padding:0 0.5rem;
+  border-radius:999px; line-height:1; display:inline-flex; align-items:center; justify-content:center;
+  background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface)); color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink)); }
+.sig-title{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'Courier Prime', 'Courier New', Courier, monospace;
+  font-size:0.74rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:color-mix(in srgb, var(--cat-color, var(--accent)) 78%, var(--ink)); }
+.sig-memo{ background:color-mix(in srgb, #D2D08A 17%, var(--surface)); }
+.sig-memo::before{ content:""; position:absolute; top:-1px; left:-1px; width:12px; height:12px; border-top-left-radius:8px; border-bottom-right-radius:3px; pointer-events:none;
+  background:linear-gradient(135deg, var(--bg) 0 50%, color-mix(in srgb, var(--ink) 10%, var(--surface)) 50% 100%); box-shadow:1px 1px 2px rgba(30,40,45,.12); }
+.sig-basket{ display:flex; color:color-mix(in srgb, var(--cat-color, var(--accent)) 78%, var(--ink)); }   /* le panier du titre des mémos */
+.sig-ecran{ background:var(--surface-2); }
+.sig-ecran .sig-title{ color:var(--ink-soft); }
+.sig-picto{ width:var(--duel-picto-w, 24px); height:var(--duel-picto-h, 18px); max-width:2.2rem; background:var(--duel-picto) no-repeat center / contain; }
+.sig-led{ flex:none; width:7px; height:7px; border-radius:50%; background:var(--logo-green); box-shadow:0 0 0 2px color-mix(in srgb, var(--logo-green) 28%, transparent); }
+.sig-flash{ animation:sig-flash 2.6s ease-out both; outline:3px solid transparent; outline-offset:3px; }
+@keyframes sig-flash{ 0%, 40%{ outline-color:color-mix(in srgb, var(--cat-color, var(--accent)) 55%, transparent); } 100%{ outline-color:transparent; } }
+@media (prefers-reduced-motion:reduce){ .sig-pile, .sig, .sig-tab svg{ transition:none; } }
+body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
+@media (max-width:720px){
+  /* téléphone : l'onglet est collé au bord de l'écran (marge de .wrap : 1rem), les signets aussi, assez hauts pour le doigt */
+  .sig-col{ left:calc(100% + 1rem - 24px); width:24px; }   /* 24 px : la flèche pleine page des cases commence à ~28 px du bord de l'écran (son bouton à ~21 px) : l'onglet ne la recouvre pas */
+  .sig-tab{ width:24px; height:52px; border-radius:9px 0 0 9px; border-right:0; }
+  .sig-tab svg{ width:20px; height:20px; }
+  .sig-pile{ top:60px; right:0; width:min(80vw, 19rem); padding-right:0; }
+  .sig{ min-height:44px; border-radius:8px 0 0 8px; border-right:0; }
+  .sig-title{ font-size:0.8rem; }
+}
 </style>
 
 <div class="wrap">
@@ -3963,6 +4014,7 @@ body.ios-gate-on{ overflow:hidden; }
     </div>
     <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
   </div>
+  <div class="signets" id="signets"><div class="sig-col"><button type="button" class="sig-tab" aria-label="Aller à une liste" aria-expanded="false" data-tip="Aller à une liste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><div class="sig-pile" role="menu" aria-label="Listes"></div></div></div>
   <div class="welcome-card"><p class="welcome-msg"><span>Ce qui dort sous le tapis</span> <span>n'est pas perdu...</span></p></div>
 
   <div class="urgent-banner" id="urgentBanner" hidden></div>
@@ -3988,7 +4040,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.22</span>
+    <span class="version-tag">v11.23</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -11803,12 +11855,14 @@ function closeBar(card){
 }
 // 10.66 : rouvrir une case fermée (elle reste à sa place ; essai abandonné : la faire remonter)
 function unfoldCat(catId){ setFolded(catId, false); }
+let sigHoldId = null;   // 11.23 : case entrouverte par un signet : elle attend qu'on y passe (la souris est encore sur la pile)
 let lastPointerType = "mouse", peekHold = 0, peekHoldId = null, peekId = null;   // peekHold : juste après un clic sur la punaise, CETTE case ne s'entrouvre pas tout de suite (10.67 : les autres, si)
 document.addEventListener("pointerdown", e=>{
   lastPointerType = e.pointerType || "mouse";
   if(!e.target.closest(".peek")) document.querySelectorAll(".peek").forEach(c => peekCard(c, false));
 }, true);
 function peekCard(card, on, still){
+  if(!on && sigHoldId === card.id) sigHoldId = null;   // 11.23
   if(on) peekId = card.id; else if(peekId === card.id) peekId = null;
   if(on === card.classList.contains("peek")) return;
   const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); if(card.classList.contains("courses")){ if(on) memoRuleTop(card); placeCoursesScroll(card); }
@@ -11832,7 +11886,9 @@ let peekWatchT = null;
 document.addEventListener("pointermove", e=>{
   if(e.pointerType !== "mouse" || !PEEKS.length || peekWatchT || dragState) return;
   peekWatchT = setTimeout(()=>{ peekWatchT = null; if(dragState) return;
-    Array.from(PEEKS).forEach(c => { if(!c.matches(":hover")) peekCard(c, false); }); }, 260);
+    Array.from(PEEKS).forEach(c => {
+      if(c.id === sigHoldId){ if(c.matches(":hover")) sigHoldId = null; return; }   // 11.23 : ouverte par un signet : se referme seulement une fois survolée puis quittée (ou clic ailleurs)
+      if(!c.matches(":hover")) peekCard(c, false); }); }, 260);
 }, { passive:true, capture:true });
 function pinNear(pin){
   const r = pin.getBoundingClientRect();
@@ -14947,4 +15003,99 @@ if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
     else navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => { if(/\/essai\.html$/.test(r.scope)) r.unregister(); })).catch(()=>{});
   }, 2000));
 }
+
+// ---- 11.23 : signets (voir la note du style) ----
+// Rien n'est calculé au rendu : la pile n'est construite qu'à l'ouverture. Aucun écouteur sur toute la page au repos :
+// ceux qui referment la pile (clic ailleurs, Échap) ne sont posés que pendant qu'elle est ouverte.
+const Signets = (()=>{
+  const root = document.getElementById("signets");
+  if(!root) return {};
+  const tab = root.querySelector(".sig-tab"), pile = root.querySelector(".sig-pile");
+  // le nombre de la bulle d'une liste fermée : tâches à faire + œufs en couvaison (même calcul que render)
+  function leftCount(cat){
+    let vis = 0, done = 0, eggs = 0;
+    getEffectiveItems(cat).forEach((base, i)=>{
+      const k = itemKey(cat.id, i);
+      if(isDeleted(k)) return;
+      const eff = getEffective(k, base);
+      if(eff.waiting) return;
+      if(eff.egg && !state[k]){ eggs++; return; }
+      vis++; if(state[k]) done++;
+    });
+    return vis - done + eggs;
+  }
+  // ajouts ou modifs d'autres personnes encore marqués « new » / « modif »
+  function hasNews(cat){
+    try{
+      const me = myUid(); if(!me) return false;
+      const items = getEffectiveItems(cat);
+      if(newItems(cat).some(i => items[i] && items[i].by && items[i].by !== me)) return true;
+      return editedItems(cat).some(i => { const by = editInfo(itemKey(cat.id, i)).by; return by && by !== me; });
+    }catch(e){ return false; }
+  }
+  function build(){
+    let html = "";
+    getCategoryOrder().forEach(idx=>{
+      const cat = DATA[idx];
+      if(!cat || isCategoryDeleted(cat.id) || !document.getElementById("cat-" + cat.id)) return;   // seulement les cases affichées (le chat masqué n'en a pas)
+      const ecran = isChatList(cat.id) || isDuelList(cat.id), memo = !ecran && isCoursesList(cat.id);
+      const n = ecran || memo ? 0 : leftCount(cat);
+      const title = cat.title || (isDuelList(cat.id) ? "Duel de faisans" : "Sans titre");
+      const mark = isDuelList(cat.id) ? `<span class="sig-picto" aria-hidden="true"></span>` : memo ? `<span class="sig-basket">${BASKET_SVG}</span>` : n ? `<span class="sig-count" aria-label="${n} à faire">${n}</span>` : "";
+      html += `<button type="button" role="menuitem" class="sig ${ecran ? "sig-ecran" : memo ? "sig-memo" : "sig-liste"}" data-id="${escapeAttr(cat.id)}" style="--cat-color:${escapeAttr(displayCatColor(cat.color))}">` +
+        `<span class="sig-mark">${mark}</span><span class="sig-title">${escapeAttr(title)}</span>${!ecran && hasNews(cat) ? `<span class="sig-led" aria-label="Du nouveau"></span>` : ""}</button>`;
+    });
+    return html;
+  }
+  // fermer en touchant ailleurs. Souris : dès l'appui (le clic passe à ce qu'il y a dessous, comme avant).
+  // Doigt : seulement sur un vrai toucher (click), pour qu'on puisse faire défiler la page derrière la pile
+  // sans qu'elle disparaisse ; ce toucher-là ferme la pile et ne fait rien d'autre (pas de coche par mégarde).
+  let downType = "mouse";
+  function outside(e){ downType = e.pointerType || "mouse"; if(downType === "mouse" && !root.contains(e.target) && e.target !== document.documentElement) close(); }   // (la barre de défilement : on fait défiler, on ne ferme pas)
+  function outsideTap(e){ if(downType === "mouse" || root.contains(e.target)) return; e.preventDefault(); e.stopPropagation(); close(); }
+  function onKey(e){ if(e.key === "Escape"){ e.stopPropagation(); close(); tab.focus(); } }
+  function open(){
+    pile.innerHTML = build();
+    const top = tab.getBoundingClientRect().bottom + 8;
+    pile.style.maxHeight = Math.max(160, (window.visualViewport ? visualViewport.height : innerHeight) - top - 12) + "px";
+    root.classList.add("open"); tab.setAttribute("aria-expanded", "true");
+    document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("click", outsideTap, true);
+    document.addEventListener("keydown", onKey, true);
+  }
+  function close(){
+    if(!root.classList.contains("open")) return;
+    root.classList.remove("open"); tab.setAttribute("aria-expanded", "false");
+    document.removeEventListener("pointerdown", outside, true);
+    document.removeEventListener("click", outsideTap, true);
+    document.removeEventListener("keydown", onKey, true);
+  }
+  // fait glisser la page jusqu'à la case, l'entrouvre si elle est fermée (sans la punaiser) et la cerne un instant à sa couleur
+  function go(id){
+    close();
+    const card = document.getElementById("cat-" + id);
+    if(!card) return;
+    const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: Math.max(0, card.getBoundingClientRect().top + window.scrollY - 16), behavior: reduce ? "auto" : "smooth" });
+    if(card.classList.contains("collapsed") && typeof peekCard === "function"){ sigHoldId = card.id; peekCard(card, true); }   // fermée : entrouverte, pas punaisée
+    card.classList.remove("sig-flash"); void card.offsetWidth; card.classList.add("sig-flash");
+    setTimeout(()=>{ const c = document.getElementById("cat-" + id); if(c) c.classList.remove("sig-flash"); }, 2700);
+  }
+  // ordi : la pile s'ouvre aussi au survol de l'onglet (petit délai : pas en passant), et se referme quand on la quitte.
+  // Ouverte (ou retenue) d'un clic, elle reste : on peut faire défiler la page, seul un clic ailleurs la ferme.
+  let hoverT = null, held = false;
+  const hover = window.matchMedia && matchMedia("(hover:hover)").matches;
+  if(hover){
+    root.addEventListener("pointerenter", e=>{ if(e.pointerType !== "mouse") return; clearTimeout(hoverT);
+      if(!root.classList.contains("open")) hoverT = setTimeout(()=>{ if(root.matches(":hover")){ open(); held = false; } }, 140); });
+    root.addEventListener("pointerleave", e=>{ if(e.pointerType !== "mouse") return; clearTimeout(hoverT);
+      if(!held) hoverT = setTimeout(()=>{ if(!held && !root.matches(":hover")) close(); }, 320); });
+  }
+  tab.addEventListener("click", e=>{ e.stopPropagation();
+    if(!root.classList.contains("open")){ open(); held = true; }
+    else if(!held){ held = true; clearTimeout(hoverT); }   // ouverte au survol : le clic la retient
+    else close(); });
+  pile.addEventListener("click", e=>{ const b = e.target.closest(".sig"); if(b){ e.stopPropagation(); go(b.dataset.id); } });
+  return { open, close, go };
+})();
 </script>

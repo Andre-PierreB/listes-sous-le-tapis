@@ -3,6 +3,14 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.23 : signets. Onglet (flèche sans trait) au bord droit, sous le compteur puis collé en haut en défilant
+    (sticky dans .wrap, hauteur nulle) ; ordi : à droite des cases ; téléphone : 24 × 52 au bord de l'écran, sans
+    recouvrir la flèche pleine page. Pile des cases dans leur ordre, construite à l'ouverture : liste (filet droit à
+    gauche, bulle du nombre), mémo (ivoire, coin corné, panier), duel (faisan) ; ombre marquée, voile léger sur la
+    page. Point vert : ajouts ou modifs des autres encore « new » / « modif ». Un signet fait glisser jusqu'à la case,
+    l'entrouvre si elle est fermée (sans punaise ; sigHoldId : elle attend qu'on y passe) et la cerne à sa couleur.
+    Ordi : ouverture aussi au survol (refermée en la quittant) ; ouverte d'un clic, elle reste en défilant. Doigt :
+    on fait défiler derrière, un toucher ailleurs la ferme sans rien faire d'autre. Masqué en pleine page. Test : signets.
   - 11.22 : duel plein écran, téléphone couché : voyant et titre placés par rapport à l'écran comme debout (ils
     passaient sous le rond de retour) ; écran, réglages et Lancer descendent dans la place libre au-dessus des objets
     (--fp-down, fitDuelFull ; l'écran ne rétrécit qu'en dernier recours) ; Lancer au bas de l'écran moins l'arrondi
