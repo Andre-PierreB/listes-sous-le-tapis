@@ -8037,6 +8037,7 @@ function renderUrgentBannerNow(){
     li.querySelector(".urgent-jump").addEventListener("dblclick", e=>{
       e.preventDefault(); e.stopPropagation();
       editUrgentEntry(entry);
+      focusEditNow();   // 11.21
     });
     const urgentCheck = li.querySelector(".urgent-check");
     urgentCheck.addEventListener("click", (e)=>{
@@ -8852,7 +8853,7 @@ function buildItemLi(cat, idx, base, key, opts){
       const t = setTimeout(()=>{
         end(); longFired = Date.now(); haptic.tick();
         let done = false;
-        const open = ()=>{ if(done) return; done = true; document.removeEventListener("touchend", open, true); document.removeEventListener("pointerup", open, true); primeKeyboard(); editingCoursesKey = key; renderAll(); focusEditNow(); };
+        const open = ()=>{ if(done) return; done = true; document.removeEventListener("touchend", open, true); document.removeEventListener("pointerup", open, true); editingCoursesKey = key; renderAll(); focusEditNow(); };
         document.addEventListener("touchend", open, true); document.addEventListener("pointerup", open, true);
       }, 480);
       li.classList.add("pressing");
@@ -8863,6 +8864,7 @@ function buildItemLi(cat, idx, base, key, opts){
       e.stopPropagation();
       editingCoursesKey = key;
       renderAll();
+      focusEditNow();   // 11.21
     });
     // 10.53 : double-clic pour modifier, comme une tâche
     li.querySelector(".item-text").addEventListener("dblclick", e=>{
@@ -8871,6 +8873,7 @@ function buildItemLi(cat, idx, base, key, opts){
       try{ window.getSelection().removeAllRanges(); }catch(err){}
       editingCoursesKey = key;
       renderAll();
+      focusEditNow();   // 11.21
     });
     li.querySelector(".delete-btn").addEventListener("click", e=>{
       e.stopPropagation();
@@ -8956,6 +8959,7 @@ function buildItemLi(cat, idx, base, key, opts){
     if(eff.note) toggleNoteOpen(key); // rend l'état d'avant le 1er clic du double-clic
     editingKey = key;
     renderAll();
+    focusEditNow();   // 11.21
   });
   wireDragRow(li, dragMode === "waiting" ? key : String(idx), dragMode, cat);
   const hatchBtn = li.querySelector(".hatch-btn");
@@ -9499,71 +9503,19 @@ function keepAboveKeyboard(box, bottomEl, field){
   document.addEventListener("focusout", later, true);
   [50, 350, 700, 1100].forEach(t => setTimeout(fit, t));
 }
-// 11.21 : au doigt, l'iPhone n'ouvre le clavier que si un champ prend le curseur PENDANT un vrai geste (un toucher,
-// un clic). Le double-toucher natif (dblclick) n'en est pas un pour lui, et le champ de la fenêtre de modification
-// prenait le curseur une image trop tard : pas de clavier. Au doigt, on reconnaît donc nous-mêmes le double-toucher
-// sur le 2e clic (un vrai geste), on ouvre la modification tout de suite et on donne le curseur à son champ dans le
-// même geste. Le dblclick natif qui suit est ignoré (il redessinerait la fenêtre et refermerait le clavier).
+// 11.21 : au doigt, l'iPhone n'ouvre le clavier que si le champ prend le curseur pendant le geste lui-même (le
+// double-toucher, le lever du doigt) : une image plus tard, c'est trop tard (page de test clavier-test.html, 26/11 :
+// essai D oui, essai C non). Les gestes qui ouvrent une modification appellent donc focusEditNow() juste après le
+// rendu, dans le même geste. À la souris, rien ne change (le curseur arrive comme avant).
 function isTouchUI(){ return !!(window.matchMedia && matchMedia("(hover:none)").matches); }
 const EDIT_FIELD_SEL = ".editing input:not([type=checkbox]), .editing textarea, li .edit-form input, .cat-title-input, .chat-edit";
 function focusEditNow(){
+  if(!isTouchUI()) return null;
   const f = document.querySelector(EDIT_FIELD_SEL);
   if(!f) return null;
-  try{ f.focus({ preventScroll:true }); if(f.classList.contains("cat-title-input")) f.select(); }catch(e){}
+  try{ f.focus({ preventScroll:true }); }catch(e){}
   return f;
 }
-// filet de sécurité : un champ invisible prend le curseur pendant le geste, le vrai champ le reprend ensuite
-function primeKeyboard(){
-  if(!isTouchUI()) return;
-  let p = document.getElementById("kbProxy");
-  if(!p){
-    p = document.createElement("input");
-    p.id = "kbProxy"; p.type = "text"; p.tabIndex = -1; p.autocomplete = "off";
-    p.setAttribute("aria-hidden", "true");
-    p.style.cssText = "position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;font-size:16px;border:0;padding:0;margin:0;";
-    document.body.appendChild(p);
-  }
-  p.style.top = (window.visualViewport ? visualViewport.offsetTop : 0) + "px";
-  try{ p.focus({ preventScroll:true }); }catch(e){}
-  setTimeout(()=>{ if(document.activeElement === p) p.blur(); }, 1500);
-}
-const DBL_TAP_SEL = ".item-text, .urgent-jump, .cat-title, .chat-l.mine";
-// 11.21 (2e essai) : sur iPhone, le 2e toucher d'un double-toucher ne produit pas de clic (seulement le dblclick, qui
-// n'ouvre pas le clavier) : le double-toucher est donc reconnu au lever du doigt (touchend, un geste valable pour le
-// clavier) ; ce 2e toucher est annulé (preventDefault : ni clic, ni dblclick, ni zoom derrière)
-let lastTap = null, ownDblAt = 0, tapStart = null;
-document.addEventListener("click", e=>{
-  if(isTouchUI() && e.target.closest && e.target.closest(".courses-edit-btn")) primeKeyboard();
-}, true);
-document.addEventListener("touchstart", e=>{
-  const p = e.touches[0];
-  tapStart = (e.touches.length === 1 && p) ? { x: p.clientX, y: p.clientY, at: Date.now() } : null;
-}, { capture:true, passive:true });
-document.addEventListener("touchend", e=>{
-  const p = e.changedTouches[0], st = tapStart; tapStart = null;
-  if(!p || !st || e.touches.length || Date.now() - st.at > 350 || Math.abs(p.clientX - st.x) > 10 || Math.abs(p.clientY - st.y) > 10){ return; }
-  const t = e.target.closest && e.target.closest(DBL_TAP_SEL);
-  if(!t || t.closest(".courses-item")){ lastTap = null; return; }   // mémo : appui long (le toucher raye)
-  const holder = t.closest("[data-key]") || t.closest("[id]");
-  const id = holder ? (holder.dataset.key || holder.id) : "";
-  const now = Date.now();
-  if(lastTap && lastTap.id === id && now - lastTap.at < 450 && Math.abs(p.clientX - lastTap.x) < 30 && Math.abs(p.clientY - lastTap.y) < 30){
-    lastTap = null; ownDblAt = now;
-    e.preventDefault(); e.stopPropagation();
-    primeKeyboard();
-    // un éventuel dblclick natif arriverait sur ce même élément, peut-être déjà retiré de la page : arrêté sur lui
-    const stopNative = ev=>{ if(ev.isTrusted){ ev.stopImmediatePropagation(); ev.preventDefault(); } };
-    t.addEventListener("dblclick", stopNative, true);
-    setTimeout(()=> t.removeEventListener("dblclick", stopNative, true), 800);
-    t.dispatchEvent(new MouseEvent("dblclick", { bubbles:true, cancelable:true, clientX:p.clientX, clientY:p.clientY }));
-    focusEditNow();
-    return;
-  }
-  lastTap = { id, at: now, x: p.clientX, y: p.clientY };
-}, { capture:true, passive:false });
-document.addEventListener("dblclick", e=>{
-  if(e.isTrusted && isTouchUI() && Date.now() - ownDblAt < 800){ e.stopImmediatePropagation(); e.preventDefault(); }
-}, true);
 // 11.21 : fenêtre de modification ouverte au doigt : tout son cadre, jusqu'à Annuler / Enregistrer, au-dessus du clavier
 function editFrame(f){
   const li = f.closest("li");
@@ -9574,7 +9526,7 @@ function editFrame(f){
 }
 document.addEventListener("focusin", e=>{
   const f = e.target;
-  if(!f || f.id === "kbProxy" || !isTouchUI() || !f.matches || !f.matches(EDIT_FIELD_SEL)) return;
+  if(!f || !isTouchUI() || !f.matches || !f.matches(EDIT_FIELD_SEL)) return;
   const fr = editFrame(f);
   fr.top.style.scrollMarginTop = "10px";
   keepAboveKeyboard(fr.top, fr.bottom, f);
@@ -9824,6 +9776,7 @@ function buildChatCard(cat, catIdx){
     chatEdit = { catId: cat.id, idx: +l.dataset.i, v: null };
     chatFix = null; chatFocus = null;
     renderAll();
+    focusEditNow();   // 11.21
   });
   // menu « … »
   const more = card.querySelector(".chat-more"), menu = card.querySelector(".chat-menu");
@@ -11423,6 +11376,7 @@ function render(){
         e.stopPropagation();
         editingCategoryTitle = cat.id;
         renderAll();
+        focusEditNow();   // 11.21
       });
     }
     card.appendChild(head);
