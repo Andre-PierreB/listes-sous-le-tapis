@@ -385,6 +385,8 @@ async def t_signets(pg):
     for i in range(10): c = await new_list(tel, f"Liste {i}", memo=(i == 2)); await add_tasks(tel, c, "Une", "Deux")
     r = await js(tel, "(() => { const r = document.querySelector('.sig-tab').getBoundingClientRect(); return [r.right, r.width, r.height, innerWidth]; })()")
     check(abs(r[0] - r[3]) < 1.5 and r[2] >= 44, f"onglet du téléphone mal placé {r}")
+    top = await js(tel, "document.querySelector('.sig-tab').getBoundingClientRect().top")
+    check(top < 40, f"au téléphone, l'onglet n'est pas en haut de l'écran en haut de page ({top})")
     gap = await js(tel, "(() => { const t = document.querySelector('.sig-tab').getBoundingClientRect(); return Math.min(...[...document.querySelectorAll('.cat-full svg')].map(f => f.getBoundingClientRect().right > 0 ? t.left - f.getBoundingClientRect().right : 99)); })()")
     check(gap >= 0, f"au téléphone, l'onglet recouvre la flèche pleine page ({gap})")
     if shots: await tel.screenshot(path=f"{shots}/tel-ferme.png")

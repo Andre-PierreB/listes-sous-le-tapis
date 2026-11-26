@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.24 -->
+<!-- Sous le tapis — version AUTONOME 11.25 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3991,7 +3991,8 @@ body.ios-gate-on{ overflow:hidden; }
 body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
 @media (max-width:720px){
   /* téléphone : l'onglet est collé au bord de l'écran (marge de .wrap : 1rem), les signets aussi, assez hauts pour le doigt */
-  .sig-col{ left:calc(100% + 1rem - 24px); width:24px; }   /* 24 px : la flèche pleine page des cases commence à ~28 px du bord de l'écran (son bouton à ~21 px) : l'onglet ne la recouvre pas */
+  .signets{ position:fixed; left:0; right:0; }   /* 11.25 : téléphone : l'onglet reste en haut, même tout en haut de la page (la pile a toute la hauteur) */
+  .sig-col{ left:calc(100% - 24px); width:24px; }   /* 24 px : la flèche pleine page des cases commence à ~28 px du bord de l'écran (son bouton à ~21 px) : l'onglet ne la recouvre pas */
   .sig-tab{ width:24px; height:52px; border-radius:9px 0 0 9px; border-right:0; }
   .sig-tab svg{ width:20px; height:20px; }
   .sig-pile{ top:60px; right:0; width:min(80vw, 19rem); padding-right:0; }
@@ -4040,7 +4041,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.24</span>
+    <span class="version-tag">v11.25</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
