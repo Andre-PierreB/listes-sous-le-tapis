@@ -4034,11 +4034,11 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   footer #shareLink{ margin-right:0; }
   footer > .backup-bar{ display:contents; }
   footer .backup-nudge{ flex-basis:100%; text-align:center; margin-right:0; }   /* « Se connecter pour ne jamais perdre ses listes » centré */
-  /* case urgente : son picto et son titre se décalent ensemble (--urg-dx, vers la gauche), en décalage visuel seulement :
-     les tâches dessous ne bougent pas. 11.29 : le coin gauche du triangle est sur la première colonne de points de la
-     poignée (--dot1, mesuré sur l'appareil ; la poignée de l'urgent ne bouge pas, le coin est à 1,875 px du bord du picto),
-     puis 1 px plus à gauche « pour asseoir le triangle » (choix d'André-Pierre) */
-  :root{ --urg-dx:calc(19.3px - var(--dot1, 9.73px)); }
+  /* case urgente : son picto et son titre se décalent ensemble (--urg-dx, vers la gauche si positif), en décalage visuel
+     seulement : les tâches dessous ne bougent pas. 11.29 : le coin gauche du triangle (1,875 px dans le picto) sur le bord
+     gauche des titres et des bulles des cases (43.5 px du bord de la case), comme les titres des listes au-dessus de
+     leurs poignées. Ne dépend pas de la police de l'appareil. */
+  :root{ --urg-dx:-1.1px; }
   .urgent-banner > svg, .urgent-banner-title{ position:relative; left:calc(-1 * var(--urg-dx)); }
 }
 </style>
@@ -14903,11 +14903,6 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
     const dh = document.querySelector(".categories > .category > ul.items > .item > .drag-handle");
     const dw = dh ? dh.getBoundingClientRect().width : 0;
     if(dw > 0) html.style.setProperty("--dh-w", dw.toFixed(2) + "px");
-    // 11.29 : centre de la première colonne de points de la poignée, depuis son bord gauche (le point est au milieu
-    // de son caractère ; l'espacement négatif des lettres est retiré de la largeur mesurée)
-    if(dw > 0 && dh.firstChild){ try{ const r = document.createRange(); r.setStart(dh.firstChild, 0); r.setEnd(dh.firstChild, 1);
-      const b = r.getBoundingClientRect(), ls = parseFloat(getComputedStyle(dh).letterSpacing) || 0;
-      html.style.setProperty("--dot1", (b.left + (b.width - ls) / 2 - dh.getBoundingClientRect().left).toFixed(2) + "px"); }catch(e){} }
     for(const card of document.querySelectorAll(".categories > .category:not(.courses):not(.chat-card):not(.duel-card):not(.fullpage)")){
       const k = card.querySelector("ul.items > .item input[type=checkbox]"), g = card.querySelector(".cat-title-group");
       if(!k || !g) continue;
