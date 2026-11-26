@@ -334,6 +334,7 @@ async def t_decalage_telephone(pg):
           ordC: (b => b.left + b.width / 2)(l.querySelector(':scope > .cat-order svg').getBoundingClientRect()),
           dotC: m && (b => b.left + b.width / 2)(m.querySelector('.strike-dot').getBoundingClientRect()),
           mordC: m && (b => b.left + b.width / 2)(m.querySelector(':scope > .cat-order svg').getBoundingClientRect()),
+          bulC: (e => e && (b => b.left + b.width / 2)(e.getBoundingClientRect()))(document.querySelector('.urgent-list .urgent-bullet')),
           memoLi: m && r(m.querySelector('.courses-item')), memoUl: m && r(m.querySelector('ul.items')), memoHandle: m && r(m.querySelector('.courses-item .drag-handle')) }; }"""
     async def prepare(page):
         await js(page, """() => { addCategory('Maison'); const a = DATA[DATA.length - 1]; addQuickTask(a, 'Trier la cave'); addQuickTask(a, 'Ampoule');
@@ -344,6 +345,7 @@ async def t_decalage_telephone(pg):
     await prepare(pg)
     o = await js(pg, pos)
     check(o["dx"] == 0 and o["ul"] == "0px", f"ordi : décalage appliqué ({o})")
+    check(o["bulC"] is None or abs(o["bulC"] - o["chkC"]) < 0.6, f"ordi : points de l'urgent hors de la colonne des cases ({o})")
     ctx, tel, errs = await _tel(pg)
     try:
         await prepare(tel)
@@ -353,6 +355,7 @@ async def t_decalage_telephone(pg):
         check(t["memoLi"] is not None and abs(t["memoLi"] - t["memoUl"] - t["dx"]) < 1.5, f"mémo : le filet part du bord ({t})")
         check(t["memoHandle"] is not None and t["memoHandle"] < t["memoLi"], f"mémo : la poignée n'a pas glissé ({t})")
         check(abs(t["ordC"] - t["chkC"]) < 0.6 and abs(t["mordC"] - t["dotC"]) < 0.6, f"flèche de tri pas centrée sur les cases / ronds ({t})")
+        check(t["bulC"] is None or abs(t["bulC"] - t["chkC"]) < 0.6, f"téléphone : points de l'urgent hors de la colonne des cases ({t})")
         check(not errs, "erreur JavaScript au téléphone : " + "; ".join(errs[:3]))
     finally:
         await ctx.close()
