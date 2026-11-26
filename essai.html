@@ -3965,7 +3965,8 @@ body.ios-gate-on{ overflow:hidden; }
 .signets.open .sig-pile{ opacity:1; transform:none; visibility:visible; pointer-events:auto; transition:opacity .16s ease, transform .16s ease; }
 .sig{ appearance:none; font:inherit; text-align:left; flex:none; display:flex; align-items:center; gap:0.5rem; min-height:36px; padding:0 0.75rem 0 5px;
   position:relative; background:var(--surface); border:1px solid var(--line); border-radius:8px; cursor:pointer;
-  box-shadow:inset 5px 0 0 var(--cat-color, var(--accent)), var(--shadow); transition:transform .12s ease; }
+  box-shadow:var(--shadow); transition:transform .12s ease; }
+.sig-liste::after{ content:""; position:absolute; left:-1px; top:9px; bottom:9px; width:3px; background:var(--cat-color, var(--accent)); }   /* comme la case : filet droit à gauche, bouts droits, loin des coins ; pas de filet sur les mémos ni le duel */
 @media (hover:hover){ .sig:hover{ transform:translateX(-4px); } }
 .sig-mark{ flex:none; width:2.3rem; display:flex; align-items:center; justify-content:center; }
 .sig-count{ font-family:'Public Sans', system-ui, sans-serif; font-size:0.78rem; font-weight:700; min-width:1.55rem; height:1.3rem; padding:0 0.5rem;
