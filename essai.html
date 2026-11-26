@@ -4000,8 +4000,8 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   .sig-title{ font-size:0.8rem; }
 }
 /* 11.26 : téléphone : le contenu des cases (rangées des listes, des mémos, d'« En cours » et de la case urgente) glisse
-   vers la gauche de --ph-dx, pour gagner de la largeur. Titres, boutons (flèche de tri comprise), ligne du bas, champ de
-   saisie et cases fermées ne bougent pas (la mesure de la colonne des cases ajoute --ph-dx) ; la marge des mémos suit. */
+   vers la gauche de --ph-dx, pour gagner de la largeur. Titres, boutons, ligne du bas, champ de saisie et
+   cases fermées ne bougent pas (la mesure de la colonne des cases ajoute --ph-dx) ; la marge des mémos et la flèche de tri suivent. */
 @media (max-width:720px){
   :root{ --ph-dx:20px; }
   .category > ul.items, .urgent-list, #waitingList{ margin-left:calc(-1 * var(--ph-dx)); }
@@ -4010,6 +4010,9 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   .category.courses > ul.items > .courses-item{ margin-left:var(--ph-dx); }
   .category.courses > ul.items > .courses-item > .drag-handle{ margin-left:calc(-1 * var(--ph-dx)); }
   .category.courses > .courses-entry{ margin-left:calc(-1 * var(--ph-dx)); }   /* « + Ajouter un article » reste sous les ronds */
+  /* la flèche de tri suit la colonne des cases, ronds des mémos et points de l'urgent : centrée dessus (mesuré, vraies polices) */
+  .category > .cat-order{ left:calc(3.3rem + 13.6px - var(--ph-dx)); }
+  .category.courses > .cat-order{ left:calc(3.3rem + 16.6px - var(--ph-dx)); }
 }
 </style>
 

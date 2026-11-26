@@ -330,6 +330,10 @@ async def t_decalage_telephone(pg):
         return { dx: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ph-dx')) || 0,
           chk: r(l.querySelector('ul.items > .item input')), title: r(l.querySelector('.cat-title-group')), card: r(l),
           ul: getComputedStyle(l.querySelector('ul.items')).marginLeft, field: r(f),
+          chkC: (b => b.left + b.width / 2)(l.querySelector('ul.items > .item input').getBoundingClientRect()),
+          ordC: (b => b.left + b.width / 2)(l.querySelector(':scope > .cat-order svg').getBoundingClientRect()),
+          dotC: m && (b => b.left + b.width / 2)(m.querySelector('.strike-dot').getBoundingClientRect()),
+          mordC: m && (b => b.left + b.width / 2)(m.querySelector(':scope > .cat-order svg').getBoundingClientRect()),
           memoLi: m && r(m.querySelector('.courses-item')), memoUl: m && r(m.querySelector('ul.items')), memoHandle: m && r(m.querySelector('.courses-item .drag-handle')) }; }"""
     async def prepare(page):
         await js(page, """() => { addCategory('Maison'); const a = DATA[DATA.length - 1]; addQuickTask(a, 'Trier la cave'); addQuickTask(a, 'Ampoule');
@@ -348,6 +352,7 @@ async def t_decalage_telephone(pg):
         check(abs(t["field"] - t["dx"] - t["chk"]) < 1.5, f"téléphone : le champ fermé a bougé ou les cases n'ont pas glissé ({t})")
         check(t["memoLi"] is not None and abs(t["memoLi"] - t["memoUl"] - t["dx"]) < 1.5, f"mémo : le filet part du bord ({t})")
         check(t["memoHandle"] is not None and t["memoHandle"] < t["memoLi"], f"mémo : la poignée n'a pas glissé ({t})")
+        check(abs(t["ordC"] - t["chkC"]) < 0.6 and abs(t["mordC"] - t["dotC"]) < 0.6, f"flèche de tri pas centrée sur les cases / ronds ({t})")
         check(not errs, "erreur JavaScript au téléphone : " + "; ".join(errs[:3]))
     finally:
         await ctx.close()
