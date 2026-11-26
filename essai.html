@@ -3959,14 +3959,14 @@ body.ios-gate-on{ overflow:hidden; }
 .sig-tab svg{ width:18px; height:18px; transition:transform .16s ease; }
 .signets.open .sig-tab svg{ transform:rotate(180deg); }
 @media (hover:hover){ .sig-tab:hover{ background:var(--accent-soft); color:var(--accent-strong); border-color:var(--accent); } }
-.sig-pile{ position:absolute; right:0; top:42px; width:16rem; display:flex; flex-direction:column; gap:4px; overflow-y:auto; overscroll-behavior:contain;
-  padding:2px 2px 8px 10px; opacity:0; transform:translateX(8px); visibility:hidden; pointer-events:none;
+.sig-pile{ position:absolute; right:-14px; top:42px; width:calc(16rem + 14px); display:flex; flex-direction:column; gap:4px; overflow-y:auto; overscroll-behavior:contain;
+  padding:2px 14px 20px 10px; opacity:0;   /* de la place pour l'ombre (la pile défile : elle couperait l'ombre) */ transform:translateX(8px); visibility:hidden; pointer-events:none;
   transition:opacity .16s ease, transform .16s ease, visibility 0s .16s; }
 .signets.open .sig-pile{ opacity:1; transform:none; visibility:visible; pointer-events:auto; transition:opacity .16s ease, transform .16s ease; }
 .sig{ appearance:none; font:inherit; text-align:left; flex:none; display:flex; align-items:center; gap:0.5rem; min-height:36px; padding:0 0.75rem 0 5px;
   position:relative; background:var(--surface); border:1px solid var(--line); border-radius:8px; cursor:pointer;
-  box-shadow:var(--shadow); transition:transform .12s ease; }
-.sig-liste::after{ content:""; position:absolute; left:-1px; top:9px; bottom:9px; width:3px; background:var(--cat-color, var(--accent)); }   /* comme la case : filet droit à gauche, bouts droits, loin des coins ; pas de filet sur les mémos ni le duel */
+  box-shadow:0 1px 3px rgba(30,40,45,.12), 0 10px 22px -8px rgba(30,40,45,.32); transition:transform .12s ease; }   /* ombre plus marquée que celle des cases : la pile passe par-dessus et doit s'en détacher */
+.sig-liste::after{ content:""; position:absolute; left:3px; top:6px; bottom:6px; width:3px; background:var(--cat-color, var(--accent)); }   /* comme la case : filet droit à gauche, un peu de blanc avant lui, bouts droits, loin des coins ; pas de filet sur les mémos ni le duel */
 @media (hover:hover){ .sig:hover{ transform:translateX(-4px); } }
 .sig-mark{ flex:none; width:2.3rem; display:flex; align-items:center; justify-content:center; }
 .sig-count{ font-family:'Public Sans', system-ui, sans-serif; font-size:0.78rem; font-weight:700; min-width:1.55rem; height:1.3rem; padding:0 0.5rem;
@@ -3990,7 +3990,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   /* téléphone : l'onglet est collé au bord de l'écran (marge de .wrap : 1rem), les signets aussi, assez hauts pour le doigt */
   .sig-col{ left:calc(100% + 1rem - 22px); width:22px; }
   .sig-tab{ width:22px; height:44px; border-radius:8px 0 0 8px; border-right:0; }
-  .sig-pile{ top:52px; width:min(80vw, 19rem); padding-right:0; }
+  .sig-pile{ top:52px; right:0; width:min(80vw, 19rem); padding-right:0; }
   .sig{ min-height:44px; border-radius:8px 0 0 8px; border-right:0; }
   .sig-title{ font-size:0.8rem; }
 }
