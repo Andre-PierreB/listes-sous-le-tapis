@@ -382,6 +382,12 @@ async def t_signets(pg):
     check(h >= 44, "signets trop petits au doigt")
     sw = await js(tel, "document.documentElement.scrollWidth <= innerWidth")
     check(sw, "la pile fait déborder la page de côté")
+    # faire défiler derrière au doigt (appui sans toucher franc) : la pile reste ; un toucher ailleurs la ferme
+    await js(tel, "() => { document.querySelector('.progress-card').dispatchEvent(new PointerEvent('pointerdown', { bubbles:true, pointerType:'touch' })); window.scrollBy(0, 300); }")
+    await tel.wait_for_timeout(300)
+    check(await js(tel, "document.getElementById('signets').classList.contains('open')"), "au doigt, faire défiler ferme la pile")
+    await tel.tap("footer"); await tel.wait_for_timeout(300)
+    check(not await js(tel, "document.getElementById('signets').classList.contains('open')"), "au doigt, toucher ailleurs ne ferme pas la pile")
     await ctx.close()
 
 # --- lancement --------------------------------------------------------------

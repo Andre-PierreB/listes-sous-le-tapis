@@ -3953,7 +3953,10 @@ body.ios-gate-on{ overflow:hidden; }
    Petit point vert : ajouts ou modifs des autres de moins de 48 h (les mêmes que « new » / « modif »).
    Sur ordi, la pile s'ouvre aussi au survol. Un signet entrouvre la case fermée (sans la punaiser). */
 .signets{ position:sticky; top:max(0.6rem, env(safe-area-inset-top, 0px)); height:0; z-index:130; }
-.sig-col{ position:absolute; top:0.5rem; width:34px; left:min(calc(100% + 10px), calc(50vw + 50% - 38px)); }
+/* voile léger sur la page quand la pile est ouverte : les signets s'en détachent. Il ne prend pas la souris ni le doigt (on peut faire défiler derrière) */
+.signets::before{ content:""; position:fixed; inset:0; z-index:0; pointer-events:none; background:color-mix(in srgb, var(--bg) 62%, transparent); opacity:0; transition:opacity .16s ease; }
+.signets.open::before{ opacity:1; }
+.sig-col{ z-index:1; position:absolute; top:0.5rem; width:34px; left:min(calc(100% + 10px), calc(50vw + 50% - 38px)); }
 .sig-tab{ appearance:none; padding:0; width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2);
   color:var(--ink-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow); }
 .sig-tab svg{ width:18px; height:18px; transition:transform .16s ease; }
@@ -15043,7 +15046,12 @@ const Signets = (()=>{
     });
     return html;
   }
-  function outside(e){ if(!root.contains(e.target)) close(); }
+  // fermer en touchant ailleurs. Souris : dès l'appui (le clic passe à ce qu'il y a dessous, comme avant).
+  // Doigt : seulement sur un vrai toucher (click), pour qu'on puisse faire défiler la page derrière la pile
+  // sans qu'elle disparaisse ; ce toucher-là ferme la pile et ne fait rien d'autre (pas de coche par mégarde).
+  let downType = "mouse";
+  function outside(e){ downType = e.pointerType || "mouse"; if(downType === "mouse" && !root.contains(e.target)) close(); }
+  function outsideTap(e){ if(downType === "mouse" || root.contains(e.target)) return; e.preventDefault(); e.stopPropagation(); close(); }
   function onKey(e){ if(e.key === "Escape"){ e.stopPropagation(); close(); tab.focus(); } }
   function open(){
     pile.innerHTML = build();
@@ -15051,12 +15059,14 @@ const Signets = (()=>{
     pile.style.maxHeight = Math.max(160, (window.visualViewport ? visualViewport.height : innerHeight) - top - 12) + "px";
     root.classList.add("open"); tab.setAttribute("aria-expanded", "true");
     document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("click", outsideTap, true);
     document.addEventListener("keydown", onKey, true);
   }
   function close(){
     if(!root.classList.contains("open")) return;
     root.classList.remove("open"); tab.setAttribute("aria-expanded", "false");
     document.removeEventListener("pointerdown", outside, true);
+    document.removeEventListener("click", outsideTap, true);
     document.removeEventListener("keydown", onKey, true);
   }
   // fait glisser la page jusqu'à la case, l'entrouvre si elle est fermée (sans la punaiser) et la cerne un instant à sa couleur
