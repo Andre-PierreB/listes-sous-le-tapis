@@ -3713,7 +3713,13 @@ html.no-select, html.no-select *{ -webkit-user-select:none !important; user-sele
 /* ---------- mode sombre : retouches propres à certains éléments
    (chaque règle deux fois : thème forcé, puis réglage du système) ---------- */
 :root[data-theme="dark"] .tapis-watermark{ opacity:0.1; }
-:root[data-theme="dark"]{ --memo-ivoire:color-mix(in srgb, #D2D08A 6%, var(--surface)); }   /* 11.30 : thème sombre forcé, comme le réglage du système */
+:root[data-theme="dark"]{ --memo-ivoire:color-mix(in srgb, #D2D08A 6%, var(--surface)); }
+/* banc 11.30 : ivoire des mémos en clair, à comparer (?ml=b / c / d ; sans réglage : 17 %) */
+@media (prefers-color-scheme: light){
+  :root.ml-b:not([data-theme="dark"]){ --memo-ivoire:color-mix(in srgb, #D2D08A 13%, var(--surface)); }
+  :root.ml-c:not([data-theme="dark"]){ --memo-ivoire:color-mix(in srgb, #D2D08A 10%, var(--surface)); }
+  :root.ml-d:not([data-theme="dark"]){ --memo-ivoire:color-mix(in srgb, #D2D08A 7%, var(--surface)); }
+}   /* 11.30 : thème sombre forcé, comme le réglage du système */
 :root[data-theme="dark"] .urgent-banner{ box-shadow:var(--shadow); }
 :root[data-theme="dark"] #waitingSection .item:not(.editing):hover{ background:color-mix(in srgb, var(--wait) 14%, transparent); }
 :root[data-theme="dark"] .tapis-roll{ background:linear-gradient(180deg, #34424A 0%, #26323A 50%, #1A2328 100%); border-color:#3A4650; }
@@ -4149,6 +4155,7 @@ const CHAT_OFF = true;
 // 10.68 : essai.html?demo : vitrine de test, listes d'exemple dans un coin à part du navigateur
 // (préfixe « demo: »), sans connexion ni synchro ; ?demo&reset remet les exemples à neuf
 const DEMO = ESSAI && /[?&]demo\b/.test(location.search);
+if(ESSAI){ const ml = location.search.match(/[?&]ml=([bcd])\b/); if(ml) document.documentElement.classList.add("ml-" + ml[1]); }   // banc 11.30 : ivoire des mémos en clair
 if(DEMO && /[?&]reset\b/.test(location.search)){
   try{ Object.keys(localStorage).filter(k => k.startsWith("demo:")).forEach(k => localStorage.removeItem(k)); }catch(e){}
   location.replace(location.pathname + "?demo");
@@ -12089,7 +12096,9 @@ function glideHeight(card, h0, opening){
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
   if(card.classList.contains("courses") && !card.classList.contains("has-ptint")){   // 11.30 : le bas du dégradé vire en douceur (voir --memo-end)
     const cs = getComputedStyle(card), iv = cs.getPropertyValue("--memo-ivoire").trim(), sf = cs.getPropertyValue("--surface").trim();
-    if(iv && sf) card.animate([{ "--memo-end":opening ? iv : sf }, { "--memo-end":opening ? sf : iv }], { duration:dur, delay:lag, fill:"backwards", easing:opening ? SOFT_EASE : SOFT_CLOSE });
+    // seulement quand la case est presque à sa hauteur fermée : sinon tout le corps du mémo, articles compris, se teintait
+    const k = opening ? [{ "--memo-end":iv }, { "--memo-end":sf, offset:0.3 }, { "--memo-end":sf }] : [{ "--memo-end":sf }, { "--memo-end":sf, offset:0.7 }, { "--memo-end":iv }];
+    if(iv && sf) card.animate(k, { duration:dur, delay:lag, fill:"backwards", easing:"linear" });
   }
   const done = ()=>{ if(card._shutEnd) card._shutEnd();   // 11.28 : l'écran du duel figé reprend sa place de bande
     if(card._soft === a){ card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); if(card.classList.contains("courses")) placeCoursesScroll(card);
