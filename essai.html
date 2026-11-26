@@ -435,7 +435,7 @@
 -->
 <title>Sous le tapis</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Courier+Prime:wght@400;700&family=Work+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Courier+Prime:ital,wght@0,400;0,700;1,700&family=Work+Sans:wght@400;500;600&display=swap');
 
 /* ==========================================================================
    Feuille de style rangée en 8.0 : chaque retouche (7.x) est fondue dans sa
@@ -2970,6 +2970,7 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   margin:0 0 1.1rem;
 }
 #waitingSection .section-title span{ white-space:nowrap; }
+#waitingSection .section-title span + span{ font-style:italic; }   /* 11.27 : « La balle est dans leur camp » en italique (vraie italique de Courier Prime, chargée pour ça), « En cours » droit */
 /* 11.22 : « En cours » se masque (flèche en haut à droite) ; réglage propre à l'appareil. Masquée : même hauteur qu'une
    case fermée (72 px, 94 au téléphone), titre et bouton centrés en hauteur ; le nombre de tâches et la flèche forment une
    pastille verte, qui apparaît et disparaît en fondu (le nombre s'élargit depuis la flèche). */
