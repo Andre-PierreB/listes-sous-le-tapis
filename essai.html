@@ -11989,12 +11989,19 @@ function cfNarrow(card){
   card.classList.add("cf-narrow");
   if(!s || !s.animate){ card.classList.remove("cf-narrow"); return; }
   const rw = s.getBoundingClientRect();
-  card.classList.remove("cf-narrow"); const rn = s.getBoundingClientRect(); card.classList.add("cf-narrow");   // la place finale, mesurée
+  const m = card.querySelector(".d-mini");   // 11.28 : le texte du duel fermé, posé d'emblée à sa place finale
+  card.classList.remove("cf-narrow"); const rn = s.getBoundingClientRect(), mn = m && m.getBoundingClientRect(); card.classList.add("cf-narrow");   // la place finale, mesurée
+  if(mn && mn.width){   // (au téléphone, sa zone était plus étroite pendant le resserrement : le texte centré sautait à droite à la fin)
+    m.style.width = mn.width + "px";
+    const mw = m.getBoundingClientRect();
+    m.style.translate = (mn.left - mw.left).toFixed(1) + "px " + (mn.top - mw.top).toFixed(1) + "px";
+  }
+  const clearM = ()=>{ if(m){ m.style.width = ""; m.style.translate = ""; } };
   const a = s.animate([{ clipPath:cfInset(0, 0, 0, 0, 8) },
     { clipPath:cfInset(rn.top - rw.top, rw.right - rn.right, rw.bottom - rn.bottom, rn.left - rw.left, 8) }],
     { duration:520, easing:SOFT_CLOSE, fill:"forwards" });
-  const end = ()=>{ card.classList.remove("cf-narrow"); a.cancel(); };
-  a.onfinish = end; a.oncancel = ()=> card.classList.remove("cf-narrow");
+  const end = ()=>{ card.classList.remove("cf-narrow"); clearM(); a.cancel(); };
+  a.onfinish = end; a.oncancel = ()=>{ card.classList.remove("cf-narrow"); clearM(); };
 }
 function softHeight(card, change, opening){
   const h0 = card.getBoundingClientRect().height;   // pendant une animation : la hauteur du moment
