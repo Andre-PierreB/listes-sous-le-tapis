@@ -7548,7 +7548,15 @@ function revealRow(li, toggle){
   clearTimeout(revealTimer);
   li.classList.toggle("revealed", on);
   if(on) revealTimer = setTimeout(()=> li.classList.remove("revealed"), REVEAL_MS);
+  if(on) li._revealedAt = Date.now();   // 11.21
 }
+// 11.21 : double-toucher sur une tâche : le 1er toucher fait apparaître ses boutons, le 2e tombait parfois sur l'un
+// d'eux (urgent). Un bouton qui vient d'apparaître ne répond pas pendant le temps d'un double-toucher.
+document.addEventListener("click", e=>{
+  const c = e.target.closest && e.target.closest(".item-controls");
+  const li = c && c.closest("li");
+  if(li && li._revealedAt && Date.now() - li._revealedAt < 450){ e.stopPropagation(); e.preventDefault(); }
+}, true);
 document.addEventListener("click", e=>{
   if(!e.target.closest || !e.target.closest(".revealed")) hideRevealed(null);
 }, true);
@@ -9514,6 +9522,7 @@ function focusEditNow(){
   const f = document.querySelector(EDIT_FIELD_SEL);
   if(!f) return null;
   try{ f.focus({ preventScroll:true }); }catch(e){}
+  try{ const n = f.value.length; f.setSelectionRange(n, n); }catch(e){}   // curseur à la fin, pour modifier
   return f;
 }
 // 11.21 : fenêtre de modification ouverte au doigt : tout son cadre, jusqu'à Annuler / Enregistrer, au-dessus du clavier
