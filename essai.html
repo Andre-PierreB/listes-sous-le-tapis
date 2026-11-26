@@ -3950,7 +3950,8 @@ body.ios-gate-on{ overflow:hidden; }
 /* 11.23 : signets. Un onglet fixe (flèche sans trait) au bord droit, sous le compteur au départ, puis collé en haut
    en défilant (position:sticky dans .wrap, hauteur nulle : rien ne bouge dans la page). Au clic, la pile droite des
    signets, dans l'ordre des cases : liste (blanc, bulle du nombre), mémo (ivoire, coin corné, panier), duel (gris, faisan).
-   Petit point vert : ajouts ou modifs des autres de moins de 48 h (les mêmes que « new » / « modif »). */
+   Petit point vert : ajouts ou modifs des autres de moins de 48 h (les mêmes que « new » / « modif »).
+   Sur ordi, la pile s'ouvre aussi au survol. Un signet entrouvre la case fermée (sans la punaiser). */
 .signets{ position:sticky; top:max(0.6rem, env(safe-area-inset-top, 0px)); height:0; z-index:130; }
 .sig-col{ position:absolute; top:0.5rem; width:34px; left:min(calc(100% + 10px), calc(50vw + 50% - 38px)); }
 .sig-tab{ appearance:none; padding:0; width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2);
@@ -11849,12 +11850,14 @@ function closeBar(card){
 }
 // 10.66 : rouvrir une case fermée (elle reste à sa place ; essai abandonné : la faire remonter)
 function unfoldCat(catId){ setFolded(catId, false); }
+let sigHoldId = null;   // 11.23 : case entrouverte par un signet : elle attend qu'on y passe (la souris est encore sur la pile)
 let lastPointerType = "mouse", peekHold = 0, peekHoldId = null, peekId = null;   // peekHold : juste après un clic sur la punaise, CETTE case ne s'entrouvre pas tout de suite (10.67 : les autres, si)
 document.addEventListener("pointerdown", e=>{
   lastPointerType = e.pointerType || "mouse";
   if(!e.target.closest(".peek")) document.querySelectorAll(".peek").forEach(c => peekCard(c, false));
 }, true);
 function peekCard(card, on, still){
+  if(!on && sigHoldId === card.id) sigHoldId = null;   // 11.23
   if(on) peekId = card.id; else if(peekId === card.id) peekId = null;
   if(on === card.classList.contains("peek")) return;
   const change = ()=>{ card.classList.toggle("peek", on); card.classList.toggle("collapsed", !on); if(card.classList.contains("courses")){ if(on) memoRuleTop(card); placeCoursesScroll(card); }
@@ -11878,7 +11881,9 @@ let peekWatchT = null;
 document.addEventListener("pointermove", e=>{
   if(e.pointerType !== "mouse" || !PEEKS.length || peekWatchT || dragState) return;
   peekWatchT = setTimeout(()=>{ peekWatchT = null; if(dragState) return;
-    Array.from(PEEKS).forEach(c => { if(!c.matches(":hover")) peekCard(c, false); }); }, 260);
+    Array.from(PEEKS).forEach(c => {
+      if(c.id === sigHoldId){ if(c.matches(":hover")) sigHoldId = null; return; }   // 11.23 : ouverte par un signet : se referme seulement une fois survolée puis quittée (ou clic ailleurs)
+      if(!c.matches(":hover")) peekCard(c, false); }); }, 260);
 }, { passive:true, capture:true });
 function pinNear(pin){
   const r = pin.getBoundingClientRect();
@@ -15053,17 +15058,29 @@ const Signets = (()=>{
     document.removeEventListener("pointerdown", outside, true);
     document.removeEventListener("keydown", onKey, true);
   }
-  // fait glisser la page jusqu'à la case (sans l'ouvrir) et la cerne un instant à sa couleur
+  // fait glisser la page jusqu'à la case, l'entrouvre si elle est fermée (sans la punaiser) et la cerne un instant à sa couleur
   function go(id){
     close();
     const card = document.getElementById("cat-" + id);
     if(!card) return;
     const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top: Math.max(0, card.getBoundingClientRect().top + window.scrollY - 16), behavior: reduce ? "auto" : "smooth" });
+    if(card.classList.contains("collapsed") && typeof peekCard === "function"){ sigHoldId = card.id; peekCard(card, true); }   // fermée : entrouverte, pas punaisée
     card.classList.remove("sig-flash"); void card.offsetWidth; card.classList.add("sig-flash");
     setTimeout(()=>{ const c = document.getElementById("cat-" + id); if(c) c.classList.remove("sig-flash"); }, 2700);
   }
-  tab.addEventListener("click", e=>{ e.stopPropagation(); root.classList.contains("open") ? close() : open(); });
+  // ordi : la pile s'ouvre aussi au survol de l'onglet (petit délai : pas en passant), et se referme quand on la quitte
+  let hoverT = null, openedAt = 0;
+  const hover = window.matchMedia && matchMedia("(hover:hover)").matches;
+  if(hover){
+    root.addEventListener("pointerenter", e=>{ if(e.pointerType !== "mouse") return; clearTimeout(hoverT);
+      if(!root.classList.contains("open")) hoverT = setTimeout(()=>{ if(root.matches(":hover")){ open(); openedAt = Date.now(); } }, 140); });
+    root.addEventListener("pointerleave", e=>{ if(e.pointerType !== "mouse") return; clearTimeout(hoverT);
+      hoverT = setTimeout(()=>{ if(!root.matches(":hover")) close(); }, 320); });
+  }
+  tab.addEventListener("click", e=>{ e.stopPropagation();
+    if(!root.classList.contains("open")){ open(); openedAt = Date.now(); }
+    else if(Date.now() - openedAt > 600) close(); });   // ouverte par le survol juste avant : le clic ne la referme pas
   pile.addEventListener("click", e=>{ const b = e.target.closest(".sig"); if(b){ e.stopPropagation(); go(b.dataset.id); } });
   return { open, close, go };
 })();

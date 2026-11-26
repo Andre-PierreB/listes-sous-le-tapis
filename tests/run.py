@@ -343,9 +343,31 @@ async def t_signets(pg):
     # l'onglet reste visible en bas de page
     vis = await js(pg, "(() => { const r = document.querySelector('.sig-tab').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.right <= innerWidth; })()")
     check(vis, "l'onglet n'est plus à l'écran après le défilement")
-    # clic ailleurs : se referme ; pleine page : masqué
+    # clic ailleurs : se referme
     await pg.click(".sig-tab"); await pg.mouse.click(20, 400); await pg.wait_for_timeout(200)
     check(not await js(pg, "document.getElementById('signets').classList.contains('open')"), "un clic ailleurs ne referme pas la pile")
+    # survol (ordi) : la pile s'ouvre, et se referme quand on la quitte
+    await pg.mouse.move(5, 5); await pg.wait_for_timeout(300)
+    t = await pg.locator(".sig-tab").bounding_box()
+    await pg.mouse.move(t["x"] + 15, t["y"] + 15, steps=3); await pg.wait_for_timeout(400)
+    check(await js(pg, "document.getElementById('signets').classList.contains('open')"), "le survol n'ouvre pas la pile")
+    await pg.mouse.move(t["x"] + 15, t["y"] + 15); await pg.mouse.down(); await pg.mouse.up(); await pg.wait_for_timeout(200)
+    check(await js(pg, "document.getElementById('signets').classList.contains('open')"), "le clic juste après le survol referme la pile")
+    await pg.mouse.move(5, 300, steps=3); await pg.wait_for_timeout(600)
+    check(not await js(pg, "document.getElementById('signets').classList.contains('open')"), "la pile ne se referme pas quand on la quitte")
+    # case fermée : entrouverte par le signet, pas punaisée ; elle attend qu'on y passe, puis se referme en la quittant
+    await js(pg, "() => { DATA.forEach(y => setFolded(y.id, true)); renderAll(); }"); await pg.wait_for_timeout(300)
+    await pg.click(".sig-tab"); await pg.wait_for_timeout(300)
+    await pg.click(f".sig[data-id='{a}']"); await pg.wait_for_timeout(900)
+    peek = f"document.getElementById('cat-{a}').classList.contains('peek')"
+    check(await js(pg, peek), "le signet n'entrouvre pas la case fermée")
+    check(await js(pg, f"isFolded('{a}')"), "le signet a punaisé la case")
+    await pg.mouse.move(1250, 850, steps=6); await pg.wait_for_timeout(700)
+    check(await js(pg, peek), "la case se referme avant qu'on y passe")
+    b = await pg.locator(f"#cat-{a}").bounding_box()
+    await pg.mouse.move(b["x"] + b["width"] / 2, b["y"] + 20, steps=5); await pg.wait_for_timeout(500)
+    await pg.mouse.move(1250, 850, steps=5); await pg.wait_for_timeout(900)
+    check(not await js(pg, peek), "survolée puis quittée, la case reste entrouverte")
     # téléphone
     ctx = await pg.context.browser.new_context(viewport={"width": 390, "height": 760}, has_touch=True, is_mobile=True, device_scale_factor=2)
     tel = await ctx.new_page()
