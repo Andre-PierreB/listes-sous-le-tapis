@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.30 -->
+<!-- Sous le tapis — version AUTONOME 11.31 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1518,12 +1518,16 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
 /* 11.14 : mémo partagé à la couleur d'une personne : même principe que l'ivoire (11.13). Fermé : la couleur ; ouvert (et
    pendant qu'il se referme) : la couleur en haut, qui fond vers le blanc sur la hauteur d'une case fermée. Le fond des champs
    d'ajout (--memo-b) suit le blanc. */
-:root:root .category.courses.has-ptint:is(:not(.collapsed), .gliding){ --memo-a:var(--surface); --memo-b:var(--surface); --memo-c:var(--surface);
+:root:root .category.courses.has-ptint:is(:not(.collapsed), .gliding){ --memo-a:var(--surface); --memo-b:var(--surface); --memo-c:var(--surface); }
+/* 11.30 : comme l'ivoire : même dégradé ouvert et fermé, le bas (--memo-end) vire pendant le glissement (avant : la
+   couleur pleine arrivait d'un coup à la fin de la fermeture) ; le fondu du bas suit */
+:root:root .category.courses.has-ptint{ --memo-end:var(--surface);
   background:
     linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 9%), transparent calc(var(--gloss-p, 18%) + 26%)),
     linear-gradient(var(--gloss-a, 115deg), transparent calc(var(--gloss-p, 18%) + 34%), color-mix(in srgb, var(--gloss) 60%, transparent) calc(var(--gloss-p, 18%) + 38%), transparent calc(var(--gloss-p, 18%) + 44%)),
-    linear-gradient(180deg, var(--ptint-bg) 0, var(--surface) var(--memo-top-h, 72px)); }
-:root:root .category.courses.has-ptint.gliding::after{ background:linear-gradient(transparent, var(--surface) 0.75rem); }   /* 11.14 : le fondu du bas reste blanc pendant la fermeture */
+    linear-gradient(180deg, var(--ptint-bg) 0, var(--memo-end) var(--memo-top-h, 72px)); }
+:root:root .category.courses.collapsed.has-ptint:not(.gliding){ --memo-end:var(--ptint-bg); }
+:root:root .category.courses.has-ptint::after{ background:linear-gradient(transparent, var(--memo-end) 0.75rem); }
 /* 10.2 : pastilles des personnes avec qui la liste est partagée (à côté du titre) */
 .share-chips{ display:inline-flex; flex:none; }
 .share-chip{
@@ -4093,7 +4097,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.30</span>
+    <span class="version-tag">v11.31</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -12088,8 +12092,8 @@ function glideHeight(card, h0, opening){
   card._soft = a; card._glide = { dh: h1 - h0, dur, lag, easing: opening ? SOFT_EASE : SOFT_CLOSE };   // 10.80 : pour la punaise retenue
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
-  if(card.classList.contains("courses") && !card.classList.contains("has-ptint")){   // 11.30 : le bas du dégradé vire en douceur (voir --memo-end)
-    const cs = getComputedStyle(card), iv = cs.getPropertyValue("--memo-ivoire").trim(), sf = cs.getPropertyValue("--surface").trim();
+  if(card.classList.contains("courses")){   // 11.30 : le bas du dégradé vire en douceur (voir --memo-end) ; mémo partagé : la couleur de la personne
+    const cs = getComputedStyle(card), iv = cs.getPropertyValue(card.classList.contains("has-ptint") ? "--ptint-bg" : "--memo-ivoire").trim(), sf = cs.getPropertyValue("--surface").trim();
     // seulement quand la case est presque à sa hauteur fermée : sinon tout le corps du mémo, articles compris, se teintait
     const k = opening ? [{ "--memo-end":iv }, { "--memo-end":sf, offset:0.3 }, { "--memo-end":sf }] : [{ "--memo-end":sf }, { "--memo-end":sf, offset:0.7 }, { "--memo-end":iv }];
     if(iv && sf) card.animate(k, { duration:dur, delay:lag, fill:"backwards", easing:"linear" });
