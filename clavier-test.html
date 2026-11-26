@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test clavier</title>
+<!-- Page de test à part (26/11/2026) : quelle façon d'ouvrir un champ fait venir le clavier sur iPhone.
+     Ne touche ni à l'appli, ni au banc, ni à aucune donnée. -->
+<style>
+  body{ font:16px/1.4 -apple-system, system-ui, sans-serif; margin:0; padding:1rem 1rem 60vh; background:#F7FAF9; color:#223; }
+  h1{ font-size:1.1rem; margin:0 0 .3rem; }
+  p.note{ margin:0 0 1rem; color:#667; font-size:.9rem; }
+  .t{ background:#fff; border-radius:12px; padding:.8rem; margin:0 0 .8rem; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .t b{ display:block; margin-bottom:.4rem; }
+  .row{ display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; }
+  button, .tap{ font:inherit; padding:.6rem .9rem; border:1px solid #cdd; border-radius:10px; background:#f3f6f6; color:#223; -webkit-user-select:none; user-select:none; }
+  .tap{ display:inline-block; -webkit-touch-callout:none; }
+  .slot input{ font-size:16px; padding:.45rem .6rem; border:1px solid #9bb; border-radius:8px; width:12rem; }
+  .res{ font-weight:700; min-width:6rem; }
+  .ok{ color:#2a7a3a; } .ko{ color:#a9472a; }
+  #sum{ position:sticky; top:0; z-index:5; background:#223; color:#cfe; font:13px/1.3 monospace; padding:.5rem .7rem; border-radius:10px; margin-bottom:1rem; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Test du clavier</h1>
+<p class="note">Faites chaque essai une fois. La page voit seule si le clavier est venu (vert) ou pas (rouge), puis le referme. À la fin, une capture d'écran du cadre noir suffit.</p>
+<div id="sum">Résultats : —</div>
+
+<div class="t" data-k="A"><b>A · un toucher sur le bouton, le champ prend le curseur tout de suite</b>
+  <div class="row"><button>Essayer A</button><span class="slot"><input placeholder="champ A"></span><span class="res"></span></div></div>
+
+<div class="t" data-k="B"><b>B · un toucher, le champ est créé puis prend le curseur tout de suite</b>
+  <div class="row"><button>Essayer B</button><span class="slot"></span><span class="res"></span></div></div>
+
+<div class="t" data-k="C"><b>C · un toucher, le champ est créé et prend le curseur une image plus tard (comme le + de l'appli)</b>
+  <div class="row"><button>Essayer C</button><span class="slot"></span><span class="res"></span></div></div>
+
+<div class="t" data-k="D"><b>D · double-toucher sur le texte (comme une tâche aujourd'hui)</b>
+  <div class="row"><span class="tap">Touchez-moi deux fois</span><span class="slot"></span><span class="res"></span></div></div>
+
+<div class="t" data-k="E"><b>E · double-toucher reconnu au lever du doigt</b>
+  <div class="row"><span class="tap">Touchez-moi deux fois</span><span class="slot"></span><span class="res"></span></div></div>
+
+<div class="t" data-k="F"><b>F · appui long, le champ s'ouvre au lever du doigt</b>
+  <div class="row"><span class="tap">Appui long puis lever</span><span class="slot"></span><span class="res"></span></div></div>
+
+<div class="t" data-k="G"><b>G · un seul toucher sur le texte (pas de bouton)</b>
+  <div class="row"><span class="tap">Touchez-moi une fois</span><span class="slot"></span><span class="res"></span></div></div>
+
+<div class="t" data-k="H"><b>H · double-toucher, le texte est déjà un champ déguisé (lecture seule, devient modifiable)</b>
+  <div class="row"><span class="slot"><input value="Touchez-moi deux fois" readonly style="border-color:transparent;background:transparent"></span><span class="res"></span></div></div>
+
+<script>
+const vv = window.visualViewport, results = {};
+const sum = document.getElementById("sum");
+function paint(){ sum.textContent = "Résultats : " + (Object.keys(results).sort().map(k => k + " " + (results[k] ? "OUI" : "non")).join("   ") || "—") + "\n" + navigator.userAgent.replace(/^.*?\(/, "(").slice(0, 90); }
+function newInput(slot, k){ slot.innerHTML = ""; const i = document.createElement("input"); i.placeholder = "champ " + k; slot.appendChild(i); return i; }
+function watch(k, inp){
+  const h0 = vv ? vv.height : innerHeight, row = document.querySelector(`[data-k="${k}"] .res`);
+  row.textContent = "…"; row.className = "res";
+  let seen = false;
+  const chk = ()=>{ if((vv ? vv.height : innerHeight) < h0 - 120) seen = true; };
+  if(vv) vv.addEventListener("resize", chk);
+  setTimeout(()=>{
+    chk(); if(vv) vv.removeEventListener("resize", chk);
+    results[k] = seen; row.textContent = seen ? "clavier OUI" : "clavier non"; row.className = "res " + (seen ? "ok" : "ko");
+    paint(); try{ inp.blur(); }catch(e){}
+  }, 1500);
+}
+const box = k => document.querySelector(`[data-k="${k}"]`);
+// A
+box("A").querySelector("button").addEventListener("click", ()=>{ const i = box("A").querySelector("input"); i.focus(); watch("A", i); });
+// B
+box("B").querySelector("button").addEventListener("click", ()=>{ const i = newInput(box("B").querySelector(".slot"), "B"); i.focus(); watch("B", i); });
+// C
+box("C").querySelector("button").addEventListener("click", ()=>{ const i = newInput(box("C").querySelector(".slot"), "C"); requestAnimationFrame(()=>{ i.focus(); watch("C", i); }); });
+// D
+box("D").querySelector(".tap").addEventListener("dblclick", ()=>{ const i = newInput(box("D").querySelector(".slot"), "D"); i.focus(); watch("D", i); });
+// E
+(()=>{ const t = box("E").querySelector(".tap"); let last = 0;
+  t.addEventListener("touchend", e=>{ const now = Date.now();
+    if(now - last < 450){ last = 0; e.preventDefault(); const i = newInput(box("E").querySelector(".slot"), "E"); i.focus(); watch("E", i); }
+    else last = now; }, { passive:false }); })();
+// F
+(()=>{ const t = box("F").querySelector(".tap"); let timer = null, ready = false;
+  t.addEventListener("touchstart", ()=>{ ready = false; timer = setTimeout(()=>{ ready = true; t.style.background = "#dfeee2"; }, 480); }, { passive:true });
+  t.addEventListener("touchmove", ()=>{ clearTimeout(timer); }, { passive:true });
+  t.addEventListener("touchend", e=>{ clearTimeout(timer); t.style.background = ""; if(!ready) return; e.preventDefault(); const i = newInput(box("F").querySelector(".slot"), "F"); i.focus(); watch("F", i); }, { passive:false });
+  t.addEventListener("contextmenu", e => e.preventDefault()); })();
+// G
+box("G").querySelector(".tap").addEventListener("click", ()=>{ const i = newInput(box("G").querySelector(".slot"), "G"); i.focus(); watch("G", i); });
+// H
+(()=>{ const i = box("H").querySelector("input");
+  i.addEventListener("dblclick", ()=>{ i.readOnly = false; i.focus(); watch("H", i); setTimeout(()=>{ i.readOnly = true; }, 1600); }); })();
+paint();
+</script>
+</body>
+</html>
