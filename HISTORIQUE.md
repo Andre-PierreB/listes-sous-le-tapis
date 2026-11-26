@@ -3,6 +3,12 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.27 : téléphone : flèche de tri centrée sur le début du texte des tâches et des articles (suit --dh-w) ; case
+    urgente : picto et titre décalés ensemble (--urg-dx, position:relative) pour que le centre du chiffre du titre soit
+    sur le centre des points des tâches ; pied de page : Corbeille sur le bord gauche des cases à cocher (--chk-x,
+    mesuré), Partage à côté, « Se connecter pour ne jamais perdre ses listes » centré dessous (backup-bar en
+    display:contents). Partout : titre d'« En cours » : « Bravo c'est en cours, la balle est dans leur camp ».
+    Test : signets_au_doigt ; decalage_telephone vérifie flèche et Corbeille.
   - 11.26 : téléphone : le contenu des cases (listes, mémos, « En cours », case urgente) glisse de 20 px vers la gauche
     (--ph-dx) ; titres, boutons, ligne du bas, champ de saisie et cases fermées inchangés (la mesure de la colonne des
     cases ajoute --ph-dx). Mémos : la marge suit, filets et voile des articles gardent leur départ. Flèche de tri centrée

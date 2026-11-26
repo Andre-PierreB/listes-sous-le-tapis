@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.26 -->
+<!-- Sous le tapis — version AUTONOME 11.27 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -4010,12 +4010,28 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   .category.courses > ul.items > .courses-item{ margin-left:var(--ph-dx); }
   .category.courses > ul.items > .courses-item > .drag-handle{ margin-left:calc(-1 * var(--ph-dx)); }
   .category.courses > .courses-entry{ margin-left:calc(-1 * var(--ph-dx)); }   /* « + Ajouter un article » reste sous les ronds */
-  /* la flèche de tri suit la colonne des cases, ronds des mémos et points de l'urgent : centrée dessus (mesuré, vraies polices) */
+  /* la flèche de tri suit la colonne des cases (mesuré, vraies polices) */
   /* le signe ⋮⋮ de la poignée n'est dans aucune police de l'appli : chaque appareil le dessine avec la sienne, et la colonne
      des cases bouge avec sa largeur ; --dh-w est la largeur mesurée sur l'appareil (34.9px : celle du banc de Claude) */
-  .category > .cat-order{ left:calc(3.3rem + 13.6px - var(--ph-dx) + var(--dh-w, 34.9px) - 34.9px); }
-  .category.courses > .cat-order{ left:calc(3.3rem + 16.6px - var(--ph-dx) + var(--dh-w, 34.9px) - 34.9px); }
+  /* 11.27 : centre de la flèche sur le début du texte des tâches et des articles (23.7 px à droite du centre des cases) */
+  .category > .cat-order{ left:calc(3.3rem + 37.3px - var(--ph-dx) + var(--dh-w, 34.9px) - 34.9px); }
+  .category.courses > .cat-order{ left:calc(3.3rem + 40.3px - var(--ph-dx) + var(--dh-w, 34.9px) - 34.9px); }
   .urgent-bullet{ left:calc(-0.17rem + 2.46px); }   /* points de la case urgente : 2,46 px à gauche de la colonne au téléphone (déjà avant la 11.26), recentrés ; ordi déjà juste */
+}
+/* 11.27 : téléphone : Corbeille (bord gauche) sur le bord gauche des cases à cocher (--chk-x : mesuré depuis le bord des
+   cases, qui est aussi celui du pied de page), Partage juste à côté ; dessous, le rappel de connexion centré, puis le numéro de
+   version à droite (la barre de sauvegarde, vide une fois connecté, ne décale plus rien) */
+@media (max-width:720px){
+  footer{ justify-content:flex-start; }
+  footer #trashLink{ margin-left:var(--chk-x, 3.6rem); margin-right:0; }
+  footer #shareLink{ margin-right:0; }
+  footer > .backup-bar{ display:contents; }
+  footer .backup-nudge{ flex-basis:100%; text-align:center; margin-right:0; }   /* « Se connecter pour ne jamais perdre ses listes » centré */
+  /* case urgente : son picto et son titre se décalent (--urg-dx, vers la gauche si positif), en décalage visuel seulement :
+     les tâches dessous ne bougent pas. Le centre du chiffre du titre (« 1 seul point urgent ») est sur le centre des
+     points des tâches ; les points suivent la largeur de la poignée (--dh-w), le chiffre non (Courier Prime chargée) */
+  :root{ --urg-dx:calc(-9.17px - var(--dh-w, 34.94px) + 34.94px); }
+  .urgent-banner > svg, .urgent-banner-title{ position:relative; left:calc(-1 * var(--urg-dx)); }
 }
 </style>
 
@@ -4045,7 +4061,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   <div class="add-category-row" id="addCategoryRow"></div>
 
   <section class="section-block" id="waitingSection">
-    <h2 class="section-title"><span>En cours -</span> <span>La balle est dans leur camp</span></h2>
+    <h2 class="section-title"><span>Bravo c'est en cours,</span> <span>la balle est dans leur camp</span></h2>
     <button type="button" class="waiting-fold" id="waitingFold" aria-expanded="true" aria-label="Masquer les tâches en cours" data-tip="Masquer"><span class="waiting-count" hidden></span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <ul class="items" id="waitingList"></ul>
   </section>
@@ -4059,7 +4075,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.26</span>
+    <span class="version-tag">v11.27</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -14833,6 +14849,7 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
       const x = k.getBoundingClientRect().left + dx, c = card.getBoundingClientRect().left, t = g.getBoundingClientRect().left;
       if(!(x > c)) continue;
       html.style.setProperty("--cf-ml", (x - t).toFixed(1) + "px");
+      html.style.setProperty("--chk-x", (k.getBoundingClientRect().left - c).toFixed(1) + "px");   // 11.27 : Corbeille au téléphone
       // le champ d'une case fermée sans initiales (elles le raccourcissent), une fois posé sur la colonne des cases
       const f = Array.from(document.querySelectorAll(".categories > .category.collapsed:not(.courses):not(.has-people):not(.chat-card):not(.duel-card) .cat-quick"))[0];
       if(f){ const r = f.getBoundingClientRect(), cr = f.closest(".category").getBoundingClientRect();
