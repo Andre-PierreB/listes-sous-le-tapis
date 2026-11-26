@@ -2103,12 +2103,13 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   .duel-card.fullpage .persos canvas{ width:36px; height:30px; }
   .duel-card.fullpage .duel-foot{ grid-column:5; grid-row:5; justify-content:flex-end; margin:0; }
   .duel-card.fullpage .duel-foot .cat-grip{ display:none; }
-  /* 11.22 : le titre passait sous le rond de retour : il se range à droite du rond. L'écran, les réglages et Lancer
-     descendent de --fp-down (une partie de la place libre au-dessus des objets, mesurée par fitDuelFull), sans
+  /* 11.22 : voyant et titre placés par rapport à l'écran du jeu, comme debout (22,5 px à droite de son bord gauche,
+     17,6 px au-dessus de son haut) : ils ne passent plus sous le rond de retour. Pour leur faire de la place, l'écran,
+     les réglages et Lancer descendent de --fp-down, pris sur la place libre au-dessus des objets (fitDuelFull), sans
      changer de taille ; la rangée du bas ne bouge pas. Lancer descend en plus jusqu'au bas de l'écran. */
   .duel-card.fullpage :is(.duel-screen, .coup > .reglage){ translate:0 var(--fp-down, 0px); }
   .duel-card.fullpage .d-lancer{ translate:0 calc(var(--fp-down, 0px) + var(--fp-lancer, 0px)); }
-  .duel-card.fullpage .chat-led{ left:calc(max(calc(50vw - 410px + 1.1rem), calc(env(safe-area-inset-left, 0px) + 0.9rem)) + var(--fb-size) + 0.7rem - max(1.25rem, env(safe-area-inset-left, 0px))); }
+  .duel-card.fullpage .duel-stage > .chat-led{ left:var(--fp-led-x, 1.25rem); top:var(--fp-led-y, calc(0.9rem - 6.5px)); }
 }
 .chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ display:none; }   /* 10.71 : on sort par le grand bouton rond */
 .chat-card.fullpage, .duel-card.fullpage{ padding-top:calc(max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) + var(--fb-size) + 0.4rem); }
@@ -11186,17 +11187,31 @@ let running = false, cardCat = null;
 if(!window.fitDuelFull){
   window.fitDuelFull = function(){
     document.querySelectorAll(".duel-card:not(.fullpage) .duel-stage[style*='width']").forEach(st => st.style.width = "");
+    document.querySelectorAll(".duel-card:not(.fullpage) .duel-screen[style*='width']").forEach(sc => sc.style.width = "");   // 11.22
     const card = document.querySelector(".duel-card.fullpage"); if(!card) return;
     const st = card.querySelector(".duel-stage"), sc = card.querySelector(".duel-screen"); if(!st || !sc) return;
-    st.style.width = "";
+    st.style.width = ""; sc.style.width = "";
     if(matchMedia("(orientation:landscape) and (max-height:560px)").matches){
-      // 11.22 : manette : descendre d'une partie de la place libre entre l'écran et la rangée des objets (au plus 18 px)
-      // Lancer : jusqu'au bas de l'écran, à sa droite (il s'éloigne des boutons de la force)
-      card.style.removeProperty("--fp-down"); card.style.removeProperty("--fp-lancer");
-      const ob = card.querySelector(".objets"), la = card.querySelector(".d-lancer"), r = sc.getBoundingClientRect();
-      const gap = ob ? ob.getBoundingClientRect().top - r.bottom : 0, lb = la ? la.getBoundingClientRect().bottom : r.bottom;   // tout mesuré avant d'écrire
-      card.style.setProperty("--fp-down", Math.round(Math.max(0, Math.min(18, (gap - 10) * 0.6))) + "px");
+      // 11.22 : manette : voyant et titre au-dessus de l'écran comme debout ; l'écran descend juste assez pour leur faire
+      // la place (pris sur la place libre au-dessus des objets, 4 px gardés) ; Lancer jusqu'au bas de l'écran, à sa droite
+      ["--fp-down", "--fp-lancer", "--fp-led-x", "--fp-led-y"].forEach(k => card.style.removeProperty(k));
+      sc.style.width = "";
+      const LED_X = 22.5, LED_Y = 17.6, LED_TOP = 10;   // écarts de la mise en page debout ; voyant au moins à 10 px du haut de la case
+      const ob = card.querySelector(".objets"), la = card.querySelector(".d-lancer");
+      let r = sc.getBoundingClientRect();
+      const ct = card.getBoundingClientRect().top;
+      let gap = ob ? ob.getBoundingClientRect().top - r.bottom : 0;
+      const need = LED_TOP + LED_Y - (r.top - ct);
+      if(need > gap - 4){   // pas assez de place libre (petit écran) : en dernier recours seulement, l'écran rétrécit du manque
+        sc.style.width = Math.max(200, r.width - (need - (gap - 4)) * 16 / 9) + "px";
+        r = sc.getBoundingClientRect(); gap = ob ? ob.getBoundingClientRect().top - r.bottom : 0;
+      }
+      const sr = st.getBoundingClientRect(), lb = la ? la.getBoundingClientRect().bottom : r.bottom;   // tout mesuré avant d'écrire
+      const down = Math.round(Math.max(0, Math.min(LED_TOP + LED_Y - (r.top - ct), gap - 4)));
+      card.style.setProperty("--fp-down", down + "px");
       card.style.setProperty("--fp-lancer", Math.round(Math.max(0, r.bottom - lb)) + "px");
+      card.style.setProperty("--fp-led-x", Math.round(r.left - sr.left + LED_X) + "px");
+      card.style.setProperty("--fp-led-y", Math.round(r.top + down - LED_Y - sr.top) + "px");
       return;
     }   // 10.68 : téléphone couché : la « manette » (CSS) s'en charge   // tout le poste (écran, réglages, Lancer, pied) prend la largeur de l'écran
     for(let i = 0; i < 3; i++){   // les réglages peuvent passer sur deux lignes quand l'écran rétrécit : on remesure
@@ -13382,23 +13397,9 @@ const TAPIS = (()=>{
     n.start(at, Math.random()*2); n.stop(at + 0.36);
   }
   // froissement de tissu : bruit rose filtré dans le médium, enveloppe lisse
-  // 11.22 : au lancer du tapis, un souffle net et court (avant : froissement sur toute la durée) ; le « flop » d'arrivée
-  // devient duveteux (puff). Banc seulement : essai.html?souffle=long rejoue les anciens sons, pour comparer.
-  function whoosh(ctx, t0){
-    const W = 0.34;
-    const src = ctx.createBufferSource(); src.buffer = noiseBuf;
-    const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 600; hp.Q.value = 0.6;
-    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.9;
-    const g = ctx.createGain();
-    src.connect(hp).connect(bp).connect(g).connect(ctx.destination);
-    bp.frequency.setValueAtTime(4200, t0); bp.frequency.exponentialRampToValueAtTime(1300, t0 + W);
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(0.4, t0 + 0.03);
-    g.gain.exponentialRampToValueAtTime(0.12, t0 + W*0.55);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + W);
-    src.start(t0, Math.random()*2); src.stop(t0 + W + 0.02);
-  }
-  // 11.22 : arrivée duveteuse (avant : un « tac » net) : attaque lente, bruit très filtré, extinction plus longue
+  // 11.22 : au lancer du tapis, un souffle duveteux et court ; plus rien à l'arrivée (avant : froissement sur toute la
+  // durée puis « flop »). Banc seulement : essai.html?souffle=long rejoue les anciens sons, pour comparer.
+  // souffle duveteux : attaque lente, bruit très filtré, extinction douce
   function puff(ctx, at){
     const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
     n.buffer = noiseBuf; f.type = "lowpass"; f.Q.value = 0.3;
@@ -13413,7 +13414,7 @@ const TAPIS = (()=>{
   function rustle(unroll, dur){
     const ctx = audio(); if(!ctx) return;
     const t0 = ctx.currentTime + 0.01, D = dur/1000;
-    if(unroll && !OLD_RUSTLE){ whoosh(ctx, t0); puff(ctx, t0 + D - 0.12); return; }
+    if(unroll && !OLD_RUSTLE){ puff(ctx, t0); return; }
     const src = ctx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
     const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 350; hp.Q.value = 0.5;
     const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 0.4;
