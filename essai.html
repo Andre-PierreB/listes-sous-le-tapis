@@ -15041,9 +15041,9 @@ const Signets = (()=>{
       const ecran = isChatList(cat.id) || isDuelList(cat.id), memo = !ecran && isCoursesList(cat.id);
       const n = ecran || memo ? 0 : leftCount(cat);
       let title = cat.title || (isDuelList(cat.id) ? "Duel de faisans" : "Sans titre");
-      if(isDuelList(cat.id)){   // 11.24 : « Duel avec Hiske » : le nom de l'adversaire (ou des autres), sinon le titre
-        const who = listPeople(cat.id).map(u => personName(u, cat.id)).filter(n => n && n !== "?");
-        if(who.length) title = "Duel avec " + (who.length > 1 ? who.slice(0, -1).join(", ") + " et " + who[who.length - 1] : who[0]);
+      if(isDuelList(cat.id)){   // 11.24 : « Duel avec Hiske » : le nom de l'adversaire (un duel se joue à deux), sinon le titre
+        const who = personName(listPeople(cat.id)[0], cat.id);
+        if(who && who !== "?") title = "Duel avec " + who;
       }
       const mark = isDuelList(cat.id) ? `<span class="sig-picto" aria-hidden="true"></span>` : memo ? `<span class="sig-basket">${BASKET_SVG}</span>` : n ? `<span class="sig-count" aria-label="${n} à faire">${n}</span>` : "";
       html += `<button type="button" role="menuitem" class="sig ${ecran ? "sig-ecran" : memo ? "sig-memo" : "sig-liste"}" data-id="${escapeAttr(cat.id)}" style="--cat-color:${escapeAttr(displayCatColor(cat.color))}">` +
