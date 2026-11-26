@@ -372,6 +372,12 @@ async def t_signets(pg):
     await pg.mouse.move(b["x"] + b["width"] / 2, b["y"] + 20, steps=5); await pg.wait_for_timeout(500)
     await pg.mouse.move(1250, 850, steps=5); await pg.wait_for_timeout(900)
     check(not await js(pg, peek), "survolée puis quittée, la case reste entrouverte")
+    # duel : le nom de l'adversaire (11.24) ; simulé : le mode hors ligne n'a ni partage ni duel partagé
+    nom = await js(pg, f"""() => {{ const d = '{z}', oD = isDuelList, oP = listPeople, oN = personName;
+        isDuelList = id => id === d; listPeople = id => id === d ? ['u1', 'u2'] : []; personName = u => u === 'u1' ? 'Hiske' : 'Léon-John';
+        Signets.open(); const t = document.querySelector('.sig[data-id="' + d + '"] .sig-title').textContent;
+        Signets.close(); isDuelList = oD; listPeople = oP; personName = oN; return t; }}""")
+    check(nom == "Duel avec Hiske et Léon-John", f"signet du duel : {nom}")
     # téléphone
     ctx = await pg.context.browser.new_context(viewport={"width": 390, "height": 760}, has_touch=True, is_mobile=True, device_scale_factor=2)
     tel = await ctx.new_page()

@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.23 -->
+<!-- Sous le tapis — version AUTONOME 11.24 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -4040,7 +4040,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.23</span>
+    <span class="version-tag">v11.24</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -15040,7 +15040,11 @@ const Signets = (()=>{
       if(!cat || isCategoryDeleted(cat.id) || !document.getElementById("cat-" + cat.id)) return;   // seulement les cases affichées (le chat masqué n'en a pas)
       const ecran = isChatList(cat.id) || isDuelList(cat.id), memo = !ecran && isCoursesList(cat.id);
       const n = ecran || memo ? 0 : leftCount(cat);
-      const title = cat.title || (isDuelList(cat.id) ? "Duel de faisans" : "Sans titre");
+      let title = cat.title || (isDuelList(cat.id) ? "Duel de faisans" : "Sans titre");
+      if(isDuelList(cat.id)){   // 11.24 : « Duel avec Hiske » : le nom de l'adversaire (ou des autres), sinon le titre
+        const who = listPeople(cat.id).map(u => personName(u, cat.id)).filter(n => n && n !== "?");
+        if(who.length) title = "Duel avec " + (who.length > 1 ? who.slice(0, -1).join(", ") + " et " + who[who.length - 1] : who[0]);
+      }
       const mark = isDuelList(cat.id) ? `<span class="sig-picto" aria-hidden="true"></span>` : memo ? `<span class="sig-basket">${BASKET_SVG}</span>` : n ? `<span class="sig-count" aria-label="${n} à faire">${n}</span>` : "";
       html += `<button type="button" role="menuitem" class="sig ${ecran ? "sig-ecran" : memo ? "sig-memo" : "sig-liste"}" data-id="${escapeAttr(cat.id)}" style="--cat-color:${escapeAttr(displayCatColor(cat.color))}">` +
         `<span class="sig-mark">${mark}</span><span class="sig-title">${escapeAttr(title)}</span>${!ecran && hasNews(cat) ? `<span class="sig-led" aria-label="Du nouveau"></span>` : ""}</button>`;
