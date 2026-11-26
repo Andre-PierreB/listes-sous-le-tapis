@@ -4028,9 +4028,10 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   footer #shareLink{ margin-right:0; }
   footer > .backup-bar{ display:contents; }
   footer .backup-nudge{ flex-basis:100%; text-align:center; margin-right:0; }   /* « Se connecter pour ne jamais perdre ses listes » centré */
-  /* case urgente : son picto et son titre glissent aussi vers la gauche (--urg-dx), en décalage visuel seulement : les
-     tâches dessous ne bougent pas */
-  :root{ --urg-dx:14px; }
+  /* case urgente : son picto et son titre se décalent (--urg-dx, vers la gauche si positif), en décalage visuel seulement :
+     les tâches dessous ne bougent pas. Le centre du chiffre du titre (« 1 seul point urgent ») est sur le centre des
+     points des tâches ; les points suivent la largeur de la poignée (--dh-w), le chiffre non (Courier Prime chargée) */
+  :root{ --urg-dx:calc(-9.17px - var(--dh-w, 34.94px) + 34.94px); }
   .urgent-banner > svg, .urgent-banner-title{ position:relative; left:calc(-1 * var(--urg-dx)); }
 }
 </style>
