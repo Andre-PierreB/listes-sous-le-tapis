@@ -4039,9 +4039,10 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
      points des tâches ; les points suivent la largeur de la poignée (--dh-w), le chiffre non (Courier Prime chargée) */
   :root{ --urg-dx:calc(-9.17px - var(--dh-w, 34.94px) + 34.94px); }
   .urgent-banner > svg, .urgent-banner-title{ position:relative; left:calc(-1 * var(--urg-dx)); }
-  /* banc 11.29 (?urg=a|b) : A, le triangle centré sur les petits points de la poignée (ils suivent la moitié de la
-     largeur de la poignée) ; B, le triangle sur la ligne des titres et des bulles des cases (43.5 px du bord) */
-  :root.urg-a{ --urg-dx:calc(10.03px - (var(--dh-w, 34.94px) - 34.94px) / 2); }
+  /* banc 11.29 (?urg=a|b) : A, le coin gauche du triangle sur la première colonne de points de la poignée (--dot1,
+     mesuré sur l'appareil ; la poignée de l'urgent ne bouge pas, le coin est à 1,875 px du bord du picto) ; B, le
+     triangle sur la ligne des titres et des bulles des cases (43.5 px du bord) */
+  :root.urg-a{ --urg-dx:calc(18.3px - var(--dot1, 9.73px)); }
   :root.urg-b{ --urg-dx:-2.97px; }
 }
 </style>
@@ -14906,6 +14907,11 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
     const dh = document.querySelector(".categories > .category > ul.items > .item > .drag-handle");
     const dw = dh ? dh.getBoundingClientRect().width : 0;
     if(dw > 0) html.style.setProperty("--dh-w", dw.toFixed(2) + "px");
+    // banc 11.29 : centre de la première colonne de points de la poignée, depuis son bord gauche (le point est au milieu
+    // de son caractère ; l'espacement négatif des lettres est retiré de la largeur mesurée)
+    if(dw > 0 && dh.firstChild){ try{ const r = document.createRange(); r.setStart(dh.firstChild, 0); r.setEnd(dh.firstChild, 1);
+      const b = r.getBoundingClientRect(), ls = parseFloat(getComputedStyle(dh).letterSpacing) || 0;
+      html.style.setProperty("--dot1", (b.left + (b.width - ls) / 2 - dh.getBoundingClientRect().left).toFixed(2) + "px"); }catch(e){} }
     for(const card of document.querySelectorAll(".categories > .category:not(.courses):not(.chat-card):not(.duel-card):not(.fullpage)")){
       const k = card.querySelector("ul.items > .item input[type=checkbox]"), g = card.querySelector(".cat-title-group");
       if(!k || !g) continue;
