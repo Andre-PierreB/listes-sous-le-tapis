@@ -3,6 +3,12 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.26 : téléphone : le contenu des cases (listes, mémos, « En cours », case urgente) glisse de 20 px vers la gauche
+    (--ph-dx) ; titres, boutons, ligne du bas, champ de saisie et cases fermées inchangés (la mesure de la colonne des
+    cases ajoute --ph-dx). Mémos : la marge suit, filets et voile des articles gardent leur départ. Flèche de tri centrée
+    sur les cases et les ronds, en suivant la largeur réelle de la poignée ⋮⋮ (--dh-w : signe absent des polices de
+    l'appli, dessiné par la police de l'appareil). Points de la case urgente recentrés sur la colonne (2,5 px d'écart,
+    téléphone seulement). Test : decalage_telephone.
   - 11.25 : téléphone : l'onglet des signets reste en haut de l'écran, même en haut de page (position fixe ; la pile a toute la hauteur).
   - 11.24 : signet du duel au nom de l'adversaire (« Duel avec Hiske ») ; sans nom connu, le titre.
   - 11.23 : signets. Onglet (flèche sans trait) au bord droit, sous le compteur puis collé en haut en défilant

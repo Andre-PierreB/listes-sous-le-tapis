@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.25 -->
+<!-- Sous le tapis — version AUTONOME 11.26 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -4011,8 +4011,10 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   .category.courses > ul.items > .courses-item > .drag-handle{ margin-left:calc(-1 * var(--ph-dx)); }
   .category.courses > .courses-entry{ margin-left:calc(-1 * var(--ph-dx)); }   /* « + Ajouter un article » reste sous les ronds */
   /* la flèche de tri suit la colonne des cases, ronds des mémos et points de l'urgent : centrée dessus (mesuré, vraies polices) */
-  .category > .cat-order{ left:calc(3.3rem + 13.6px - var(--ph-dx)); }
-  .category.courses > .cat-order{ left:calc(3.3rem + 16.6px - var(--ph-dx)); }
+  /* le signe ⋮⋮ de la poignée n'est dans aucune police de l'appli : chaque appareil le dessine avec la sienne, et la colonne
+     des cases bouge avec sa largeur ; --dh-w est la largeur mesurée sur l'appareil (34.9px : celle du banc de Claude) */
+  .category > .cat-order{ left:calc(3.3rem + 13.6px - var(--ph-dx) + var(--dh-w, 34.9px) - 34.9px); }
+  .category.courses > .cat-order{ left:calc(3.3rem + 16.6px - var(--ph-dx) + var(--dh-w, 34.9px) - 34.9px); }
   .urgent-bullet{ left:calc(-0.17rem + 2.46px); }   /* points de la case urgente : 2,46 px à gauche de la colonne au téléphone (déjà avant la 11.26), recentrés ; ordi déjà juste */
 }
 </style>
@@ -14819,6 +14821,10 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
   let done = false;
   const measure = ()=>{
     if(done) return;
+    // 11.26 : largeur réelle de la poignée des rangées (police de secours de l'appareil), pour la flèche de tri au téléphone
+    const dh = document.querySelector(".categories > .category > ul.items > .item > .drag-handle");
+    const dw = dh ? dh.getBoundingClientRect().width : 0;
+    if(dw > 0) html.style.setProperty("--dh-w", dw.toFixed(2) + "px");
     for(const card of document.querySelectorAll(".categories > .category:not(.courses):not(.chat-card):not(.duel-card):not(.fullpage)")){
       const k = card.querySelector("ul.items > .item input[type=checkbox]"), g = card.querySelector(".cat-title-group");
       if(!k || !g) continue;

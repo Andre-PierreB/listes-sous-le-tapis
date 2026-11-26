@@ -355,6 +355,13 @@ async def t_decalage_telephone(pg):
         check(t["memoLi"] is not None and abs(t["memoLi"] - t["memoUl"] - t["dx"]) < 1.5, f"mémo : le filet part du bord ({t})")
         check(t["memoHandle"] is not None and t["memoHandle"] < t["memoLi"], f"mémo : la poignée n'a pas glissé ({t})")
         check(abs(t["ordC"] - t["chkC"]) < 0.6 and abs(t["mordC"] - t["dotC"]) < 0.6, f"flèche de tri pas centrée sur les cases / ronds ({t})")
+        # 11.26 : sur iPhone, la poignée ⋮⋮ est plus large ou plus étroite (police de secours) : la flèche suit
+        await tel.add_style_tag(content=".drag-handle{ letter-spacing:3px !important; }")
+        await tel.evaluate("() => window.dispatchEvent(new Event('resize'))"); await tel.wait_for_timeout(600)
+        t2 = await js(tel, pos)
+        check(abs(t2["chkC"] - t["chkC"]) > 2, f"la poignée élargie n'a pas déplacé les cases ({t2})")
+        check(abs(t2["ordC"] - t2["chkC"]) < 0.6 and abs(t2["mordC"] - t2["dotC"]) < 0.6, f"poignée d'une autre largeur : flèche de tri décentrée ({t2})")
+        check(abs(t2["field"] - t2["dx"] - t2["chk"]) < 1.5, f"poignée d'une autre largeur : le champ fermé n'est plus à sa place ({t2})")
         check(t["bulC"] is None or abs(t["bulC"] - t["chkC"]) < 0.6, f"téléphone : points de l'urgent hors de la colonne des cases ({t})")
         check(not errs, "erreur JavaScript au téléphone : " + "; ".join(errs[:3]))
     finally:
