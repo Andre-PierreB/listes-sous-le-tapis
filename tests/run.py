@@ -320,6 +320,48 @@ async def t_duel_au_repos(pg):
     check(b - a > 5, "hors de l'écran, un coup en vol n'avance plus")
     await pg.wait_for_function("!Duel.etat().busy", timeout=12000)
 
+async def t_signets(pg):
+    """11.23 : la pile des signets suit l'ordre des cases, distingue listes et mémos, et mène à la bonne case."""
+    a = await new_list(pg, "Maison"); await add_tasks(pg, a, "Porte", "Volet")
+    m = await new_list(pg, "Courses", memo=True)
+    for i in range(6): await new_list(pg, f"Liste {i}")
+    z = await new_list(pg, "Tout en bas"); await add_tasks(pg, z, "Une")
+    shots = os.environ.get("CAPTURES")
+    await pg.click(".sig-tab"); await pg.wait_for_timeout(300)
+    if shots: await pg.screenshot(path=f"{shots}/ordi-pile.png")
+    ids = await js(pg, "() => [...document.querySelectorAll('.sig')].map(b => b.dataset.id)")
+    ordre = await js(pg, "() => [...document.querySelectorAll('#categories > [id^=cat-]')].map(n => n.id.slice(4))")
+    check(ids == ordre, "les signets ne suivent pas l'ordre des cases")
+    check(await js(pg, f"() => document.querySelector('.sig[data-id=\"{m}\"]').classList.contains('sig-memo')"), "le mémo n'a pas son signet de mémo")
+    check(await js(pg, f"() => document.querySelector('.sig[data-id=\"{a}\"] .sig-count').textContent") == "2", "bulle fausse")
+    await pg.click(f".sig[data-id='{z}']"); await pg.wait_for_timeout(1200)
+    check(not await js(pg, "document.getElementById('signets').classList.contains('open')"), "la pile reste ouverte")
+    top = await js(pg, f"document.getElementById('cat-{z}').getBoundingClientRect().top")
+    check(-2 < top < 80, f"la case n'est pas en haut de l'écran ({top})")
+    check(await js(pg, f"document.getElementById('cat-{z}').classList.contains('sig-flash')"), "la case n'est pas cernée")
+    if shots: await pg.screenshot(path=f"{shots}/ordi-arrivee.png")
+    # l'onglet reste visible en bas de page
+    vis = await js(pg, "(() => { const r = document.querySelector('.sig-tab').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.right <= innerWidth; })()")
+    check(vis, "l'onglet n'est plus à l'écran après le défilement")
+    # clic ailleurs : se referme ; pleine page : masqué
+    await pg.click(".sig-tab"); await pg.mouse.click(20, 400); await pg.wait_for_timeout(200)
+    check(not await js(pg, "document.getElementById('signets').classList.contains('open')"), "un clic ailleurs ne referme pas la pile")
+    # téléphone
+    ctx = await pg.context.browser.new_context(viewport={"width": 390, "height": 760}, has_touch=True, is_mobile=True, device_scale_factor=2)
+    tel = await ctx.new_page()
+    await tel.goto(pg.url); await tel.wait_for_timeout(1200)
+    for i in range(10): c = await new_list(tel, f"Liste {i}", memo=(i == 2)); await add_tasks(tel, c, "Une", "Deux")
+    r = await js(tel, "(() => { const r = document.querySelector('.sig-tab').getBoundingClientRect(); return [r.right, r.width, r.height, innerWidth]; })()")
+    check(abs(r[0] - r[3]) < 1.5 and r[2] >= 44, f"onglet du téléphone mal placé {r}")
+    if shots: await tel.screenshot(path=f"{shots}/tel-ferme.png")
+    await tel.tap(".sig-tab"); await tel.wait_for_timeout(300)
+    if shots: await tel.screenshot(path=f"{shots}/tel-pile.png")
+    h = await js(tel, "Math.min(...[...document.querySelectorAll('.sig')].map(b => b.getBoundingClientRect().height))")
+    check(h >= 44, "signets trop petits au doigt")
+    sw = await js(tel, "document.documentElement.scrollWidth <= innerWidth")
+    check(sw, "la pile fait déborder la page de côté")
+    await ctx.close()
+
 # --- lancement --------------------------------------------------------------
 async def main():
     args = [a for a in sys.argv[1:] if a != "complet"]
