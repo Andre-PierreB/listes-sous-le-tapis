@@ -2974,16 +2974,15 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
    case fermée (72 px, 94 au téléphone), titre et bouton centrés en hauteur ; le nombre de tâches et la flèche forment une
    pastille verte, qui apparaît et disparaît en fondu (le nombre s'élargit depuis la flèche). */
 #waitingSection{ position:relative; }
-#waitingSection .section-title{ padding-right:1.5rem; margin-left:-1px; }   /* aligné sur les titres des listes ouvertes (sans bulle) : 23 px du bord */
-@media (max-width:720px){ #waitingSection .section-title{ margin-left:-1.5px; } }   /* téléphone : 25,5 px, comme elles */
-#waitingSection.folded{ padding-top:16px; padding-bottom:0; min-height:72px; }   /* titre sur la ligne des titres des cases fermées */
-@media (hover:none){ #waitingSection.folded{ min-height:94px; padding-top:17px; } }
+#waitingSection .section-title{ padding-right:1.5rem; }   /* bord gauche : celui du chiffre des tâches accomplies, en haut (24 px, 27 au téléphone) */
+#waitingSection.folded{ padding-bottom:0; min-height:72px; }   /* le titre ne bouge pas en masquant (même marge du haut) */
+@media (hover:none){ #waitingSection.folded{ min-height:94px; } }
 #waitingSection.folded .section-title{ margin-bottom:0; padding-right:3.5rem; }
 #waitingSection.folded #waitingList{ display:none; }
 /* le bouton : à la place de la flèche « pleine page » des listes (même centre, en haut à droite), ouverte ou masquée ;
    masquée, la pastille s'étend vers la gauche depuis la flèche */
 #waitingSection .waiting-fold{ position:absolute; top:6px; right:7px; min-width:28px; height:26px; display:flex; align-items:center; justify-content:flex-end;
-  appearance:none; border:0; padding:0 1px; border-radius:999px; cursor:pointer; color:var(--ink-faint);
+  appearance:none; border:0; padding:0; border-radius:999px; cursor:pointer; color:var(--ink-faint);
   background-color:transparent; transition:background-color .3s ease, padding .3s ease; }
 @media (hover:none){ #waitingSection .waiting-fold{ top:9px; right:8px; } }
 #waitingSection.folded .waiting-fold{ padding:0; background:color-mix(in srgb, #2E9467 16%, var(--surface)); }
