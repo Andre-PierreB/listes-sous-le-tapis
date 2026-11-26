@@ -4036,8 +4036,9 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   footer .backup-nudge{ flex-basis:100%; text-align:center; margin-right:0; }   /* « Se connecter pour ne jamais perdre ses listes » centré */
   /* case urgente : son picto et son titre se décalent ensemble (--urg-dx, vers la gauche), en décalage visuel seulement :
      les tâches dessous ne bougent pas. 11.29 : le coin gauche du triangle est sur la première colonne de points de la
-     poignée (--dot1, mesuré sur l'appareil ; la poignée de l'urgent ne bouge pas, le coin est à 1,875 px du bord du picto) */
-  :root{ --urg-dx:calc(18.3px - var(--dot1, 9.73px)); }
+     poignée (--dot1, mesuré sur l'appareil ; la poignée de l'urgent ne bouge pas, le coin est à 1,875 px du bord du picto),
+     puis 1 px plus à gauche « pour asseoir le triangle » (choix d'André-Pierre) */
+  :root{ --urg-dx:calc(19.3px - var(--dot1, 9.73px)); }
   .urgent-banner > svg, .urgent-banner-title{ position:relative; left:calc(-1 * var(--urg-dx)); }
 }
 </style>
