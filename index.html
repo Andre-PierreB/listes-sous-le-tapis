@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.21 -->
+<!-- Sous le tapis — version AUTONOME 11.22 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -615,6 +615,12 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 ::selection{background:var(--accent-soft); color:var(--ink);}
+/* 11.22 : téléphone : la page ne défile que verticalement (elle glissait de côté dès qu'un élément dépassait à droite).
+   clip et non hidden : ne crée pas de zone de défilement, rien d'autre ne change */
+@media (hover:none){
+  html, body{ overflow-x:clip; }
+  html{ overscroll-behavior-x:none; }
+}
 /* 10.68 : téléphone : tout un cran plus grand (Hiske : trop petit ; standard iPhone ≈ 17 pt) — un seul
    réglage, la taille de base (rem) : tâches ≈ 16,6 px au lieu de 14,7 ; marges de côté réduites pour
    garder la largeur. Les champs passent à 16 px au doigt (en dessous, Safari zoome en tapant). */
@@ -1221,6 +1227,10 @@ header{
 /* 11.12 : la marge passe par-dessus les lignes du cahier, comme sur une vraie feuille (avant : dessinée dans le fond de
    la carte, sous les filets des articles). Un trait posé par fitCoursesCards, sous le fondu du bas, sans capter le doigt. */
 .memo-margin{ position:absolute; z-index:1; left:var(--margin-x); top:var(--rule-top, 0); bottom:0; width:1.5px; background:var(--margin-ink); pointer-events:none; }
+/* 11.22 : les champs du + passent devant la marge (bug 11.12 : elle les barrait). La liste a un masque (fondu du bas),
+   qui l'isole : c'est la liste entière qui passe devant, et seulement tant que le + est ouvert ; elle est transparente,
+   la marge reste visible entre les champs */
+:root .category.courses > ul.items:has(> li.add-form-row){ position:relative; z-index:2; }
 /* 10.75 : mémo reconnaissable même fermé (choisi au banc) : coin corné en haut à gauche (à droite, la
    pleine page) ; papier blanc ouvert, gris très clair fermé (le fondu du bas suit) */
 .category.courses::before{ content:""; position:absolute; top:0; left:0; width:20px; height:20px; border-top-left-radius:14px; pointer-events:none;
@@ -2088,7 +2098,7 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   .duel-card.fullpage .objets{ grid-column:2; grid-row:5; justify-self:end; gap:0.1rem; margin-right:1rem; }
   .duel-card.fullpage .objets button{ width:34px; height:34px; border-radius:8px; }
   .duel-card.fullpage .objets canvas{ width:24px; height:24px; }
-  .duel-card.fullpage .d-lancer{ grid-column:5; grid-row:3; justify-self:stretch; margin:0.7rem 3px 0 0; min-width:0; min-height:42px; padding:0.3rem 0.4rem; font-size:1rem; white-space:normal; line-height:1.1; }   /* sous la force */
+  .duel-card.fullpage .d-lancer{ grid-column:5; grid-row:3; justify-self:stretch; margin:0.7rem 2px 0 0; min-width:0; min-height:42px; padding:0.3rem 0.4rem; font-size:1rem; white-space:normal; line-height:1.1; }   /* sous la force ; 11.22 : marge droite 2 px (avant 3) : avec son ombre de 1,5 px à droite, centré sur les boutons de la force */
   .duel-card.fullpage .d-lancer.fin{ font-size:0.8rem; padding:0.3rem 0.15rem; letter-spacing:0; }   /* 10.77 : « Nouvelle partie » tenait mal dans la colonne (tronqué) */
   .duel-card.fullpage .d-dur{ grid-column:1; grid-row:5; justify-self:center; margin:0; flex-direction:column; gap:0.2rem; font-size:0.72rem; min-height:0; }   /* 10.77 : en bas à gauche, à l'opposé des faisans */
   .duel-card.fullpage .d-sous{ grid-column:4; grid-row:5; justify-self:start; min-height:0; margin-left:1rem; }
@@ -2097,6 +2107,13 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   .duel-card.fullpage .persos canvas{ width:36px; height:30px; }
   .duel-card.fullpage .duel-foot{ grid-column:5; grid-row:5; justify-content:flex-end; margin:0; }
   .duel-card.fullpage .duel-foot .cat-grip{ display:none; }
+  /* 11.22 : voyant et titre placés par rapport à l'écran du jeu, comme debout (22,5 px à droite de son bord gauche,
+     17,6 px au-dessus de son haut) : ils ne passent plus sous le rond de retour. Pour leur faire de la place, l'écran,
+     les réglages et Lancer descendent de --fp-down, pris sur la place libre au-dessus des objets (fitDuelFull), sans
+     changer de taille ; la rangée du bas ne bouge pas. Lancer descend en plus jusqu'au bas de l'écran. */
+  .duel-card.fullpage :is(.duel-screen, .coup > .reglage){ translate:0 var(--fp-down, 0px); }
+  .duel-card.fullpage .d-lancer{ translate:0 calc(var(--fp-down, 0px) + var(--fp-lancer, 0px)); }
+  .duel-card.fullpage .duel-stage > .chat-led{ left:var(--fp-led-x, 1.25rem); top:var(--fp-led-y, calc(0.9rem - 6.5px)); }
 }
 .chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ display:none; }   /* 10.71 : on sort par le grand bouton rond */
 .chat-card.fullpage, .duel-card.fullpage{ padding-top:calc(max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) + var(--fb-size) + 0.4rem); }
@@ -2548,6 +2565,7 @@ li.undo-flash{ animation:undo-flash 2.6s ease-out both; }
 .courses-edit textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
 .courses-edit textarea.courses-edit-note{ font-size:0.86rem; }
 .courses-edit.long .courses-edit-name{ flex:1 0 100%; width:100%; }
+@media (max-width:720px){ .courses-edit .courses-edit-name{ flex:1 0 100%; width:100%; } }   /* 11.22 : téléphone : l'article sur toute la ligne, la quantité dessous (le champ était trop étroit) */
 .edit-form textarea.grow{ display:block; overflow:hidden; }
 .courses-qty-edit{ flex:none; display:flex; align-items:center; gap:2px; }
 .courses-edit .courses-edit-qty{ width:3.4rem; text-align:center; padding-left:0.25rem; padding-right:0.25rem; }
@@ -2819,6 +2837,14 @@ li.undo-flash{ animation:undo-flash 2.6s ease-out both; }
 }
 .cat-edit-actions{ margin:0.5rem 0 0.2rem; justify-content:flex-end; }   /* 10.53 : bas de la modification d'une liste */
 .courses-edit .edit-actions{ flex-basis:100%; margin-top:0.1rem; }
+/* 11.22 : téléphone : « Enregistrer » sortait de la case (les trois boutons ne tiennent pas dans la colonne du texte) :
+   Annuler et Enregistrer sur la ligne, à droite ; Retirer passe dessous, à gauche */
+@media (max-width:720px){
+  .courses-edit .edit-actions{ flex-wrap:wrap; justify-content:flex-end; row-gap:0.2rem; }
+  .courses-edit .edit-actions button{ padding-left:0.55rem; padding-right:0.55rem; }
+  .courses-edit .edit-actions::before{ content:""; order:1; flex-basis:100%; }   /* passage à la ligne */
+  .courses-edit .edit-actions .edit-remove{ order:2; padding-left:0; }   /* pas toute la largeur : pas de « Retirer » par erreur */
+}
 .courses-edit .edit-remove{ margin-right:auto; color:var(--ink-faint); border-color:transparent; background:none; }   /* 10.71 : à gauche, discret */
 .cat-share-link.cat-remove{ color:var(--ink-faint); text-decoration-color:color-mix(in srgb, currentColor 40%, transparent); transition:color .12s ease; }   /* 11.19 : discret, terre cuite au survol */
 .cat-share-link.cat-remove:hover, .cat-share-link.cat-remove.sure{ color:var(--late); }
@@ -2943,7 +2969,32 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   color:var(--ink-soft);   /* 10.51 : retour à --ink-soft (mauve en 10.48-10.50) */
   margin:0 0 1.1rem;
 }
-#waitingSection .section-title span{ white-space:nowrap; }   /* 10.50 : trop étroit, coupé après le tiret */
+#waitingSection .section-title span{ white-space:nowrap; }
+/* 11.22 : « En cours » se masque (flèche en haut à droite) ; réglage propre à l'appareil. Masquée : même hauteur qu'une
+   case fermée (72 px, 94 au téléphone), titre et bouton centrés en hauteur ; le nombre de tâches et la flèche forment une
+   pastille verte, qui apparaît et disparaît en fondu (le nombre s'élargit depuis la flèche). */
+#waitingSection{ position:relative; }
+#waitingSection .section-title{ padding-right:1.5rem; }   /* bord gauche : celui du chiffre des tâches accomplies, en haut (24 px, 27 au téléphone) */
+#waitingSection.folded{ padding-bottom:0; min-height:72px; }   /* le titre ne bouge pas en masquant (même marge du haut) */
+@media (hover:none){ #waitingSection.folded{ min-height:94px; } }
+#waitingSection.folded .section-title{ margin-bottom:0; padding-right:3.5rem; }
+#waitingSection.folded #waitingList{ display:none; }
+/* le bouton : à la place de la flèche « pleine page » des listes (même centre, en haut à droite), ouverte ou masquée ;
+   masquée, la pastille s'étend vers la gauche depuis la flèche */
+#waitingSection .waiting-fold{ position:absolute; top:6px; right:12px; min-width:18px; height:26px; display:flex; align-items:center; justify-content:flex-end;
+  appearance:none; border:0; padding:0; border-radius:999px; cursor:pointer; color:var(--ink-faint);
+  background-color:transparent; transition:background-color .3s ease, padding .3s ease; }
+@media (hover:none){ #waitingSection .waiting-fold{ top:9px; right:13px; } }   /* centre de la flèche sur l'axe de la flèche pleine page et de la croix des listes (21 px du bord, 22 au téléphone) */
+#waitingSection.folded .waiting-fold{ padding:0 4px 0 0; margin-right:-4px; background:color-mix(in srgb, #2E9467 16%, var(--surface)); }
+.waiting-fold svg{ display:block; flex:none; transform:rotate(180deg); transition:transform .25s ease, scale .15s ease; color:color-mix(in srgb, #2E9467 75%, var(--ink)); }   /* toujours verte, ouverte ou masquée */
+.waiting-fold:hover svg{ scale:1.15; }
+.waiting-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+#waitingSection.folded .waiting-fold svg{ transform:none; }
+#waitingSection .waiting-count{ display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; overflow:hidden;
+  font-family:'Public Sans', system-ui, sans-serif; font-size:0.78rem; font-weight:700; line-height:1; color:color-mix(in srgb, #2E9467 75%, var(--ink));
+  max-width:0; min-width:0; padding:0; opacity:0; transition:max-width .3s ease, min-width .3s ease, padding .3s ease, opacity .25s ease; }
+#waitingSection.folded .waiting-count{ max-width:3rem; min-width:1.8rem; padding:0 0.1rem 0 0.4rem; opacity:1; }
+#waitingSection .waiting-count[hidden]{ display:none; }
 #waitingList .empty-note{ color:color-mix(in srgb, var(--ink-faint) 72%, var(--wait-soft)); }
 #waitingSection{ --task-size:0.85rem; }   /* 10.75 : « En cours » un peu plus petit que les listes (avant : 0.92rem, comme elles) */
 @media (min-width:721px){   /* 10.75 : sur ordi, deux colonnes (on lit la première, puis la seconde) */
@@ -3522,6 +3573,7 @@ body.no-list .add-category-row{
 .nl-chat:hover{ color:var(--ink); }
 .nl-chat:not(.nl-duel){ margin-top:0.7rem; }   /* 10.63 : écran de chat et duel groupés, à l'écart de la création d'une liste */
 .nl-chat.nl-duel{ margin-top:-0.3rem; }
+.nl-chat.nl-duel.nl-seul{ margin-top:0.7rem; }   /* 11.22 : sans le chat, le duel prend sa place */
 .nl-chat:hover .add-btn{ color:var(--ink); border-color:color-mix(in srgb, var(--ink-soft) 40%, var(--line)); }
 .nl-courses input:focus-visible + .nl-switch{ outline:2px solid var(--accent); outline-offset:2px; }
 .nl-courses:has(input:checked){ color:var(--ink); }
@@ -3923,6 +3975,7 @@ body.ios-gate-on{ overflow:hidden; }
 
   <section class="section-block" id="waitingSection">
     <h2 class="section-title"><span>En cours -</span> <span>La balle est dans leur camp</span></h2>
+    <button type="button" class="waiting-fold" id="waitingFold" aria-expanded="true" aria-label="Masquer les tâches en cours" data-tip="Masquer"><span class="waiting-count" hidden></span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <ul class="items" id="waitingList"></ul>
   </section>
 
@@ -3935,7 +3988,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.21</span>
+    <span class="version-tag">v11.22</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -3985,6 +4038,10 @@ body.ios-gate-on{ overflow:hidden; }
 // qu'elle range dans le navigateur porte le préfixe « essai: », et en ligne ses
 // fiches vont dans des collections « essai_… ». L'appli elle-même n'y touche jamais.
 const ESSAI = /essai/i.test(location.pathname);
+// 11.22 : chat retiré de l'interface (demandé le 26/11) : plus affiché, plus de création, plus proposé comme liste où
+// déplacer une tâche. Rien n'est effacé : les écrans de chat et leurs messages restent dans les données (et en ligne),
+// à leur place parmi les cases. Le code reste là, en veille : CHAT_OFF = false le fait revenir tel quel.
+const CHAT_OFF = true;
 // 10.68 : essai.html?demo : vitrine de test, listes d'exemple dans un coin à part du navigateur
 // (préfixe « demo: »), sans connexion ni synchro ; ?demo&reset remet les exemples à neuf
 const DEMO = ESSAI && /[?&]demo\b/.test(location.search);
@@ -5519,6 +5576,8 @@ function addPastedTasks(cat, lines){
   seq.forEach(it => { try{ insertItem(cat, it); n++; }catch(err){ console.error("[collage] échec", err); } });
   return n;
 }
+// 11.22 : une seule ligne venue de « Copier » (commence par « - », ou finit par une marque) : traitée comme un collage
+function isCopiedLine(txt){ const t = String(txt || "").trim(); return /^-\s/.test(t) || /\[(œuf|oeuf|urgent|en cours)\]$/i.test(t); }
 // 11.20 : marques ajoutées par « Copier » en fin de ligne : [œuf] → œuf, [urgent] → urgente,
 // [en cours] → retirée (la tâche recollée repart normale) ; le reste du texte ne bouge pas
 function pastedItem(line){
@@ -6305,8 +6364,8 @@ function renderAddCategoryRow(){
             <button type="button" class="add-save nl-save">Créer</button>
           </div>
         </div>
-        ${Store.mode === "doc" ? `<button type="button" class="nl-chat"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un écran de chat</button>` : ""}
-        ${Store.mode === "doc" ? `<button type="button" class="nl-chat nl-duel"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un duel de faisans</button>` : ""}
+        ${Store.mode === "doc" && !CHAT_OFF ? `<button type="button" class="nl-chat"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un écran de chat</button>` : ""}
+        ${Store.mode === "doc" ? `<button type="button" class="nl-chat nl-duel${CHAT_OFF ? " nl-seul" : ""}"><span class="add-btn" aria-hidden="true"><span class="g">+</span></span>Ajouter un duel de faisans</button>` : ""}
       </div>
     </div>
   `;
@@ -8604,7 +8663,7 @@ function buildItemLi(cat, idx, base, key, opts){
     const dueParts = splitDue(eff.waiting ? eff.relance : eff.due);
     // 10.2 : une tâche qu'on ne peut pas effacer ne peut pas non plus quitter sa liste
     const canMove = canRemoveTask(cat, base);
-    const catOptions = DATA.filter(c => (!isCategoryDeleted(c.id) || c.id === cat.id) && (canMove || c.id === cat.id))
+    const catOptions = DATA.filter(c => (!isCategoryDeleted(c.id) || c.id === cat.id) && (canMove || c.id === cat.id) && !(CHAT_OFF && isChatList(c.id) && c.id !== cat.id))   // 11.22 : pas vers un chat caché
       .map(c => `<option value="${escapeAttr(c.id)}" ${c.id === cat.id ? "selected" : ""}>${escapeAttr(c.title)}</option>`).join("");
     li.className = "item editing";
     li.innerHTML = `
@@ -9038,10 +9097,25 @@ function buildItemLi(cat, idx, base, key, opts){
   return { el: li, focus: null };
 }
 
+// 11.22 : « En cours » masqué ou non, sur cet appareil seulement (rien ne passe par la synchro)
+const WAIT_FOLD_KEY = (DEMO ? "demo:" : ESSAI ? "essai:" : "") + "sous-le-tapis-encours-masque";
+let waitingFolded = (()=>{ try{ return localStorage.getItem(WAIT_FOLD_KEY) === "1"; }catch(e){ return false; } })();
+(()=>{
+  const b = document.getElementById("waitingFold");
+  if(b) b.addEventListener("click", e=>{
+    e.stopPropagation();
+    waitingFolded = !waitingFolded;
+    try{ localStorage.setItem(WAIT_FOLD_KEY, waitingFolded ? "1" : "0"); }catch(err){}
+    renderWaitingSection();
+  });
+})();
 function renderWaitingSection(){
   const ul = document.getElementById("waitingList");
   if(!ul) return;
   ul.innerHTML = "";
+  const sec = document.getElementById("waitingSection"), fb = document.getElementById("waitingFold");
+  if(sec) sec.classList.toggle("folded", waitingFolded);
+  if(fb){ fb.setAttribute("aria-expanded", String(!waitingFolded)); fb.setAttribute("aria-label", waitingFolded ? "Afficher les tâches en cours" : "Masquer les tâches en cours"); fb.dataset.tip = waitingFolded ? "Afficher" : "Masquer"; }
   const rows = [];
   DATA.forEach(cat=>{
     const items = getEffectiveItems(cat);
@@ -9053,6 +9127,9 @@ function renderWaitingSection(){
       rows.push({cat, idx:i, base, key, eff});
     });
   });
+  const cnt = sec && sec.querySelector(".waiting-count");
+  if(cnt){ cnt.hidden = !rows.length; cnt.textContent = String(rows.length); cnt.setAttribute("aria-label", rows.length + " en cours"); }   // ouverte : gardé, à largeur nulle (fondu CSS)
+  if(waitingFolded) return;   // masqué : rien n'est dessiné dedans
   if(rows.length === 0){
     const li = document.createElement("li");
     li.className = "empty-note";
@@ -11140,10 +11217,34 @@ let running = false, cardCat = null;
 if(!window.fitDuelFull){
   window.fitDuelFull = function(){
     document.querySelectorAll(".duel-card:not(.fullpage) .duel-stage[style*='width']").forEach(st => st.style.width = "");
+    document.querySelectorAll(".duel-card:not(.fullpage) .duel-screen[style*='width']").forEach(sc => sc.style.width = "");   // 11.22
     const card = document.querySelector(".duel-card.fullpage"); if(!card) return;
     const st = card.querySelector(".duel-stage"), sc = card.querySelector(".duel-screen"); if(!st || !sc) return;
-    st.style.width = "";
-    if(matchMedia("(orientation:landscape) and (max-height:560px)").matches) return;   // 10.68 : téléphone couché : la « manette » (CSS) s'en charge   // tout le poste (écran, réglages, Lancer, pied) prend la largeur de l'écran
+    st.style.width = ""; sc.style.width = "";
+    if(matchMedia("(orientation:landscape) and (max-height:560px)").matches){
+      // 11.22 : manette : voyant et titre au-dessus de l'écran comme debout ; l'écran descend juste assez pour leur faire
+      // la place (pris sur la place libre au-dessus des objets, 4 px gardés) ; Lancer jusqu'au bas de l'écran, à sa droite
+      ["--fp-down", "--fp-lancer", "--fp-led-x", "--fp-led-y"].forEach(k => card.style.removeProperty(k));
+      sc.style.width = "";
+      const LED_X = 22.5, LED_Y = 17.6, LED_TOP = 10;   // écarts de la mise en page debout ; voyant au moins à 10 px du haut de la case
+      const ob = card.querySelector(".objets"), la = card.querySelector(".d-lancer");
+      let r = sc.getBoundingClientRect();
+      const ct = card.getBoundingClientRect().top;
+      let gap = ob ? ob.getBoundingClientRect().top - r.bottom : 0;
+      const need = LED_TOP + LED_Y - (r.top - ct);
+      if(need > gap - 4){   // pas assez de place libre (petit écran) : en dernier recours seulement, l'écran rétrécit du manque
+        sc.style.width = Math.max(200, r.width - (need - (gap - 4)) * 16 / 9) + "px";
+        r = sc.getBoundingClientRect(); gap = ob ? ob.getBoundingClientRect().top - r.bottom : 0;
+      }
+      const sr = st.getBoundingClientRect(), lb = la ? la.getBoundingClientRect().bottom : r.bottom;   // tout mesuré avant d'écrire
+      const down = Math.round(Math.max(0, Math.min(LED_TOP + LED_Y - (r.top - ct), gap - 4)));
+      card.style.setProperty("--fp-down", down + "px");
+      const rad = parseFloat(getComputedStyle(sc).borderBottomRightRadius) || 0;   // Lancer s'arrête au-dessus de l'arrondi du coin de l'écran
+      card.style.setProperty("--fp-lancer", Math.round(Math.max(0, r.bottom - rad - lb)) + "px");
+      card.style.setProperty("--fp-led-x", Math.round(r.left - sr.left + LED_X) + "px");
+      card.style.setProperty("--fp-led-y", Math.round(r.top + down - LED_Y - sr.top) + "px");
+      return;
+    }   // 10.68 : téléphone couché : la « manette » (CSS) s'en charge   // tout le poste (écran, réglages, Lancer, pied) prend la largeur de l'écran
     for(let i = 0; i < 3; i++){   // les réglages peuvent passer sur deux lignes quand l'écran rétrécit : on remesure
       const z = parseFloat(getComputedStyle(st).zoom) || 1, cs = getComputedStyle(card);
       const avail = window.innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
@@ -11219,7 +11320,7 @@ function render(){
   let memoRank = 0;   // 10.23 : rang des mémos, pour varier leur reflet
   catDisplayOrder.forEach(catIdx=>{
     const cat = DATA[catIdx];
-    if(isChatList(cat.id)){ built.push({ node: buildChatCard(cat, catIdx) }); return; }   // 10.57
+    if(isChatList(cat.id)){ if(!CHAT_OFF) built.push({ node: buildChatCard(cat, catIdx) }); return; }   // 10.57 ; 11.22 : CHAT_OFF
     if(isDuelList(cat.id)){ built.push({ node: Duel.card(cat, catIdx) }); return; }   // 10.63
     const items = getEffectiveItems(cat);
     const courses = isCoursesList(cat.id);
@@ -11316,7 +11417,7 @@ function render(){
       quickInp.addEventListener("click", e=> e.stopPropagation());
       quickInp.addEventListener("paste", e=>{   // 10.22
         const txt = e.clipboardData ? e.clipboardData.getData("text") : "";
-        if(!txt || !/\n/.test(txt.trim())) return;
+        if(!txt || !(/\n/.test(txt.trim()) || isCopiedLine(txt))) return;   // 11.22 : une seule tâche copiée (« - … [œuf] ») passe aussi par là
         e.preventDefault();
         const all = quickInp.value.slice(0, quickInp.selectionStart) + txt + quickInp.value.slice(quickInp.selectionEnd);
         if(courses){ addCoursesQuick(cat, all); quickInp.value = ""; refocusQuickCat = cat.id; renderAll(); return; }   // 10.68
@@ -11574,7 +11675,7 @@ function render(){
       li.querySelector(".add-save").addEventListener("click", save);
       titleInput.addEventListener("paste", e=>{   // 10.22 : plusieurs lignes = plusieurs tâches
         const txt = e.clipboardData ? e.clipboardData.getData("text") : "";
-        if(!txt || !/\n/.test(txt.trim())) return;
+        if(!txt || !(/\n/.test(txt.trim()) || isCopiedLine(txt))) return;   // 11.22 : une seule tâche copiée aussi
         e.preventDefault();
         const lines = splitPastedTasks(titleInput.value.slice(0, titleInput.selectionStart) + txt + titleInput.value.slice(titleInput.selectionEnd));
         if(addPastedTasks(cat, lines)) actionToast("add");
@@ -13327,9 +13428,24 @@ const TAPIS = (()=>{
     n.start(at, Math.random()*2); n.stop(at + 0.36);
   }
   // froissement de tissu : bruit rose filtré dans le médium, enveloppe lisse
+  // 11.22 : au lancer du tapis, un souffle duveteux et court ; plus rien à l'arrivée (avant : froissement sur toute la
+  // durée puis « flop »). Banc seulement : essai.html?souffle=long rejoue les anciens sons, pour comparer.
+  // souffle duveteux : attaque lente, bruit très filtré, extinction douce
+  function puff(ctx, at){
+    const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    n.buffer = noiseBuf; f.type = "lowpass"; f.Q.value = 0.3;
+    f.frequency.setValueAtTime(420, at); f.frequency.exponentialRampToValueAtTime(140, at + 0.5);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.linearRampToValueAtTime(0.16, at + 0.09);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.55);
+    n.connect(f).connect(g).connect(ctx.destination);
+    n.start(at, Math.random()*2); n.stop(at + 0.6);
+  }
+  const OLD_RUSTLE = ESSAI && /[?&]souffle=long\b/.test(location.search);
   function rustle(unroll, dur){
     const ctx = audio(); if(!ctx) return;
     const t0 = ctx.currentTime + 0.01, D = dur/1000;
+    if(unroll && !OLD_RUSTLE){ puff(ctx, t0); return; }
     const src = ctx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
     const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 350; hp.Q.value = 0.5;
     const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 0.4;

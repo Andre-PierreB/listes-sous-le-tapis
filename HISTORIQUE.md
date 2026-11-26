@@ -3,6 +3,16 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.22 : duel plein écran, téléphone couché : voyant et titre placés par rapport à l'écran comme debout (ils
+    passaient sous le rond de retour) ; écran, réglages et Lancer descendent dans la place libre au-dessus des objets
+    (--fp-down, fitDuelFull ; l'écran ne rétrécit qu'en dernier recours) ; Lancer au bas de l'écran moins l'arrondi
+    du coin, centré sur les boutons de la force. Tapis : souffle duveteux au lancer, plus de son à l'arrivée (banc :
+    ?souffle=long). « En cours » masquable : flèche verte sur l'axe de la flèche pleine page, pastille « n ⌄ » en
+    fondu, hauteur d'une case fermée, titre immobile ; réglage propre à l'appareil. Chat retiré de l'interface
+    (CHAT_OFF : plus affiché ni créé ni proposé comme destination ; données et code gardés). Téléphone : plus de
+    défilement de côté (overflow-x:clip, zoom possible). Mémos : la marge ne barre plus les champs du + (bug 11.12) ;
+    téléphone, modification d'un article : Enregistrer ne sort plus de la case (Retirer dessous), quantité sous le
+    nom. Collage d'une seule tâche copiée (« - … [œuf] ») : traitée comme un collage (isCopiedLine).
   - 11.21 : téléphone : le clavier vient à l'ouverture d'une modification (double-toucher sur une tâche, un article,
     un titre, un message ; appui long d'un article, ouvert au lever du doigt) : curseur donné au champ dans le geste
     même (focusEditNow), à la fin du texte ; plus de select() rejoué une image plus tard (retirait le clavier). Page
