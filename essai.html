@@ -2960,7 +2960,9 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 /* 11.22 : « En cours » se masque (flèche en haut à droite) : reste le titre et le nombre ; réglage propre à l'appareil */
 #waitingSection{ position:relative; }
 #waitingSection .section-title{ padding-right:2rem; }
-#waitingSection .waiting-fold{ position:absolute; top:calc(1.4rem - 4px); right:1rem; width:28px; height:26px; display:grid; place-items:center;
+#waitingSection.folded .section-title{ padding-right:4rem; }
+:root.encours-bulle #waitingSection.folded .section-title{ padding-right:5.5rem; }
+#waitingSection .waiting-fold{ position:absolute; top:calc(1.4rem - 4px); right:1rem; min-width:28px; height:26px; display:flex; align-items:center; justify-content:flex-end; gap:0.35rem;
   appearance:none; border:0; background:none; padding:0; border-radius:6px; cursor:pointer; color:var(--ink-faint); }
 .waiting-fold svg{ display:block; transform:rotate(180deg); transition:transform .25s ease, scale .15s ease; }
 .waiting-fold:hover svg{ color:var(--ink-soft); scale:1.15; }
@@ -2969,11 +2971,12 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 #waitingSection.folded{ padding-bottom:1.4rem; }
 #waitingSection.folded .section-title{ margin-bottom:0; }
 #waitingSection.folded #waitingList{ display:none; }
-#waitingSection .waiting-count{   /* masquée : le nombre en bulle à gauche du titre, comme les cases fermées */
-  display:inline-flex; align-items:center; justify-content:center; vertical-align:middle; margin:-0.2rem 0.6rem 0 0;
-  font-family:'Public Sans', system-ui, sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0;
-  min-width:2.3rem; height:1.3rem; box-sizing:border-box; padding:0 0.45rem; border-radius:999px; line-height:1;
-  background:color-mix(in srgb, var(--wait) 32%, var(--surface)); color:color-mix(in srgb, var(--wait) 60%, var(--ink)); }
+#waitingSection .waiting-count{   /* masquée : le nombre à gauche de la flèche, dans le bouton (un clic dessus rouvre) ; vert de la case */
+  font-family:'Public Sans', system-ui, sans-serif; font-size:0.85rem; font-weight:700; line-height:1;
+  color:color-mix(in srgb, #2E9467 75%, var(--ink)); }
+:root.encours-bulle #waitingSection .waiting-count{   /* banc ?encours-bulle : la bulle des cases fermées, en vert */
+  display:inline-flex; align-items:center; justify-content:center; min-width:2.3rem; height:1.3rem; padding:0 0.45rem;
+  border-radius:999px; font-size:0.78rem; background:color-mix(in srgb, #2E9467 16%, var(--surface)); }
 #waitingSection .waiting-count[hidden]{ display:none; }   /* 10.50 : trop étroit, coupé après le tiret */
 #waitingList .empty-note{ color:color-mix(in srgb, var(--ink-faint) 72%, var(--wait-soft)); }
 #waitingSection{ --task-size:0.85rem; }   /* 10.75 : « En cours » un peu plus petit que les listes (avant : 0.92rem, comme elles) */
@@ -3953,8 +3956,8 @@ body.ios-gate-on{ overflow:hidden; }
   <div class="add-category-row" id="addCategoryRow"></div>
 
   <section class="section-block" id="waitingSection">
-    <h2 class="section-title"><span class="waiting-count" hidden></span><span>En cours -</span> <span>La balle est dans leur camp</span></h2>
-    <button type="button" class="waiting-fold" id="waitingFold" aria-expanded="true" aria-label="Masquer les tâches en cours" data-tip="Masquer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <h2 class="section-title"><span>En cours -</span> <span>La balle est dans leur camp</span></h2>
+    <button type="button" class="waiting-fold" id="waitingFold" aria-expanded="true" aria-label="Masquer les tâches en cours" data-tip="Masquer"><span class="waiting-count" hidden></span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <ul class="items" id="waitingList"></ul>
   </section>
 
@@ -9073,6 +9076,7 @@ function buildItemLi(cat, idx, base, key, opts){
 }
 
 // 11.22 : « En cours » masqué ou non, sur cet appareil seulement (rien ne passe par la synchro)
+if(ESSAI && /[?&]encours-bulle\b/.test(location.search)) document.documentElement.classList.add("encours-bulle");   // 11.22 : banc seulement
 const WAIT_FOLD_KEY = (DEMO ? "demo:" : ESSAI ? "essai:" : "") + "sous-le-tapis-encours-masque";
 let waitingFolded = (()=>{ try{ return localStorage.getItem(WAIT_FOLD_KEY) === "1"; }catch(e){ return false; } })();
 (()=>{
