@@ -2103,11 +2103,11 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   .duel-card.fullpage .persos canvas{ width:36px; height:30px; }
   .duel-card.fullpage .duel-foot{ grid-column:5; grid-row:5; justify-content:flex-end; margin:0; }
   .duel-card.fullpage .duel-foot .cat-grip{ display:none; }
-  /* 11.22 : le titre passait sous le rond de retour et l'écran le touchait : le titre se range à droite du rond, l'écran
-     et les réglages descendent de --fp-titre (l'écran rétrécit d'autant) ; la rangée du bas ne bouge pas */
-  .duel-card.fullpage{ --fp-titre:1.6rem; }
-  .duel-card.fullpage .duel-stage{ padding-top:var(--fp-titre); }
-  .duel-card.fullpage .duel-screen{ width:min(calc((100dvh - 1.85rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2.9rem - var(--fp-titre)) * 16 / 9), 100%); }
+  /* 11.22 : le titre passait sous le rond de retour : il se range à droite du rond. L'écran, les réglages et Lancer
+     descendent de --fp-down (une partie de la place libre au-dessus des objets, mesurée par fitDuelFull), sans
+     changer de taille ; la rangée du bas ne bouge pas. Lancer descend en plus jusqu'au bas de l'écran. */
+  .duel-card.fullpage :is(.duel-screen, .coup > .reglage){ translate:0 var(--fp-down, 0px); }
+  .duel-card.fullpage .d-lancer{ translate:0 calc(var(--fp-down, 0px) + var(--fp-lancer, 0px)); }
   .duel-card.fullpage .chat-led{ left:calc(max(calc(50vw - 410px + 1.1rem), calc(env(safe-area-inset-left, 0px) + 0.9rem)) + var(--fb-size) + 0.7rem - max(1.25rem, env(safe-area-inset-left, 0px))); }
 }
 .chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ display:none; }   /* 10.71 : on sort par le grand bouton rond */
@@ -11189,7 +11189,16 @@ if(!window.fitDuelFull){
     const card = document.querySelector(".duel-card.fullpage"); if(!card) return;
     const st = card.querySelector(".duel-stage"), sc = card.querySelector(".duel-screen"); if(!st || !sc) return;
     st.style.width = "";
-    if(matchMedia("(orientation:landscape) and (max-height:560px)").matches) return;   // 10.68 : téléphone couché : la « manette » (CSS) s'en charge   // tout le poste (écran, réglages, Lancer, pied) prend la largeur de l'écran
+    if(matchMedia("(orientation:landscape) and (max-height:560px)").matches){
+      // 11.22 : manette : descendre d'une partie de la place libre entre l'écran et la rangée des objets (au plus 18 px)
+      // Lancer : jusqu'au bas de l'écran, à sa droite (il s'éloigne des boutons de la force)
+      card.style.removeProperty("--fp-down"); card.style.removeProperty("--fp-lancer");
+      const ob = card.querySelector(".objets"), la = card.querySelector(".d-lancer"), r = sc.getBoundingClientRect();
+      const gap = ob ? ob.getBoundingClientRect().top - r.bottom : 0, lb = la ? la.getBoundingClientRect().bottom : r.bottom;   // tout mesuré avant d'écrire
+      card.style.setProperty("--fp-down", Math.round(Math.max(0, Math.min(18, (gap - 10) * 0.6))) + "px");
+      card.style.setProperty("--fp-lancer", Math.round(Math.max(0, r.bottom - lb)) + "px");
+      return;
+    }   // 10.68 : téléphone couché : la « manette » (CSS) s'en charge   // tout le poste (écran, réglages, Lancer, pied) prend la largeur de l'écran
     for(let i = 0; i < 3; i++){   // les réglages peuvent passer sur deux lignes quand l'écran rétrécit : on remesure
       const z = parseFloat(getComputedStyle(st).zoom) || 1, cs = getComputedStyle(card);
       const avail = window.innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
