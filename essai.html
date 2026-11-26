@@ -2565,6 +2565,7 @@ li.undo-flash{ animation:undo-flash 2.6s ease-out both; }
 .courses-edit textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
 .courses-edit textarea.courses-edit-note{ font-size:0.86rem; }
 .courses-edit.long .courses-edit-name{ flex:1 0 100%; width:100%; }
+@media (max-width:720px){ .courses-edit .courses-edit-name{ flex:1 0 100%; width:100%; } }   /* 11.22 : téléphone : l'article sur toute la ligne, la quantité dessous (le champ était trop étroit) */
 .edit-form textarea.grow{ display:block; overflow:hidden; }
 .courses-qty-edit{ flex:none; display:flex; align-items:center; gap:2px; }
 .courses-edit .courses-edit-qty{ width:3.4rem; text-align:center; padding-left:0.25rem; padding-right:0.25rem; }
