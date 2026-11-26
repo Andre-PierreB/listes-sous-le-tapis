@@ -1215,7 +1215,7 @@ header{
 }
 /* 11.13 : mémo ouvert : rappel de l'ivoire du mémo fermé (11.8) en haut, qui fond vers le blanc sur la hauteur d'une
    case fermée (72 px sur ordinateur, 94 px au téléphone) ; reflets gardés, nacre remplacée (variante E du banc, 19/11). */
-:root{ --memo-top-h:72px; --memo-ivoire:color-mix(in srgb, #D2D08A 10%, var(--surface)); }   /* 11.30 : l'ivoire des mémos en un seul endroit (fermé, haut de l'ouvert, signet) ; 10 % en clair (17 % avant, choisi au banc), 6 % en sombre */
+:root{ --memo-top-h:72px; --memo-ivoire:color-mix(in srgb, #D2D08A 11%, var(--surface)); }   /* 11.30 : l'ivoire des mémos en un seul endroit (fermé, haut de l'ouvert, signet) ; 11 % en clair (17 % avant, choisi au banc), 6 % en sombre */
 @media (hover:none){ :root{ --memo-top-h:94px; } }
 :root .category.courses:is(:not(.collapsed), .gliding):not(.has-ptint){   /* 11.14 : gardé pendant la fermeture (.gliding) : la couleur pleine ne revient qu'une fois la case fermée */
   --memo-grey:var(--surface);
@@ -1223,7 +1223,7 @@ header{
 /* 11.30 : fermé aussi, le mémo est peint par ce dégradé : la case fermée a la hauteur du dégradé, et le bas (--memo-end)
    y est à l'ivoire, ce qui donne la couleur pleine. Pendant le glissement, glideHeight fait virer --memo-end de l'un à
    l'autre (avant : la couleur pleine arrivait d'un coup à la fin de la fermeture, le dégradé d'un coup à l'ouverture). */
-@property --memo-end{ syntax:'<color>'; inherits:false; initial-value:transparent; }
+@property --memo-end{ syntax:'<color>'; inherits:true; initial-value:transparent; }   /* héritée : le fondu du bas (::after) la suit */
 :root .category.courses:not(.has-ptint){ --memo-end:var(--surface); }
 :root .category.courses.collapsed:not(.gliding):not(.has-ptint){ --memo-end:var(--memo-ivoire); }
 :root .category.courses:not(.has-ptint){
@@ -1247,6 +1247,7 @@ header{
 .category.courses{ --memo-grey:var(--surface); --memo-a:var(--memo-grey); --memo-b:var(--memo-grey); --memo-c:var(--memo-grey); }
 .category.courses.collapsed{ --memo-grey:color-mix(in srgb, var(--ink) 2%, var(--surface)); }
 .category.courses::after{ background:linear-gradient(transparent, var(--memo-grey) 0.75rem); }
+:root .category.courses:not(.has-ptint)::after{ background:linear-gradient(transparent, var(--memo-end) 0.75rem); }   /* 11.30 : le fondu du bas suit le bas du dégradé (il restait blanc pendant la fermeture, puis sautait à l'ivoire) */
 .category.courses > ul.items{
   flex:0 1 auto; min-height:0;
   overflow-y:auto;   /* 10.39 : plus de contain : au bout du mémo, la page reprend le défilement */
