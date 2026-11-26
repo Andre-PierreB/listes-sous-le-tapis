@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.21 -->
+<!-- Sous le tapis — version AUTONOME 11.22 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -615,6 +615,12 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 ::selection{background:var(--accent-soft); color:var(--ink);}
+/* 11.22 : téléphone : la page ne défile que verticalement (elle glissait de côté dès qu'un élément dépassait à droite).
+   clip et non hidden : ne crée pas de zone de défilement, rien d'autre ne change */
+@media (hover:none){
+  html, body{ overflow-x:clip; }
+  html{ overscroll-behavior-x:none; }
+}
 /* 10.68 : téléphone : tout un cran plus grand (Hiske : trop petit ; standard iPhone ≈ 17 pt) — un seul
    réglage, la taille de base (rem) : tâches ≈ 16,6 px au lieu de 14,7 ; marges de côté réduites pour
    garder la largeur. Les champs passent à 16 px au doigt (en dessous, Safari zoome en tapant). */
@@ -2097,6 +2103,12 @@ body.has-fullpage > .fp-back{ display:inline-flex; }
   .duel-card.fullpage .persos canvas{ width:36px; height:30px; }
   .duel-card.fullpage .duel-foot{ grid-column:5; grid-row:5; justify-content:flex-end; margin:0; }
   .duel-card.fullpage .duel-foot .cat-grip{ display:none; }
+  /* 11.22 : le titre passait sous le rond de retour et l'écran le touchait : le titre se range à droite du rond, l'écran
+     et les réglages descendent de --fp-titre (l'écran rétrécit d'autant) ; la rangée du bas ne bouge pas */
+  .duel-card.fullpage{ --fp-titre:1.6rem; }
+  .duel-card.fullpage .duel-stage{ padding-top:var(--fp-titre); }
+  .duel-card.fullpage .duel-screen{ width:min(calc((100dvh - 1.85rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2.9rem - var(--fp-titre)) * 16 / 9), 100%); }
+  .duel-card.fullpage .chat-led{ left:calc(max(calc(50vw - 410px + 1.1rem), calc(env(safe-area-inset-left, 0px) + 0.9rem)) + var(--fb-size) + 0.7rem - max(1.25rem, env(safe-area-inset-left, 0px))); }
 }
 .chat-card.fullpage .scr-full, .duel-card.fullpage .scr-full{ display:none; }   /* 10.71 : on sort par le grand bouton rond */
 .chat-card.fullpage, .duel-card.fullpage{ padding-top:calc(max(0.9rem, calc(env(safe-area-inset-top, 0px) + 0.5rem)) + var(--fb-size) + 0.4rem); }
@@ -2943,7 +2955,20 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   color:var(--ink-soft);   /* 10.51 : retour à --ink-soft (mauve en 10.48-10.50) */
   margin:0 0 1.1rem;
 }
-#waitingSection .section-title span{ white-space:nowrap; }   /* 10.50 : trop étroit, coupé après le tiret */
+#waitingSection .section-title span{ white-space:nowrap; }
+/* 11.22 : « En cours » se masque (flèche en haut à droite) : reste le titre et le nombre ; réglage propre à l'appareil */
+#waitingSection{ position:relative; }
+#waitingSection .section-title{ padding-right:2rem; }
+#waitingSection .waiting-fold{ position:absolute; top:calc(1.4rem - 4px); right:1rem; width:28px; height:26px; display:grid; place-items:center;
+  appearance:none; border:0; background:none; padding:0; border-radius:6px; cursor:pointer; color:var(--ink-faint); }
+.waiting-fold svg{ display:block; transform:rotate(180deg); transition:transform .25s ease, scale .15s ease; }
+.waiting-fold:hover svg{ color:var(--ink-soft); scale:1.15; }
+.waiting-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+#waitingSection.folded .waiting-fold svg{ transform:none; }
+#waitingSection.folded{ padding-bottom:1.4rem; }
+#waitingSection.folded .section-title{ margin-bottom:0; }
+#waitingSection.folded #waitingList{ display:none; }
+#waitingSection .waiting-count{ margin-left:0.5em; color:var(--ink-faint); }   /* 10.50 : trop étroit, coupé après le tiret */
 #waitingList .empty-note{ color:color-mix(in srgb, var(--ink-faint) 72%, var(--wait-soft)); }
 #waitingSection{ --task-size:0.85rem; }   /* 10.75 : « En cours » un peu plus petit que les listes (avant : 0.92rem, comme elles) */
 @media (min-width:721px){   /* 10.75 : sur ordi, deux colonnes (on lit la première, puis la seconde) */
@@ -3922,7 +3947,8 @@ body.ios-gate-on{ overflow:hidden; }
   <div class="add-category-row" id="addCategoryRow"></div>
 
   <section class="section-block" id="waitingSection">
-    <h2 class="section-title"><span>En cours -</span> <span>La balle est dans leur camp</span></h2>
+    <h2 class="section-title"><span>En cours -</span> <span>La balle est dans leur camp</span><span class="waiting-count" hidden></span></h2>
+    <button type="button" class="waiting-fold" id="waitingFold" aria-expanded="true" aria-label="Masquer les tâches en cours" data-tip="Masquer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <ul class="items" id="waitingList"></ul>
   </section>
 
@@ -3935,7 +3961,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.21</span>
+    <span class="version-tag">v11.22</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5519,6 +5545,8 @@ function addPastedTasks(cat, lines){
   seq.forEach(it => { try{ insertItem(cat, it); n++; }catch(err){ console.error("[collage] échec", err); } });
   return n;
 }
+// 11.22 : une seule ligne venue de « Copier » (commence par « - », ou finit par une marque) : traitée comme un collage
+function isCopiedLine(txt){ const t = String(txt || "").trim(); return /^-\s/.test(t) || /\[(œuf|oeuf|urgent|en cours)\]$/i.test(t); }
 // 11.20 : marques ajoutées par « Copier » en fin de ligne : [œuf] → œuf, [urgent] → urgente,
 // [en cours] → retirée (la tâche recollée repart normale) ; le reste du texte ne bouge pas
 function pastedItem(line){
@@ -9038,10 +9066,25 @@ function buildItemLi(cat, idx, base, key, opts){
   return { el: li, focus: null };
 }
 
+// 11.22 : « En cours » masqué ou non, sur cet appareil seulement (rien ne passe par la synchro)
+const WAIT_FOLD_KEY = (DEMO ? "demo:" : ESSAI ? "essai:" : "") + "sous-le-tapis-encours-masque";
+let waitingFolded = (()=>{ try{ return localStorage.getItem(WAIT_FOLD_KEY) === "1"; }catch(e){ return false; } })();
+(()=>{
+  const b = document.getElementById("waitingFold");
+  if(b) b.addEventListener("click", e=>{
+    e.stopPropagation();
+    waitingFolded = !waitingFolded;
+    try{ localStorage.setItem(WAIT_FOLD_KEY, waitingFolded ? "1" : "0"); }catch(err){}
+    renderWaitingSection();
+  });
+})();
 function renderWaitingSection(){
   const ul = document.getElementById("waitingList");
   if(!ul) return;
   ul.innerHTML = "";
+  const sec = document.getElementById("waitingSection"), fb = document.getElementById("waitingFold");
+  if(sec) sec.classList.toggle("folded", waitingFolded);
+  if(fb){ fb.setAttribute("aria-expanded", String(!waitingFolded)); fb.setAttribute("aria-label", waitingFolded ? "Afficher les tâches en cours" : "Masquer les tâches en cours"); fb.dataset.tip = waitingFolded ? "Afficher" : "Masquer"; }
   const rows = [];
   DATA.forEach(cat=>{
     const items = getEffectiveItems(cat);
@@ -9053,6 +9096,9 @@ function renderWaitingSection(){
       rows.push({cat, idx:i, base, key, eff});
     });
   });
+  const cnt = sec && sec.querySelector(".waiting-count");
+  if(cnt){ cnt.hidden = !waitingFolded || !rows.length; cnt.textContent = "(" + rows.length + ")"; }
+  if(waitingFolded) return;   // masqué : rien n'est dessiné dedans
   if(rows.length === 0){
     const li = document.createElement("li");
     li.className = "empty-note";
@@ -11316,7 +11362,7 @@ function render(){
       quickInp.addEventListener("click", e=> e.stopPropagation());
       quickInp.addEventListener("paste", e=>{   // 10.22
         const txt = e.clipboardData ? e.clipboardData.getData("text") : "";
-        if(!txt || !/\n/.test(txt.trim())) return;
+        if(!txt || !(/\n/.test(txt.trim()) || isCopiedLine(txt))) return;   // 11.22 : une seule tâche copiée (« - … [œuf] ») passe aussi par là
         e.preventDefault();
         const all = quickInp.value.slice(0, quickInp.selectionStart) + txt + quickInp.value.slice(quickInp.selectionEnd);
         if(courses){ addCoursesQuick(cat, all); quickInp.value = ""; refocusQuickCat = cat.id; renderAll(); return; }   // 10.68
@@ -11574,7 +11620,7 @@ function render(){
       li.querySelector(".add-save").addEventListener("click", save);
       titleInput.addEventListener("paste", e=>{   // 10.22 : plusieurs lignes = plusieurs tâches
         const txt = e.clipboardData ? e.clipboardData.getData("text") : "";
-        if(!txt || !/\n/.test(txt.trim())) return;
+        if(!txt || !(/\n/.test(txt.trim()) || isCopiedLine(txt))) return;   // 11.22 : une seule tâche copiée aussi
         e.preventDefault();
         const lines = splitPastedTasks(titleInput.value.slice(0, titleInput.selectionStart) + txt + titleInput.value.slice(titleInput.selectionEnd));
         if(addPastedTasks(cat, lines)) actionToast("add");
@@ -13327,9 +13373,27 @@ const TAPIS = (()=>{
     n.start(at, Math.random()*2); n.stop(at + 0.36);
   }
   // froissement de tissu : bruit rose filtré dans le médium, enveloppe lisse
+  // 11.22 : au lancer du tapis, un souffle net et court (avant : froissement sur toute la durée) ; le « flop » d'arrivée
+  // ne change pas. Banc seulement : essai.html?souffle=long rejoue l'ancien froissement, pour comparer.
+  function whoosh(ctx, t0){
+    const W = 0.34;
+    const src = ctx.createBufferSource(); src.buffer = noiseBuf;
+    const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 600; hp.Q.value = 0.6;
+    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.9;
+    const g = ctx.createGain();
+    src.connect(hp).connect(bp).connect(g).connect(ctx.destination);
+    bp.frequency.setValueAtTime(4200, t0); bp.frequency.exponentialRampToValueAtTime(1300, t0 + W);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.4, t0 + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.12, t0 + W*0.55);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + W);
+    src.start(t0, Math.random()*2); src.stop(t0 + W + 0.02);
+  }
+  const OLD_RUSTLE = ESSAI && /[?&]souffle=long\b/.test(location.search);
   function rustle(unroll, dur){
     const ctx = audio(); if(!ctx) return;
     const t0 = ctx.currentTime + 0.01, D = dur/1000;
+    if(unroll && !OLD_RUSTLE){ whoosh(ctx, t0); thud(ctx, t0 + D - 0.06, 0.14, 260); return; }
     const src = ctx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
     const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 350; hp.Q.value = 0.5;
     const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 0.4;
