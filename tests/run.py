@@ -373,8 +373,8 @@ async def t_decalage_telephone(pg):
         await ctx.close()
 
 async def t_signets_au_doigt(pg):
-    """11.27 : au doigt, l'onglet des signets s'ouvre au lever du doigt, une seule fois (le clic qui suit ne la
-    referme pas) ; un deuxième toucher la ferme ; un doigt qui glisse (défilement) ne l'ouvre pas."""
+    """Au doigt : un toucher sur l'onglet ouvre les signets, un deuxième les ferme, un doigt qui glisse (défilement)
+    ne les ouvre pas, toucher un signet referme la pile."""
     ctx, tel, errs = await _tel(pg)
     try:
         for t in ("Maison", "Bureau", "Jardin"):
