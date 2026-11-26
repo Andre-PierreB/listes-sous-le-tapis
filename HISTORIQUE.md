@@ -3,6 +3,8 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.29 : téléphone : case urgente, le coin gauche du triangle sur le bord gauche des titres et des bulles des cases
+    (--urg-dx : -1.1px, picto et titre ensemble ; avant : chiffre du titre centré sur le point des tâches, 11.27).
   - 11.28 : duel : fermeture en miroir de l'ouverture (11.18) : l'écran garde sa taille et sa place (figé en style,
     marge du bas négative), une découpe le ramène sur la bande pendant que la case se replie, le jeu s'efface sur place,
     le texte de la bande revient en fondu (duelShutRect / duelShut, softHeight et foldSmooth ; avant : l'écran tombait
