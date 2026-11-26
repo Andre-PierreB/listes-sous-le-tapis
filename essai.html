@@ -4034,16 +4034,11 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   footer #shareLink{ margin-right:0; }
   footer > .backup-bar{ display:contents; }
   footer .backup-nudge{ flex-basis:100%; text-align:center; margin-right:0; }   /* « Se connecter pour ne jamais perdre ses listes » centré */
-  /* case urgente : son picto et son titre se décalent (--urg-dx, vers la gauche si positif), en décalage visuel seulement :
-     les tâches dessous ne bougent pas. Le centre du chiffre du titre (« 1 seul point urgent ») est sur le centre des
-     points des tâches ; les points suivent la largeur de la poignée (--dh-w), le chiffre non (Courier Prime chargée) */
-  :root{ --urg-dx:calc(-9.17px - var(--dh-w, 34.94px) + 34.94px); }
+  /* case urgente : son picto et son titre se décalent ensemble (--urg-dx, vers la gauche), en décalage visuel seulement :
+     les tâches dessous ne bougent pas. 11.29 : le coin gauche du triangle est sur la première colonne de points de la
+     poignée (--dot1, mesuré sur l'appareil ; la poignée de l'urgent ne bouge pas, le coin est à 1,875 px du bord du picto) */
+  :root{ --urg-dx:calc(18.3px - var(--dot1, 9.73px)); }
   .urgent-banner > svg, .urgent-banner-title{ position:relative; left:calc(-1 * var(--urg-dx)); }
-  /* banc 11.29 (?urg=a|b) : A, le coin gauche du triangle sur la première colonne de points de la poignée (--dot1,
-     mesuré sur l'appareil ; la poignée de l'urgent ne bouge pas, le coin est à 1,875 px du bord du picto) ; B, le
-     triangle sur la ligne des titres et des bulles des cases (43.5 px du bord) */
-  :root.urg-a{ --urg-dx:calc(18.3px - var(--dot1, 9.73px)); }
-  :root.urg-b{ --urg-dx:-2.97px; }
 }
 </style>
 
@@ -14907,7 +14902,7 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
     const dh = document.querySelector(".categories > .category > ul.items > .item > .drag-handle");
     const dw = dh ? dh.getBoundingClientRect().width : 0;
     if(dw > 0) html.style.setProperty("--dh-w", dw.toFixed(2) + "px");
-    // banc 11.29 : centre de la première colonne de points de la poignée, depuis son bord gauche (le point est au milieu
+    // 11.29 : centre de la première colonne de points de la poignée, depuis son bord gauche (le point est au milieu
     // de son caractère ; l'espacement négatif des lettres est retiré de la largeur mesurée)
     if(dw > 0 && dh.firstChild){ try{ const r = document.createRange(); r.setStart(dh.firstChild, 0); r.setEnd(dh.firstChild, 1);
       const b = r.getBoundingClientRect(), ls = parseFloat(getComputedStyle(dh).letterSpacing) || 0;
@@ -14932,22 +14927,6 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
   [300, 1500, 4000, 10000].forEach(t => setTimeout(measure, t));
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ done = false; measure(); });
   window.addEventListener("resize", ()=>{ done = false; measure(); });
-})();
-// ---- banc 11.29 (essai.html?demo&urg) : place du triangle et du titre de la case urgente au téléphone, avec interrupteur
-if(ESSAI && /[?&]urg\b/.test(location.search)) (()=>{
-  const q = new URLSearchParams(location.search), html = document.documentElement;
-  let v = ["a", "b"].includes(q.get("urg")) ? q.get("urg") : "0";
-  const box = document.createElement("div");
-  box.style.cssText = "position:fixed;left:.6rem;right:.6rem;bottom:.6rem;z-index:8000;max-width:20rem;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.7rem 0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.95rem;color:var(--ink)";
-  document.body.appendChild(box);
-  ["click", "pointerdown"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
-  const row = "display:flex;gap:.5rem;align-items:center;margin:.35rem 0;cursor:pointer";
-  box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.3rem">Triangle de l'urgent (téléphone)</div>`
-    + [["0", "Chiffre sur le point (en ligne, 11.27)"], ["a", "A · sur la poignée"], ["b", "B · sur les titres et les bulles"]]
-      .map(([k, l]) => `<label style="${row}"><input type="radio" name="urg" value="${k}"${k === v ? " checked" : ""}>${l}</label>`).join("");
-  const apply = ()=>{ html.classList.toggle("urg-a", v === "a"); html.classList.toggle("urg-b", v === "b"); };
-  box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
-  apply();
 })();
 // ---- banc 11.7 (essai.html?demo&champ=a|b) : place du champ des cases fermées sur ordinateur, avec interrupteur
 if(ESSAI && /[?&]champ\b/.test(location.search)) (()=>{
