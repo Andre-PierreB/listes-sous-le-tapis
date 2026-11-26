@@ -13374,7 +13374,7 @@ const TAPIS = (()=>{
   }
   // froissement de tissu : bruit rose filtré dans le médium, enveloppe lisse
   // 11.22 : au lancer du tapis, un souffle net et court (avant : froissement sur toute la durée) ; le « flop » d'arrivée
-  // ne change pas. Banc seulement : essai.html?souffle=long rejoue l'ancien froissement, pour comparer.
+  // devient duveteux (puff). Banc seulement : essai.html?souffle=long rejoue les anciens sons, pour comparer.
   function whoosh(ctx, t0){
     const W = 0.34;
     const src = ctx.createBufferSource(); src.buffer = noiseBuf;
@@ -13389,11 +13389,22 @@ const TAPIS = (()=>{
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + W);
     src.start(t0, Math.random()*2); src.stop(t0 + W + 0.02);
   }
+  // 11.22 : arrivée duveteuse (avant : un « tac » net) : attaque lente, bruit très filtré, extinction plus longue
+  function puff(ctx, at){
+    const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    n.buffer = noiseBuf; f.type = "lowpass"; f.Q.value = 0.3;
+    f.frequency.setValueAtTime(420, at); f.frequency.exponentialRampToValueAtTime(140, at + 0.5);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.linearRampToValueAtTime(0.16, at + 0.09);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.55);
+    n.connect(f).connect(g).connect(ctx.destination);
+    n.start(at, Math.random()*2); n.stop(at + 0.6);
+  }
   const OLD_RUSTLE = ESSAI && /[?&]souffle=long\b/.test(location.search);
   function rustle(unroll, dur){
     const ctx = audio(); if(!ctx) return;
     const t0 = ctx.currentTime + 0.01, D = dur/1000;
-    if(unroll && !OLD_RUSTLE){ whoosh(ctx, t0); thud(ctx, t0 + D - 0.06, 0.14, 260); return; }
+    if(unroll && !OLD_RUSTLE){ whoosh(ctx, t0); puff(ctx, t0 + D - 0.12); return; }
     const src = ctx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
     const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 350; hp.Q.value = 0.5;
     const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 0.4;
