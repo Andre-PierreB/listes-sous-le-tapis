@@ -3,6 +3,13 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.21 : téléphone : le clavier vient à l'ouverture d'une modification (double-toucher sur une tâche, un article,
+    un titre, un message ; appui long d'un article, ouvert au lever du doigt) : curseur donné au champ dans le geste
+    même (focusEditNow), à la fin du texte ; plus de select() rejoué une image plus tard (retirait le clavier). Page
+    de test clavier-test.html (essais A à H, iPhone iOS 18.7). Toute la fenêtre de modification, jusqu'à Annuler /
+    Enregistrer, remonte au-dessus du clavier (keepAboveKeyboard étendu). Bouton d'une tâche inerte 450 ms après son
+    apparition (le 2e toucher d'un double-toucher la rendait urgente). Ordinateur : champ (et écran du chat et du duel)
+    des cases fermées remonté de 3 px (--cf-up). Banc seulement : journal ?clavier, panneau ?monte.
   - 11.20 : « Copier » une liste : sans le titre ; œufs marqués « [œuf] ». Collage de plusieurs lignes : « [œuf] »
     → œuf (en queue, dans l'ordre), « [urgent] » → urgente, « [en cours] » retiré (pastedItem). Test : copier_recoller.
   - 11.19 : « Supprimer la liste » dans la fenêtre de modification d'une liste ou d'un mémo (dernière ligne, sous

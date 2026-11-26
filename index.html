@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.20 -->
+<!-- Sous le tapis — version AUTONOME 11.21 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3881,9 +3881,10 @@ body.ios-gate-on{ overflow:hidden; }
    de la poignée et de la punaise (14 px du bas), plus fin (22 px) ; les cases gardent leurs 72 px. Choisi au banc le 17/11/2026. */
 @media (min-width:721px){
   html:not(.ch-a):root .category.collapsed .cat-quick{ padding-top:0.12rem; padding-bottom:0.12rem; }
-  html:not(.ch-a):root:root .category.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ position:relative; top:9px; }
-  html:not(.ch-a):root:root .category.courses.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ top:7px; }
-  html:not(.ch-a):root:root .collapsed :is(.chat-hole, .duel-screen){ height:22px; position:relative; top:9px; }
+  /* 11.21 : --cf-up (3 px, choisi le 24/11) remonte le champ et l'écran d'un rien (rien d'autre ne bouge : décalage seul, sans place prise) */
+  html:not(.ch-a):root:root .category.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ position:relative; top:calc(9px - var(--cf-up, 3px)); }
+  html:not(.ch-a):root:root .category.courses.collapsed:not(.chat-card):not(.duel-card) .cat-quick-wrap{ top:calc(7px - var(--cf-up, 3px)); }
+  html:not(.ch-a):root:root .collapsed :is(.chat-hole, .duel-screen){ height:22px; position:relative; top:calc(9px - var(--cf-up, 3px)); }
   /* banc : variante A (?champ=a) : le champ au-dessus de la ligne du bas, cases fermées à 86 px */
   .ch-a:root:root .category.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:21px; }
   .ch-a:root:root .category.courses.collapsed:not(.chat-card):not(.duel-card){ padding-bottom:19px; }
@@ -3934,7 +3935,7 @@ body.ios-gate-on{ overflow:hidden; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.20</span>
+    <span class="version-tag">v11.21</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -7547,7 +7548,15 @@ function revealRow(li, toggle){
   clearTimeout(revealTimer);
   li.classList.toggle("revealed", on);
   if(on) revealTimer = setTimeout(()=> li.classList.remove("revealed"), REVEAL_MS);
+  if(on) li._revealedAt = Date.now();   // 11.21
 }
+// 11.21 : double-toucher sur une tâche : le 1er toucher fait apparaître ses boutons, le 2e tombait parfois sur l'un
+// d'eux (urgent). Un bouton qui vient d'apparaître ne répond pas pendant le temps d'un double-toucher.
+document.addEventListener("click", e=>{
+  const c = e.target.closest && e.target.closest(".item-controls");
+  const li = c && c.closest("li");
+  if(li && li._revealedAt && Date.now() - li._revealedAt < 450){ e.stopPropagation(); e.preventDefault(); }
+}, true);
 document.addEventListener("click", e=>{
   if(!e.target.closest || !e.target.closest(".revealed")) hideRevealed(null);
 }, true);
@@ -8036,6 +8045,7 @@ function renderUrgentBannerNow(){
     li.querySelector(".urgent-jump").addEventListener("dblclick", e=>{
       e.preventDefault(); e.stopPropagation();
       editUrgentEntry(entry);
+      focusEditNow();   // 11.21
     });
     const urgentCheck = li.querySelector(".urgent-check");
     urgentCheck.addEventListener("click", (e)=>{
@@ -8738,7 +8748,7 @@ function buildItemLi(cat, idx, base, key, opts){
         if(e.key === "Escape"){ editingKey = null; renderAll(); }
       });
     });
-    return { el: li, focus: ()=>{ titleInput.focus(); titleInput.select(); } };
+    return { el: li, focus: ()=>{ if(isTouchUI() && document.activeElement === titleInput) return; titleInput.focus(); titleInput.select(); } };   // 11.21 : au doigt, déjà pris dans le geste : ni re-focus ni select() (l'iPhone retirait le clavier)
   }
 
   // 10.15 : article d'une liste de courses — un rond creux à la place de la
@@ -8794,7 +8804,7 @@ function buildItemLi(cat, idx, base, key, opts){
       if(e.key === "Escape"){ e.preventDefault(); editingCoursesKey = null; renderAll(); }
     }));
     li.addEventListener("click", e => e.stopPropagation());
-    return { el: li, focus: ()=>{ nameInp.focus(); nameInp.select(); } };
+    return { el: li, focus: ()=>{ if(isTouchUI() && document.activeElement === nameInp) return; nameInp.focus(); nameInp.select(); } };   // 11.21 : au doigt, déjà pris dans le geste : ni re-focus ni select() (l'iPhone retirait le clavier)
   }
   if(opts.courses){
     const struck = !!state[key];
@@ -8847,7 +8857,13 @@ function buildItemLi(cat, idx, base, key, opts){
       const x0 = e.clientX, y0 = e.clientY, id = e.pointerId;
       const end = ()=>{ clearTimeout(t); li.classList.remove("pressing"); document.removeEventListener("pointermove", mv, true); document.removeEventListener("pointerup", end, true); document.removeEventListener("pointercancel", end, true); };
       const mv = ev=>{ if(ev.pointerId === id && (Math.abs(ev.clientX - x0) > 10 || Math.abs(ev.clientY - y0) > 10)) end(); };
-      const t = setTimeout(()=>{ end(); longFired = Date.now(); haptic.tick(); editingCoursesKey = key; renderAll(); }, 480);
+      // 11.21 : prêt au bout de 480 ms (vibration), mais la fenêtre s'ouvre au lever du doigt : c'est un geste, le clavier peut venir
+      const t = setTimeout(()=>{
+        end(); longFired = Date.now(); haptic.tick();
+        let done = false;
+        const open = ()=>{ if(done) return; done = true; document.removeEventListener("touchend", open, true); document.removeEventListener("pointerup", open, true); editingCoursesKey = key; renderAll(); focusEditNow(); };
+        document.addEventListener("touchend", open, true); document.addEventListener("pointerup", open, true);
+      }, 480);
       li.classList.add("pressing");
       document.addEventListener("pointermove", mv, true); document.addEventListener("pointerup", end, true); document.addEventListener("pointercancel", end, true);
     });
@@ -8856,6 +8872,7 @@ function buildItemLi(cat, idx, base, key, opts){
       e.stopPropagation();
       editingCoursesKey = key;
       renderAll();
+      focusEditNow();   // 11.21
     });
     // 10.53 : double-clic pour modifier, comme une tâche
     li.querySelector(".item-text").addEventListener("dblclick", e=>{
@@ -8864,6 +8881,7 @@ function buildItemLi(cat, idx, base, key, opts){
       try{ window.getSelection().removeAllRanges(); }catch(err){}
       editingCoursesKey = key;
       renderAll();
+      focusEditNow();   // 11.21
     });
     li.querySelector(".delete-btn").addEventListener("click", e=>{
       e.stopPropagation();
@@ -8949,6 +8967,7 @@ function buildItemLi(cat, idx, base, key, opts){
     if(eff.note) toggleNoteOpen(key); // rend l'état d'avant le 1er clic du double-clic
     editingKey = key;
     renderAll();
+    focusEditNow();   // 11.21
   });
   wireDragRow(li, dragMode === "waiting" ? key : String(idx), dragMode, cat);
   const hatchBtn = li.querySelector(".hatch-btn");
@@ -9466,18 +9485,61 @@ function revealAddField(f){
 // 11.6 : au doigt, le clavier s'ouvre APRÈS le clic sur + et recouvre le bas de l'écran sans que la page change de
 // taille (iPhone) : le cadre de saisie, ramené en vue avant, finissait derrière le clavier. On écoute la zone
 // réellement visible (visualViewport) pendant l'ouverture du clavier et on remonte la page juste assez.
-function keepAboveKeyboard(box){
+function keepAboveKeyboard(box, bottomEl, field){
   const vv = window.visualViewport;
-  if(!vv || !(window.matchMedia && matchMedia("(hover:none)").matches)) return;
+  if(!vv || !isTouchUI()) return;
+  bottomEl = bottomEl || box;
+  // 11.21 : tout en bas de la page, on ne pouvait pas remonter assez : de la place est ajoutée sous la page tant que le
+  // clavier est ouvert sur ce cadre
+  const card = box.closest(".category, .chat-card, .duel-card") || box;
   const fit = ()=>{
-    if(!box.isConnected || !box.contains(document.activeElement)) return;
-    const r = box.getBoundingClientRect(), top = vv.offsetTop + 10, bottom = vv.offsetTop + vv.height - 10;
-    if(r.bottom > bottom) window.scrollBy(0, Math.min(r.bottom - bottom, Math.max(0, r.top - top)));
+    if(!box.isConnected || !card.contains(document.activeElement)) return;
+    const kb = Math.max(0, innerHeight - vv.height - vv.offsetTop);
+    document.body.style.paddingBottom = kb ? kb + "px" : "";
+    const top = vv.offsetTop + 10, bottom = vv.offsetTop + vv.height - 10;
+    const rb = bottomEl.getBoundingClientRect().bottom;
+    const keepTop = (field || box).getBoundingClientRect().top;   // le champ où l'on écrit reste toujours visible
+    if(rb > bottom) window.scrollBy(0, Math.min(rb - bottom, Math.max(0, keepTop - top)));
   };
+  const later = ()=> setTimeout(()=>{
+    if(card.isConnected && card.contains(document.activeElement)) return;
+    document.body.style.paddingBottom = "";
+    vv.removeEventListener("resize", fit);
+    document.removeEventListener("focusout", later, true);
+  }, 300);
   vv.addEventListener("resize", fit);
-  [350, 700, 1100].forEach(t => setTimeout(fit, t));
-  setTimeout(()=> vv.removeEventListener("resize", fit), 1600);
+  document.addEventListener("focusout", later, true);
+  [50, 350, 700, 1100].forEach(t => setTimeout(fit, t));
 }
+// 11.21 : au doigt, l'iPhone n'ouvre le clavier que si le champ prend le curseur pendant le geste lui-même (le
+// double-toucher, le lever du doigt) : une image plus tard, c'est trop tard (page de test clavier-test.html, 26/11 :
+// essai D oui, essai C non). Les gestes qui ouvrent une modification appellent donc focusEditNow() juste après le
+// rendu, dans le même geste. À la souris, rien ne change (le curseur arrive comme avant).
+function isTouchUI(){ return !!(window.matchMedia && matchMedia("(hover:none)").matches); }
+const EDIT_FIELD_SEL = ".editing input:not([type=checkbox]), .editing textarea, li .edit-form input, .cat-title-input, .chat-edit";
+function focusEditNow(){
+  if(!isTouchUI()) return null;
+  const f = document.querySelector(EDIT_FIELD_SEL);
+  if(!f) return null;
+  try{ f.focus({ preventScroll:true }); }catch(e){}
+  try{ const n = f.value.length; f.setSelectionRange(n, n); }catch(e){}   // curseur à la fin, pour modifier
+  return f;
+}
+// 11.21 : fenêtre de modification ouverte au doigt : tout son cadre, jusqu'à Annuler / Enregistrer, au-dessus du clavier
+function editFrame(f){
+  const li = f.closest("li");
+  if(li) return { top: li, bottom: li.querySelector(".edit-actions") || li };
+  const card = f.closest(".category, .chat-card, .duel-card");
+  const acts = card && card.querySelector(".cat-edit-actions");
+  return { top: f.closest(".cat-head") || f, bottom: acts || f };
+}
+document.addEventListener("focusin", e=>{
+  const f = e.target;
+  if(!f || !isTouchUI() || !f.matches || !f.matches(EDIT_FIELD_SEL)) return;
+  const fr = editFrame(f);
+  fr.top.style.scrollMarginTop = "10px";
+  keepAboveKeyboard(fr.top, fr.bottom, f);
+});
 const COURSES_DBL_MS = 260;   // 10.75 : attente d'un éventuel double-clic avant de rayer un article (souris)
 let lastPageScroll = 0;
 window.addEventListener("scroll", ()=>{ lastPageScroll = Date.now(); }, { passive:true });
@@ -9723,6 +9785,7 @@ function buildChatCard(cat, catIdx){
     chatEdit = { catId: cat.id, idx: +l.dataset.i, v: null };
     chatFix = null; chatFocus = null;
     renderAll();
+    focusEditNow();   // 11.21
   });
   // menu « … »
   const more = card.querySelector(".chat-more"), menu = card.querySelector(".chat-menu");
@@ -11322,6 +11385,7 @@ function render(){
         e.stopPropagation();
         editingCategoryTitle = cat.id;
         renderAll();
+        focusEditNow();   // 11.21
       });
     }
     card.appendChild(head);
@@ -14600,6 +14664,40 @@ if(ESSAI && /[?&]champ\b/.test(location.search)) (()=>{
   const apply = ()=>{ html.classList.toggle("ch-a", v === "a"); if(typeof cfFootRoom === "function") setTimeout(cfFootRoom, 50); };
   box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
   const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "champ=" + v;
+  box.querySelector("[data-c]").addEventListener("click", async e=>{
+    try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
+    setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
+  });
+  apply();
+})();
+// ---- banc 11.21 (essai.html?demo&clavier) : petit journal à l'écran (touchers, dblclick, curseur), pour le téléphone
+if(ESSAI && /[?&]clavier\b/.test(location.search)) (()=>{
+  const box = document.createElement("pre");
+  box.style.cssText = "position:fixed;left:4px;right:4px;top:4px;z-index:9000;max-height:9.5em;overflow:hidden;margin:0;padding:4px 6px;background:rgba(20,30,30,.82);color:#cfe;font:11px/1.25 monospace;border-radius:6px;pointer-events:none;white-space:pre-wrap";
+  document.body.appendChild(box);
+  const lines = [], t0 = Date.now();
+  const log = s => { lines.push(((Date.now() - t0) / 1000).toFixed(2) + " " + s); while(lines.length > 7) lines.shift(); box.textContent = lines.join("\n"); };
+  const nm = el => !el ? "?" : (el.id ? "#" + el.id : (el.className && typeof el.className === "string" ? "." + el.className.split(" ")[0] : el.tagName));
+  ["touchend", "click", "dblclick"].forEach(t => document.addEventListener(t, e => log(t + " " + nm(e.target) + (e.isTrusted ? "" : " (appli)")), true));
+  document.addEventListener("focusin", e => log("curseur → " + nm(e.target)), true);
+  document.addEventListener("focusout", e => log("curseur quitte " + nm(e.target)), true);
+  if(window.visualViewport) visualViewport.addEventListener("resize", ()=> log("écran visible : " + Math.round(visualViewport.height) + " px"));
+  log("journal prêt (" + (isTouchUI() ? "doigt" : "souris") + ")");
+})();
+// ---- banc 11.21 (essai.html?demo&monte=0..5) : champ et écran des cases fermées (ordi) remontés de quelques px
+if(ESSAI && /[?&]monte\b/.test(location.search)) (()=>{
+  const q = new URLSearchParams(location.search), html = document.documentElement;
+  let v = q.get("monte"); if(!/^[0-5]$/.test(v || "")) v = "3";
+  const box = document.createElement("div");
+  box.style.cssText = "position:fixed;right:1rem;bottom:1rem;z-index:8000;width:15rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0.8rem;box-shadow:0 10px 30px rgba(40,50,60,.15);font-size:0.85rem;color:var(--ink)";
+  document.body.appendChild(box);
+  ["click", "pointerdown"].forEach(t => box.addEventListener(t, e => e.stopPropagation()));
+  box.innerHTML = `<div style="font:700 0.75rem 'Courier Prime',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.4rem">Champ remonté (ordi, fermé)</div>`
+    + ["0", "2", "3", "4", "5"].map(k => `<label style="display:inline-flex;gap:.25rem;align-items:center;margin:.2rem .5rem .2rem 0;cursor:pointer"><input type="radio" name="mt" value="${k}"${k === v ? " checked" : ""}>${k === "3" ? "3 px (retenu)" : k + " px"}</label>`).join("")
+    + `<button type="button" data-c style="display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.82rem;padding:.4rem;border:0;border-radius:8px;cursor:pointer;background:color-mix(in srgb, var(--accent) 12%, var(--surface));color:var(--btn-ink)">Copier le lien des réglages</button>`;
+  const apply = ()=> html.style.setProperty("--cf-up", v + "px");
+  box.querySelectorAll("input").forEach(i => i.addEventListener("change", ()=>{ v = i.value; apply(); }));
+  const link = ()=> location.origin + location.pathname + "?" + (q.has("demo") ? "demo&" : "") + "monte=" + v;
   box.querySelector("[data-c]").addEventListener("click", async e=>{
     try{ await navigator.clipboard.writeText(link()); e.target.textContent = "Lien copié"; }catch(err){ prompt("Lien des réglages :", link()); }
     setTimeout(()=>{ e.target.textContent = "Copier le lien des réglages"; }, 1600);
