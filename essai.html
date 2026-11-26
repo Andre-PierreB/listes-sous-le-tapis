@@ -1215,7 +1215,7 @@ header{
 }
 /* 11.13 : mémo ouvert : rappel de l'ivoire du mémo fermé (11.8) en haut, qui fond vers le blanc sur la hauteur d'une
    case fermée (72 px sur ordinateur, 94 px au téléphone) ; reflets gardés, nacre remplacée (variante E du banc, 19/11). */
-:root{ --memo-top-h:72px; --memo-ivoire:color-mix(in srgb, #D2D08A 17%, var(--surface)); }   /* 11.30 : l'ivoire des mémos en un seul endroit (fermé, haut de l'ouvert, signet) ; 6 % en sombre */
+:root{ --memo-top-h:72px; --memo-ivoire:color-mix(in srgb, #D2D08A 10%, var(--surface)); }   /* 11.30 : l'ivoire des mémos en un seul endroit (fermé, haut de l'ouvert, signet) ; 10 % en clair (17 % avant, choisi au banc), 6 % en sombre */
 @media (hover:none){ :root{ --memo-top-h:94px; } }
 :root .category.courses:is(:not(.collapsed), .gliding):not(.has-ptint){   /* 11.14 : gardé pendant la fermeture (.gliding) : la couleur pleine ne revient qu'une fois la case fermée */
   --memo-grey:var(--surface);
@@ -3713,13 +3713,7 @@ html.no-select, html.no-select *{ -webkit-user-select:none !important; user-sele
 /* ---------- mode sombre : retouches propres à certains éléments
    (chaque règle deux fois : thème forcé, puis réglage du système) ---------- */
 :root[data-theme="dark"] .tapis-watermark{ opacity:0.1; }
-:root[data-theme="dark"]{ --memo-ivoire:color-mix(in srgb, #D2D08A 6%, var(--surface)); }
-/* banc 11.30 : ivoire des mémos en clair, à comparer (?ml=b / c / d ; sans réglage : 17 %) */
-@media (prefers-color-scheme: light){
-  :root.ml-b:not([data-theme="dark"]){ --memo-ivoire:color-mix(in srgb, #D2D08A 13%, var(--surface)); }
-  :root.ml-c:not([data-theme="dark"]){ --memo-ivoire:color-mix(in srgb, #D2D08A 10%, var(--surface)); }
-  :root.ml-d:not([data-theme="dark"]){ --memo-ivoire:color-mix(in srgb, #D2D08A 7%, var(--surface)); }
-}   /* 11.30 : thème sombre forcé, comme le réglage du système */
+:root[data-theme="dark"]{ --memo-ivoire:color-mix(in srgb, #D2D08A 6%, var(--surface)); }   /* 11.30 : thème sombre forcé, comme le réglage du système */
 :root[data-theme="dark"] .urgent-banner{ box-shadow:var(--shadow); }
 :root[data-theme="dark"] #waitingSection .item:not(.editing):hover{ background:color-mix(in srgb, var(--wait) 14%, transparent); }
 :root[data-theme="dark"] .tapis-roll{ background:linear-gradient(180deg, #34424A 0%, #26323A 50%, #1A2328 100%); border-color:#3A4650; }
@@ -4155,7 +4149,6 @@ const CHAT_OFF = true;
 // 10.68 : essai.html?demo : vitrine de test, listes d'exemple dans un coin à part du navigateur
 // (préfixe « demo: »), sans connexion ni synchro ; ?demo&reset remet les exemples à neuf
 const DEMO = ESSAI && /[?&]demo\b/.test(location.search);
-if(ESSAI){ const ml = location.search.match(/[?&]ml=([bcd])\b/); if(ml) document.documentElement.classList.add("ml-" + ml[1]); }   // banc 11.30 : ivoire des mémos en clair
 if(DEMO && /[?&]reset\b/.test(location.search)){
   try{ Object.keys(localStorage).filter(k => k.startsWith("demo:")).forEach(k => localStorage.removeItem(k)); }catch(e){}
   location.replace(location.pathname + "?demo");
