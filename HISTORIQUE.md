@@ -3,6 +3,9 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.31 : mémos partagés (couleur de personne) : passage du dégradé à la couleur pleine en douceur, comme l'ivoire en 11.30
+    (même dégradé ouvert et fermé jusqu'à --memo-end, animée vers --ptint-bg ; fondu du bas sur --memo-end ; la règle 11.14
+    qui gardait ce fondu blanc pendant la fermeture est retirée).
   - 11.30 : ivoire des mémos en une seule variable --memo-ivoire (mémo fermé, haut du mémo ouvert, signet de la pile) :
     11 % en clair (avant 17 %), 6 % en sombre, thème sombre forcé compris (le haut du mémo ouvert et le signet restaient à
     17 %). Fermeture / ouverture d'un mémo : passage du dégradé à la couleur pleine en douceur : le mémo est peint par le
