@@ -8740,7 +8740,7 @@ function buildItemLi(cat, idx, base, key, opts){
         if(e.key === "Escape"){ editingKey = null; renderAll(); }
       });
     });
-    return { el: li, focus: ()=>{ titleInput.focus(); titleInput.select(); } };
+    return { el: li, focus: ()=>{ if(isTouchUI() && document.activeElement === titleInput) return; titleInput.focus(); titleInput.select(); } };   // 11.21 : au doigt, déjà pris dans le geste : ni re-focus ni select() (l'iPhone retirait le clavier)
   }
 
   // 10.15 : article d'une liste de courses — un rond creux à la place de la
@@ -8796,7 +8796,7 @@ function buildItemLi(cat, idx, base, key, opts){
       if(e.key === "Escape"){ e.preventDefault(); editingCoursesKey = null; renderAll(); }
     }));
     li.addEventListener("click", e => e.stopPropagation());
-    return { el: li, focus: ()=>{ nameInp.focus(); nameInp.select(); } };
+    return { el: li, focus: ()=>{ if(isTouchUI() && document.activeElement === nameInp) return; nameInp.focus(); nameInp.select(); } };   // 11.21 : au doigt, déjà pris dans le geste : ni re-focus ni select() (l'iPhone retirait le clavier)
   }
   if(opts.courses){
     const struck = !!state[key];
@@ -14671,6 +14671,7 @@ if(ESSAI && /[?&]clavier\b/.test(location.search)) (()=>{
   const nm = el => !el ? "?" : (el.id ? "#" + el.id : (el.className && typeof el.className === "string" ? "." + el.className.split(" ")[0] : el.tagName));
   ["touchend", "click", "dblclick"].forEach(t => document.addEventListener(t, e => log(t + " " + nm(e.target) + (e.isTrusted ? "" : " (appli)")), true));
   document.addEventListener("focusin", e => log("curseur → " + nm(e.target)), true);
+  document.addEventListener("focusout", e => log("curseur quitte " + nm(e.target)), true);
   if(window.visualViewport) visualViewport.addEventListener("resize", ()=> log("écran visible : " + Math.round(visualViewport.height) + " px"));
   log("journal prêt (" + (isTouchUI() ? "doigt" : "souris") + ")");
 })();
