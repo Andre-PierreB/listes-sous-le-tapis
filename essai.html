@@ -2969,7 +2969,12 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 #waitingSection.folded{ padding-bottom:1.4rem; }
 #waitingSection.folded .section-title{ margin-bottom:0; }
 #waitingSection.folded #waitingList{ display:none; }
-#waitingSection .waiting-count{ margin-left:0.5em; color:var(--ink-faint); }   /* 10.50 : trop étroit, coupé après le tiret */
+#waitingSection .waiting-count{   /* masquée : le nombre en bulle à gauche du titre, comme les cases fermées */
+  display:inline-flex; align-items:center; justify-content:center; vertical-align:middle; margin:-0.2rem 0.6rem 0 0;
+  font-family:'Public Sans', system-ui, sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0;
+  min-width:2.3rem; height:1.3rem; box-sizing:border-box; padding:0 0.45rem; border-radius:999px; line-height:1;
+  background:color-mix(in srgb, var(--wait) 32%, var(--surface)); color:color-mix(in srgb, var(--wait) 60%, var(--ink)); }
+#waitingSection .waiting-count[hidden]{ display:none; }   /* 10.50 : trop étroit, coupé après le tiret */
 #waitingList .empty-note{ color:color-mix(in srgb, var(--ink-faint) 72%, var(--wait-soft)); }
 #waitingSection{ --task-size:0.85rem; }   /* 10.75 : « En cours » un peu plus petit que les listes (avant : 0.92rem, comme elles) */
 @media (min-width:721px){   /* 10.75 : sur ordi, deux colonnes (on lit la première, puis la seconde) */
@@ -3948,7 +3953,7 @@ body.ios-gate-on{ overflow:hidden; }
   <div class="add-category-row" id="addCategoryRow"></div>
 
   <section class="section-block" id="waitingSection">
-    <h2 class="section-title"><span>En cours -</span> <span>La balle est dans leur camp</span><span class="waiting-count" hidden></span></h2>
+    <h2 class="section-title"><span class="waiting-count" hidden></span><span>En cours -</span> <span>La balle est dans leur camp</span></h2>
     <button type="button" class="waiting-fold" id="waitingFold" aria-expanded="true" aria-label="Masquer les tâches en cours" data-tip="Masquer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <ul class="items" id="waitingList"></ul>
   </section>
@@ -9098,7 +9103,7 @@ function renderWaitingSection(){
     });
   });
   const cnt = sec && sec.querySelector(".waiting-count");
-  if(cnt){ cnt.hidden = !waitingFolded || !rows.length; cnt.textContent = "(" + rows.length + ")"; }
+  if(cnt){ cnt.hidden = !waitingFolded || !rows.length; cnt.textContent = String(rows.length); cnt.setAttribute("aria-label", rows.length + " en cours"); }
   if(waitingFolded) return;   // masqué : rien n'est dessiné dedans
   if(rows.length === 0){
     const li = document.createElement("li");
@@ -11209,7 +11214,8 @@ if(!window.fitDuelFull){
       const sr = st.getBoundingClientRect(), lb = la ? la.getBoundingClientRect().bottom : r.bottom;   // tout mesuré avant d'écrire
       const down = Math.round(Math.max(0, Math.min(LED_TOP + LED_Y - (r.top - ct), gap - 4)));
       card.style.setProperty("--fp-down", down + "px");
-      card.style.setProperty("--fp-lancer", Math.round(Math.max(0, r.bottom - lb)) + "px");
+      const rad = parseFloat(getComputedStyle(sc).borderBottomRightRadius) || 0;   // Lancer s'arrête au-dessus de l'arrondi du coin de l'écran
+      card.style.setProperty("--fp-lancer", Math.round(Math.max(0, r.bottom - rad - lb)) + "px");
       card.style.setProperty("--fp-led-x", Math.round(r.left - sr.left + LED_X) + "px");
       card.style.setProperty("--fp-led-y", Math.round(r.top + down - LED_Y - sr.top) + "px");
       return;
