@@ -1219,10 +1219,18 @@ header{
 @media (hover:none){ :root{ --memo-top-h:94px; } }
 :root .category.courses:is(:not(.collapsed), .gliding):not(.has-ptint){   /* 11.14 : gardé pendant la fermeture (.gliding) : la couleur pleine ne revient qu'une fois la case fermée */
   --memo-grey:var(--surface);
+}
+/* 11.30 : fermé aussi, le mémo est peint par ce dégradé : la case fermée a la hauteur du dégradé, et le bas (--memo-end)
+   y est à l'ivoire, ce qui donne la couleur pleine. Pendant le glissement, glideHeight fait virer --memo-end de l'un à
+   l'autre (avant : la couleur pleine arrivait d'un coup à la fin de la fermeture, le dégradé d'un coup à l'ouverture). */
+@property --memo-end{ syntax:'<color>'; inherits:false; initial-value:transparent; }
+:root .category.courses:not(.has-ptint){ --memo-end:var(--surface); }
+:root .category.courses.collapsed:not(.gliding):not(.has-ptint){ --memo-end:var(--memo-ivoire); }
+:root .category.courses:not(.has-ptint){
   background:
     linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 9%), transparent calc(var(--gloss-p, 18%) + 26%)),
     linear-gradient(var(--gloss-a, 115deg), transparent calc(var(--gloss-p, 18%) + 34%), color-mix(in srgb, var(--gloss) 60%, transparent) calc(var(--gloss-p, 18%) + 38%), transparent calc(var(--gloss-p, 18%) + 44%)),
-    linear-gradient(180deg, var(--memo-ivoire) 0, var(--surface) var(--memo-top-h));
+    linear-gradient(180deg, var(--memo-ivoire) 0, var(--memo-end) var(--memo-top-h));
 }
 /* 11.12 : la marge passe par-dessus les lignes du cahier, comme sur une vraie feuille (avant : dessinée dans le fond de
    la carte, sous les filets des articles). Un trait posé par fitCoursesCards, sous le fondu du bas, sans capter le doigt. */
@@ -12079,6 +12087,10 @@ function glideHeight(card, h0, opening){
   card._soft = a; card._glide = { dh: h1 - h0, dur, lag, easing: opening ? SOFT_EASE : SOFT_CLOSE };   // 10.80 : pour la punaise retenue
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
+  if(card.classList.contains("courses") && !card.classList.contains("has-ptint")){   // 11.30 : le bas du dégradé vire en douceur (voir --memo-end)
+    const cs = getComputedStyle(card), iv = cs.getPropertyValue("--memo-ivoire").trim(), sf = cs.getPropertyValue("--surface").trim();
+    if(iv && sf) card.animate([{ "--memo-end":opening ? iv : sf }, { "--memo-end":opening ? sf : iv }], { duration:dur, delay:lag, fill:"backwards", easing:opening ? SOFT_EASE : SOFT_CLOSE });
+  }
   const done = ()=>{ if(card._shutEnd) card._shutEnd();   // 11.28 : l'écran du duel figé reprend sa place de bande
     if(card._soft === a){ card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); if(card.classList.contains("courses")) placeCoursesScroll(card);
     if(!opening && card.classList.contains("collapsed") && cfScreen(card)){ cfNarrow(card); } } };
