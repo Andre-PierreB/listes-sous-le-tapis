@@ -2981,11 +2981,11 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
 #waitingSection.folded #waitingList{ display:none; }
 /* le bouton : à la place de la flèche « pleine page » des listes (même centre, en haut à droite), ouverte ou masquée ;
    masquée, la pastille s'étend vers la gauche depuis la flèche */
-#waitingSection .waiting-fold{ position:absolute; top:6px; right:7px; min-width:28px; height:26px; display:flex; align-items:center; justify-content:flex-end;
+#waitingSection .waiting-fold{ position:absolute; top:6px; right:12px; min-width:18px; height:26px; display:flex; align-items:center; justify-content:flex-end;
   appearance:none; border:0; padding:0; border-radius:999px; cursor:pointer; color:var(--ink-faint);
   background-color:transparent; transition:background-color .3s ease, padding .3s ease; }
-@media (hover:none){ #waitingSection .waiting-fold{ top:9px; right:8px; } }
-#waitingSection.folded .waiting-fold{ padding:0; background:color-mix(in srgb, #2E9467 16%, var(--surface)); }
+@media (hover:none){ #waitingSection .waiting-fold{ top:9px; right:13px; } }   /* centre de la flèche sur l'axe de la flèche pleine page et de la croix des listes (21 px du bord, 22 au téléphone) */
+#waitingSection.folded .waiting-fold{ padding:0 4px 0 0; margin-right:-4px; background:color-mix(in srgb, #2E9467 16%, var(--surface)); }
 .waiting-fold svg{ display:block; flex:none; transform:rotate(180deg); transition:transform .25s ease, scale .15s ease; color:color-mix(in srgb, #2E9467 75%, var(--ink)); }   /* toujours verte, ouverte ou masquée */
 .waiting-fold:hover svg{ scale:1.15; }
 .waiting-fold:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
