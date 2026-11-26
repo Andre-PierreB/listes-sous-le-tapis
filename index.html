@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.27 -->
+<!-- Sous le tapis — version AUTONOME 11.28 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3708,6 +3708,9 @@ html.no-select, html.no-select *{ -webkit-user-select:none !important; user-sele
 :root[data-theme="dark"] .urgent-banner{ box-shadow:var(--shadow); }
 :root[data-theme="dark"] #waitingSection .item:not(.editing):hover{ background:color-mix(in srgb, var(--wait) 14%, transparent); }
 :root[data-theme="dark"] .tapis-roll{ background:linear-gradient(180deg, #34424A 0%, #26323A 50%, #1A2328 100%); border-color:#3A4650; }
+@media (prefers-color-scheme: dark){   /* 11.28 : mémo fermé en sombre : teinte à 6 % (17 % comme en clair donnait un kaki plus voyant que les listes ; choisi au banc : 4 %, puis 6 % pour la transition vers la fenêtre ouverte) */
+  :root:not([data-theme="light"]) .category.courses.collapsed:not(.has-ptint){ --memo-grey:color-mix(in srgb, #D2D08A 6%, var(--surface)); }
+}
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .tapis-watermark{ opacity:0.1; }
   :root:not([data-theme="light"]) .urgent-banner{ box-shadow:var(--shadow); }
@@ -3883,6 +3886,10 @@ body.ios-gate-on{ overflow:hidden; }
   :root:root :is(.chat-card, .duel-card).collapsed{ height:94px; min-height:94px; }
   :root:root .collapsed > :is(.chat-box, .duel-stage){ grid-template-rows:43px 51px; height:94px; }
   :root:root .collapsed :is(.chat-hole, .duel-screen){ height:24px; }
+  /* 11.28 : pendant la fermeture aussi (la bande étirée à 49 px, 5 px trop haut, sautait à la fin sous la barre du bas) */
+  :root:root .collapsed:is(.gliding, .cf-narrow) > :is(.chat-box, .duel-stage){ grid-template-rows:43px 51px; height:94px; }
+  :root:root .collapsed:is(.gliding, .cf-narrow) :is(.chat-hole, .duel-screen){ height:24px; align-self:start; }
+  :root:root .collapsed.gliding :is(.chat-foot, .duel-foot){ visibility:hidden; }   /* elle remontait un instant sur l'écran */
   /* liste ouverte : moins d'air entre le champ et la première tâche (40 px → 24 px du champ à la première case) */
   :root .category:not(.courses):not(.collapsed) .cat-head{ margin-bottom:calc(0.35rem + var(--hd-lift) - 16px); }
   /* liste punaisée : le même champ sous le titre */
@@ -4075,7 +4082,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.27</span>
+    <span class="version-tag">v11.28</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5932,6 +5939,7 @@ function foldSmooth(catId, fold){
   html.classList.add("fold-still"); clearTimeout(foldStillT);
   peekId = null; peekHold = Date.now() + 700; peekHoldId = "cat-" + catId;
   const pre = old && old._preGlide ? old._preGlide() : null;   // 10.67 : le duel, voir softHeight
+  const shutR = fold && old ? duelShutRect(old) : null;   // 11.28 : voir duelShut
   setFolded(catId, fold);
   renderAll();
   const card = document.getElementById("cat-" + catId);
@@ -5939,8 +5947,10 @@ function foldSmooth(catId, fold){
   if(card && r0){
     const top1 = card.getBoundingClientRect().top;
     if(Math.abs(top1 - r0.top) > 0.5) window.scrollBy(0, top1 - r0.top);
+    const shut = shutR && card === old ? duelShut(card, shutR, pre) : null;
     dur = glideHeight(card, r0.height, !fold);
-    if(card._postGlide) card._postGlide(pre, dur, fold ? SOFT_CLOSE : SOFT_EASE);
+    if(shut) shut(dur);
+    else if(card._postGlide) card._postGlide(pre, dur, fold ? SOFT_CLOSE : SOFT_EASE);
   }
   foldStillT = setTimeout(()=> html.classList.remove("fold-still"), dur + 80);
 }
@@ -11979,12 +11989,19 @@ function cfNarrow(card){
   card.classList.add("cf-narrow");
   if(!s || !s.animate){ card.classList.remove("cf-narrow"); return; }
   const rw = s.getBoundingClientRect();
-  card.classList.remove("cf-narrow"); const rn = s.getBoundingClientRect(); card.classList.add("cf-narrow");   // la place finale, mesurée
+  const m = card.querySelector(".d-mini");   // 11.28 : le texte du duel fermé, posé d'emblée à sa place finale
+  card.classList.remove("cf-narrow"); const rn = s.getBoundingClientRect(), mn = m && m.getBoundingClientRect(); card.classList.add("cf-narrow");   // la place finale, mesurée
+  if(mn && mn.width){   // (au téléphone, sa zone était plus étroite pendant le resserrement : le texte centré sautait à droite à la fin)
+    m.style.width = mn.width + "px";
+    const mw = m.getBoundingClientRect();
+    m.style.translate = (mn.left - mw.left).toFixed(1) + "px " + (mn.top - mw.top).toFixed(1) + "px";
+  }
+  const clearM = ()=>{ if(m){ m.style.width = ""; m.style.translate = ""; } };
   const a = s.animate([{ clipPath:cfInset(0, 0, 0, 0, 8) },
     { clipPath:cfInset(rn.top - rw.top, rw.right - rn.right, rw.bottom - rn.bottom, rn.left - rw.left, 8) }],
     { duration:520, easing:SOFT_CLOSE, fill:"forwards" });
-  const end = ()=>{ card.classList.remove("cf-narrow"); a.cancel(); };
-  a.onfinish = end; a.oncancel = ()=> card.classList.remove("cf-narrow");
+  const end = ()=>{ card.classList.remove("cf-narrow"); clearM(); a.cancel(); };
+  a.onfinish = end; a.oncancel = ()=>{ card.classList.remove("cf-narrow"); clearM(); };
 }
 function softHeight(card, change, opening){
   const h0 = card.getBoundingClientRect().height;   // pendant une animation : la hauteur du moment
@@ -11992,8 +12009,11 @@ function softHeight(card, change, opening){
   keepRoomBelow();
   const pre = card._preGlide ? card._preGlide() : null;   // 10.67 : le duel note où est son jeu, pour le faire glisser sans saut
   const cfS0 = opening && cfScreen(card), cfR0 = cfS0 && cfS0.getBoundingClientRect();   // 11.6 : l'écran étroit, avant
+  const shutR = !opening ? duelShutRect(card) : null;   // 11.28 : l'écran du duel ouvert, avant la fermeture
   change();
+  const shut = shutR ? duelShut(card, shutR, pre) : null;
   const dur = glideHeight(card, h0, opening);
+  if(shut){ shut(dur); return; }
   const cfT = cfR0 ? cfWiden(card, cfR0, dur) : 0;
   // 11.18 : duel qui s'ouvre : le jeu reste caché tant que l'écran s'élargit et que la case descend (le voir glisser
   // dans l'écran en mouvement faisait bug), puis il apparaît en fondu, l'écran une fois déployé
@@ -12001,6 +12021,46 @@ function softHeight(card, change, opening){
   if(cv && cv._appear){ cv._appear.cancel(); cv._appear = null; }
   if(cfT && cv && cv.animate) cv._appear = cv.animate([{ opacity:0 }, { opacity:0, offset:cfT / (cfT + 350) }, { opacity:1 }], { duration:cfT + 350, easing:"ease" });
   if(card._postGlide) card._postGlide(pre, dur, opening ? SOFT_EASE : SOFT_CLOSE);
+}
+// 11.28 : fermeture du duel, à l'envers de l'ouverture (11.18). Avant : l'écran tombait d'un coup en bande (10 px
+// plus bas) et le jeu remontait par-dessus. Maintenant l'écran garde sa taille et sa place pendant que la case se
+// replie (figé en style, sans rien déplacer autour : marge du bas négative), une découpe le ramène sur la bande, le
+// jeu s'efface d'abord ; à la fin, l'écran reprend sa place de bande et son texte revient en fondu (puis cfNarrow).
+function duelShutRect(card){
+  if(!card.classList.contains("duel-card") || card.classList.contains("collapsed") || card.classList.contains("fullpage")) return null;
+  const s = cfScreen(card); return s && s.animate ? s.getBoundingClientRect() : null;
+}
+function duelShut(card, rO, cvTop0){
+  const s = cfScreen(card);
+  if(!s || !card.classList.contains("collapsed")) return null;
+  card.classList.add("gliding");   // la bande telle qu'elle est pendant le glissement (large) ; glideHeight la pose aussi
+  const rB = s.getBoundingClientRect(), st = s.style;
+  const mb = parseFloat(getComputedStyle(s).marginBottom) || 0;
+  st.width = rO.width + "px"; st.maxWidth = "none"; st.height = rO.height + "px";
+  st.marginBottom = (mb - (rO.height - rB.height)) + "px";
+  st.translate = (rO.left - rB.left) + "px " + (rO.top - rB.top) + "px";
+  const rF = s.getBoundingClientRect();   // l'écran figé (= rO)
+  const cv = card.querySelector(".duel-cv"), mini = card.querySelector(".d-mini");
+  const anims = [];
+  const end = ()=>{
+    card._shutEnd = null;
+    anims.forEach(a => a.cancel());
+    st.width = st.maxWidth = st.height = st.marginBottom = st.translate = "";
+    if(card.classList.contains("collapsed")) [cv, mini].forEach(e => { if(e && e.animate) e.animate([{ opacity:0 }, { opacity:getComputedStyle(e).opacity }], { duration:320, easing:"ease" }); });
+  };
+  return dur => {
+    if(!dur){ card.classList.remove("gliding"); end(); return; }
+    anims.push(s.animate([{ clipPath:cfInset(0, 0, 0, 0, 18) },
+      { clipPath:cfInset(rB.top - rF.top, rF.right - rB.right, rF.bottom - rB.bottom, rB.left - rF.left, 8) }],
+      { duration:dur, easing:SOFT_CLOSE, fill:"forwards" }));
+    if(cv && cv.animate){
+      const dy = cvTop0 == null ? 0 : cvTop0 - cv.getBoundingClientRect().top;   // le jeu ne bouge pas, il s'efface
+      const tr = `translateY(${dy.toFixed(1)}px)`, f = Math.min(0.5, 260 / dur);
+      anims.push(cv.animate([{ transform:tr, opacity:1 }, { transform:tr, opacity:0, offset:f }, { transform:tr, opacity:0 }], { duration:dur, easing:"ease", fill:"forwards" }));
+    }
+    if(mini && mini.animate) anims.push(mini.animate([{ opacity:0 }, { opacity:0 }], { duration:dur, fill:"forwards" }));
+    card._shutEnd = end;
+  };
 }
 // 10.67 : la case passe de la hauteur h0 à sa hauteur actuelle ; rend la durée (ms)
 function glideHeight(card, h0, opening){
@@ -12017,7 +12077,8 @@ function glideHeight(card, h0, opening){
   card._soft = a; card._glide = { dh: h1 - h0, dur, lag, easing: opening ? SOFT_EASE : SOFT_CLOSE };   // 10.80 : pour la punaise retenue
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
-  const done = ()=>{ if(card._soft === a){ card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); if(card.classList.contains("courses")) placeCoursesScroll(card);
+  const done = ()=>{ if(card._shutEnd) card._shutEnd();   // 11.28 : l'écran du duel figé reprend sa place de bande
+    if(card._soft === a){ card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); if(card.classList.contains("courses")) placeCoursesScroll(card);
     if(!opening && card.classList.contains("collapsed") && cfScreen(card)){ cfNarrow(card); } } };
   a.onfinish = done; a.oncancel = done;
   return dur;

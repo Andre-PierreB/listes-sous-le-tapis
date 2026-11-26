@@ -3,6 +3,13 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.28 : duel : fermeture en miroir de l'ouverture (11.18) : l'écran garde sa taille et sa place (figé en style,
+    marge du bas négative), une découpe le ramène sur la bande pendant que la case se replie, le jeu s'efface sur place,
+    le texte de la bande revient en fondu (duelShutRect / duelShut, softHeight et foldSmooth ; avant : l'écran tombait
+    d'un coup en bande 10 px plus bas et le jeu remontait par-dessus). Téléphone : bande à 24 px aussi pendant la
+    fermeture (elle s'étirait à 49 px puis sautait), pied masqué pendant le glissement ; cfNarrow pose le texte du duel
+    fermé à sa place finale (il sautait d'~11 px à droite). Mode sombre : mémo fermé teinté à 6 % (17 % donnait un
+    kaki plus voyant que les listes).
   - 11.27 : téléphone : flèche de tri centrée sur le début du texte des tâches et des articles (suit --dh-w) ; case
     urgente : picto et titre décalés ensemble (--urg-dx, position:relative) pour que le centre du chiffre du titre soit
     sur le centre des points des tâches ; pied de page : Corbeille sur le bord gauche des cases à cocher (--chk-x,
