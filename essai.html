@@ -2976,7 +2976,8 @@ body.has-editing .category:has(.cat-title-input) .cat-head-right{
   color:color-mix(in srgb, #2E9467 75%, var(--ink)); }
 #waitingSection .waiting-count{   /* bulle des cases fermées, en vert (choisie au banc le 26/11) */
   display:inline-flex; align-items:center; justify-content:center; min-width:2.3rem; height:1.3rem; padding:0 0.45rem;
-  border-radius:999px; font-size:0.78rem; background:color-mix(in srgb, #2E9467 16%, var(--surface)); }
+  border-radius:999px; font-size:0.78rem; background:color-mix(in srgb, #2E9467 16%, var(--surface));
+  translate:0 -4px; }   /* un rien plus haut que la flèche : au téléphone, elle touchait la fin du titre (2e ligne) */
 #waitingSection .waiting-count[hidden]{ display:none; }   /* 10.50 : trop étroit, coupé après le tiret */
 #waitingList .empty-note{ color:color-mix(in srgb, var(--ink-faint) 72%, var(--wait-soft)); }
 #waitingSection{ --task-size:0.85rem; }   /* 10.75 : « En cours » un peu plus petit que les listes (avant : 0.92rem, comme elles) */
