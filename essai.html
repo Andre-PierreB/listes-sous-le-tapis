@@ -3951,7 +3951,7 @@ body.ios-gate-on{ overflow:hidden; }
    en défilant (position:sticky dans .wrap, hauteur nulle : rien ne bouge dans la page). Au clic, la pile droite des
    signets, dans l'ordre des cases : liste (blanc, bulle du nombre), mémo (ivoire, coin corné, panier), duel (gris, faisan).
    Petit point vert : ajouts ou modifs des autres de moins de 48 h (les mêmes que « new » / « modif »).
-   Sur ordi, la pile s'ouvre aussi au survol. Un signet entrouvre la case fermée (sans la punaiser). */
+   Sur ordi, la pile s'ouvre aussi au survol (et se referme en la quittant) ; ouverte d'un clic, elle reste en défilant. Un signet entrouvre la case fermée (sans la punaiser). */
 .signets{ position:sticky; top:max(0.6rem, env(safe-area-inset-top, 0px)); height:0; z-index:130; }
 /* voile léger sur la page quand la pile est ouverte : les signets s'en détachent. Il ne prend pas la souris ni le doigt (on peut faire défiler derrière) */
 .signets::before{ content:""; position:fixed; inset:0; z-index:0; pointer-events:none; background:color-mix(in srgb, var(--bg) 62%, transparent); opacity:0; transition:opacity .16s ease; }
@@ -3991,9 +3991,10 @@ body.ios-gate-on{ overflow:hidden; }
 body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
 @media (max-width:720px){
   /* téléphone : l'onglet est collé au bord de l'écran (marge de .wrap : 1rem), les signets aussi, assez hauts pour le doigt */
-  .sig-col{ left:calc(100% + 1rem - 22px); width:22px; }
-  .sig-tab{ width:22px; height:44px; border-radius:8px 0 0 8px; border-right:0; }
-  .sig-pile{ top:52px; right:0; width:min(80vw, 19rem); padding-right:0; }
+  .sig-col{ left:calc(100% + 1rem - 24px); width:24px; }   /* 24 px : la flèche pleine page des cases commence à ~28 px du bord de l'écran (son bouton à ~21 px) : l'onglet ne la recouvre pas */
+  .sig-tab{ width:24px; height:52px; border-radius:9px 0 0 9px; border-right:0; }
+  .sig-tab svg{ width:20px; height:20px; }
+  .sig-pile{ top:60px; right:0; width:min(80vw, 19rem); padding-right:0; }
   .sig{ min-height:44px; border-radius:8px 0 0 8px; border-right:0; }
   .sig-title{ font-size:0.8rem; }
 }
@@ -15050,7 +15051,7 @@ const Signets = (()=>{
   // Doigt : seulement sur un vrai toucher (click), pour qu'on puisse faire défiler la page derrière la pile
   // sans qu'elle disparaisse ; ce toucher-là ferme la pile et ne fait rien d'autre (pas de coche par mégarde).
   let downType = "mouse";
-  function outside(e){ downType = e.pointerType || "mouse"; if(downType === "mouse" && !root.contains(e.target)) close(); }
+  function outside(e){ downType = e.pointerType || "mouse"; if(downType === "mouse" && !root.contains(e.target) && e.target !== document.documentElement) close(); }   // (la barre de défilement : on fait défiler, on ne ferme pas)
   function outsideTap(e){ if(downType === "mouse" || root.contains(e.target)) return; e.preventDefault(); e.stopPropagation(); close(); }
   function onKey(e){ if(e.key === "Escape"){ e.stopPropagation(); close(); tab.focus(); } }
   function open(){
@@ -15080,18 +15081,20 @@ const Signets = (()=>{
     card.classList.remove("sig-flash"); void card.offsetWidth; card.classList.add("sig-flash");
     setTimeout(()=>{ const c = document.getElementById("cat-" + id); if(c) c.classList.remove("sig-flash"); }, 2700);
   }
-  // ordi : la pile s'ouvre aussi au survol de l'onglet (petit délai : pas en passant), et se referme quand on la quitte
-  let hoverT = null, openedAt = 0;
+  // ordi : la pile s'ouvre aussi au survol de l'onglet (petit délai : pas en passant), et se referme quand on la quitte.
+  // Ouverte (ou retenue) d'un clic, elle reste : on peut faire défiler la page, seul un clic ailleurs la ferme.
+  let hoverT = null, held = false;
   const hover = window.matchMedia && matchMedia("(hover:hover)").matches;
   if(hover){
     root.addEventListener("pointerenter", e=>{ if(e.pointerType !== "mouse") return; clearTimeout(hoverT);
-      if(!root.classList.contains("open")) hoverT = setTimeout(()=>{ if(root.matches(":hover")){ open(); openedAt = Date.now(); } }, 140); });
+      if(!root.classList.contains("open")) hoverT = setTimeout(()=>{ if(root.matches(":hover")){ open(); held = false; } }, 140); });
     root.addEventListener("pointerleave", e=>{ if(e.pointerType !== "mouse") return; clearTimeout(hoverT);
-      hoverT = setTimeout(()=>{ if(!root.matches(":hover")) close(); }, 320); });
+      if(!held) hoverT = setTimeout(()=>{ if(!held && !root.matches(":hover")) close(); }, 320); });
   }
   tab.addEventListener("click", e=>{ e.stopPropagation();
-    if(!root.classList.contains("open")){ open(); openedAt = Date.now(); }
-    else if(Date.now() - openedAt > 600) close(); });   // ouverte par le survol juste avant : le clic ne la referme pas
+    if(!root.classList.contains("open")){ open(); held = true; }
+    else if(!held){ held = true; clearTimeout(hoverT); }   // ouverte au survol : le clic la retient
+    else close(); });
   pile.addEventListener("click", e=>{ const b = e.target.closest(".sig"); if(b){ e.stopPropagation(); go(b.dataset.id); } });
   return { open, close, go };
 })();
