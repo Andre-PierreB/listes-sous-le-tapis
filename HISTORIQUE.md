@@ -3,6 +3,7 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.25 : téléphone : l'onglet des signets reste en haut de l'écran, même en haut de page (position fixe ; la pile a toute la hauteur).
   - 11.24 : signet du duel au nom de l'adversaire (« Duel avec Hiske ») ; sans nom connu, le titre.
   - 11.23 : signets. Onglet (flèche sans trait) au bord droit, sous le compteur puis collé en haut en défilant
     (sticky dans .wrap, hauteur nulle) ; ordi : à droite des cases ; téléphone : 24 × 52 au bord de l'écran, sans
