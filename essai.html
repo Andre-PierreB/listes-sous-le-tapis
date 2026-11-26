@@ -4019,14 +4019,14 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   .urgent-bullet{ left:calc(-0.17rem + 2.46px); }   /* points de la case urgente : 2,46 px à gauche de la colonne au téléphone (déjà avant la 11.26), recentrés ; ordi déjà juste */
 }
 /* 11.27 : téléphone : Corbeille (bord gauche) sur le bord gauche des cases à cocher (--chk-x : mesuré depuis le bord des
-   cases, qui est aussi celui du pied de page), Partage juste à côté ; le rappel de connexion et le numéro de version
-   restent à droite, en dessous (la barre de sauvegarde, vide une fois connecté, ne décale plus rien) */
+   cases, qui est aussi celui du pied de page), Partage juste à côté ; dessous, le rappel de connexion centré, puis le numéro de
+   version à droite (la barre de sauvegarde, vide une fois connecté, ne décale plus rien) */
 @media (max-width:720px){
   footer{ justify-content:flex-start; }
   footer #trashLink{ margin-left:var(--chk-x, 3.6rem); margin-right:0; }
   footer #shareLink{ margin-right:0; }
   footer > .backup-bar{ display:contents; }
-  footer .backup-nudge{ flex-basis:100%; text-align:right; margin-right:0; }
+  footer .backup-nudge{ flex-basis:100%; text-align:center; margin-right:0; }   /* « Se connecter pour ne jamais perdre ses listes » centré */
   /* case urgente : son picto et son titre glissent aussi vers la gauche (--urg-dx), en décalage visuel seulement : les
      tâches dessous ne bougent pas */
   :root{ --urg-dx:14px; }
