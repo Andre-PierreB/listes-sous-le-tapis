@@ -3993,7 +3993,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   /* téléphone : l'onglet est collé au bord de l'écran (marge de .wrap : 1rem), les signets aussi, assez hauts pour le doigt */
   .signets{ position:fixed; left:0; right:0; }   /* 11.25 : téléphone : l'onglet reste en haut, même tout en haut de la page (la pile a toute la hauteur) */
   .sig-col{ left:calc(100% - 24px); width:24px; }   /* 24 px : la flèche pleine page des cases commence à ~28 px du bord de l'écran (son bouton à ~21 px) : l'onglet ne la recouvre pas */
-  .sig-tab{ width:24px; height:52px; border-radius:9px 0 0 9px; border-right:0; }
+  .sig-tab{ width:24px; height:52px; border-radius:9px 0 0 9px; border-right:0; touch-action:manipulation; }
   .sig-tab svg{ width:20px; height:20px; }
   .sig-pile{ top:60px; right:0; width:min(80vw, 19rem); padding-right:0; }
   .sig{ min-height:44px; border-radius:8px 0 0 8px; border-right:0; }
@@ -4010,20 +4010,27 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   .category.courses > ul.items > .courses-item{ margin-left:var(--ph-dx); }
   .category.courses > ul.items > .courses-item > .drag-handle{ margin-left:calc(-1 * var(--ph-dx)); }
   .category.courses > .courses-entry{ margin-left:calc(-1 * var(--ph-dx)); }   /* « + Ajouter un article » reste sous les ronds */
-  /* la flèche de tri suit la colonne des cases, ronds des mémos et points de l'urgent : centrée dessus (mesuré, vraies polices) */
+  /* la flèche de tri suit la colonne des cases (mesuré, vraies polices) */
   /* le signe ⋮⋮ de la poignée n'est dans aucune police de l'appli : chaque appareil le dessine avec la sienne, et la colonne
      des cases bouge avec sa largeur ; --dh-w est la largeur mesurée sur l'appareil (34.9px : celle du banc de Claude) */
-  .category > .cat-order{ left:calc(3.3rem + 13.6px - var(--ph-dx) + var(--dh-w, 34.9px) - 34.9px); }
-  .category.courses > .cat-order{ left:calc(3.3rem + 16.6px - var(--ph-dx) + var(--dh-w, 34.9px) - 34.9px); }
+  /* 11.27 : centre de la flèche sur le début du texte des tâches et des articles (23.7 px à droite du centre des cases) */
+  .category > .cat-order{ left:calc(3.3rem + 37.3px - var(--ph-dx) + var(--dh-w, 34.9px) - 34.9px); }
+  .category.courses > .cat-order{ left:calc(3.3rem + 40.3px - var(--ph-dx) + var(--dh-w, 34.9px) - 34.9px); }
   .urgent-bullet{ left:calc(-0.17rem + 2.46px); }   /* points de la case urgente : 2,46 px à gauche de la colonne au téléphone (déjà avant la 11.26), recentrés ; ordi déjà juste */
 }
-/* 11.27 : téléphone : Corbeille et Partage centrés sur leur ligne ; le rappel de connexion et le numéro de version
-   restent à droite, en dessous (la barre de sauvegarde, vide une fois connecté, ne décale plus le centrage) */
+/* 11.27 : téléphone : Corbeille (bord gauche) sur le bord gauche des cases à cocher (--chk-x : mesuré depuis le bord des
+   cases, qui est aussi celui du pied de page), Partage juste à côté ; le rappel de connexion et le numéro de version
+   restent à droite, en dessous (la barre de sauvegarde, vide une fois connecté, ne décale plus rien) */
 @media (max-width:720px){
-  footer{ justify-content:center; }
-  footer #trashLink, footer #shareLink{ margin-right:0; }
+  footer{ justify-content:flex-start; }
+  footer #trashLink{ margin-left:var(--chk-x, 3.6rem); margin-right:0; }
+  footer #shareLink{ margin-right:0; }
   footer > .backup-bar{ display:contents; }
   footer .backup-nudge{ flex-basis:100%; text-align:right; margin-right:0; }
+  /* case urgente : son picto et son titre glissent aussi vers la gauche (--urg-dx), en décalage visuel seulement : les
+     tâches dessous ne bougent pas */
+  :root{ --urg-dx:14px; }
+  .urgent-banner > svg, .urgent-banner-title{ position:relative; left:calc(-1 * var(--urg-dx)); }
 }
 </style>
 
@@ -14841,6 +14848,7 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
       const x = k.getBoundingClientRect().left + dx, c = card.getBoundingClientRect().left, t = g.getBoundingClientRect().left;
       if(!(x > c)) continue;
       html.style.setProperty("--cf-ml", (x - t).toFixed(1) + "px");
+      html.style.setProperty("--chk-x", (k.getBoundingClientRect().left - c).toFixed(1) + "px");   // 11.27 : Corbeille au téléphone
       // le champ d'une case fermée sans initiales (elles le raccourcissent), une fois posé sur la colonne des cases
       const f = Array.from(document.querySelectorAll(".categories > .category.collapsed:not(.courses):not(.has-people):not(.chat-card):not(.duel-card) .cat-quick"))[0];
       if(f){ const r = f.getBoundingClientRect(), cr = f.closest(".category").getBoundingClientRect();
@@ -14853,6 +14861,8 @@ if(ESSAI && /[?&]glow/.test(location.search)) (()=>{
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ done = false; measure(); });
   window.addEventListener("resize", ()=>{ done = false; measure(); });
 })();
+// ---- banc 11.27 (essai.html?demo&urg=N) : décalage du picto et du titre de la case urgente au téléphone, en px
+if(ESSAI && /[?&]urg=\d/.test(location.search)) document.documentElement.style.setProperty("--urg-dx", (parseFloat(new URLSearchParams(location.search).get("urg")) || 0) + "px");
 // ---- banc 11.7 (essai.html?demo&champ=a|b) : place du champ des cases fermées sur ordinateur, avec interrupteur
 if(ESSAI && /[?&]champ\b/.test(location.search)) (()=>{
   const q = new URLSearchParams(location.search), html = document.documentElement;
@@ -15128,7 +15138,20 @@ const Signets = (()=>{
     root.addEventListener("pointerleave", e=>{ if(e.pointerType !== "mouse") return; clearTimeout(hoverT);
       if(!held) hoverT = setTimeout(()=>{ if(!held && !root.matches(":hover")) close(); }, 320); });
   }
+  // 11.27 : au doigt, l'onglet réagit dès qu'on lève le doigt (sans attendre le clic) : quand la page glissait encore
+  // après un coup de doigt, l'iPhone gardait le premier toucher pour l'arrêter et n'envoyait pas de clic. Un vrai
+  // toucher seulement (le doigt n'a presque pas bougé) ; le clic qui suit, s'il vient, est ignoré.
+  let tDown = null, tapAt = 0;
+  tab.addEventListener("pointerdown", e=>{ tDown = e.pointerType === "mouse" ? null : { x:e.clientX, y:e.clientY, id:e.pointerId }; });
+  tab.addEventListener("pointercancel", ()=>{ tDown = null; });
+  tab.addEventListener("pointerup", e=>{
+    const d = tDown; tDown = null;
+    if(!d || e.pointerId !== d.id || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 10) return;
+    tapAt = Date.now();
+    if(root.classList.contains("open")) close(); else { open(); held = true; }
+  });
   tab.addEventListener("click", e=>{ e.stopPropagation();
+    if(Date.now() - tapAt < 800) return;   // déjà traité au lever du doigt
     if(!root.classList.contains("open")){ open(); held = true; }
     else if(!held){ held = true; clearTimeout(hoverT); }   // ouverte au survol : le clic la retient
     else close(); });

@@ -335,6 +335,9 @@ async def t_decalage_telephone(pg):
           dotC: m && (b => b.left + b.width / 2)(m.querySelector('.strike-dot').getBoundingClientRect()),
           mordC: m && (b => b.left + b.width / 2)(m.querySelector(':scope > .cat-order svg').getBoundingClientRect()),
           bulC: (e => e && (b => b.left + b.width / 2)(e.getBoundingClientRect()))(document.querySelector('.urgent-list .urgent-bullet')),
+          txtL: l.querySelector('ul.items > .item .item-text').getBoundingClientRect().left,
+          mtxtL: m && m.querySelector('.courses-item .item-text').getBoundingClientRect().left,
+          trashL: document.getElementById('trashLink').getBoundingClientRect().left,
           memoLi: m && r(m.querySelector('.courses-item')), memoUl: m && r(m.querySelector('ul.items')), memoHandle: m && r(m.querySelector('.courses-item .drag-handle')) }; }"""
     async def prepare(page):
         await js(page, """() => { addCategory('Maison'); const a = DATA[DATA.length - 1]; addQuickTask(a, 'Trier la cave'); addQuickTask(a, 'Ampoule');
@@ -354,15 +357,46 @@ async def t_decalage_telephone(pg):
         check(abs(t["field"] - t["dx"] - t["chk"]) < 1.5, f"téléphone : le champ fermé a bougé ou les cases n'ont pas glissé ({t})")
         check(t["memoLi"] is not None and abs(t["memoLi"] - t["memoUl"] - t["dx"]) < 1.5, f"mémo : le filet part du bord ({t})")
         check(t["memoHandle"] is not None and t["memoHandle"] < t["memoLi"], f"mémo : la poignée n'a pas glissé ({t})")
-        check(abs(t["ordC"] - t["chkC"]) < 0.6 and abs(t["mordC"] - t["dotC"]) < 0.6, f"flèche de tri pas centrée sur les cases / ronds ({t})")
+        check(abs(t["ordC"] - t["txtL"]) < 0.6 and abs(t["mordC"] - t["mtxtL"]) < 0.6, f"flèche de tri pas centrée sur le début du texte ({t})")
+        check(abs(t["trashL"] - t["chk"]) < 0.6, f"Corbeille pas sur le bord des cases ({t})")
         # 11.26 : sur iPhone, la poignée ⋮⋮ est plus large ou plus étroite (police de secours) : la flèche suit
         await tel.add_style_tag(content=".drag-handle{ letter-spacing:3px !important; }")
         await tel.evaluate("() => window.dispatchEvent(new Event('resize'))"); await tel.wait_for_timeout(600)
         t2 = await js(tel, pos)
         check(abs(t2["chkC"] - t["chkC"]) > 2, f"la poignée élargie n'a pas déplacé les cases ({t2})")
-        check(abs(t2["ordC"] - t2["chkC"]) < 0.6 and abs(t2["mordC"] - t2["dotC"]) < 0.6, f"poignée d'une autre largeur : flèche de tri décentrée ({t2})")
+        check(abs(t2["ordC"] - t2["txtL"]) < 0.6 and abs(t2["mordC"] - t2["mtxtL"]) < 0.6, f"poignée d'une autre largeur : flèche de tri décentrée ({t2})")
+        check(abs(t2["trashL"] - t2["chk"]) < 0.6, f"poignée d'une autre largeur : Corbeille décalée ({t2})")
         check(abs(t2["field"] - t2["dx"] - t2["chk"]) < 1.5, f"poignée d'une autre largeur : le champ fermé n'est plus à sa place ({t2})")
         check(t["bulC"] is None or abs(t["bulC"] - t["chkC"]) < 0.6, f"téléphone : points de l'urgent hors de la colonne des cases ({t})")
+        check(not errs, "erreur JavaScript au téléphone : " + "; ".join(errs[:3]))
+    finally:
+        await ctx.close()
+
+async def t_signets_au_doigt(pg):
+    """11.27 : au doigt, l'onglet des signets s'ouvre au lever du doigt, une seule fois (le clic qui suit ne la
+    referme pas) ; un deuxième toucher la ferme ; un doigt qui glisse (défilement) ne l'ouvre pas."""
+    ctx, tel, errs = await _tel(pg)
+    try:
+        for t in ("Maison", "Bureau", "Jardin"):
+            c = await new_list(tel, t); await add_tasks(tel, c, "Une tâche")
+        await tel.wait_for_timeout(300)
+        cdp = await ctx.new_cdp_session(tel)
+        bb = await tel.locator(".sig-tab").bounding_box(); x, y = bb["x"] + bb["width"] / 2, bb["y"] + bb["height"] / 2
+        ouvert = lambda: js(tel, "document.getElementById('signets').classList.contains('open')")
+        await _doigt(cdp, "touchStart", x, y); await tel.wait_for_timeout(60); await _doigt(cdp, "touchEnd"); await tel.wait_for_timeout(500)
+        check(await ouvert(), "un toucher n'ouvre pas les signets (ou le clic qui suit les referme)")
+        check(await js(tel, "document.querySelectorAll('.sig-pile .sig').length") >= 3, "la pile est vide")
+        await _doigt(cdp, "touchStart", x, y); await tel.wait_for_timeout(60); await _doigt(cdp, "touchEnd"); await tel.wait_for_timeout(500)
+        check(not await ouvert(), "un deuxième toucher ne referme pas les signets")
+        await _doigt(cdp, "touchStart", x, y)
+        for k in range(1, 6):
+            await _doigt(cdp, "touchMove", x, y + k * 8); await tel.wait_for_timeout(20)
+        await _doigt(cdp, "touchEnd"); await tel.wait_for_timeout(500)
+        check(not await ouvert(), "un doigt qui glisse sur l'onglet ouvre les signets")
+        # un signet touché fait aller à sa case
+        await _doigt(cdp, "touchStart", x, y); await tel.wait_for_timeout(60); await _doigt(cdp, "touchEnd"); await tel.wait_for_timeout(400)
+        await tel.locator(".sig-pile .sig").nth(1).tap(); await tel.wait_for_timeout(500)
+        check(not await ouvert(), "la pile reste ouverte après avoir touché un signet")
         check(not errs, "erreur JavaScript au téléphone : " + "; ".join(errs[:3]))
     finally:
         await ctx.close()
