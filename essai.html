@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.26 -->
+<!-- Sous le tapis — version AUTONOME 11.27 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -4017,6 +4017,14 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
   .category.courses > .cat-order{ left:calc(3.3rem + 16.6px - var(--ph-dx) + var(--dh-w, 34.9px) - 34.9px); }
   .urgent-bullet{ left:calc(-0.17rem + 2.46px); }   /* points de la case urgente : 2,46 px à gauche de la colonne au téléphone (déjà avant la 11.26), recentrés ; ordi déjà juste */
 }
+/* 11.27 : téléphone : Corbeille et Partage centrés sur leur ligne ; le rappel de connexion et le numéro de version
+   restent à droite, en dessous (la barre de sauvegarde, vide une fois connecté, ne décale plus le centrage) */
+@media (max-width:720px){
+  footer{ justify-content:center; }
+  footer #trashLink, footer #shareLink{ margin-right:0; }
+  footer > .backup-bar{ display:contents; }
+  footer .backup-nudge{ flex-basis:100%; text-align:right; margin-right:0; }
+}
 </style>
 
 <div class="wrap">
@@ -4059,7 +4067,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.26</span>
+    <span class="version-tag">v11.27</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
