@@ -3,6 +3,11 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.30 : ivoire des mémos en une seule variable --memo-ivoire (mémo fermé, haut du mémo ouvert, signet de la pile) :
+    11 % en clair (avant 17 %), 6 % en sombre, thème sombre forcé compris (le haut du mémo ouvert et le signet restaient à
+    17 %). Fermeture / ouverture d'un mémo : passage du dégradé à la couleur pleine en douceur : le mémo est peint par le
+    même dégradé ouvert et fermé, dont le bas (--memo-end, @property) vire pendant le dernier tiers du glissement (premier
+    tiers à l'ouverture) ; le fondu du bas (::after) suit --memo-end (il restait blanc puis sautait à l'ivoire à la fin).
   - 11.29 : téléphone : case urgente, le coin gauche du triangle sur le bord gauche des titres et des bulles des cases
     (--urg-dx : -1.1px, picto et titre ensemble ; avant : chiffre du titre centré sur le point des tâches, 11.27).
   - 11.28 : duel : fermeture en miroir de l'ouverture (11.18) : l'écran garde sa taille et sa place (figé en style,

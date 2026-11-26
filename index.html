@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.29 -->
+<!-- Sous le tapis — version AUTONOME 11.30 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -1215,14 +1215,22 @@ header{
 }
 /* 11.13 : mémo ouvert : rappel de l'ivoire du mémo fermé (11.8) en haut, qui fond vers le blanc sur la hauteur d'une
    case fermée (72 px sur ordinateur, 94 px au téléphone) ; reflets gardés, nacre remplacée (variante E du banc, 19/11). */
-:root{ --memo-top-h:72px; }
+:root{ --memo-top-h:72px; --memo-ivoire:color-mix(in srgb, #D2D08A 11%, var(--surface)); }   /* 11.30 : l'ivoire des mémos en un seul endroit (fermé, haut de l'ouvert, signet) ; 11 % en clair (17 % avant, choisi au banc), 6 % en sombre */
 @media (hover:none){ :root{ --memo-top-h:94px; } }
 :root .category.courses:is(:not(.collapsed), .gliding):not(.has-ptint){   /* 11.14 : gardé pendant la fermeture (.gliding) : la couleur pleine ne revient qu'une fois la case fermée */
   --memo-grey:var(--surface);
+}
+/* 11.30 : fermé aussi, le mémo est peint par ce dégradé : la case fermée a la hauteur du dégradé, et le bas (--memo-end)
+   y est à l'ivoire, ce qui donne la couleur pleine. Pendant le glissement, glideHeight fait virer --memo-end de l'un à
+   l'autre (avant : la couleur pleine arrivait d'un coup à la fin de la fermeture, le dégradé d'un coup à l'ouverture). */
+@property --memo-end{ syntax:'<color>'; inherits:true; initial-value:transparent; }   /* héritée : le fondu du bas (::after) la suit */
+:root .category.courses:not(.has-ptint){ --memo-end:var(--surface); }
+:root .category.courses.collapsed:not(.gliding):not(.has-ptint){ --memo-end:var(--memo-ivoire); }
+:root .category.courses:not(.has-ptint){
   background:
     linear-gradient(var(--gloss-a, 115deg), transparent var(--gloss-p, 18%), var(--gloss) calc(var(--gloss-p, 18%) + 9%), transparent calc(var(--gloss-p, 18%) + 26%)),
     linear-gradient(var(--gloss-a, 115deg), transparent calc(var(--gloss-p, 18%) + 34%), color-mix(in srgb, var(--gloss) 60%, transparent) calc(var(--gloss-p, 18%) + 38%), transparent calc(var(--gloss-p, 18%) + 44%)),
-    linear-gradient(180deg, color-mix(in srgb, #D2D08A 17%, var(--surface)) 0, var(--surface) var(--memo-top-h));
+    linear-gradient(180deg, var(--memo-ivoire) 0, var(--memo-end) var(--memo-top-h));
 }
 /* 11.12 : la marge passe par-dessus les lignes du cahier, comme sur une vraie feuille (avant : dessinée dans le fond de
    la carte, sous les filets des articles). Un trait posé par fitCoursesCards, sous le fondu du bas, sans capter le doigt. */
@@ -1239,6 +1247,7 @@ header{
 .category.courses{ --memo-grey:var(--surface); --memo-a:var(--memo-grey); --memo-b:var(--memo-grey); --memo-c:var(--memo-grey); }
 .category.courses.collapsed{ --memo-grey:color-mix(in srgb, var(--ink) 2%, var(--surface)); }
 .category.courses::after{ background:linear-gradient(transparent, var(--memo-grey) 0.75rem); }
+:root .category.courses:not(.has-ptint)::after{ background:linear-gradient(transparent, var(--memo-end) 0.75rem); }   /* 11.30 : le fondu du bas suit le bas du dégradé (il restait blanc pendant la fermeture, puis sautait à l'ivoire) */
 .category.courses > ul.items{
   flex:0 1 auto; min-height:0;
   overflow-y:auto;   /* 10.39 : plus de contain : au bout du mémo, la page reprend le défilement */
@@ -3705,11 +3714,12 @@ html.no-select, html.no-select *{ -webkit-user-select:none !important; user-sele
 /* ---------- mode sombre : retouches propres à certains éléments
    (chaque règle deux fois : thème forcé, puis réglage du système) ---------- */
 :root[data-theme="dark"] .tapis-watermark{ opacity:0.1; }
+:root[data-theme="dark"]{ --memo-ivoire:color-mix(in srgb, #D2D08A 6%, var(--surface)); }   /* 11.30 : thème sombre forcé, comme le réglage du système */
 :root[data-theme="dark"] .urgent-banner{ box-shadow:var(--shadow); }
 :root[data-theme="dark"] #waitingSection .item:not(.editing):hover{ background:color-mix(in srgb, var(--wait) 14%, transparent); }
 :root[data-theme="dark"] .tapis-roll{ background:linear-gradient(180deg, #34424A 0%, #26323A 50%, #1A2328 100%); border-color:#3A4650; }
 @media (prefers-color-scheme: dark){   /* 11.28 : mémo fermé en sombre : teinte à 6 % (17 % comme en clair donnait un kaki plus voyant que les listes ; choisi au banc : 4 %, puis 6 % pour la transition vers la fenêtre ouverte) */
-  :root:not([data-theme="light"]) .category.courses.collapsed:not(.has-ptint){ --memo-grey:color-mix(in srgb, #D2D08A 6%, var(--surface)); }
+  :root:not([data-theme="light"]){ --memo-ivoire:color-mix(in srgb, #D2D08A 6%, var(--surface)); }   /* 11.30 : vaut aussi pour le haut du mémo ouvert et le signet */
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .tapis-watermark{ opacity:0.1; }
@@ -3797,7 +3807,7 @@ body.ios-gate-on{ overflow:hidden; }
   /* champ sous le titre, même place fermée et entrouverte ; il disparaît quand le + est ouvert */
   :root :is(.collapsed, .peek) .cat-head-right{ align-self:flex-start; }
   :root :is(.collapsed, .peek) .cat-quick-wrap{ order:4; flex:0 0 calc(100% - var(--cf-ml, 3.17rem)); max-width:none; z-index:3; margin-left:var(--cf-ml, 3.17rem); }   /* toujours à la même place, bulle ou pas : le bord gauche du champ sur celui des cases à cocher, mesuré au rendu (--cf-ml depuis le titre, --cf-x depuis le bord de la case) : la place des cases dépend de la police */
-  :root .category.courses.collapsed{ --memo-grey:color-mix(in srgb, #D2D08A 17%, var(--surface)); }   /* 11.8 : mémo fermé ivoire vert pâle (variante F du banc, 19/11) ; avant : 5 % d'encre, presque la couleur du fond de la page */
+  :root .category.courses.collapsed{ --memo-grey:var(--memo-ivoire); }   /* 11.8 : mémo fermé ivoire vert pâle (variante F du banc, 19/11) ; avant : 5 % d'encre, presque la couleur du fond de la page */
   :root :is(.collapsed, .peek) .cat-quick{ flex:0 0 auto; width:min(var(--cf-w, 17rem), calc(100% + 40px)); border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb, var(--ink) 2.5%, var(--surface)); padding:0.28rem 0.5rem 0.28rem 1.7rem; }
   :root :is(.collapsed, .peek) .cat-quick-pen{ left:0.55rem; }
   :root :is(.collapsed, .peek) .cat-quick:focus{ border:1px solid var(--cat-color, var(--accent)); }
@@ -3984,7 +3994,7 @@ body.ios-gate-on{ overflow:hidden; }
   background:color-mix(in srgb, var(--cat-color, var(--accent)) 18%, var(--surface)); color:color-mix(in srgb, var(--cat-color, var(--accent)) 80%, var(--ink)); }
 .sig-title{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'Courier Prime', 'Courier New', Courier, monospace;
   font-size:0.74rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:color-mix(in srgb, var(--cat-color, var(--accent)) 78%, var(--ink)); }
-.sig-memo{ background:color-mix(in srgb, #D2D08A 17%, var(--surface)); }
+.sig-memo{ background:var(--memo-ivoire); }
 .sig-memo::before{ content:""; position:absolute; top:-1px; left:-1px; width:12px; height:12px; border-top-left-radius:8px; border-bottom-right-radius:3px; pointer-events:none;
   background:linear-gradient(135deg, var(--bg) 0 50%, color-mix(in srgb, var(--ink) 10%, var(--surface)) 50% 100%); box-shadow:1px 1px 2px rgba(30,40,45,.12); }
 .sig-basket{ display:flex; color:color-mix(in srgb, var(--cat-color, var(--accent)) 78%, var(--ink)); }   /* le panier du titre des mémos */
@@ -4083,7 +4093,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.29</span>
+    <span class="version-tag">v11.30</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -12078,6 +12088,12 @@ function glideHeight(card, h0, opening){
   card._soft = a; card._glide = { dh: h1 - h0, dur, lag, easing: opening ? SOFT_EASE : SOFT_CLOSE };   // 10.80 : pour la punaise retenue
   const kids = Array.from(card.children).filter(k => k.animate && !k.classList.contains("cat-fold"));
   if(opening) kids.forEach(k => { if(!k.matches("ul.items")) k.animate([{ opacity:0.55 }, { opacity:1 }], { duration:dur, easing:"ease-out" }); });   // la liste a sa propre transition (fondu, opacité)
+  if(card.classList.contains("courses") && !card.classList.contains("has-ptint")){   // 11.30 : le bas du dégradé vire en douceur (voir --memo-end)
+    const cs = getComputedStyle(card), iv = cs.getPropertyValue("--memo-ivoire").trim(), sf = cs.getPropertyValue("--surface").trim();
+    // seulement quand la case est presque à sa hauteur fermée : sinon tout le corps du mémo, articles compris, se teintait
+    const k = opening ? [{ "--memo-end":iv }, { "--memo-end":sf, offset:0.3 }, { "--memo-end":sf }] : [{ "--memo-end":sf }, { "--memo-end":sf, offset:0.7 }, { "--memo-end":iv }];
+    if(iv && sf) card.animate(k, { duration:dur, delay:lag, fill:"backwards", easing:"linear" });
+  }
   const done = ()=>{ if(card._shutEnd) card._shutEnd();   // 11.28 : l'écran du duel figé reprend sa place de bande
     if(card._soft === a){ card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); if(card.classList.contains("courses")) placeCoursesScroll(card);
     if(!opening && card.classList.contains("collapsed") && cfScreen(card)){ cfNarrow(card); } } };
