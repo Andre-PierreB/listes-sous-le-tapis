@@ -1227,6 +1227,10 @@ header{
 /* 11.12 : la marge passe par-dessus les lignes du cahier, comme sur une vraie feuille (avant : dessinée dans le fond de
    la carte, sous les filets des articles). Un trait posé par fitCoursesCards, sous le fondu du bas, sans capter le doigt. */
 .memo-margin{ position:absolute; z-index:1; left:var(--margin-x); top:var(--rule-top, 0); bottom:0; width:1.5px; background:var(--margin-ink); pointer-events:none; }
+/* 11.22 : les champs du + passent devant la marge (bug 11.12 : elle les barrait). La liste a un masque (fondu du bas),
+   qui l'isole : c'est la liste entière qui passe devant, et seulement tant que le + est ouvert ; elle est transparente,
+   la marge reste visible entre les champs */
+:root .category.courses > ul.items:has(> li.add-form-row){ position:relative; z-index:2; }
 /* 10.75 : mémo reconnaissable même fermé (choisi au banc) : coin corné en haut à gauche (à droite, la
    pleine page) ; papier blanc ouvert, gris très clair fermé (le fondu du bas suit) */
 .category.courses::before{ content:""; position:absolute; top:0; left:0; width:20px; height:20px; border-top-left-radius:14px; pointer-events:none;
@@ -2832,6 +2836,14 @@ li.undo-flash{ animation:undo-flash 2.6s ease-out both; }
 }
 .cat-edit-actions{ margin:0.5rem 0 0.2rem; justify-content:flex-end; }   /* 10.53 : bas de la modification d'une liste */
 .courses-edit .edit-actions{ flex-basis:100%; margin-top:0.1rem; }
+/* 11.22 : téléphone : « Enregistrer » sortait de la case (les trois boutons ne tiennent pas dans la colonne du texte) :
+   Annuler et Enregistrer sur la ligne, à droite ; Retirer passe dessous, à gauche */
+@media (max-width:720px){
+  .courses-edit .edit-actions{ flex-wrap:wrap; justify-content:flex-end; row-gap:0.2rem; }
+  .courses-edit .edit-actions button{ padding-left:0.55rem; padding-right:0.55rem; }
+  .courses-edit .edit-actions::before{ content:""; order:1; flex-basis:100%; }   /* passage à la ligne */
+  .courses-edit .edit-actions .edit-remove{ order:2; padding-left:0; }   /* pas toute la largeur : pas de « Retirer » par erreur */
+}
 .courses-edit .edit-remove{ margin-right:auto; color:var(--ink-faint); border-color:transparent; background:none; }   /* 10.71 : à gauche, discret */
 .cat-share-link.cat-remove{ color:var(--ink-faint); text-decoration-color:color-mix(in srgb, currentColor 40%, transparent); transition:color .12s ease; }   /* 11.19 : discret, terre cuite au survol */
 .cat-share-link.cat-remove:hover, .cat-share-link.cat-remove.sure{ color:var(--late); }
