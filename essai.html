@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.31 -->
+<!-- Sous le tapis — version AUTONOME 11.32 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3556,8 +3556,7 @@ body.no-list .add-category-row{
 /* carte « nouvelle liste » : nom et type (7.22 ; 10.40 : plus de première tâche) */
 .new-list-card{
   width:min(440px, 100%);
-  background:var(--surface); border-radius:14px; box-shadow:var(--shadow);
-  border-left:3px solid var(--accent);
+  background:var(--surface); border-radius:14px; box-shadow:var(--shadow);   /* 11.32 : plus de bordure gauche (reste de l'ancien style des listes, courbée par l'arrondi) */
   padding:0.85rem 1rem 0.9rem;
   animation:nl-fade .3s ease;
 }
@@ -4097,7 +4096,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.31</span>
+    <span class="version-tag">v11.32</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5949,7 +5948,7 @@ function foldSmooth(catId, fold){
   const html = document.documentElement;
   const old = document.getElementById("cat-" + catId);
   const r0 = old ? old.getBoundingClientRect() : null;
-  if(old && old._soft){ old._soft.cancel(); old._soft = null; }
+  if(old && old._soft){ old._soft.cancel(); old._soft = null; old.style.overflow = ""; old.classList.remove("gliding"); }   // 11.32 : voir softHeight
   keepRoomBelow();
   html.classList.add("fold-still"); clearTimeout(foldStillT);
   peekId = null; peekHold = Date.now() + 700; peekHoldId = "cat-" + catId;
@@ -9705,6 +9704,21 @@ function keepAboveKeyboard(box, bottomEl, field){
 // essai D oui, essai C non). Les gestes qui ouvrent une modification appellent donc focusEditNow() juste après le
 // rendu, dans le même geste. À la souris, rien ne change (le curseur arrive comme avant).
 function isTouchUI(){ return !!(window.matchMedia && matchMedia("(hover:none)").matches); }
+// 11.32 : sur iPhone, la touche bleue du clavier n'arrive pas toujours comme une touche Entrée (texte collé, mot
+// souligné par la correction) : elle insérait un retour à la ligne et le champ ne validait pas. Un seul relais pour
+// tous les champs à une ligne (textarea avec enterkeyhint) : ce retour à la ligne devient une touche Entrée, traitée
+// par les écouteurs de chaque champ. Une vraie touche Entrée (Maj+Entrée compris) passe comme avant.
+let enterKeySeen = false;
+document.addEventListener("keydown", e=>{ enterKeySeen = e.key === "Enter" && !e.isComposing; }, true);
+document.addEventListener("beforeinput", e=>{
+  const seen = enterKeySeen; enterKeySeen = false;
+  if(seen || (e.inputType !== "insertLineBreak" && e.inputType !== "insertParagraph")) return;
+  const t = e.target;
+  if(!t || t.tagName !== "TEXTAREA" || !t.hasAttribute("enterkeyhint")) return;
+  e.preventDefault();
+  t.dispatchEvent(new KeyboardEvent("keydown", { key:"Enter", bubbles:true, cancelable:true }));
+  enterKeySeen = false;
+}, true);
 const EDIT_FIELD_SEL = ".editing input:not([type=checkbox]), .editing textarea, li .edit-form input, .cat-title-input, .chat-edit";
 function focusEditNow(){
   if(!isTouchUI()) return null;
@@ -12020,7 +12034,7 @@ function cfNarrow(card){
 }
 function softHeight(card, change, opening){
   const h0 = card.getBoundingClientRect().height;   // pendant une animation : la hauteur du moment
-  if(card._soft){ card._soft.cancel(); card._soft = null; }
+  if(card._soft){ card._soft.cancel(); card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); }   // 11.32 : la marque du glissement interrompu part avec lui (son done() ne la retire plus, card._soft a changé) ; sinon, case longue refermée à la toute fin de son ouverture : hauteur mesurée « fermée » = hauteur ouverte, pas de nouveau glissement, la case restait dépliée, marquée fermée
   keepRoomBelow();
   const pre = card._preGlide ? card._preGlide() : null;   // 10.67 : le duel note où est son jeu, pour le faire glisser sans saut
   const cfS0 = opening && cfScreen(card), cfR0 = cfS0 && cfS0.getBoundingClientRect();   // 11.6 : l'écran étroit, avant
