@@ -3977,7 +3977,7 @@ body.ios-gate-on{ overflow:hidden; }
 .signets::before{ content:""; position:fixed; inset:0; z-index:0; pointer-events:none; background:color-mix(in srgb, var(--bg) 62%, transparent); opacity:0; transition:opacity .16s ease; }
 .signets.open::before{ opacity:1; }
 .sig-col{ z-index:1; position:absolute; top:0.5rem; width:34px; left:min(calc(100% + 10px), calc(50vw + 50% - 38px)); }
-.sig-tab{ appearance:none; padding:0; width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2);
+.sig-tab{ appearance:none; padding:0; width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); touch-action:manipulation;   /* 11.32 : pas de double-toucher (zoom) sur l'onglet */
   color:var(--ink-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow); }
 .sig-tab svg{ width:18px; height:18px; transition:transform .16s ease; }
 .signets.open .sig-tab svg{ transform:rotate(180deg); }
@@ -15233,10 +15233,20 @@ const Signets = (()=>{
     root.addEventListener("pointerleave", e=>{ if(e.pointerType !== "mouse") return; clearTimeout(hoverT);
       if(!held) hoverT = setTimeout(()=>{ if(!held && !root.matches(":hover")) close(); }, 320); });
   }
-  tab.addEventListener("click", e=>{ e.stopPropagation();
+  const toggle = ()=>{
     if(!root.classList.contains("open")){ open(); held = true; }
     else if(!held){ held = true; clearTimeout(hoverT); }   // ouverte au survol : le clic la retient
-    else close(); });
+    else close(); };
+  // 11.32 : au doigt, l'onglet répond au lever du doigt, sans attendre le « click » que Safari fabrique ensuite : sur
+  // iPhone, ce click se perdait souvent (page qui glisse encore, deux touchers pris pour un double-toucher). Le click qui
+  // suit ce toucher est ignoré ; souris et clavier passent par le click comme avant.
+  let tapId = null, tapX = 0, tapY = 0, tapAt = 0;
+  tab.addEventListener("pointerdown", e=>{ if(e.pointerType === "mouse") return; tapId = e.pointerId; tapX = e.clientX; tapY = e.clientY; });
+  tab.addEventListener("pointercancel", ()=>{ tapId = null; });
+  tab.addEventListener("pointerup", e=>{ if(e.pointerId !== tapId) return; tapId = null;
+    if(Math.hypot(e.clientX - tapX, e.clientY - tapY) > 12) return;   // le doigt a glissé : pas un toucher
+    tapAt = Date.now(); toggle(); });
+  tab.addEventListener("click", e=>{ e.stopPropagation(); if(Date.now() - tapAt < 800) return; toggle(); });
   pile.addEventListener("click", e=>{ const b = e.target.closest(".sig"); if(b){ e.stopPropagation(); go(b.dataset.id); } });
   return { open, close, go };
 })();
