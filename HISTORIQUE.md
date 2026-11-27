@@ -3,6 +3,14 @@
 Sorti du fichier de l'appli en 10.74 (grand ménage) pour l'alléger ; rien n'est perdu.
 Les entrées sont dans l'ordre où elles avaient été écrites (pas toujours chronologique).
 
+  - 11.32 : case longue (mémo ou liste à la hauteur max) quittée à la toute fin de son ouverture : elle restait dépliée,
+    marquée fermée (clic ailleurs sans effet) — softHeight et foldSmooth retirent gliding et overflow avec le glissement
+    annulé (son done() ne le faisait plus ; défaut présent depuis la 10.68). iPhone : la touche bleue du clavier qui
+    insérait un retour à la ligne (après un collage) valide de nouveau — un seul relais sur le document (beforeinput
+    insertLineBreak / insertParagraph dans un textarea à enterkeyhint, sans vraie touche Entrée → touche Entrée).
+    Fenêtre « Nouvelle liste » : plus de bordure gauche courbée. Signets au doigt : l'onglet répond au lever du doigt
+    (le click de Safari se perdait), touch-action:manipulation ; ouvrir la pile ferme le clavier, sa hauteur suit
+    l'écran ; clavier ouvert, l'onglet est recalé sur la partie visible (visualViewport.offsetTop).
   - 11.31 : mémos partagés (couleur de personne) : passage du dégradé à la couleur pleine en douceur, comme l'ivoire en 11.30
     (même dégradé ouvert et fermé jusqu'à --memo-end, animée vers --ptint-bg ; fondu du bas sur --memo-end ; la règle 11.14
     qui gardait ce fondu blanc pendant la fermeture est retirée).

@@ -17,7 +17,7 @@
   // ouvrirait la vraie appli)
   if(/essai/i.test(location.pathname)) document.getElementById("manifestLink").href = "manifest-essai.webmanifest";
 </script>
-<!-- Sous le tapis — version AUTONOME 11.31 -->
+<!-- Sous le tapis — version AUTONOME 11.32 -->
 <!--
   NOTE POUR LA SUITE (à lire avant toute modification, y compris par Claude
   dans une nouvelle conversation) :
@@ -3556,8 +3556,7 @@ body.no-list .add-category-row{
 /* carte « nouvelle liste » : nom et type (7.22 ; 10.40 : plus de première tâche) */
 .new-list-card{
   width:min(440px, 100%);
-  background:var(--surface); border-radius:14px; box-shadow:var(--shadow);
-  border-left:3px solid var(--accent);
+  background:var(--surface); border-radius:14px; box-shadow:var(--shadow);   /* 11.32 : plus de bordure gauche (reste de l'ancien style des listes, courbée par l'arrondi) */
   padding:0.85rem 1rem 0.9rem;
   animation:nl-fade .3s ease;
 }
@@ -3978,7 +3977,7 @@ body.ios-gate-on{ overflow:hidden; }
 .signets::before{ content:""; position:fixed; inset:0; z-index:0; pointer-events:none; background:color-mix(in srgb, var(--bg) 62%, transparent); opacity:0; transition:opacity .16s ease; }
 .signets.open::before{ opacity:1; }
 .sig-col{ z-index:1; position:absolute; top:0.5rem; width:34px; left:min(calc(100% + 10px), calc(50vw + 50% - 38px)); }
-.sig-tab{ appearance:none; padding:0; width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2);
+.sig-tab{ appearance:none; padding:0; width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); touch-action:manipulation;   /* 11.32 : pas de double-toucher (zoom) sur l'onglet */
   color:var(--ink-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow); }
 .sig-tab svg{ width:18px; height:18px; transition:transform .16s ease; }
 .signets.open .sig-tab svg{ transform:rotate(180deg); }
@@ -4097,7 +4096,7 @@ body.has-fullpage .signets, body.no-tasks .signets{ display:none; }
       <button type="button" id="importBtn" class="backup-btn" data-tip="Restaurer à partir d'un fichier de sauvegarde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg><span>Restaurer</span></button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
-    <span class="version-tag">v11.31</span>
+    <span class="version-tag">v11.32</span>
   </footer>
 
   <section class="section-block trash-block" id="trashPanel" hidden></section>
@@ -5949,7 +5948,7 @@ function foldSmooth(catId, fold){
   const html = document.documentElement;
   const old = document.getElementById("cat-" + catId);
   const r0 = old ? old.getBoundingClientRect() : null;
-  if(old && old._soft){ old._soft.cancel(); old._soft = null; }
+  if(old && old._soft){ old._soft.cancel(); old._soft = null; old.style.overflow = ""; old.classList.remove("gliding"); }   // 11.32 : voir softHeight
   keepRoomBelow();
   html.classList.add("fold-still"); clearTimeout(foldStillT);
   peekId = null; peekHold = Date.now() + 700; peekHoldId = "cat-" + catId;
@@ -9705,6 +9704,21 @@ function keepAboveKeyboard(box, bottomEl, field){
 // essai D oui, essai C non). Les gestes qui ouvrent une modification appellent donc focusEditNow() juste après le
 // rendu, dans le même geste. À la souris, rien ne change (le curseur arrive comme avant).
 function isTouchUI(){ return !!(window.matchMedia && matchMedia("(hover:none)").matches); }
+// 11.32 : sur iPhone, la touche bleue du clavier n'arrive pas toujours comme une touche Entrée (texte collé, mot
+// souligné par la correction) : elle insérait un retour à la ligne et le champ ne validait pas. Un seul relais pour
+// tous les champs à une ligne (textarea avec enterkeyhint) : ce retour à la ligne devient une touche Entrée, traitée
+// par les écouteurs de chaque champ. Une vraie touche Entrée (Maj+Entrée compris) passe comme avant.
+let enterKeySeen = false;
+document.addEventListener("keydown", e=>{ enterKeySeen = e.key === "Enter" && !e.isComposing; }, true);
+document.addEventListener("beforeinput", e=>{
+  const seen = enterKeySeen; enterKeySeen = false;
+  if(seen || (e.inputType !== "insertLineBreak" && e.inputType !== "insertParagraph")) return;
+  const t = e.target;
+  if(!t || t.tagName !== "TEXTAREA" || !t.hasAttribute("enterkeyhint")) return;
+  e.preventDefault();
+  t.dispatchEvent(new KeyboardEvent("keydown", { key:"Enter", bubbles:true, cancelable:true }));
+  enterKeySeen = false;
+}, true);
 const EDIT_FIELD_SEL = ".editing input:not([type=checkbox]), .editing textarea, li .edit-form input, .cat-title-input, .chat-edit";
 function focusEditNow(){
   if(!isTouchUI()) return null;
@@ -12020,7 +12034,7 @@ function cfNarrow(card){
 }
 function softHeight(card, change, opening){
   const h0 = card.getBoundingClientRect().height;   // pendant une animation : la hauteur du moment
-  if(card._soft){ card._soft.cancel(); card._soft = null; }
+  if(card._soft){ card._soft.cancel(); card._soft = null; card.style.overflow = ""; card.classList.remove("gliding"); }   // 11.32 : la marque du glissement interrompu part avec lui (son done() ne la retire plus, card._soft a changé) ; sinon, case longue refermée à la toute fin de son ouverture : hauteur mesurée « fermée » = hauteur ouverte, pas de nouveau glissement, la case restait dépliée, marquée fermée
   keepRoomBelow();
   const pre = card._preGlide ? card._preGlide() : null;   // 10.67 : le duel note où est son jeu, pour le faire glisser sans saut
   const cfS0 = opening && cfScreen(card), cfR0 = cfS0 && cfS0.getBoundingClientRect();   // 11.6 : l'écran étroit, avant
@@ -15182,10 +15196,16 @@ const Signets = (()=>{
   function outside(e){ downType = e.pointerType || "mouse"; if(downType === "mouse" && !root.contains(e.target) && e.target !== document.documentElement) close(); }   // (la barre de défilement : on fait défiler, on ne ferme pas)
   function outsideTap(e){ if(downType === "mouse" || root.contains(e.target)) return; e.preventDefault(); e.stopPropagation(); close(); }
   function onKey(e){ if(e.key === "Escape"){ e.stopPropagation(); close(); tab.focus(); } }
+  // 11.32 : clavier ouvert, Safari décale les éléments fixes et réduit l'écran utile : la pile était coupée à mi-hauteur.
+  // On ferme le clavier en ouvrant la pile, et sa hauteur suit l'écran tant qu'elle est ouverte.
+  const vv = window.visualViewport;
+  function fitPile(){ const top = tab.getBoundingClientRect().bottom + 8;
+    pile.style.maxHeight = Math.max(160, (vv ? vv.height : innerHeight) - top - 12) + "px"; }
   function open(){
     pile.innerHTML = build();
-    const top = tab.getBoundingClientRect().bottom + 8;
-    pile.style.maxHeight = Math.max(160, (window.visualViewport ? visualViewport.height : innerHeight) - top - 12) + "px";
+    const f = document.activeElement;
+    if(f && f.matches && f.matches("input, textarea, [contenteditable]")) f.blur();
+    fitPile(); if(vv) vv.addEventListener("resize", fitPile);
     root.classList.add("open"); tab.setAttribute("aria-expanded", "true");
     document.addEventListener("pointerdown", outside, true);
     document.addEventListener("click", outsideTap, true);
@@ -15194,6 +15214,7 @@ const Signets = (()=>{
   function close(){
     if(!root.classList.contains("open")) return;
     root.classList.remove("open"); tab.setAttribute("aria-expanded", "false");
+    if(vv) vv.removeEventListener("resize", fitPile);
     document.removeEventListener("pointerdown", outside, true);
     document.removeEventListener("click", outsideTap, true);
     document.removeEventListener("keydown", onKey, true);
@@ -15213,16 +15234,33 @@ const Signets = (()=>{
   // Ouverte (ou retenue) d'un clic, elle reste : on peut faire défiler la page, seul un clic ailleurs la ferme.
   let hoverT = null, held = false;
   const hover = window.matchMedia && matchMedia("(hover:hover)").matches;
+  // 11.32 : au doigt, clavier ouvert, Safari fait remonter les éléments fixes avec la page : l'onglet sortait par le
+  // haut. Il est recalé sur le haut de la partie visible de l'écran (comme keepAboveKeyboard).
+  if(vv && !hover){
+    const col = root.querySelector(".sig-col");
+    const keep = ()=>{ col.style.translate = vv.offsetTop > 0.5 ? "0 " + Math.round(vv.offsetTop) + "px" : ""; };
+    vv.addEventListener("resize", keep); vv.addEventListener("scroll", keep);
+  }
   if(hover){
     root.addEventListener("pointerenter", e=>{ if(e.pointerType !== "mouse") return; clearTimeout(hoverT);
       if(!root.classList.contains("open")) hoverT = setTimeout(()=>{ if(root.matches(":hover")){ open(); held = false; } }, 140); });
     root.addEventListener("pointerleave", e=>{ if(e.pointerType !== "mouse") return; clearTimeout(hoverT);
       if(!held) hoverT = setTimeout(()=>{ if(!held && !root.matches(":hover")) close(); }, 320); });
   }
-  tab.addEventListener("click", e=>{ e.stopPropagation();
+  const toggle = ()=>{
     if(!root.classList.contains("open")){ open(); held = true; }
     else if(!held){ held = true; clearTimeout(hoverT); }   // ouverte au survol : le clic la retient
-    else close(); });
+    else close(); };
+  // 11.32 : au doigt, l'onglet répond au lever du doigt, sans attendre le « click » que Safari fabrique ensuite : sur
+  // iPhone, ce click se perdait souvent (page qui glisse encore, deux touchers pris pour un double-toucher). Le click qui
+  // suit ce toucher est ignoré ; souris et clavier passent par le click comme avant.
+  let tapId = null, tapX = 0, tapY = 0, tapAt = 0;
+  tab.addEventListener("pointerdown", e=>{ if(e.pointerType === "mouse") return; tapId = e.pointerId; tapX = e.clientX; tapY = e.clientY; });
+  tab.addEventListener("pointercancel", ()=>{ tapId = null; });
+  tab.addEventListener("pointerup", e=>{ if(e.pointerId !== tapId) return; tapId = null;
+    if(Math.hypot(e.clientX - tapX, e.clientY - tapY) > 12) return;   // le doigt a glissé : pas un toucher
+    tapAt = Date.now(); toggle(); });
+  tab.addEventListener("click", e=>{ e.stopPropagation(); if(Date.now() - tapAt < 800) return; toggle(); });
   pile.addEventListener("click", e=>{ const b = e.target.closest(".sig"); if(b){ e.stopPropagation(); go(b.dataset.id); } });
   return { open, close, go };
 })();
