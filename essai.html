@@ -15196,10 +15196,16 @@ const Signets = (()=>{
   function outside(e){ downType = e.pointerType || "mouse"; if(downType === "mouse" && !root.contains(e.target) && e.target !== document.documentElement) close(); }   // (la barre de défilement : on fait défiler, on ne ferme pas)
   function outsideTap(e){ if(downType === "mouse" || root.contains(e.target)) return; e.preventDefault(); e.stopPropagation(); close(); }
   function onKey(e){ if(e.key === "Escape"){ e.stopPropagation(); close(); tab.focus(); } }
+  // 11.32 : clavier ouvert, Safari décale les éléments fixes et réduit l'écran utile : la pile était coupée à mi-hauteur.
+  // On ferme le clavier en ouvrant la pile, et sa hauteur suit l'écran tant qu'elle est ouverte.
+  const vv = window.visualViewport;
+  function fitPile(){ const top = tab.getBoundingClientRect().bottom + 8;
+    pile.style.maxHeight = Math.max(160, (vv ? vv.height : innerHeight) - top - 12) + "px"; }
   function open(){
     pile.innerHTML = build();
-    const top = tab.getBoundingClientRect().bottom + 8;
-    pile.style.maxHeight = Math.max(160, (window.visualViewport ? visualViewport.height : innerHeight) - top - 12) + "px";
+    const f = document.activeElement;
+    if(f && f.matches && f.matches("input, textarea, [contenteditable]")) f.blur();
+    fitPile(); if(vv) vv.addEventListener("resize", fitPile);
     root.classList.add("open"); tab.setAttribute("aria-expanded", "true");
     document.addEventListener("pointerdown", outside, true);
     document.addEventListener("click", outsideTap, true);
@@ -15208,6 +15214,7 @@ const Signets = (()=>{
   function close(){
     if(!root.classList.contains("open")) return;
     root.classList.remove("open"); tab.setAttribute("aria-expanded", "false");
+    if(vv) vv.removeEventListener("resize", fitPile);
     document.removeEventListener("pointerdown", outside, true);
     document.removeEventListener("click", outsideTap, true);
     document.removeEventListener("keydown", onKey, true);
